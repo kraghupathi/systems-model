@@ -1,0 +1,11 @@
+
+---
+ tasks:
+  - name: Generate iptables file
+    shell: iptables-save > /etc/sysconfig/iptables
+  - name: Take backup of iptables file
+    command: cp /etc/sysconfig/iptables /etc/sysconfig/iptables.default 
+  - name: Copying IPTables to destincation
+    template: src=iptables dest=/etc/sysconfig/iptables owner=root group=root
+    notify:
+        - restart iptables

@@ -7,6 +7,7 @@
 #+DESCRIPTION: Router Server Design Documentation
 
 * Introduction
+This document describes the requirements, design and implementation of router server.
 
 * Requirements
 ** Functional Requirements
@@ -26,7 +27,31 @@
      the router [[./roles/router/files/router-design-diagram.png]]
  
 * Implementation
-  1) Creation of container with following details:
+** Directory Structure
+     #+BEGIN_SRC yaml
+roles/router
+|-- files
+|   `-- router-design-diagram.png
+|-- handlers
+|   |-- handlers.yaml
+|   |-- main.org
+|   `-- main.org~
+|-- meta
+|-- tasks
+|   |-- main.org
+|   `-- tasks.yaml
+|-- templates
+|   |-- iptables
+|   |-- #iptables.org#
+|   |-- iptables.org
+|   `-- iptables.org~
+`-- vars
+    |-- main.org
+    `-- vars.yaml
+
+     #+END_SRC
+
+** Creation of container with following details:
      #+begin_example
        Base Machine: BASEI
        CTID: 14107
@@ -37,4 +62,14 @@
        Interface: venet0:0
        Other Resources: Default Value
     #+end_example
-  
+** Main router yaml file
+#+BEGIN_SRC yaml :tangle ../build/router.yaml
+---
+- hosts: router
+  remote_user: root
+  roles:
+    - common
+    - router
+#+END_SRC
+ 
+
