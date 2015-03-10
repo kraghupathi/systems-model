@@ -1,6 +1,6 @@
 #+PROPERTY: session *scratch*
 #+PROPERTY: results output
-#+PROPERTY: tangle vars.yaml
+#+PROPERTY: tangle iptables
 #+PROPERTY: exports code
 
 * Deafault rules for filter table
@@ -68,7 +68,7 @@
 
 * Allow incoming ssh connection only from Ansible server.
 #+BEGIN_SRC yaml
--A INPUT -m state --state NEW -p tcp --dport 22 -s {{ansible-server}} -j ACCEPT
+-A INPUT -m state --state NEW -p tcp --dport 22 -s {{ansible-serverp}} -j ACCEPT
 #+END_SRC
 
 * Drop all other incoming packets on port 22
