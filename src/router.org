@@ -1,39 +1,37 @@
 #+TITLE:     router.org
-#+AUTHOR:    Siva Shanker
-#+EMAIL:     shankar@shankar
 #+DATE:      2015-03-09 Mon
 #+PROPERTY: session *scratch*
 #+PROPERTY: results output
 #+PROPERTY: tangle  
 #+PROPERTY: exports code
-
-#+DESCRIPTION: Setting up Router server
-
-* Pre-requisites
-- Container creation with private ip
-- Updating the container
-- make sure 
+#+DESCRIPTION: Router Server Design Documentation
 
 * Requirements
 
 ** Functional Requirements
-- Act as a gateway.
+- Act as a gateway for all other servers.
 - Routes traffic on port 80/443 forward to  reverse proxy.
 - Routes traffic on port 53 forward to Public DNS.
 - Listens on port 22 only from Ansible.
 
 ** Security Requirements
-- Port 22 open only for Ansible.
-  + Port 22 to be opened to ansible server so that ansible-server only can
-    access only from IIITH network
-
-- Ports 80,443,53 and ICMP open
-  + These Ports are allowed from anyrhere in order to access the labs
-   via reverseproxy
-
+- Port 22 open only to ansible server.
+- Ports 80,443,53 and ICMP open for all. These Ports are allowed from anyrhere in order to access the labs
+  via reverseproxy.
 - Rate Limiting on all open ports.
 
 * Design 
  - The following design diagram represents the overall structure of
    the router
+ - [[file://./roles/router/files/router-design-diagram.png][router-design-diagram]]
  
+* Implementation
+1. Creation of container with following details:
+   *BASEI*
+   *CTID:* 14107
+   *IPADDRESS:* 10.4.14.107 (Private)
+   *HOSTNAME:* router.virtual-labs.ac.in
+   *OS:* CentOS-6.6 
+   *Platform:* x86-64
+   *Other Resources:* Default Value
+
