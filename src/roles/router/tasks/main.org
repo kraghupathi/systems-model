@@ -4,6 +4,24 @@
 #+PROPERTY: exports code
 
 
+
+* Configuring filtering rules
+#+BEGIN_SRC  :tangle ./templates/iptable
+-A INPUT -i lo -j ACCEPT
+-A OUTPUT -o lo -j ACCEPT
+# Allowing 80 and 443 from anywhere
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+-A INPUT -m state --state NEW -p tcp -m tcp --dport 80 -j ACCEPT
+-A INPUT -m state --state NEW -p tcp -m tcp --dport 443 -j ACCEPT
+-A INPUT -j DROP
+
+
+#Allow incoming SSH connections.  Hopefully denyhosts will take care of bruteforce attacks
+-A INPUT -p tcp -s {{iiit-network}} --dport 22  -j ACCEPT
+#-A INPUT -m state -s {{ --state NEW -p tcp -m tcp --dport 22 -j ACCEPT
+#Allow incoming HTTP, HTTPS connection
+
+
 * Forward port 80/443 to Reverse Proxy.
 #+BEGIN_SRC yaml
 -A PREROUTING -d {{router public-ip}} --dport 80 -p tcp -j DNAT --to-destination {{reverse proxy private-ip}}
