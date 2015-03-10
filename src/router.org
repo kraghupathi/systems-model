@@ -16,22 +16,24 @@
 
 ** Security Requirements
 - Port 22 open only to ansible server.
-- Ports 80,443,53 and ICMP open for all. These Ports are allowed from anyrhere in order to access the labs
+- Ports 80,443,53 and ICMP open for all. These Ports are allowed from anywhere in order to access the labs
   via reverseproxy.
 - Rate Limiting on all open ports.
 
 * Design 
  - The following design diagram represents the overall structure of
    the router
- - [[file://./roles/router/files/router-design-diagram.png][router-design-diagram]]
+  [[./roles/router/files/router-design-diagram.png]]
  
 * Implementation
-1. Creation of container with following details:
-   *BASEI*
-   *CTID:* 14107
-   *IPADDRESS:* 10.4.14.107 (Private)
-   *HOSTNAME:* router.virtual-labs.ac.in
-   *OS:* CentOS-6.6 
-   *Platform:* x86-64
-   *Other Resources:* Default Value
+- Creation of container with following details:
+#+begin_example
+   Base Machine: BASEI
+   CTID: 14107
+   IPADDRESS: 10.4.14.107 (Private)
+   HOSTNAME: router.virtual-labs.ac.in
+   OS: CentOS-6.6 
+   Platform: x86-64
+   Other Resources: Default Value
 
+#+end_example
