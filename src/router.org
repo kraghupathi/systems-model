@@ -6,8 +6,9 @@
 #+PROPERTY: exports code
 #+DESCRIPTION: Router Server Design Documentation
 
-* Requirements
+* Introduction
 
+* Requirements
 ** Functional Requirements
   1) Act as a gateway for all other servers.
   2) Routes traffic on port 80/443 forward to  reverse proxy.
@@ -36,3 +37,4 @@
        Interface: venet0:0
        Other Resources: Default Value
     #+end_example
+  
