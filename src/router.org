@@ -9,32 +9,30 @@
 * Requirements
 
 ** Functional Requirements
-- Act as a gateway for all other servers.
-- Routes traffic on port 80/443 forward to  reverse proxy.
-- Routes traffic on port 53 forward to Public DNS.
-- Listens on port 22 only from Ansible.
+  1) Act as a gateway for all other servers.
+  2) Routes traffic on port 80/443 forward to  reverse proxy.
+  3) Routes traffic on port 53 forward to Public DNS.
+  4) Listens on port 22 only from Ansible.
 
 ** Security Requirements
-- Port 22 open only to ansible server.
-- Ports 80,443,53 and ICMP open for all. These Ports are allowed from anywhere in order to access the labs
-  via reverseproxy.
-- Rate Limiting on all open ports.
+  1) Port 22 open only to ansible server.
+  2) Ports 80,443,53 and ICMP open for all. These Ports are allowed from anywhere in order to access the labs
+     via reverseproxy.
+  3) Rate Limiting on all open ports.
 
 * Design 
- - The following design diagram represents the overall structure of
-   the router
-  [[./roles/router/files/router-design-diagram.png]]
+  1) The following design diagram represents the overall structure of
+    the router [[./roles/router/files/router-design-diagram.png]]
  
 * Implementation
-- Creation of container with following details:
-#+begin_example
-   Base Machine: BASEI
-   CTID: 14107
-   IPADDRESS: 10.4.14.107 (Private)
-   HOSTNAME: router.virtual-labs.ac.in
-   OS: CentOS-6.6 
-   Platform: x86-64
-   Interface: venet0:0
-   Other Resources: Default Value
-
-#+end_example
+  1) Creation of container with following details:
+     #+begin_example
+       Base Machine: BASEI
+       CTID: 14107
+       IPADDRESS: 10.4.14.107 (Private)
+       HOSTNAME: router.virtual-labs.ac.in
+       OS: CentOS-6.6 
+       Platform: x86-64
+       Interface: venet0:0
+       Other Resources: Default Value
+    #+end_example
