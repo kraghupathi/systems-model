@@ -1,0 +1,13 @@
+
+#+PROPERTY: session *scratch*
+#+PROPERTY: results output
+#+PROPERTY: tangle ../build/roles/ansible/handlers/main.yml
+#+PROPERTY: exports code
+
+Explain whatever in org mode style..
+
+#+BEGIN_SRC YAML
+---
+  - name: restart iptables
+    service: name=iptables state=restarted
+#+END_SRC

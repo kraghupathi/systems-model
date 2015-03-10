@@ -1,0 +1,75 @@
+#+PROPERTY: session *scratch*
+#+PROPERTY: results output
+#+PROPERTY: tangle ../build/site.yml
+#+PROPERTY: exports code
+
+* Introduction
+  This is a overall site file for configuring entire site using
+  ansible.  This file will get executed automatically through cron job
+  at least once a day to ensure that all systems are running in
+  desired state.
+
+* Servers
+  This site file includes various other server files.  The other
+  servers are described in various sub-sections
+
+** OSSEC server
+   There is a OSSEC server which is deployed using [[file:ossec.txt]].
+   The OSSEC server script requires some information about environment
+   which is described further in [[file:ossec.txt]]
+
+   It is necessary to specify OSSEC server at top as a client.keys
+   file gets created while configuring OSSEC server.  This keys file
+   is required for configuring OSSEC client on other machines that
+   implement ossec-client role.  If this server is added to site file
+   later then it must be ensured that all previous servers do not
+   implement ossec-client role.
+
+#+BEGIN_SRC YAML
+---
+- include: ossec.yml
+#+END_SRC
+
+** Ansible server
+   There is an Ansible server which will automatically configure
+   various servers and ensure that all deployed servers follow desired
+   configuration.  Build output of this repository would be used by
+   ansible server as its sources.
+
+#+BEGIN_SRC YAML
+- include: ansible.yml
+#+END_SRC
+
+** Base1 machine
+   Before the entire system is deployed for production on AWS, it
+   would be deployed on a local base1 machine.  This would help in
+   testing security, ansible based automated configuration and also
+   ADS auto-deployment.  This setup on base1 will act as
+   qa/development/staging environment before things are pushed to AWS.
+
+   The base1 machine which is part of this environment will also get
+   configured automatically through ansible.
+#+BEGIN_SRC YAML
+- include: base1.yml
+#+END_SRC
+
+** GLPI server
+   There is a GLPI test server which hosts GLPI asset management
+   system and ticketing system.  This is deployed just for practicing
+   ansible based auto-deployment at the moment.  This is not targeted
+   to be deployed on AWS
+
+#+BEGIN_SRC YAML
+- include: glpi.yml
+#+END_SRC
+
+** Redmine server
+   There is a redmine test server which hosts redmine issue tracking
+   system.  This is deployed just for practising ansible based
+   auto-deployment at the moment.  This is not targeted to be deployed
+   on AWS
+
+#+BEGIN_SRC YAML
+- include: redmine.yml
+#+END_SRC
+

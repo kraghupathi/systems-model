@@ -1,0 +1,17 @@
+
+#+PROPERTY: session *scratch*
+#+PROPERTY: results output
+#+PROPERTY: tangle ../build/redmine.yml
+#+PROPERTY: exports code
+
+Explain whatever in org mode style..
+
+#+BEGIN_SRC YAML
+---
+- name: Configure redmine server
+  hosts: redmine-server
+  roles:
+    - common
+    - redmine
+    - ossec-client
+#+END_SRC

@@ -1,0 +1,16 @@
+
+#+PROPERTY: session *scratch*
+#+PROPERTY: results output
+#+PROPERTY: tangle ../build/ossec.yml
+#+PROPERTY: exports code
+
+Explain whatever in org mode style..
+
+#+BEGIN_SRC YAML
+---
+- name: Configure ossec server
+  hosts: ossec-server
+  roles:
+    - common
+    - ossec
+#+END_SRC

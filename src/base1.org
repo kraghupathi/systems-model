@@ -1,0 +1,16 @@
+
+#+PROPERTY: session *scratch*
+#+PROPERTY: results output
+#+PROPERTY: tangle ../build/base1.yml
+#+PROPERTY: exports code
+
+Explain whatever in org mode style..
+
+#+BEGIN_SRC YAML
+---
+- name: Configure base1 machine
+  hosts: 10.4.12.21
+  roles:
+    - common
+    - base
+#+END_SRC

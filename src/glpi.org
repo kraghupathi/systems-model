@@ -1,0 +1,17 @@
+
+#+PROPERTY: session *scratch*
+#+PROPERTY: results output
+#+PROPERTY: tangle ../build/glpi.yml
+#+PROPERTY: exports code
+
+Explain whatever in org mode style..
+
+#+BEGIN_SRC YAML
+---
+- name: Configure glpi server
+  hosts: glpi-server
+  roles:
+    - common
+    - glpi
+    - ossec-client
+#+END_SRC

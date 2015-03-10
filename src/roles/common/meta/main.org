@@ -1,0 +1,14 @@
+
+#+PROPERTY: session *scratch*
+#+PROPERTY: results output
+#+PROPERTY: tangle ../build/roles/common/meta/main.yml
+#+PROPERTY: exports code
+
+Explain whatever in org mode style..
+
+#+BEGIN_SRC YAML
+---
+dependencies:
+  - role: common_vars
+
+#+END_SRC
