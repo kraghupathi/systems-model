@@ -1,0 +1,4 @@
+#+PROPERTY: session *scratch*
+#+PROPERTY: results output
+#+PROPERTY: tangle ../build/roles/common/tasks/logwatch.yml
+#+PROPERTY: exports code
