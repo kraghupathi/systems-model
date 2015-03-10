@@ -1,0 +1,93 @@
+#+PROPERTY: session *scratch*
+#+PROPERTY: results output
+#+PROPERTY: tangle ../build/ansible.yml
+#+PROPERTY: exports code
+
+* Requirements
+The functional and security requirements for Ansible server can be
+listed as:
+
+** Functional Requirements
+   1) Ansible server should manage itself.
+   2) Update OS, enforce firewall rules.
+
+** Security Requirements
+   1. Apply Firewall Rules.
+   2. SSH/Port 22 accessible *ONLY* from VLEAD IP range.
+   3. Allow ICMP (Ping)
+   4. Limit rate of new connections on port 22.
+   
+* Design
+
+* Implementation
+
+The implementation of this system is in terms of a collection of Ansible scripts that
+configure the machine.   These scripts need to be organized in a certain way:
+
+#+BEGIN_EXAMPLE
+
+|-- ansible.org
+|-- roles
+|   |-- ansible
+|   |   |-- handlers
+|   |   |   `-- main.org
+|   |   |-- meta
+|   |   |   `-- main.org
+|   |   |-- tasks
+|   |   |   |-- main.org
+|   |   `-- templates
+|   |       `-- iptables
+|   |-- common
+|   |   ... 
+#+END_EXAMPLE
+
+We do the implementation in terms of defining suitable scripts for each role.
+
+**  Scripts
+
+The top level script resides in =ansible-scripts/ansible.yml=
+
+#+BEGIN_SRC  :tangle ansible-scripts/ansible.yml :eval no
+---
+- name: Configure ansible server
+  hosts: ansible-server
+  roles:
+    - common
+    - ansible
+#+END_SRC
+
+** Common
+
+#+BEGIN_SRC  :tangle ansible-scripts/ansible.yml :eval no
+---
+- name: Configure ansible server
+  hosts: ansible-server
+  roles:
+    - common
+    - ansible
+#+END_SRC
+
+
+
+
+Here, we are using two roles as follows:
+
+  - common :: The configuration defined inside this, is common to all
+              servers. The organization can be referred here.
+
+  - ansible :: This configuration is specific to ansible server.  The
+               organization of configuration inside these roles is as follows:
+    + meta :: This has =main.yml= and all the role dependencies are listed in this.
+    + tasks :: The =main.yml= inside this ensures that iptables for ansible
+    server are included.
+    + handlers :: The =main.yml= inside handler notifies it what services need
+                  to be restarted, if that action(change) is performed.
+
+** Firewall and iptables
+
+The firewall design and implementation is given [[here]]. 
+
+** OS updates and patches
+
+** Cron jobs
+

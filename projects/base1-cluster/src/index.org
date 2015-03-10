@@ -1,0 +1,110 @@
+#+title: The Base1 Cluster Specification
+#+SETUPFILE: org-templates/level-0.org
+* Introduction and Motivation
+
+The purpose of this cluster is to run a set of virtual labs.  The /ab
+ initio/ design of this cluster is being done keeping strong security
+ in mind right from the beginning.  Availability without security is
+ short-lived.
+
+** Security driven design
+
+Our goal is to incorporate several security measures ([[wiki:Defense_in_depth_computing][Defence in
+Depth]]) that can hopefully detect and frustrate an attacker.
+
+ - ssh access :: All machines are accessible only via ssh key based
+                 protocols, not passwords.   ssh access from a public
+                 network to =root= is completely disabled. 
+
+ - Minimize IP's exposed to the internet :: Very few (one or two)
+      machines are exposed to the internet.
+
+ - Tightly control ports :: Access is enabled only to specific ports
+      and that too from specific source machines.
+
+ - Rate limits on ports :: All ports are rate limited using a
+      firewall.  This is done to block brute force attacks. 
+
+ - Security group :: Available only on Amazon.  Not used here.
+
+ - Firewall rules :: On every machine or container. 
+
+ - Using fail2ban :: Works with the firewall to ban IPs involved in
+                     brute-force attacks.
+
+* Design of Base1-cluster's Network
+
+The diagram of the final design of base1-cluster is shown below:
+#   Source  at 
+#    [[https://docs.google.com/a/vlabs.ac.in/drawings/d/1e9YL9YXbA1KZwEQ0HDiQhV9014J6EzKoR0zsKXMrgwQ/edit]]
+
+<<<fig-network-diagram>>>
+#+CAPTION:  Network Diagram
+#+LABEL:  fig-network-diagram
+#+NAME: fig-network-diagram
+
+[[./diagrams/network-diagram.png]]
+
+
+The network is divided into public and private components.
+
+** Public 
+
+The public component consists of machines with
+public interfaces.  They are
+
+ - Router ::  Access to this only via ports 80 (http), 53 (dns) and
+              443 (https).  This is the public face of virtual labs.
+              Any hits from a user of virtual labs will land here.
+
+ - Ansible ::  This is the configuration server.  It is accessible
+               only via port 22 (ssh).  There will be only one or two
+               specific users have access to this, and that too from
+               the IIIT network.
+
+** Private
+
+The private component has no interface to the internet.  It consists
+of the following servers: *Nagios*, *Reverse Proxy*, *DNS*, *LDAP* and
+the *ADS*.  In addition, any hosted lab will be added to this private
+component.
+
+* Use cases
+
+ -  Nagios ::  monitors and provides alerts for applications, and
+               services.  Alerts are generated when things go wrong
+               and as well when the problem is been resolved
+
+ - Reverse Proxy :: maintains an internal DNS to map the requests to
+                    the individual labs.  
+
+ - All servers and service tasks like DNS, ADS are automated
+  using Ansible.
+ 
+ -  Ansible will take a request for configuration change and perform the
+  house keeping. 
+
+ - Labs will deployed using the ADS service. 
+
+* Implementation of the cluster
+
+#+BEGIN_EXAMPLE
+src/
+ spec/
+ approx/
+
+   index.org  :: simple network consisting of ansible
+
+    
+#+END_EXAMPLE
+
+The implementation of
+ - ansible :: [[./ansible.org]]
+
+
+
+
+
+
+
+
