@@ -1,0 +1,15 @@
+#+PROPERTY: session *scratch*
+#+PROPERTY: results output
+#+PROPERTY: tangle ../build/roles/common/tasks/logwatch.yml
+#+PROPERTY: exports code
+
+
+* Introduction
+  This task installs and configures logwatch on the target server.
+  In general this is a required configuration on the servers.
+
+#+BEGIN_SRC YAML
+ -name: install logwatch
+  yum: name=logwatch state=present
+
+#+END_SRC

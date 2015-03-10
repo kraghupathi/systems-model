@@ -1,0 +1,18 @@
+#+title:  Main
+#+PROPERTY: session *scratch*
+#+PROPERTY: results output
+#+PROPERTY: tangle ../build/roles/common/tasks/main.yml
+#+PROPERTY: exports code
+
+* Introduction
+
+#+BEGIN_SRC YAML
+---
+- name: Include iptables configuration
+  include: iptables.yaml
+
+- name: Include /etc/aliases configuration
+  include: aliases.yaml
+
+#+END_SRC
+

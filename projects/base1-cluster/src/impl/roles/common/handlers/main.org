@@ -1,0 +1,17 @@
+
+#+PROPERTY: session *scratch*
+#+PROPERTY: results output
+#+PROPERTY: tangle ../build/roles/common/handlers/main.yml
+#+PROPERTY: exports code
+
+* Introduction
+  Common tasks which will be called by other tasks/plays
+
+#+BEGIN_SRC YAML
+---
+  - name: rebuild aliases
+    shell: newaliases
+
+  - name: restart iptables
+    service: name=iptables state=restarted
+#+END_SRC
