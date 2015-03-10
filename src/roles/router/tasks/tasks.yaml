@@ -1,12 +1,4 @@
-#+TITLE:     main.org
-#+DATE:      2015-03-09 Mon
-#+PROPERTY: session *scratch*
-#+PROPERTY: results output
-#+PROPERTY: exports code
 
-
-* Tasks
-#+BEGIN_SRC yaml :tangle tasks.yaml
 ---
  tasks:
   - name: Generate iptables file
@@ -17,4 +9,3 @@
     template: src=iptables dest=/etc/sysconfig/iptables owner=root group=root
     notify:
         - restart iptables
-#+END_SRC
