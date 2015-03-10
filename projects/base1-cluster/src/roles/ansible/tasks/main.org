@@ -1,18 +1,18 @@
 #+PROPERTY: session *scratch*
 #+PROPERTY: results output
-#+PROPERTY: tangle ../build/roles/ansible/tasks/main.yml
+#+PROPERTY: tangle ../../../../build/roles/ansible/tasks/main.yml
 #+PROPERTY: exports code
 
 * Introduction
-This document is meant to specify the tasks that have to be executed on the ansible server.
+  This document is meant to specify the tasks that have to be executed on the
+  ansible server.
 
 * Tasks
-First, the iptables rules have to be set which will configure the
-iptables rules specific to this server.  The iptables are written in a
-template and and then copied in to the location
-=/etc/sysconfig/iptables=.  This is done by the following code. Using
-templates, the template file in the given source is copied into the
-destination machines.
+  First, the iptables rules have to be set which will configure the iptables
+  rules specific to this server.  The iptables are written in a template and
+  and then copied in to the location =/etc/sysconfig/iptables=.  This is done
+  by the following code. Using templates, the template file in the given source
+  is copied into the destination machines.
 
 #+BEGIN_SRC YAML
 ---

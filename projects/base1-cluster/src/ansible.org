@@ -2,6 +2,7 @@
 #+PROPERTY: results output
 #+PROPERTY: tangle ../build/ansible.yml
 #+PROPERTY: exports code
+#+SETUPFILE: org-templates/level-0.org
 
 * Requirements
 The functional and security requirements for Ansible server can be
@@ -18,6 +19,11 @@ listed as:
    4. Limit rate of new connections on port 22.
    
 * Design
+#+CAPTION:  Network Diagram
+#+LABEL:  fig-network-diagram
+#+NAME: fig-network-diagram
+
+[[./diagrams/ansible.png][Network diagram of Ansible]]
 
 * Implementation
 
@@ -43,20 +49,14 @@ configure the machine.   These scripts need to be organized in a certain way:
 
 We do the implementation in terms of defining suitable scripts for each role.
 
-**  Scripts
-
 The top level script resides in =ansible-scripts/ansible.yml=
 
-#+BEGIN_SRC  :tangle ansible-scripts/ansible.yml :eval no
----
-- name: Configure ansible server
-  hosts: ansible-server
-  roles:
-    - common
-    - ansible
-#+END_SRC
+** Common Roles
+Hardening of the machine is done by the common roles.  More information is [[./roles/common/tasks/main.org][here]]
 
-** Common
+** Specific roles
+*** Firewall Rules
+Firewall rules are defined [[./roles/ansible/templates/iptables.org][here]]
 
 #+BEGIN_SRC  :tangle ansible-scripts/ansible.yml :eval no
 ---
@@ -67,26 +67,7 @@ The top level script resides in =ansible-scripts/ansible.yml=
     - ansible
 #+END_SRC
 
-
-
-
-Here, we are using two roles as follows:
-
-  - common :: The configuration defined inside this, is common to all
-              servers. The organization can be referred here.
-
-  - ansible :: This configuration is specific to ansible server.  The
-               organization of configuration inside these roles is as follows:
-    + meta :: This has =main.yml= and all the role dependencies are listed in this.
-    + tasks :: The =main.yml= inside this ensures that iptables for ansible
-    server are included.
-    + handlers :: The =main.yml= inside handler notifies it what services need
-                  to be restarted, if that action(change) is performed.
-
-** Firewall and iptables
-
-The firewall design and implementation is given [[here]]. 
-
+                  
 ** OS updates and patches
 
 ** Cron jobs
