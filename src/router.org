@@ -22,7 +22,7 @@
 
 * Design 
   1) The following design diagram represents the overall structure of
-    the router [[./roles/router/files/router-design-diagram.png]]
+     the router [[./roles/router/files/router-design-diagram.png]]
  
 * Implementation
   1) Creation of container with following details:
