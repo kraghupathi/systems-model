@@ -3,9 +3,26 @@
 #+PROPERTY: 
 #+PROPERTY: exports code
 
-#+BEGIN_SRC txt :tangle ./templates/iptable.txt
--A INPUT -i eth0  
 
+* Forward port 80/443 to Reverse Proxy.
+#+BEGIN_SRC yaml
+-A PREROUTING -d {{router public-ip}} --dport 80 -p tcp -j DNAT --to-destination {{reverse proxy private-ip}}
+-A PREROUTING -d {{router public-ip}} --dport 443 -p tcp -j DNAAT --to-destincation {{reverse proxy private-ip}}
 #+END_SRC
 
+* SNAT traffic comming from Reverse Proxy on port 80,443 with Router Public IP
+#+BEGIN_SRC yaml
+-A POSTROUTING -s {{reverse proxy private-ip}} --sport 80 -p tcp -j SNAT --to-source {{router public-ip}}
+-A POSTROUTING -s {{reverse proxy private-ip}} --sport 443 -p tcp -j SNAT --to-source {{router public-ip}}
+#+END_SRC
 
+* Forward port 53 tcp/udp to Public DNS.
+#+BEGIN_SRC yaml
+-A PREROUTING -d {{public-dns public-ip}} --dport 53 -p udp -j DNAT --to-destination {{public-dns private-ip}}
+-A PREROUTING -d {{public-dns public-ip}} --dport 53 -p tcp -j DNAT --to-destination {{public-dns private-ip}}
+#+END_SRC
+
+* SNAT traffic coming from Public DNS on port 53 with Router Public IP
+#+BEGIN_SRC yaml
+-A POSTROUTING -s {{public-dn private-ip}} 
+#+END_SRC
