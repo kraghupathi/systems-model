@@ -4,11 +4,13 @@
 #+PROPERTY: tangle ../build/roles/ansible/meta/main.yml
 #+PROPERTY: exports code
 
-Explain whatever in org mode style..
+* Introduction
+This document specifies the common variables needed by this server for
+some basic configurations to be setup. The dependecies are taken from
+another role named as *common_var*.
 
 #+BEGIN_SRC YAML
 ---
 dependencies:
   - role: common_vars
-
 #+END_SRC
