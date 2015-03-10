@@ -1,1 +1,11 @@
-Test file
+#+PROPERTY: session *scratch*
+#+PROPERTY: results output
+#+PROPERTY: 
+#+PROPERTY: exports code
+
+#+BEGIN_SRC txt :tangle ./templates/iptable.txt
+-A INPUT -i eth0  
+
+#+END_SRC
+
+
