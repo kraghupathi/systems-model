@@ -1,4 +1,0 @@
-
----
- - name: restart ipatbles
-   service: name=iptabels state=restarted

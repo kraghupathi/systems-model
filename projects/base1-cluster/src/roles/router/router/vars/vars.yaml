@@ -1,7 +1,0 @@
-
----
-vars: 
-   router-ip: 196.12.53.140
-   reverse-proxy-ip: 10.4.12.111
-   public-dns-public-ip: 196.12.53.134
-   public-dns-private-ip: 10.4.12.160
