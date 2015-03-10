@@ -5,7 +5,7 @@
 #+PROPERTY: exports code
 
 This script configures the ansible server according to the roles
-given. 
+given.. 
 
 #+BEGIN_SRC YAML
 ---
