@@ -1,0 +1,117 @@
+#+Title: Common Roles
+#+Author:Zubair S and Prakash B H
+#+Date: 10 March 2015
+#+PROPERTY: session *scratch*
+#+PROPERTY: results output
+#+PROPERTY: exports code
+#+SETUPFILE: org-templates/level-0.org
+
+
+* Introduction:
+This document describes the requirements, design and implementation of
+the common roles which is part of the cluster. A role is a specific
+set of configurations. Common Roles are the roles which will be
+applied on all the deployed servers.
+
+* Requirements
+
+The functional requirements for common roles are:
+
+** Functional Requirements
+
+  1. Below common roles are applied at periodic intervals:
+    + Restarting the IP tables
+    + Installing and configuring the logwatch
+    + Disabling password-based ssh
+    + Installing and configuring fail2ban for ssh
+    + Updating / patching the OS
+    + Logging / Modfying the history behavior
+
+The security best practices needs to be followed in defining the
+roles. All processes suggested for =hardening a server= should be
+implemented. A good documentation can be found here: [[http://www.serverhardening.com/][Server Hardening]].
+
+
+* Design:    
+
+Network Diagram
+#+CAPTION:  Common Roles Diagram
+#+LABEL:  fig-common-diagram
+#+NAME: fig-common-diagram
+
+[[./diagrams/common-roles.png]]
+
+Common roles will ensure that all the common roles will be applied on
+all the deployed servers,
+
+The diagram can be edited [[https://docs.google.com/a/vlabs.ac.in/drawings/d/1NHBwOSxikqlg5cXbgnKMfnUS_K_iMGkCClktXMOBTw8/edit][HERE]] 
+
+
+* Implementation:
+** Structure of the scripts
+The implementation of this system is in terms of a collection of
+Ansible scripts that configure the machine.  These scripts need to be
+organized in a certain way:
+
+#+BEGIN_EXAMPLE
+|-- ansible.yml
+|-- roles
+|   |-- ansible
+|   |   |...
+|   |   |...
+|   |-- common
+|   |   |-- files
+|   |   |    |-- history.sh
+|   |   |    `-- sshd_config
+|   |   |-- handlers
+|   |   |    `-- main.yml
+|   |   |-- meta
+|   |   |   `-- main.yml
+|   |   |-- tasks
+|   |   |   |-- aliases.yml
+|   |   |   |-- history-config.yml
+|   |   |   |-- restart-iptables.yml
+|   |   |   |-- logwatch.yml
+|   |   |   |-- main.yml
+|   |   |   |-- fail2ban.yml
+|   |   |   |-- sshd-config.yml
+|   |   |   `-- update-os.yml
+|   |   |-- templates
+|   |   `-- vars
+#+END_EXAMPLE
+
+*** History
+History parameters will be exported for the following:
+ - HISTTIMEFORMAT :: display the time stamp along with the command
+                     history
+ - HISTSIZE       :: is the number of lines or commands that are stored in
+                     memory in a history list while bash session is
+                     ongoing
+ - HISTFILESIZE   :: is the number of lines or commands that are allowed
+                     in the history file at startup time of a session,
+                     and are stored in the history file at the end of
+                     bash session for use in future sessions.
+#+BEGIN_SRC SHELL :tangle ../build/roles/common/files/history.sh
+#!/bin/bash
+HISTTIMEFORMAT  = "%y %m %d %T"
+HISTSIZE        = 100000
+HISTFILESIZE    = 100000
+export HISTTIMEFORMAT HISTSIZE HISTFILESIZE
+#+END_SRC 
+
+
+*** SSHD Configuration
+This file copies the modified sshd configuration and restarts using
+the handler.
+
+#+BEGIN_SRC YAML :tangle ../build/roles/common/tasks/sshd-config.yml
+ ---
+#Role to copy the modified sshd_config and call ssh restart handler
+ - name: copy sshd_config
+   copy: src=sshd_config dest=/etc/ssh/sshd_config owner=root group=root mode=0644
+   notify:
+    - restart sshd
+#+END_SRC
+
+
+
