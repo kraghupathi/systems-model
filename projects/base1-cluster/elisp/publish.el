@@ -1,9 +1,9 @@
 ;;; org-publish.el
 
-;;; Adapted from Sebastian Rose's org publishing tutorial at 
+;;; Adapted from Sebastian Rose's org publishing tutorial at
 ;;; http://orgmode.org/worg/org-tutorials/org-publish-html-tutorial.html
 
-;;; Customized for use by vlead-system team. 
+;;; Customized for use by vlead-system team.
 
 ;; Maintainer: Venkatesh Choppella <venkatesh.choppell@iiit.ac.in>
 ;; Keywords: publish, org
@@ -23,20 +23,21 @@
 ;; Boston, MA 02111-1307, USA.
 
 ;;; Usage:
-;;; This file is loaded by the publish target of the
+;;; This file is loaded by the docs target of the
 ;;; makefile in the parent directory.
 
 ;;; Requirements:
 ;;; make sure that org-8.2.10 is available at
-;;; ~/emacs/lisp/org-8.2.10. 
+;;; ~/emacs/lisp/org-8.2.10.
 
-(setq load-path 
-      (append 
+(setq load-path
+      (append
        (list "~/emacs/lisp/org-8.2.10/lisp"
-	     "~/emacs/lisp/org-8.2.10/contrib/lisp") 
+	     "~/emacs/lisp/org-8.2.10/contrib/lisp")
        load-path))
 
 (require 'org)
+(require 'ob-tangle)
 
 (message "Org version = %s" (org-version))
 (message "Org version = %s" (org-version))
@@ -46,6 +47,7 @@
 (setq org-export-allow-BIND t)
 ;;; tangle code before publishing
 (add-hook 'org-publish-before-export-hook 'org-babel-tangle 'append)
+;(add-hook 'org-publish-before-export-hook 'org-babel-tangle)
 
 
 ;;; https://groups.google.com/forum/#!topic/comp.emacs/iiYJL04M7lA
@@ -55,13 +57,14 @@
 
 ;;; CUSTOMIZE these variables!
 ;;; child of the build directory
-(defvar *publish-dir* "base1-cluster/")  
+(defvar *publish-dir* "docs/")
+(defvar *scripts-dir* "scripts/")
 ;;; src directory
 (defvar *src-dir* "src/")
 
 
 
-;;; The variable default-dir is automatically bound the
+;;; The variable default-directory is automatically bound to the
 ;;; directory from where the emacs to run this script is
 ;;; called.  it is NOT the directory where this script is
 ;;; located.
@@ -69,9 +72,32 @@
 (defvar build-dir (concat base-dir "build/"))
 
 (defvar publishing-dir (concat build-dir *publish-dir*))
+(defvar built-code-dir (concat build-dir *scripts-dir*))
 (defvar org-notes '())
 (defvar org-static '())
-(defvar popl '())
+(defvar org-scripts '())
+(defvar snag '())
+
+(message "======================")
+(message "base dir = %s" (concat base-dir *src-dir*))
+(message "pub dir= %s" built-code-dir)
+;(message "tangle func= %s" org-babel-tangle)
+;(message "publish func= %s" org-html-publish-to-html)
+(message "======================")
+(interactive "press enter.....")
+
+(defun tangle-wrapper(plist filename publish-dir)
+  (org-babel-tangle-file filename))
+
+
+(setq org-scripts
+`("org-scripts"
+ :base-directory ,(concat base-dir *src-dir*)
+ :base-extension "org"
+ :publishing-directory ,built-code-dir
+ :recursive t
+ :publishing-function tangle-wrapper
+  ))
 
 (setq org-notes
 `("org-notes"
@@ -94,16 +120,20 @@
   :publishing-function org-publish-attachment
   ))
 
- (setq popl  '("popl" :components ("org-notes" "org-static")))
+ ;(setq snag  '("snag" :components ("org-notes" "org-static")))
+ ;(setq snag  '("snag" :components ("org-scripts" "org-notes" "org-static")))
+ (setq snag  '("snag" :components ("org-scripts")))
 
  (require 'ox-publish)
  (load-file "./elisp/htmlize.el")
 
  (setq org-publish-project-alist
-       (list org-notes org-static popl))
+       ;(list org-notes org-static snag))
+       ;(list org-scripts org-notes org-static snag))
+       (list org-scripts snag))
 
-(org-publish-project 
- popl  ; project name
+(org-publish-project
+ snag  ; project name
  t ; force
  )
 

@@ -1,9 +1,14 @@
-DEST=build/base1-cluster
+DEST=build
 
-all:  publish
+all:  build docs
 
-publish: init
+build: init
+	mkdir -p ${DEST}/scripts
+	echo "building scripts.."
+
+docs: init
 	emacs  --script elisp/publish.el
+	rm -f ${DEST}/docs/*.html~
 
 init:
 	mkdir -p ${DEST}
