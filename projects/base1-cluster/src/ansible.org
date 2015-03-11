@@ -9,6 +9,11 @@
 This document describes the requirements, design and implementation of the
 ansible server which is part of the cluster.
 
+The Ansible works by configuring servers.   A server may have multiple
+roles and a machine is configured for a specific role.    Roles are
+build on the idea of include files and combine them to form clean,
+reusable abstractions. 
+
 * Requirements
 The functional and security requirements for Ansible server are:
 
