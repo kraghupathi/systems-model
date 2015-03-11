@@ -63,7 +63,6 @@
 (defvar *src-dir* "src/")
 
 
-
 ;;; The variable default-directory is automatically bound to the
 ;;; directory from where the emacs to run this script is
 ;;; called.  it is NOT the directory where this script is
@@ -71,7 +70,7 @@
 (defvar base-dir default-directory)
 (defvar build-dir (concat base-dir "build/"))
 
-(defvar publishing-dir (concat build-dir *publish-dir*))
+(defvar publishing-dir *publish-dir*)
 (defvar built-code-dir (concat build-dir *scripts-dir*))
 (defvar org-notes '())
 (defvar org-static '())
@@ -86,7 +85,7 @@
 (message "======================")
 (interactive "press enter.....")
 
-(defun tangle-wrapper(plist filename publish-dir)
+(defun tangle-wrapper(plist filename pub-dir)
   (org-babel-tangle-file filename))
 
 
@@ -120,17 +119,13 @@
   :publishing-function org-publish-attachment
   ))
 
- ;(setq snag  '("snag" :components ("org-notes" "org-static")))
- ;(setq snag  '("snag" :components ("org-scripts" "org-notes" "org-static")))
- (setq snag  '("snag" :components ("org-scripts")))
+ (setq snag  '("snag" :components ("org-scripts" "org-notes" "org-static")))
 
  (require 'ox-publish)
  (load-file "./elisp/htmlize.el")
 
  (setq org-publish-project-alist
-       ;(list org-notes org-static snag))
-       ;(list org-scripts org-notes org-static snag))
-       (list org-scripts snag))
+       (list org-scripts org-notes org-static snag))
 
 (org-publish-project
  snag  ; project name
