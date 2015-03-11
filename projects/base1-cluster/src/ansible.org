@@ -73,12 +73,13 @@ We do the implementation in terms of defining suitable scripts for each role.
 The top level script is  =build/ansible.yml=
 
 
-#+BEGIN_SRC :tangle ../build/ansible.yml
+#+BEGIN_SRC YAML :tangle ../build/ansible.yml
 ---
 - name: Configure ansible server
   hosts: ansible-server
+  remote_user: root
   roles:
-    - common
+#    - common
     - ansible
 #+END_SRC
 
@@ -158,9 +159,9 @@ Whenever iptables are changed, the iptables service will be restarted.
 ** Dependencies
 
 #+BEGIN_SRC YAML :tangle ../build/roles/ansible/meta/main.yml
----
-dependencies:
-  - role: common_vars
+#---
+#dependencies:
+#  - role: common_vars
 #+END_SRC
 
    
