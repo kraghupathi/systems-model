@@ -81,6 +81,7 @@ organized in a certain way:
 |   |   `-- vars
 #+END_EXAMPLE
 
+#+BEGIN_COMMENT
 *** History
 History parameters will be exported for the following:
  - HISTTIMEFORMAT :: display the time stamp along with the command
@@ -100,7 +101,6 @@ HISTSIZE        = 100000
 HISTFILESIZE    = 100000
 export HISTTIMEFORMAT HISTSIZE HISTFILESIZE
 #+END_SRC 
-
 
 *** SSHD config file
 This file sets up the sshd configurations
@@ -143,6 +143,7 @@ This file installs the logwatch  and copies the configuration
  - name: copy logwatch.conf
    copy: src=logwatch.conf dest=/etc/logwatch/conf/logwatch.conf owner=root group=root mode=0644
 #+END_SRC
-  
 
+#+END_COMMENT
+  
 
