@@ -1,6 +1,5 @@
 #+PROPERTY: session *scratch*
 #+PROPERTY: results output
-#+PROPERTY: tangle ../build/ansible.yml
 #+PROPERTY: exports code
 #+SETUPFILE: org-templates/level-0.org
 
@@ -9,10 +8,9 @@
 This document describes the requirements, design and implementation of the
 ansible server which is part of the cluster.
 
-The Ansible works by configuring servers.   A server may have multiple
-roles and a machine is configured for a specific role.    Roles are
-build on the idea of include files and combine them to form clean,
-reusable abstractions. 
+This server is used to configure all other servers in the cluster.  Using
+Ansible, a machine is configured using multiple roles.  A role is a specific set
+of configurations.
 
 * Requirements
 
@@ -20,21 +18,20 @@ The functional and security requirements for Ansible server are:
 
 ** Functional Requirements
 
-  1. Ansible server should manage itself
+  1. Ansible server should manage itself 
      + At regular intervals, it should apply firewall rules.
      + At regular intervals, it should update the packages of the OS and other
        software.
 
-
 ** Security Requirements
-   1. Apply Firewall Rules.
+   1. Apply Firewall Rules. 
    2. SSH/Port 22 accessible *ONLY* from VLEAD IP range.
    3. Allow ICMP (Ping)
    4. Limit rate of new connections on port 22.
-   
+      
 * Design
 
-** Network Diagram
+Network Diagram
 [[https://docs.google.com/a/vlabs.ac.in/drawings/d/1KRicWtnWvtqb06uNl5hYipeAH5KDQywWy7aOVStVAmo/edit?usp=sharing][Edit Image]]
 
 #+CAPTION:  Network Diagram
@@ -46,44 +43,37 @@ The functional and security requirements for Ansible server are:
 
 The design of the firewall rules will ensure that this server is accessible
 only via port 22. All other ports are disabled. The port 22 is accessible only
-from VLEAD ip range.  Only key-based login to the this server is allowed. This
+from VLEAD IP range.  Only key-based login to this server is allowed. This
 server can be pinged from anywhere.
 
-
 * Implementation
-
+** Structure of the scripts
 The implementation of this system is in terms of a collection of Ansible scripts that
 configure the machine.   These scripts need to be organized in a certain way:
 
 #+BEGIN_EXAMPLE
 
-|-- ansible.org
+|-- ansible.yml
 |-- roles
 |   |-- ansible
 |   |   |-- handlers
-|   |   |   `-- main.org
+|   |   |   `-- main.yml
 |   |   |-- meta
-|   |   |   `-- main.org
+|   |   |   `-- main.yml
 |   |   |-- tasks
-|   |   |   |-- main.org
+|   |   |   |-- main.yml
 |   |   `-- templates
 |   |       `-- iptables
 |   |-- common
 |   |   ... 
 #+END_EXAMPLE
 
+** ansible.yml
 We do the implementation in terms of defining suitable scripts for each role.
+The top level script is  =build/ansible.yml=
 
-The top level script resides in =ansible-scripts/ansible.yml=
 
-** Common Roles
-Hardening of the machine is done by the common roles.  More information is [[./roles/common/tasks/main.org][here]]
-
-** Specific roles
-*** Firewall Rules
-Firewall rules are defined [[./roles/ansible/templates/iptables.org][here]]
-
-#+BEGIN_SRC  :tangle ansible-scripts/ansible.yml :eval no
+#+BEGIN_SRC :tangle ../build/ansible.yml
 ---
 - name: Configure ansible server
   hosts: ansible-server
@@ -92,8 +82,85 @@ Firewall rules are defined [[./roles/ansible/templates/iptables.org][here]]
     - ansible
 #+END_SRC
 
-                  
-** OS updates and patches
+** Hardening, OS Updates etc.
+Requirement 1 {link has to be created} is taken care by the common role.  More
+information is [[./roles/common/tasks/main.org][here]]
 
-** Cron jobs
+** Setting firewall rules
 
+#+BEGIN_SRC YAML :tangle ../build/roles/ansible/tasks/main.yml
+---
+  - name: Copy iptables configuration file for ansible server
+    template: src=iptables dest=/etc/sysconfig/iptables mode=600 owner=root group=root
+    notify: restart iptables
+#+END_SRC
+   
+** What are the firewall rules
+
+*** The default contents of the firewall
+#+BEGIN_SRC YAML :tangle ../build/roles/ansible/templates/iptables
+*filter
+:INPUT ACCEPT [773:1200054]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [940:1161060]
+#+END_SRC
+
+*** Loop Back
+The ansible server needs to accept all connections from loop back.
+
+#+BEGIN_SRC YAML :tangle ../build/roles/ansible/templates/iptables
+#Accept all connections from loop-back
+-A INPUT -i lo -j ACCEPT
+#+END_SRC
+
+*** Ongoing Connections
+The server should allow the ongoing connections 
+
+#+BEGIN_SRC YAML :tangle ../build/roles/ansible/templates/iptables
+#Allow ongoing connections
+-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+#+END_SRC
+
+*** SSH Rule
+The server should allow *only* the VLEAD network to ssh to it on port 22.
+
+#+BEGIN_SRC YAML :tangle ../build/roles/ansible/templates/iptables
+-A INPUT -p tcp -m tcp --dport 22 -s 10.0.0.0/8 -j ACCEPT
+#+END_SRC
+
+*** ICMP Rule
+The server should accept ping requests(ICMP) from anywhere
+
+#+BEGIN_SRC YAML :tangle ../build/roles/ansible/templates/iptables
+-A INPUT -p icmp -m icmp --icmp-type echo-request -j ACCEPT
+#+END_SRC
+
+*** All other packets should be rejected
+The incoming and outgoing packets on all other ports should be rejected.
+
+#+BEGIN_SRC YAML :tangle ../build/roles/ansible/templates/iptables :eval no 
+-A INPUT -j REJECT
+-A FORWARD -j REJECT
+COMMIT
+#+END_SRC
+
+
+** Applying firewall rules
+
+Whenever iptables are changed, the iptables service will be restarted.
+ 
+#+BEGIN_SRC YAML :tangle ../build/roles/ansible/handlers/main.yml :eval no 
+---
+  - name: restart iptables
+    service: name=iptables state=restarted
+#+END_SRC
+
+** Dependencies
+
+#+BEGIN_SRC YAML :tangle ../build/roles/ansible/meta/main.yml
+---
+dependencies:
+  - role: common_vars
+#+END_SRC
+
+   
