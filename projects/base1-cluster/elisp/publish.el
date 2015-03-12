@@ -6,6 +6,7 @@
 ;;; Customized for use by vlead-system team.
 
 ;; Maintainer: Venkatesh Choppella <venkatesh.choppell@iiit.ac.in>
+;;  VLEAD  <engg@vlabs.ac.in>
 ;; Keywords: publish, org
 
 ;; It is released under the same terms, namely the GPL v2 or
@@ -38,6 +39,7 @@
 
 (require 'org)
 (require 'ob-tangle)
+(load-file "./elisp/tangle-with-publish-dir.el")
 
 (message "Org version = %s" (org-version))
 (message "Org version = %s" (org-version))
@@ -49,61 +51,84 @@
 (add-hook 'org-publish-before-export-hook 'org-babel-tangle 'append)
 ;(add-hook 'org-publish-before-export-hook 'org-babel-tangle)
 
+(setq org-babel-default-header-args
+      (cons '(:mkdirp . "yes")
+	    ;;; if mkdirp is already there, delete it
+	    (assq-delete-all :mkdirp org-babel-default-header-args)))
+
+(setq org-babel-default-header-args
+      (append '((:eval . "no") (:mkdirp . "yes"))
+	    ;;; if mkdirp is already there, delete it
+	    ;;; if eval is already there, delete it
+	    (progn  
+	      (assq-delete-all :mkdirp  org-babel-default-header-args)
+	      (assq-delete-all :eval    org-babel-default-header-args))))
+	    
 
 ;;; https://groups.google.com/forum/#!topic/comp.emacs/iiYJL04M7lA
 ;;; eliminate annoying messages from emacs about following
 ;;; version controlled files that are symlinks.
 (setq vc-follow-symlinks t)
 
+
+;;; default-directory :: emacs defined variable.  Is equal
+;;; to the directory from where the emacs is launched.
+
+;;; base-dir :: equal to default-dir
+;;; src-dir   =  base-dir/src
+;;; build-dir =  base-dir/build
+;;; docs-dir  =  build-dir/docs
+;;; code-dir  =  build-dir/code
+
 ;;; CUSTOMIZE these variables!
-;;; child of the build directory
-(defvar *publish-dir* "docs/")
-(defvar *scripts-dir* "scripts/")
-;;; src directory
-(defvar *src-dir* "src/")
+(defvar *base-dir*  default-directory)
+(defvar *src-dir*   (concat *base-dir* "src/"))
+(defvar *build-dir* (concat *base-dir* "build/"))
+(defvar *docs-dir*  (concat *build-dir* "docs/"))
+(defvar *code-dir*  (concat *build-dir* "code/"))
 
-
-;;; The variable default-directory is automatically bound to the
-;;; directory from where the emacs to run this script is
-;;; called.  it is NOT the directory where this script is
-;;; located.
-(defvar base-dir default-directory)
-(defvar build-dir (concat base-dir "build/"))
-
-(defvar publishing-dir *publish-dir*)
-(defvar built-code-dir (concat build-dir *scripts-dir*))
-(defvar org-notes '())
+(defvar org-docs '())
 (defvar org-static '())
-(defvar org-scripts '())
+(defvar org-code '())
 (defvar snag '())
 
 (message "======================")
-(message "base dir = %s" (concat base-dir *src-dir*))
-(message "pub dir= %s" built-code-dir)
+(message "base dir = %s" *base-dir*)
+(message "docs dir= %s" *docs-dir*)
+(message "code dir= %s" *code-dir*)
+
 ;(message "tangle func= %s" org-babel-tangle)
 ;(message "publish func= %s" org-html-publish-to-html)
 (message "======================")
 (interactive "press enter.....")
 
-(defun tangle-wrapper(plist filename pub-dir)
-  (org-babel-tangle-file filename))
+(defun tangle-wrapper (plist filename pub-dir)
+  (org-babel-tangle-file/publish-dir filename pub-dir))
 
 
-(setq org-scripts
-`("org-scripts"
- :base-directory ,(concat base-dir *src-dir*)
+(setq org-code
+`("org-code"
+ :base-directory ,*src-dir*
  :base-extension "org"
- :publishing-directory ,built-code-dir
+ :publishing-directory ,*code-dir*
  :recursive t
  :publishing-function tangle-wrapper
   ))
 
-(setq org-notes
-`("org-notes"
- :base-directory ,(concat base-dir *src-dir*)
-; :base-directory ,(concat base-dir "src/current-topics/objects/")
+(setq org-tangled `("org-tangled"
+  :base-directory ,*src-dir*
+  :base-extension "yml\\|yaml"
+  :publishing-directory ,*code-dir*
+  :recursive t
+  :publishing-function org-publish-attachment
+  ))
+
+
+(setq org-docs
+`("org-docs"
+ :base-directory ,*src-dir*
  :base-extension "org"
- :publishing-directory ,publishing-dir
+ :publishing-directory ,*docs-dir*
  :recursive t
  :publishing-function org-html-publish-to-html
  :headline-levels 4             ; Just the default for this project.
@@ -111,21 +136,23 @@
  :auto-sitemap t
   ))
 
- (setq org-static `("org-static"
-  :base-directory ,(concat base-dir *src-dir*)
+(setq org-static `("org-static"
+  :base-directory ,*src-dir*
   :base-extension "css\\|js\\|png\\|ico\\|jpg\\|png\\|gif\\|mp3\\|ogg\\|swf\\|emacs\\|sh\\|py\\|pdf\\|tex\\|css\\|ss\\|rkt\\|flv\\|tgz"
-  :publishing-directory ,publishing-dir
+  :publishing-directory ,*docs-dir*
   :recursive t
   :publishing-function org-publish-attachment
   ))
 
- (setq snag  '("snag" :components ("org-scripts" "org-notes" "org-static")))
+(setq snag  
+      '("snag" :components ("org-code" "org-docs"
+      "org-static" "org-tangled")))
 
- (require 'ox-publish)
- (load-file "./elisp/htmlize.el")
+(require 'ox-publish)
+(load-file "./elisp/htmlize.el")
 
- (setq org-publish-project-alist
-       (list org-scripts org-notes org-static snag))
+(setq org-publish-project-alist
+      (list org-code org-docs org-static org-tangled snag))
 
 (org-publish-project
  snag  ; project name
