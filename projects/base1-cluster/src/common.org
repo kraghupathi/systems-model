@@ -1,5 +1,4 @@
 #+Title: Common Roles
-#+Author:Zubair S and Prakash B H
 #+Date: 10 March 2015
 #+PROPERTY: session *scratch*
 #+PROPERTY: results output
