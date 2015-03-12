@@ -13,7 +13,6 @@ the common roles which is part of the cluster. A role is a specific
 set of configurations. Common Roles are the roles which will be
 applied on all the deployed servers.
 
-
 * Requirements
 
 The functional requirements for common roles are:
@@ -42,7 +41,7 @@ Common Roles Diagram
 [[./diagrams/common-roles.png]]
 
 Common roles will ensure that all the common roles will be applied on
-all the deployed servers,
+all the deployed servers, including the ansible.
 
 The diagram can be edited [[https://docs.google.com/a/vlabs.ac.in/drawings/d/1NHBwOSxikqlg5cXbgnKMfnUS_K_iMGkCClktXMOBTw8/edit][HERE]] 
 
@@ -62,6 +61,7 @@ organized in a certain way:
 |   |-- common
 |   |   |-- files
 |   |   |    |-- logwatch.conf
+|   |   |    |-- jail.local
 |   |   |    |-- history.sh
 |   |   |    `-- sshd-config
 |   |   |-- handlers
@@ -81,7 +81,6 @@ organized in a certain way:
 |   |   `-- vars
 #+END_EXAMPLE
 
-#+BEGIN_COMMENT
 *** History
 History parameters will be exported for the following:
  - HISTTIMEFORMAT :: display the time stamp along with the command
@@ -122,11 +121,7 @@ the handler.
 
 #+BEGIN_SRC YAML :tangle ../build/roles/common/tasks/sshd-config.yml
 #Role to copy the modified sshd_config and call ssh restart handler
----
- - name: copy sshd_config
-   copy: src=sshd_config dest=/etc/ssh/sshd_config owner=root group=root mode=0644
-   notify:
-    - restart sshd
+
 #+END_SRC
 
 
@@ -144,6 +139,38 @@ This file installs the logwatch  and copies the configuration
    copy: src=logwatch.conf dest=/etc/logwatch/conf/logwatch.conf owner=root group=root mode=0644
 #+END_SRC
 
-#+END_COMMENT
-  
+*** Fail2ban
+Fail2ban scans log files and bans IPs that show the malicious signs of
+agents seeking for exploits. It comes with filters for various
+services like ssh, apache, mysql etc. Fail2Ban can be used to update
+firewall rules to reject the IP addresses for a specified amount of
+time. Even other services like sending mails, alerts can be
+configured.
 
+*Python* is the pre-requisite package to be installed to run Fail2ban
+service. More details can be found in the [[http://www.fail2ban.org/wiki/index.php/Main_Page][WIKI]] page of Fail2ban. 
+
+The objective is to install Fail2ban on all the servers and apply the
+local rules.
+#+BEGIN_SRC YAML :tangle ../build/roles/common/tasks/fail2ban.yml
+---
+tasks:
+   - name: install fail2ban package
+     apt: pkg=fail2ban state=present
+     when: ansible_distribution=='Debian' or ansible_distribution=='Ubuntu'
+     sudo: yes
+   
+   - name: copy fail2ban local config
+     file: src=jail.local dest=/etc/fail2ban/jail.local owner=root group=root  mode=0644
+     sudo: yes 
+#+END_SRC
+
+The configuration file =jail.local= applies the required rules on all
+the servers.
+
+*** Configuring the Fail2ban local file
+The Fail2ban local configuration file called =jail.local= has all the
+common rules which will be applied through Fail2ban.
+#+BEGIN_SRC SHELL :tangle ../build/roles/common/files/logwatch.conf
+
+#+END_SRC 
