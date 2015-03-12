@@ -93,7 +93,7 @@ History parameters will be exported for the following:
                      and are stored in the history file at the end of
                      bash session for use in future sessions.
 
-#+BEGIN_SRC SHELL :tangle ../build/roles/common/files/history.sh
+#+BEGIN_SRC SHELL :tangle roles/common/files/history.sh
 #!/bin/bash
 HISTTIMEFORMAT  = "%y %m %d %T"
 HISTSIZE        = 100000
@@ -103,14 +103,14 @@ export HISTTIMEFORMAT HISTSIZE HISTFILESIZE
 
 *** SSHD config file
 This file sets up the sshd configurations
-#+BEGIN_SRC SHELL :tangle ../build/roles/common/files/sshd-config
+#+BEGIN_SRC SHELL :tangle roles/common/files/sshd-config
 
 #+END_SRC 
 
 
 *** Logwatch config file
 This file sets up the logwatch configurations
-#+BEGIN_SRC SHELL :tangle ../build/roles/common/files/logwatch.conf
+#+BEGIN_SRC SHELL :tangle roles/common/files/logwatch.conf
 
 #+END_SRC 
 
@@ -119,7 +119,7 @@ This file sets up the logwatch configurations
 This file copies the modified sshd configuration and restarts using
 the handler.
 
-#+BEGIN_SRC YAML :tangle ../build/roles/common/tasks/sshd-config.yml
+#+BEGIN_SRC YAML :tangle roles/common/tasks/sshd-config.yml
 #Role to copy the modified sshd_config and call ssh restart handler
 
 #+END_SRC
@@ -128,7 +128,7 @@ the handler.
 *** Configuring the logwatch
 This file installs the logwatch  and copies the configuration
 
-#+BEGIN_SRC YAML :tangle ../build/roles/common/tasks/logwatch.yml
+#+BEGIN_SRC YAML :tangle roles/common/tasks/logwatch.yml
 #install and copy logwatch configuration
 ---
  - name: install logwatch
@@ -152,7 +152,7 @@ service. More details can be found in the [[http://www.fail2ban.org/wiki/index.p
 
 The objective is to install Fail2ban on all the servers and apply the
 local rules.
-#+BEGIN_SRC YAML :tangle ../build/roles/common/tasks/fail2ban.yml
+#+BEGIN_SRC YAML :tangle roles/common/tasks/fail2ban.yml
 ---
 tasks:
    - name: install fail2ban package
@@ -171,6 +171,6 @@ the servers.
 *** Configuring the Fail2ban local file
 The Fail2ban local configuration file called =jail.local= has all the
 common rules which will be applied through Fail2ban.
-#+BEGIN_SRC SHELL :tangle ../build/roles/common/files/logwatch.conf
+#+BEGIN_SRC SHELL :tangle roles/common/files/logwatch.conf
 
 #+END_SRC 

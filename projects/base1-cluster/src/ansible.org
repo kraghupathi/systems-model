@@ -40,7 +40,7 @@ Network Diagram
 #+NAME: fig-network-diagram
 
 [[./diagrams/ansible.png]]
-
+roles
 
 The design of the firewall rules will ensure that this server is accessible
 only via port 22. All other ports are disabled. The port 22 is accessible only
@@ -74,7 +74,7 @@ We do the implementation in terms of defining suitable scripts for each role.
 The top level script is  =build/ansible.yml=
 
 
-#+BEGIN_SRC YAML :tangle ../build/ansible.yml
+#+BEGIN_SRC YAML :tangle ansible.yml
 ---
 - name: Configure ansible server
   hosts: ansible-server
@@ -90,7 +90,7 @@ information is [[./roles/common/tasks/main.org][here]]
 
 ** Setting firewall rules
 
-#+BEGIN_SRC YAML :tangle ../build/roles/ansible/tasks/main.yml
+#+BEGIN_SRC YAML :tangle roles/ansible/tasks/main.yml
 ---
   - name: Copy iptables configuration file for ansible server
     template: src=iptables dest=/etc/sysconfig/iptables mode=600 owner=root group=root
@@ -100,7 +100,7 @@ information is [[./roles/common/tasks/main.org][here]]
 ** What are the firewall rules?
 
 *** The default contents of the firewall
-#+BEGIN_SRC YAML :tangle ../build/roles/ansible/templates/iptables
+#+BEGIN_SRC YAML :tangle roles/ansible/templates/iptables
 *filter
 :INPUT ACCEPT [773:1200054]
 :FORWARD ACCEPT [0:0]
@@ -110,7 +110,7 @@ information is [[./roles/common/tasks/main.org][here]]
 *** Loop Back
 The ansible server needs to accept all connections from loop back.
 
-#+BEGIN_SRC YAML :tangle ../build/roles/ansible/templates/iptables
+#+BEGIN_SRC YAML :tangle roles/ansible/templates/iptables
 #Accept all connections from loop-back
 -A INPUT -i lo -j ACCEPT
 #+END_SRC
@@ -118,7 +118,7 @@ The ansible server needs to accept all connections from loop back.
 *** Ongoing Connections
 The server should allow the ongoing connections 
 
-#+BEGIN_SRC YAML :tangle ../build/roles/ansible/templates/iptables
+#+BEGIN_SRC YAML :tangle roles/ansible/templates/iptables
 #Allow ongoing connections
 -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
 #+END_SRC
@@ -126,21 +126,21 @@ The server should allow the ongoing connections
 *** SSH Rule
 The server should allow *only* the VLEAD network to ssh to it on port 22.
 
-#+BEGIN_SRC YAML :tangle ../build/roles/ansible/templates/iptables
+#+BEGIN_SRC YAML :tangle roles/ansible/templates/iptables
 -A INPUT -p tcp -m tcp --dport 22 -s 10.0.0.0/8 -j ACCEPT
 #+END_SRC
 
 *** ICMP Rule
 The server should accept ping requests(ICMP) from anywhere
 
-#+BEGIN_SRC YAML :tangle ../build/roles/ansible/templates/iptables
+#+BEGIN_SRC YAML :tangle roles/ansible/templates/iptables
 -A INPUT -p icmp -m icmp --icmp-type echo-request -j ACCEPT
 #+END_SRC
 
 *** All other packets should be rejected
 The incoming and outgoing packets on all other ports should be rejected.
 
-#+BEGIN_SRC YAML :tangle ../build/roles/ansible/templates/iptables :eval no 
+#+BEGIN_SRC YAML :tangle roles/ansible/templates/iptables :eval no 
 -A INPUT -j REJECT
 -A FORWARD -j REJECT
 COMMIT
@@ -151,7 +151,7 @@ COMMIT
 
 Whenever iptables are changed, the iptables service will be restarted.
  
-#+BEGIN_SRC YAML :tangle ../build/roles/ansible/handlers/main.yml :eval no 
+#+BEGIN_SRC YAML :tangle roles/ansible/handlers/main.yml :eval no 
 ---
   - name: restart iptables
     service: name=iptables state=restarted
@@ -159,7 +159,7 @@ Whenever iptables are changed, the iptables service will be restarted.
 
 ** Dependencies
 
-#+BEGIN_SRC YAML :tangle ../build/roles/ansible/meta/main.yml
+#+BEGIN_SRC YAML :tangle roles/ansible/meta/main.yml
 #---
 #dependencies:
 #  - role: common_vars
