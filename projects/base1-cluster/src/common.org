@@ -99,10 +99,17 @@ export HISTTIMEFORMAT HISTSIZE HISTFILESIZE
 #+END_SRC 
 
 *** SSHD config file
-This file sets up the sshd configurations
+This file sets up the sshd configurations. The commented parameters
+are the default values set for the admin awareness. 
+This configuration file sets the following:
+    + Permit root login as key based not as password based
+    + Disables the password based authentication
+    + Enables public key authentication
+    + Does not permit empty passwords
+    
 #+BEGIN_SRC SHELL :tangle ../build/roles/common/files/sshd_config
-#	$OpenBSD: sshd_config,v 1.80 2008/07/02 02:24:18 djm Exp $
 
+#	$OpenBSD: sshd_config,v 1.80 2008/07/02 02:24:18 djm Exp $
 # This is the sshd server system-wide configuration file.  See
 # sshd_config(5) for more information.
 
@@ -243,9 +250,13 @@ Subsystem	sftp	/usr/libexec/openssh/sftp-server
 #+END_SRC 
 
 
+*Note:* Alternative work around for config file needs to be looked
+over, keeping the functionality with representation transformation.
+
 *** Logwatch config file
 This file sets up the logwatch configurations
 #+BEGIN_SRC SHELL :tangle ../build/roles/common/files/logwatch.conf
+
 
 #+END_SRC 
 
@@ -256,7 +267,29 @@ the handler.
 
 #+BEGIN_SRC YAML :tangle ../build/roles/common/tasks/sshd-config.yml
 #Role to copy the modified sshd_config and call ssh restart handler
+---
 
+ - name: copy sshd_config 
+   copy: src=sshd_config dest=/etc/ssh/sshd_config owner=root group=root mode=0644
+
+#   This below implementation using lineinfile has a problem of appending the commands at every run.
+#   Needs Troubleshooting.
+#  
+# - name: Permit root login without-pasword(key based) and backup the file before modifying
+#   lineinfile: dest=/etc/ssh/sshd_config regexp='^#PermitRootLogin *' line='PermitRootLogin without-password' backup=yes state=present
+
+# - name: Disable Password authentication
+#   lineinfile: dest=/etc/ssh/sshd_config regexp='^#PasswordAuthentication *' line='PasswordAuthentication no' 
+
+# - name: Enable Public key authentication
+#   lineinfile: dest=/etc/ssh/sshd_config regexp='^#PubkeyAuthentication *' line='PubkeyAuthentication yes'
+
+# - name: Do not permit empty password, also ensure proper owner, group and permissions
+#   lineinfile: dest=/etc/ssh/sshd_config regexp='^#PermitEmptyPasswords *' line='PermitEmptyPasswords no' mode=0600 owner=root group=root
+
+#Call handler to restart sshd
+   notify:
+     - restart sshd
 #+END_SRC
 
 
