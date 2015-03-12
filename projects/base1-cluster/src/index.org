@@ -95,6 +95,7 @@ Network
 ** Nodes
    The cluster contains the following machines:
  - [[./ansible.org][Ansible]]
+ - [[./common.org][Common]]
 
 * Testing of the cluster
 

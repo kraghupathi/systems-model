@@ -3,6 +3,7 @@
 #+PROPERTY: results output
 #+PROPERTY: exports code
 #+SETUPFILE: org-templates/level-0.org
+#+options: ^:nil
 
 * Introduction
 
@@ -160,3 +161,48 @@ dependencies:
     - common
     - ansible
 #+END_SRC
+
+* Provisioning Ansible machine
+This section describes the provisioning of ansible machine on cluster.
+
+** Creation of Ansible machine
+   + How ansible machine is created, IP-address of machine, Domain
+     name.
+*** Ansible machine configuration
+   + Operating System: Centos-6.6
+   + Memory: 256MB
+   + Disk space: 2GB
+*** Ansible machine is created using:
+   #+BEGIN_SRC shell 
+   vzctl create 14102 --ostemplate centos-6-x86_64-point6 --hostname ansible.virtual-labs.ac.in --ipadd 10.4.14.102 
+   #+END_SRC
+*** Domain name and IP address of Ansible machine
+    - Domain name :: =ansible.virtual-labs.ac.in=
+    - IP Address :: =10.4.14.102=
+** Key based authentication is enabled on the Ansible machine.
+   LDAP is disabled. Engineers with their public keys added to
+   authorized_keys will only be able to ssh.
+** Access to Ansible machine
+   - VLEAD engineers who have their keys placed in =authorized_keys= of ansible machine can *only* access.
+** List of VLEAD engineers who have access to Ansible machine
+   1. Dr.Venkatesh Choppella
+   2. Thirumal Ravula
+   3. Saurabh Barjatiya
+   4. Anon Ray
+   5. Zubair
+   6. Prakash B Hegde
+   7. Jayanth Sagar
+   8. Yogesh
+   9. Shiva Shankar
+  10. Soumya
+  11. Ambika
+  12. Khushpreet
+  13. Sripathi
+  14. Madhavi
+  15. Sanchita 
+
+* Testcases
+** SSH should be allowed only from STPI(196.12.53.130).
+** Ansible machine must be pingable(ICMP) from everywhere.
+** All the other ports are blocked.
+
