@@ -24,10 +24,76 @@ Build a cluster consisting of the following:
 ** Performance Requirements of Cluster
 
 * Design of the cluster
+
+Network
+[[https://docs.google.com/a/vlabs.ac.in/drawings/d/1KRicWtnWvtqb06uNl5hYipeAH5KDQywWy7aOVStVAmo/edit][Edit Image]]
+
+#+CAPTION:  Network Diagram
+#+LABEL:  fig-network-diagram
+#+NAME: fig-network-diagram
+
+[[./diagrams/network.png]]
+
 * Implementation of the cluster
+** Provisioning of the cluster
+   The nodes in the cluster are openVZ containers running on the base
+   machine.  [[http://openvz.org/Main_Page][OpenVZ]] is container-based virtualization for Linux.
 
-The cluster contains the following machines:
+*** Base Machine Configuration
+**** IP Address
+     IP address of the base machine is 10.4.12.21.
+**** Hardware Configuration
+      - IBM System x3650 M3 server (http://www-03.ibm.com/systems/in/x/hardware/rack/x3650m3/specs.html)
+      - Product ID: 7945D2A 
+      - 32GB RAM
+      - Two Intel(R) Xeon(R) CPU E5620 processors
+        Each Intel Xeon E5620 Processor has 4 Cores (8 threads) which operate
+        at 2.40GHz. Each processor has 12MB Cache which operates at 1066MHz.
 
+       - 8 x 300GB :: All 8 hard-disks are SAS 2.5inch 15k RPM.
+       - 4 x 600GB :: All 4 hard-disks are SAS 2.5inch 10k RPM.
+       - RAID controller with 256MB RAM
+         Configured first two drive groups of 4 hdd in RAID 5 each having approx
+         900 GB space as a single span of 1.8TB. Further four hdd of 600 GB are
+         used to create a virtual-disk of 1.8TB in second span. The server has
+         battery backup for RAID controller. Hence all disks are configured
+         with write-back with fallback.
+
+       - 4gbps brocade fc HBA.
+       - 2 ethernet ports
+
+        One ethernet port for LAN is connected to 10.4.5.57 switch gig1/0/1. Corresponding IP of server for the port is 10.4.12.22/22. 
+        The other LAN port is not connected anywhere 
+
+
+
+
+
+
+**** Software Configuration
+       - IP address: 10.4.12.21
+       - Operating System: Cent-OS 6.5
+       - Disk Partitions:
+          /dev/sda1 - boot - 300MB (required in case of EFI compliant systems)
+          /dev/sda2 - / - 60GB
+          /dev/sda3 - swap - 34GB
+          /dev/sda4 - lvm - 1.6TB
+          /dev/sdb1 - lvm - 1.7 TB 
+       - Logical Volumes
+          /dev/sda4 and /dev/sdb1 are combined in single VolumeGroup vg_base1. One logical volume LogVol00 is created on it. This logical volume is formatted with ext4 and mounted at /mnt/das1. All openVZ files and VM images are stored in this volume. 
+       - Storage volumes
+         /dev/sdc1 - /mnt/san1 - 1.8TB 
+       - Primary admin:
+         Zubair
+         
+
+*** Access Control
+    SSH access using key based authentication is allowed on this machine.
+    Zubair, Jayanth, Thirumal and Saurabh will have access to this machine by
+    having their public keys placed on this machine.
+
+** Nodes
+   The cluster contains the following machines:
  - [[./ansible.org][Ansible]]
  - [[./common.org][Common]]
 

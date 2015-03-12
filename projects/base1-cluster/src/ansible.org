@@ -1,8 +1,9 @@
-#+TITLE:     Ansible
+#+TITLE:  Ansible
 #+PROPERTY: session *scratch*
 #+PROPERTY: results output
 #+PROPERTY: exports code
 #+SETUPFILE: org-templates/level-0.org
+#+options: ^:nil
 
 * Introduction
 
@@ -32,15 +33,15 @@ The functional and security requirements for Ansible server are:
       
 * Design
 
-Network Diagram
+Ansible server
 [[https://docs.google.com/a/vlabs.ac.in/drawings/d/1KRicWtnWvtqb06uNl5hYipeAH5KDQywWy7aOVStVAmo/edit?usp=sharing][Edit Image]]
 
-#+CAPTION:  Network Diagram
-#+LABEL:  fig-network-diagram
-#+NAME: fig-network-diagram
+#+CAPTION:  Ansible Design Diagram
+#+LABEL:  fig-ansible-diagram
+#+NAME: fig-ansible-diagram
 
 [[./diagrams/ansible.png]]
-roles
+
 
 The design of the firewall rules will ensure that this server is accessible
 only via port 22. All other ports are disabled. The port 22 is accessible only
@@ -69,35 +70,11 @@ configure the machine.   These scripts need to be organized in a certain way:
 |   |   ... 
 #+END_EXAMPLE
 
-** ansible.yml
-We do the implementation in terms of defining suitable scripts for each role.
-The top level script is  =build/ansible.yml=
-
-
-#+BEGIN_SRC YAML :tangle ansible.yml
----
-- name: Configure ansible server
-  hosts: ansible-server
-  remote_user: root
-  roles:
-#    - common
-    - ansible
-#+END_SRC
-
 ** Hardening, OS Updates etc.
-Requirement 1 {link has to be created} is taken care by the common role.  More
-information is [[./roles/common/tasks/main.org][here]]
+   Requirement 1 {link has to be created} is taken care by the common role.  More
+   information is [[./common.org][here]]
 
-** Setting firewall rules
-
-#+BEGIN_SRC YAML :tangle roles/ansible/tasks/main.yml
----
-  - name: Copy iptables configuration file for ansible server
-    template: src=iptables dest=/etc/sysconfig/iptables mode=600 owner=root group=root
-    notify: restart iptables
-#+END_SRC
-   
-** What are the firewall rules?
+** Building the firewall rules
 
 *** The default contents of the firewall
 #+BEGIN_SRC YAML :tangle roles/ansible/templates/iptables
@@ -146,23 +123,86 @@ The incoming and outgoing packets on all other ports should be rejected.
 COMMIT
 #+END_SRC
 
-
+** Copy the firewall rules to the appropriate location
+#+BEGIN_SRC YAML :tangle roles/ansible/tasks/main.yml
+---
+  - name: Copy iptables configuration file for ansible server
+    template: src=iptables dest=/etc/sysconfig/iptables mode=600 owner=root group=root
+    notify: restart iptables
+#+END_SRC
 ** Applying firewall rules
-
-Whenever iptables are changed, the iptables service will be restarted.
+   Whenever iptables are changed, the iptables service will be restarted.
  
 #+BEGIN_SRC YAML :tangle roles/ansible/handlers/main.yml :eval no 
 ---
   - name: restart iptables
     service: name=iptables state=restarted
 #+END_SRC
-
+   
 ** Dependencies
-
+   All the variables go here. For Ansible server, currently no variables are
+   used.
 #+BEGIN_SRC YAML :tangle roles/ansible/meta/main.yml
-#---
-#dependencies:
-#  - role: common_vars
+---
+dependencies:
+- role: common_vars
 #+END_SRC
 
-   
+** Putting it together   
+   The ansible server is managed with all the above rules. The implementation
+   is done in terms of defining suitable scripts for each role.  The top level
+   script is =build/code/ansible.yml=
+#+BEGIN_SRC YAML :tangle ansible.yml
+---
+- name: Configure ansible server
+  hosts: ansible-server
+  remote_user: root
+  roles:
+    - common
+    - ansible
+#+END_SRC
+
+* Provisioning Ansible machine
+This section describes the provisioning of ansible machine on cluster.
+
+** Creation of Ansible machine
+   + How ansible machine is created, IP-address of machine, Domain
+     name.
+*** Ansible machine configuration
+   + Operating System: Centos-6.6
+   + Memory: 256MB
+   + Disk space: 2GB
+*** Ansible machine is created using:
+   #+BEGIN_SRC shell 
+   vzctl create 14102 --ostemplate centos-6-x86_64-point6 --hostname ansible.virtual-labs.ac.in --ipadd 10.4.14.102 
+   #+END_SRC
+*** Domain name and IP address of Ansible machine
+    - Domain name :: =ansible.virtual-labs.ac.in=
+    - IP Address :: =10.4.14.102=
+** Key based authentication is enabled on the Ansible machine.
+   LDAP is disabled. Engineers with their public keys added to
+   authorized_keys will only be able to ssh.
+** Access to Ansible machine
+   - VLEAD engineers who have their keys placed in =authorized_keys= of ansible machine can *only* access.
+** List of VLEAD engineers who have access to Ansible machine
+   1. Dr.Venkatesh Choppella
+   2. Thirumal Ravula
+   3. Saurabh Barjatiya
+   4. Anon Ray
+   5. Zubair
+   6. Prakash B Hegde
+   7. Jayanth Sagar
+   8. Yogesh
+   9. Shiva Shankar
+  10. Soumya
+  11. Ambika
+  12. Khushpreet
+  13. Sripathi
+  14. Madhavi
+  15. Sanchita 
+
+* Testcases
+** SSH should be allowed only from STPI(196.12.53.130).
+** Ansible machine must be pingable(ICMP) from everywhere.
+** All the other ports are blocked.
+
