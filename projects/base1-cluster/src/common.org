@@ -196,7 +196,7 @@ This files configures the aliases
    include: sendmail_configure.yml
 
  - name: install common packages
-   include: common-pkg.yml
+   include: common_pkg.yml
 #+END_SRC
 
 
@@ -277,3 +277,24 @@ common rules which will be applied through Fail2ban.
 - name: Ensure that iptables service is running with latest rules
   service: name=iptables state=restarted 
 #+END_SRC 
+
+
+#+BEGIN_SRC YAML :tangle roles/common/tasks/commom_pkg.yml
+---
+#this play installs the common packages needed by admins to troubleshoot issues
+ - name: install bind-utils
+   yum: name=bind-utils state=present
+   environment:
+    proxy_env
+#+END_SRC 
+
+
+#+BEGIN_SRC YAML :tangle roles/common/tasks/sendmail_configure.yml
+---
+#This play configures smart hosts
+
+ - name: Change the smart host entry in /etc/mail/sendmail.mc
+   lineinfile: dest=/etc/mail/sendmail.mc regexp="SMART_HOST" line="define(`SMART_HOST', `{{iiit_mail_server}}')dnl"  state=present mode=0644
+   notify: 
+     - restart sendmail
+#+END_SRC
