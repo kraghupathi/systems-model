@@ -1,10 +1,10 @@
 BUILD_DEST=build
 
-all:  build 
+all:  build
 
 build: init
 	emacs  --script elisp/publish.el
-	rm -f ${DOCS_DEST}/*.html~
+	rm -f ${BUILD_DEST}/docs/*.html~
 
 init:
 	mkdir -p ${BUILD_DEST}
