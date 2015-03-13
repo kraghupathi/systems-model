@@ -160,7 +160,7 @@ This files configures the aliases
   lineinfile: 'dest=/etc/aliases regexp=^root: line="root: alerts@vlabs.ac.in"'
   notify:
     - rebuild aliases
-#=END_SRC
+#+END_SRC
 
 
 ** Main file under tasks
@@ -189,7 +189,7 @@ This files configures the aliases
 
  - name: install common packages
    include: common-pkg.yml
-#=END_SRC
+#+END_SRC
 
 
 
@@ -209,14 +209,14 @@ This files configures the aliases
 
   - name: restart fail2ban
     service: name=fail2ban state=restarted
-#=END_SRC
+#+END_SRC
 
 
 #+BEGIN_SRC YAML :tangle roles/common/meta/main.yml
 ---
 dependencies:
   - role: common_vars
-#=END_SRC
+#+END_SRC
 
 
 
