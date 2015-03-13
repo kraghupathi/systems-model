@@ -65,12 +65,12 @@ organized in a certain way:
 |   |   |   `-- main.yml
 |   |   |-- tasks
 |   |   |   |-- aliases.yml
-|   |   |   |-- history-config.yml
-|   |   |   |-- restart-iptables.yml
+|   |   |   |-- history_config.yml
+|   |   |   |-- restart_iptables.yml
 |   |   |   |-- logwatch.yml
 |   |   |   |-- main.yml
 |   |   |   |-- fail2ban.yml
-|   |   |   |-- sshd-config.yml
+|   |   |   |-- sshd_config.yml
 |   |   |   `-- update-os.yml
 |   |   |-- templates
 |   |   `-- vars
@@ -97,11 +97,19 @@ export HISTTIMEFORMAT HISTSIZE HISTFILESIZE
 #+END_SRC 
 
 
+#+BEGIN_SRC SHELL :tangle roles/common/tasks/history_config.yml
+---
+#This play copies a stock history file
+ - name: copying history
+   copy: src=history.sh dest=/etc/profile.d/history.sh owner=root group=root mode=0655
+#+END_SRC 
+
+
 *** Calling the SSHD Configuration
 This file copies the modified sshd configuration and restarts using
 the handler.
 
-#+BEGIN_SRC YAML :tangle roles/common/tasks/sshd-config.yml
+#+BEGIN_SRC YAML :tangle roles/common/tasks/sshd_config.yml
 
 #Modify  sshd_config and call ssh restart handler
 
@@ -167,25 +175,25 @@ This files configures the aliases
 #+BEGIN_SRC YAML :tangle roles/common/tasks/main.yml
 ---
  - name: restart iptables
-   include: restart-iptables.yml
+   include: restart_iptables.yml
 
 #- name: Include /etc/aliases configuration
 #  include: aliases.yml
 
  - name: sshd_config
-   include: sshd-config.yml
+   include: sshd_config.yml
 
  - name: history file
-   include: history-config.yml
+   include: history_config.yml
 
  - name: logwatch install
    include: logwatch.yml
 
 # - name: update-os
-#   include: update-os.yml
+#   include: update_os.yml
 
  - name: sendmail configure
-   include: sendmail-configure.yml
+   include: sendmail_configure.yml
 
  - name: install common packages
    include: common-pkg.yml
@@ -254,4 +262,18 @@ The Fail2ban local configuration file called =jail.local= has all the
 common rules which will be applied through Fail2ban.
 #+BEGIN_SRC SHELL :tangle roles/common/files/jail.local
 
+#+END_SRC 
+
+
+#+BEGIN_SRC YAML :tangle roles/common/tasks/restart_iptables.yml
+---
+#- stat: path=/etc/sysconfig/iptables
+#  register: iptables_rules
+
+#- name: Copy iptables file if not present already
+#  template: src=iptables dest=/etc/sysconfig/iptables 
+#  when: iptables_rules.stat.exists == False
+
+- name: Ensure that iptables service is running with latest rules
+  service: name=iptables state=restarted 
 #+END_SRC 
