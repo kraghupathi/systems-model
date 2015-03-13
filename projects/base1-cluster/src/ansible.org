@@ -203,6 +203,6 @@ This section describes the provisioning of ansible machine on cluster.
 
 * Testcases
 ** SSH should be allowed only from STPI(196.12.53.130).
-** Ansible machine must be pingable(ICMP) from everywhere.
+** Ansible machine must be pingable(ICMP) only from IIIT network.
 ** All the other ports are blocked.
 
