@@ -57,10 +57,8 @@ organized in a certain way:
 |   |   |...
 |   |-- common
 |   |   |-- files
-|   |   |    |-- logwatch.conf
 |   |   |    |-- jail.local
-|   |   |    |-- history.sh
-|   |   |    `-- sshd_config
+|   |   |    `-- history.sh
 |   |   |-- handlers
 |   |   |    `-- main.yml
 |   |   |-- meta
@@ -98,198 +96,34 @@ HISTFILESIZE    = 100000
 export HISTTIMEFORMAT HISTSIZE HISTFILESIZE
 #+END_SRC 
 
-*** SSHD config file
-This file sets up the sshd configurations. The commented parameters
-are the default values set for the admin awareness. 
-This configuration file sets the following:
-    + Permit root login as key based not as password based
-    + Disables the password based authentication
-    + Enables public key authentication
-    + Does not permit empty passwords
-    
-#+BEGIN_SRC SHELL :tangle roles/common/files/sshd_config
-
-#	$OpenBSD: sshd_config,v 1.80 2008/07/02 02:24:18 djm Exp $
-# This is the sshd server system-wide configuration file.  See
-# sshd_config(5) for more information.
-
-# This sshd was compiled with PATH=/usr/local/bin:/bin:/usr/bin
-
-# The strategy used for options in the default sshd_config shipped with
-# OpenSSH is to specify options with their default value where
-# possible, but leave them commented.  Uncommented options change a
-# default value.
-
-#Port 22
-#AddressFamily any
-#ListenAddress 0.0.0.0
-#ListenAddress ::
-
-# Disable legacy (protocol version 1) support in the server for new
-# installations. In future the default will change to require explicit
-# activation of protocol 1
-Protocol 2
-
-# HostKey for protocol version 1
-#HostKey /etc/ssh/ssh_host_key
-# HostKeys for protocol version 2
-#HostKey /etc/ssh/ssh_host_rsa_key
-#HostKey /etc/ssh/ssh_host_dsa_key
-
-# Lifetime and size of ephemeral version 1 server key
-#KeyRegenerationInterval 1h
-#ServerKeyBits 1024
-
-# Logging
-# obsoletes QuietMode and FascistLogging
-#SyslogFacility AUTH
-SyslogFacility AUTHPRIV
-#LogLevel INFO
-
-# Authentication:
-
-#LoginGraceTime 2m
-#PermitRootLogin yes
-PermitRootLogin without-password
-#StrictModes yes
-#MaxAuthTries 6
-#MaxSessions 10
-
-#RSAAuthentication yes
-PubkeyAuthentication yes
-#AuthorizedKeysFile	.ssh/authorized_keys
-#AuthorizedKeysCommand none
-#AuthorizedKeysCommandRunAs nobody
-
-# For this to work you will also need host keys in /etc/ssh/ssh_known_hosts
-#RhostsRSAAuthentication no
-# similar for protocol version 2
-#HostbasedAuthentication no
-# Change to yes if you don't trust ~/.ssh/known_hosts for
-# RhostsRSAAuthentication and HostbasedAuthentication
-#IgnoreUserKnownHosts no
-# Don't read the user's ~/.rhosts and ~/.shosts files
-#IgnoreRhosts yes
-
-# To disable tunneled clear text passwords, change to no here!
-#PasswordAuthentication yes
-#PermitEmptyPasswords no
-PasswordAuthentication no
-
-# Change to no to disable s/key passwords
-#ChallengeResponseAuthentication yes
-ChallengeResponseAuthentication no
-
-# Kerberos options
-#KerberosAuthentication no
-#KerberosOrLocalPasswd yes
-#KerberosTicketCleanup yes
-#KerberosGetAFSToken no
-#KerberosUseKuserok yes
-
-# GSSAPI options
-#GSSAPIAuthentication no
-GSSAPIAuthentication yes
-#GSSAPICleanupCredentials yes
-GSSAPICleanupCredentials yes
-#GSSAPIStrictAcceptorCheck yes
-#GSSAPIKeyExchange no
-
-# Set this to 'yes' to enable PAM authentication, account processing, 
-# and session processing. If this is enabled, PAM authentication will 
-# be allowed through the ChallengeResponseAuthentication and
-# PasswordAuthentication.  Depending on your PAM configuration,
-# PAM authentication via ChallengeResponseAuthentication may bypass
-# the setting of "PermitRootLogin without-password".
-# If you just want the PAM account and session checks to run without
-# PAM authentication, then enable this but set PasswordAuthentication
-# and ChallengeResponseAuthentication to 'no'.
-#UsePAM no
-UsePAM yes
-
-# Accept locale-related environment variables
-AcceptEnv LANG LC_CTYPE LC_NUMERIC LC_TIME LC_COLLATE LC_MONETARY LC_MESSAGES
-AcceptEnv LC_PAPER LC_NAME LC_ADDRESS LC_TELEPHONE LC_MEASUREMENT
-AcceptEnv LC_IDENTIFICATION LC_ALL LANGUAGE
-AcceptEnv XMODIFIERS
-
-#AllowAgentForwarding yes
-#AllowTcpForwarding yes
-#GatewayPorts no
-#X11Forwarding no
-#X11DisplayOffset 10
-#X11UseLocalhost yes
-#PrintMotd yes
-#PrintLastLog yes
-#TCPKeepAlive yes
-#UseLogin no
-#UsePrivilegeSeparation yes
-#PermitUserEnvironment no
-#Compression delayed
-#ClientAliveInterval 0
-#ClientAliveCountMax 3
-#ShowPatchLevel no
-#UseDNS yes
-#PidFile /var/run/sshd.pid
-#MaxStartups 10:30:100
-#PermitTunnel no
-#ChrootDirectory none
-
-# no default banner path
-#Banner none
-
-# override default of no subsystems
-Subsystem	sftp	/usr/libexec/openssh/sftp-server
-
-# Example of overriding settings on a per-user basis
-#Match User anoncvs
-#	X11Forwarding no
-#	AllowTcpForwarding no
-#	ForceCommand cvs server
-
-#+END_SRC 
-
-
-*Note:* Alternative work around for config file needs to be looked
-over, keeping the functionality with representation transformation.
-
-*** Logwatch config file
-This file sets up the logwatch configurations
-#+BEGIN_SRC SHELL :tangle roles/common/files/logwatch.conf
-
-
-#+END_SRC 
-
 
 *** Calling the SSHD Configuration
 This file copies the modified sshd configuration and restarts using
 the handler.
 
 #+BEGIN_SRC YAML :tangle roles/common/tasks/sshd-config.yml
-#Role to copy the modified sshd_config and call ssh restart handler
----
 
- - name: copy sshd_config 
-   copy: src=sshd_config dest=/etc/ssh/sshd_config owner=root group=root mode=0644
+#Modify  sshd_config and call ssh restart handler
 
-#   This below implementation using lineinfile has a problem of appending the commands at every run.
-#   Needs Troubleshooting.
-#  
-# - name: Permit root login without-pasword(key based) and backup the file before modifying
-#   lineinfile: dest=/etc/ssh/sshd_config regexp='^#PermitRootLogin *' line='PermitRootLogin without-password' backup=yes state=present
+# - name: copy sshd_config
+#   copy: src=sshd_config dest=/etc/ssh/sshd_config owner=root group=root mode=0644
 
-# - name: Disable Password authentication
-#   lineinfile: dest=/etc/ssh/sshd_config regexp='^#PasswordAuthentication *' line='PasswordAuthentication no' 
+ - name: Permit root login without-pasword(key based)
+   lineinfile: dest=/etc/ssh/sshd_config regexp='PermitRootLogin ' line='PermitRootLogin without-password' state=present
 
-# - name: Enable Public key authentication
-#   lineinfile: dest=/etc/ssh/sshd_config regexp='^#PubkeyAuthentication *' line='PubkeyAuthentication yes'
+ - name: Disable Password authentication
+   lineinfile: dest=/etc/ssh/sshd_config regexp='PasswordAuthentication ' line='PasswordAuthentication no'
 
-# - name: Do not permit empty password, also ensure proper owner, group and permissions
-#   lineinfile: dest=/etc/ssh/sshd_config regexp='^#PermitEmptyPasswords *' line='PermitEmptyPasswords no' mode=0600 owner=root group=root
+ - name: Enable Public key authentication
+   lineinfile: dest=/etc/ssh/sshd_config regexp='PubkeyAuthentication ' line='PubkeyAuthentication yes'
+
+ - name: Do not permit empty password, also ensure proper owner, group and permissions
+   lineinfile: dest=/etc/ssh/sshd_config regexp='PermitEmptyPasswords ' line='PermitEmptyPasswords no' mode=0600 owner=root group=root
 
 #Call handler to restart sshd
    notify:
      - restart sshd
+
 #+END_SRC
 
 
@@ -297,15 +131,94 @@ the handler.
 This file installs the logwatch  and copies the configuration
 
 #+BEGIN_SRC YAML :tangle roles/common/tasks/logwatch.yml
-#install and copy logwatch configuration
 ---
+#install and copy logwatch configuration
+
  - name: install logwatch
    yum: name=logwatch state=present
    environment: proxy_env
 
- - name: copy logwatch.conf
-   copy: src=logwatch.conf dest=/etc/logwatch/conf/logwatch.conf owner=root group=root mode=0644
+# - name: copy logwatch.conf
+#   copy: src=logwatch.conf dest=/etc/logwatch/conf/logwatch.conf owner=root group=root mode=0644
+
+ - name: copy logwatch.conf from default directory /etc/
+   command: /bin/cp -p /usr/share/logwatch/default.conf/logwatch.conf /etc/logwatch/conf/logwatch.conf
+
+ - name: changing the mail to in logwatch.conf, ensure proper owner,group, mode
+   lineinfile: dest=/etc/logwatch/conf/logwatch.conf state=present regexp='^MailTo =' line='MailTo = alerts@vlabs.ac.in' owner=root group=root mode=0644
+
+ - name: change the level of detail to medium
+   lineinfile: dest=/etc/logwatch/conf/logwatch.conf state=present regexp='^Detail =' line='Detail = Med'
+
 #+END_SRC
+
+*** Aliases
+This files configures the aliases
+#+BEGIN_SRC YAML :tangle roles/common/tasks/aliases.yml
+---
+- name: Configure aliases file
+  lineinfile: 'dest=/etc/aliases regexp=^root: line="root: alerts@vlabs.ac.in"'
+  notify:
+    - rebuild aliases
+#=END_SRC
+
+
+** Main file under tasks
+#+BEGIN_SRC YAML :tangle roles/common/tasks/main.yml
+---
+ - name: restart iptables
+   include: restart-iptables.yml
+
+#- name: Include /etc/aliases configuration
+#  include: aliases.yml
+
+ - name: sshd_config
+   include: sshd-config.yml
+
+ - name: history file
+   include: history-config.yml
+
+ - name: logwatch install
+   include: logwatch.yml
+
+# - name: update-os
+#   include: update-os.yml
+
+ - name: sendmail configure
+   include: sendmail-configure.yml
+
+ - name: install common packages
+   include: common-pkg.yml
+#=END_SRC
+
+
+
+#+BEGIN_SRC YAML :tangle roles/common/handlers/main.yml
+---
+#  - name: rebuild aliases
+#    shell: newaliases
+
+  - name: restart iptables
+    service: name=iptables state=restarted
+
+  - name: restart sshd
+    service: name=sshd state=restarted
+  
+  - name: restart sendmail
+    service: name=sendmail state=restarted
+
+  - name: restart fail2ban
+    service: name=fail2ban state=restarted
+#=END_SRC
+
+
+#+BEGIN_SRC YAML :tangle roles/common/meta/main.yml
+---
+dependencies:
+  - role: common_vars
+#=END_SRC
+
+
 
 *** Fail2ban
 Fail2ban scans log files and bans IPs that show the malicious signs of
