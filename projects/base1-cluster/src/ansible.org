@@ -26,10 +26,9 @@ The functional and security requirements for Ansible server are:
        software.
 
   2. Only one user called `ansible` is created on the Ansible server. This
-     user has sudo permissions.
+     user has sudo permissions, to run all commands.
 
-  3. Authorized VLEAD users log-in as ansible user.
-     Copy the VLEAD authorized_keys file to the Ansible server, under the ansible user.
+  3. Only VLEAD authorized users log-in as the `ansible` user.
 
 ** Security Requirements
    1. Apply Firewall Rules.
@@ -50,15 +49,17 @@ Ansible server
 [[./diagrams/ansible.png]]
 
 
-The design of the firewall rules will ensure that this server is
-accessible only via port 22. All other ports are disabled. The port 22
+The design of the firewall rules ensures that this server is
+accessible only via port 22. All other ports are disabled. Moreover, port 22
 is accessible only from VLEAD IP range.  Only key-based login to this
-server is allowed. This server can be pinged from anywhere.
+server is allowed.
+
+This server can be reached via ICMP (ping) requests.
 
 * Implementation
 ** Structure of the scripts
 The implementation of this system is in terms of a collection of Ansible scripts that
-configure the machine.   These scripts need to be organized in a certain way:
+configure the machine. These scripts are organized in the following way:
 
 #+BEGIN_EXAMPLE
 
@@ -79,7 +80,7 @@ configure the machine.   These scripts need to be organized in a certain way:
 
 ** Hardening, OS Updates etc.
    Requirement 1 {link has to be created} is taken care by the common role.  More
-   information is [[./common.org][here]]
+   information is [[./common.org][here]].
 
 ** Building the firewall rules
 
@@ -156,7 +157,6 @@ COMMIT
    We assume =PermitRootLogin= parameter is already set to some value.
 
 #+BEGIN_SRC YAML :tangle roles/ansible/tasks/main.yml :eval no
-
   - name: Disable root login via ssh
     lineinfile: dest=/etc/sshd_config regexp="^PermitRootLogin .*" state=present line="PermitRootLogin no"
 #+END_SRC
@@ -179,7 +179,8 @@ dependencies:
 ---
 - name: Configure ansible server
   hosts: ansible-server
-  remote_user: root
+  remote_user: ansible
+  sudo: yes
   roles:
     - common
     - ansible
@@ -197,27 +198,27 @@ This section describes the provisioning of ansible machine on cluster.
    + Disk space: 2GB
 *** Ansible machine is created using:
    #+BEGIN_EXAMPLE
-    vzctl create <ctid> --ostemplate centos-6-x86_64 --hostname <hostname> --ipadd <ip address> 
+    vzctl create <ctid> --ostemplate centos-6-x86_64 --hostname <hostname> --ipadd <ip address>
     vzctl start <ctid>
     vzctl set <ctid> --nameserver inherit --ram 256M --swap 512M --onboot yes --save
-   #+END_EXAMPLE 
+   #+END_EXAMPLE
 *** Create user ansible
     #+BEGIN_EXAMPLE
     useradd ansible
-    #+END_EXAMPLE  
+    #+END_EXAMPLE
 *** Generate ssh key and place it in git server
 *** Copy VLEAD users public keys to ansible user's authorized keys
 *** Provide root privilages to ansible user
     The below line is added to /etc/sudoers.
    #+BEGIN_EXAMPLE
    ansible ALL=(ALL)       NOPASSWD: ALL
-   #+END_EXAMPLE 
+   #+END_EXAMPLE
 *** Set proxy in /etc/yum.conf
    #+BEGIN_EXAMPLE
     proxy=http://proxy.iiit.ac.in:8080
    #+END_EXAMPLE
 *** Install ansible(version 1.8.4) and git
-   #+BEGIN_SRC 
+   #+BEGIN_SRC
    rpm -Uvh http://download.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm
    yum install ansible git -y
    #+BEGIN_SRC shell
@@ -225,9 +226,9 @@ This section describes the provisioning of ansible machine on cluster.
    #+END_SRC
 *** Disable SSH login for root user
     Change the PermitRootLogin to no in /etc/ssh/sshd_config
-    #+BEGIN_SRC 
+    #+BEGIN_SRC
      PermitRootLogin no
-    #+END_SRC 
+    #+END_SRC
 *** Domain name and IP address of Ansible machine
     - Domain name :: =ansible.sraging.virtual-labs.ac.in=
     - IP Address :: =10.4.14.101=
