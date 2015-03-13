@@ -10,16 +10,14 @@
 This document describes the requirements, design and implementation of
 the ansible server which is part of the cluster.
 
-This server is used to configure all other servers in the cluster.
+This server configures all other servers in the cluster.
 Using Ansible, a machine is configured using multiple roles.  A role
 is a specific set of configurations.
 
 * Requirements
-
 The functional and security requirements for Ansible server are:
-
-** Functional Requirements
-
+** Functional Requirements 
+   <<requirement>>
   1. Ansible server should manage itself
      + At regular intervals, it should apply firewall rules.
      + At regular intervals, it should update the packages of the OS and other
@@ -28,7 +26,7 @@ The functional and security requirements for Ansible server are:
   2. Only one user called `ansible` is created on the Ansible server. This
      user has sudo permissions.
 
-  3. Authorized VLEAD users log-in as ansible user.
+  3. Only authorized VLEAD users log-in as ansible user.
      Copy the VLEAD authorized_keys file to the Ansible server, under the ansible user.
 
 ** Security Requirements
@@ -39,7 +37,7 @@ The functional and security requirements for Ansible server are:
    5. Disable root login via ssh.
 
 * Design
-
+  
 Ansible server
 [[https://docs.google.com/a/vlabs.ac.in/drawings/d/1KRicWtnWvtqb06uNl5hYipeAH5KDQywWy7aOVStVAmo/edit?usp=sharing][Edit Image]]
 
@@ -78,60 +76,60 @@ configure the machine.   These scripts need to be organized in a certain way:
 #+END_EXAMPLE
 
 ** Hardening, OS Updates etc.
-   Requirement 1 {link has to be created} is taken care by the common role.  More
+    [[Requirement]] is taken care by the common role.  More
    information is [[./common.org][here]]
 
 ** Building the firewall rules
 
 *** The default contents of the firewall
-#+BEGIN_SRC YAML :tangle roles/ansible/templates/iptables
-*filter
-:INPUT ACCEPT [773:1200054]
-:FORWARD ACCEPT [0:0]
-:OUTPUT ACCEPT [940:1161060]
-#+END_SRC
+    #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
+     *filter
+     :INPUT ACCEPT [773:1200054]
+     :FORWARD ACCEPT [0:0]
+     :OUTPUT ACCEPT [940:1161060]
+    #+END_SRC
 
 *** Loop Back
-The ansible server needs to accept all connections from loop back.
+    The ansible server needs to accept all connections from loop back.
 
-#+BEGIN_SRC YAML :tangle roles/ansible/templates/iptables
-#Accept all connections from loop-back
--A INPUT -i lo -j ACCEPT
-#+END_SRC
+    #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
+     #Accept all connections from loop-back
+     -A INPUT -i lo -j ACCEPT
+    #+END_SRC
 
 *** Ongoing Connections
-The server should allow the ongoing connections
+    The server should allow the ongoing connections
 
-#+BEGIN_SRC YAML :tangle roles/ansible/templates/iptables
-#Allow ongoing connections
--A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
-#+END_SRC
+    #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
+     #Allow ongoing connections
+     -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+    #+END_SRC
 
 *** SSH Rule
-The server should allow *only* the VLEAD network to ssh to it on port 22.
+    The server should allow *only* the VLEAD network to ssh to it on port 22.
 
-#+BEGIN_SRC YAML :tangle roles/ansible/templates/iptables
--A INPUT -p tcp -m tcp --dport 22 -s 10.0.0.0/8 -j ACCEPT
-#+END_SRC
+    #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
+     -A INPUT -p tcp -m tcp --dport 22 -s 10.0.0.0/8 -j ACCEPT
+    #+END_SRC
 
 *** ICMP Rule
-The server should accept ping requests(ICMP) from anywhere
+    The server should accept ping requests(ICMP) from anywhere
 
-#+BEGIN_SRC YAML :tangle roles/ansible/templates/iptables
--A INPUT -p icmp -m icmp --icmp-type echo-request -j ACCEPT
-#+END_SRC
+    #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
+     -A INPUT -p icmp -m icmp --icmp-type echo-request -j ACCEPT
+    #+END_SRC
 
 *** All other packets should be rejected
-The incoming and outgoing packets on all other ports should be rejected.
+    The incoming and outgoing packets on all other ports should be rejected.
 
-#+BEGIN_SRC YAML :tangle roles/ansible/templates/iptables :eval no
--A INPUT -j REJECT
--A FORWARD -j REJECT
-COMMIT
-#+END_SRC
+    #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables :eval no
+     -A INPUT -j REJECT
+     -A FORWARD -j REJECT
+     COMMIT
+    #+END_SRC
 
 ** Copy the firewall rules to the appropriate location
-#+BEGIN_SRC YAML :tangle roles/ansible/tasks/main.yml
+#+BEGIN_SRC yaml :tangle roles/ansible/tasks/main.yml
 ---
   - name: Copy iptables configuration file for ansible server
     template: src=iptables dest=/etc/sysconfig/iptables mode=600 owner=root group=root
@@ -141,7 +139,7 @@ COMMIT
 ** Applying firewall rules
    Whenever iptables are changed, the iptables service will be restarted.
 
-#+BEGIN_SRC YAML :tangle roles/ansible/handlers/main.yml :eval no
+#+BEGIN_SRC yaml :tangle roles/ansible/handlers/main.yml :eval no
 ---
   - name: restart iptables
     service: name=iptables state=restarted
@@ -155,7 +153,7 @@ COMMIT
    Hence, we modify the =sshd_config= file to disable root login.
    We assume =PermitRootLogin= parameter is already set to some value.
 
-#+BEGIN_SRC YAML :tangle roles/ansible/tasks/main.yml :eval no
+#+BEGIN_SRC yaml :tangle roles/ansible/tasks/main.yml :eval no
 
   - name: Disable root login via ssh
     lineinfile: dest=/etc/sshd_config regexp="^PermitRootLogin .*" state=present line="PermitRootLogin no"
@@ -164,7 +162,7 @@ COMMIT
 ** Dependencies
    All the variables go here. For Ansible server, currently no variables are
    used.
-#+BEGIN_SRC YAML :tangle roles/ansible/meta/main.yml
+#+BEGIN_SRC yaml :tangle roles/ansible/meta/main.yml
 ---
 dependencies:
 - role: common_vars
@@ -175,7 +173,7 @@ dependencies:
    is done in terms of defining suitable scripts for each role.  The top level
    script is =build/code/ansible.yml=
 
-#+BEGIN_SRC YAML :tangle ansible.yml
+#+BEGIN_SRC yaml :tangle ansible.yml
 ---
 - name: Configure ansible server
   hosts: ansible-server
@@ -201,6 +199,9 @@ This section describes the provisioning of ansible machine on cluster.
     vzctl start <ctid>
     vzctl set <ctid> --nameserver inherit --ram 256M --swap 512M --onboot yes --save
    #+END_EXAMPLE 
+*** Domain name and IP address of Ansible machine
+    - Domain name :: =ansible.staging.virtual-labs.ac.in=
+    - IP Address :: =10.4.14.101=
 *** Create user ansible
     #+BEGIN_EXAMPLE
     useradd ansible
@@ -213,6 +214,7 @@ This section describes the provisioning of ansible machine on cluster.
    ansible ALL=(ALL)       NOPASSWD: ALL
    #+END_EXAMPLE 
 *** Set proxy in /etc/yum.conf
+   The following line is added to etc/yum.conf
    #+BEGIN_EXAMPLE
     proxy=http://proxy.iiit.ac.in:8080
    #+END_EXAMPLE
@@ -220,17 +222,12 @@ This section describes the provisioning of ansible machine on cluster.
    #+BEGIN_SRC 
    rpm -Uvh http://download.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm
    yum install ansible git -y
-   #+BEGIN_SRC shell
-   vzctl create 14102 --ostemplate centos-6-x86_64-point6 --hostname ansible.virtual-labs.ac.in --ipadd 10.4.14.102
    #+END_SRC
 *** Disable SSH login for root user
     Change the PermitRootLogin to no in /etc/ssh/sshd_config
     #+BEGIN_SRC 
      PermitRootLogin no
     #+END_SRC 
-*** Domain name and IP address of Ansible machine
-    - Domain name :: =ansible.sraging.virtual-labs.ac.in=
-    - IP Address :: =10.4.14.101=
 ** Access to Ansible machine
    - VLEAD engineers who have their keys placed in =authorized_keys=
      of ansible machine can *only* access.
@@ -255,12 +252,19 @@ This section describes the provisioning of ansible machine on cluster.
   15. Sanchita
 
 * Testcases
-** SSH should be allowed only from STPI(196.12.53.130).
-   Test ansible is able to ssh from STPI
-   #+BEGIN_SRC shell
-    ssh root@<STPI IP>
+** SSH should be allowed only from IIIT ip  using ansible user.
+   Test ansible is allowed to ssh ansible user from IIIT network 
+   #+BEGIN_SRC 
+    ssh ansible@<Ansible machine IP>
    #+END_SRC
 ** Ansible machine must be pingable(ICMP) only from IIIT network.
-   Ansible machine
+   Test ansible machine allow ping only from IIIT network
+   #+BEGIN_SRC 
+   ping <Ansible machine IP>
+   #+END_SRC
 ** All the other ports are blocked.
+   Test ansible machine to block all ports except 22
+   #+BEGIN_SRC 
+   telnet <Ansible machine IP> <Port Number>
+   #+END_SRC
 
