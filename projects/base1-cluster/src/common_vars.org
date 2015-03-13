@@ -14,44 +14,16 @@ which would be required for various configurations (firewall, server).
 We initialize the variable below according to the required network
 settings and configurations.
 
-** Proxy Variable
-Proxy is set for http and https protocol as following:
 #+BEGIN_SRC YAML :tangle roles/common_vars/vars/main.yml :eval no
 ---
   proxy_env:
     http_proxy: http://proxy.virtual-labs.ac.in:8080/
     https_proxy: http://proxy.virtual-labs.ac.in:8080/
-#+END_SRC
-
-** OSSEC IP
-OSSEC server ip is set to the following:
-#+BEGIN_SRC YAML roles/common_vars/vars/main.yml :eval no
   vars:
     ossec_server_ip:
-#+END_SRC
-
-** Nagios IP
-Nagios server ip is set to the following:
-#+BEGIN_SRC YAML roles/common_vars/vars/main.yml :eval no
     nagios_server_ip:
-#+END_SRC
-
-** Ansible IP
-ANsible server ip is set to the following:
-#+BEGIN_SRC YAML roles/common_vars/vars/main.yml :eval no
     ansible_server_ip:
-#+END_SRC
-
-** DNS IP
-We have two DNS ip's namely public and private. The values are set to
-the following:
-#+BEGIN_SRC YAML roles/common_vars/vars/main.yml :eval no
     dns_public_ip:
     dns_private_ip:
-#+END_SRC
-
-** Mail Server
-The mail records point to iiit mail exchange records.
-#+BEGIN_SRC YAML roles/common_vars/vars/main.yml :eval no
     iiit_mail_server: mail.iiit.ac.in.
 #+END_SRC
