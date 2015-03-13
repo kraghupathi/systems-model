@@ -147,6 +147,20 @@ COMMIT
     service: name=iptables state=restarted
 #+END_SRC
 
+** Disable root login via ssh
+   Common role of ansible ensures that root login is enabled on all machines
+   but only via public key authentication. But for the Ansible server we want
+   to disable root login altogether via ssh.
+
+   Hence, we modify the =sshd_config= file to disable root login.
+   We assume =PermitRootLogin= parameter is already set to some value.
+
+#+BEGIN_SRC YAML :tangle roles/ansible/tasks/main.yml :eval no
+
+  - name: Disable root login via ssh
+    lineinfile: dest=/etc/sshd_config regexp="^PermitRootLogin .*" state=present line="PermitRootLogin no"
+#+END_SRC
+
 ** Dependencies
    All the variables go here. For Ansible server, currently no variables are
    used.
