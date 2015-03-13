@@ -51,15 +51,16 @@
 (add-hook 'org-publish-before-export-hook 'org-babel-tangle 'append)
 ;(add-hook 'org-publish-before-export-hook 'org-babel-tangle)
 
-(setq org-babel-default-header-args
-      (cons '(:mkdirp . "yes")
-	    ;;; if mkdirp is already there, delete it
-	    (assq-delete-all :mkdirp org-babel-default-header-args)))
+;(setq org-babel-default-header-args
+;      (cons '(:mkdirp . "yes")
+;	    ;;; if mkdirp is already there, delete it
+;	    (assq-delete-all :mkdirp org-babel-default-header-args)))
 
 (setq org-babel-default-header-args
       (append '((:eval . "no") (:mkdirp . "yes"))
 	    ;;; if mkdirp is already there, delete it
 	    ;;; if eval is already there, delete it
+	    ;;; if org-src-preserve-indentation is already there, delete it
 	    (progn
 	      (assq-delete-all :mkdirp  org-babel-default-header-args)
 	      (assq-delete-all :eval    org-babel-default-header-args))))
@@ -69,6 +70,9 @@
 ;;; eliminate annoying messages from emacs about following
 ;;; version controlled files that are symlinks.
 (setq vc-follow-symlinks t)
+
+; Preserve whitespace indentation for .yml files!!
+(setq org-src-preserve-indentation t)
 
 
 ;;; default-directory :: emacs defined variable.  Is equal
