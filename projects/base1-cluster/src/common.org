@@ -19,12 +19,13 @@ The functional requirements for common roles are:
 ** Functional Requirements
 
   1. Below common roles are applied at periodic intervals:
-    + Restarting the IP tables
-    + Installing and configuring the logwatch
-    + Disabling password-based ssh
-    + Installing and configuring fail2ban for ssh
-    + Updating / patching the OS
-    + Logging / Modfying the history behavior
+    + Ensure the consistency in IP table rules 
+    + Mailing the log summary at the end of the day
+    + Securing the system by not allowing password based access
+    + Capturing and banning the IP's of the suspected malicious
+      attacks
+    + Keeping the OS updated 
+    + Provision to audit the commonds run on the servers
 
 The security best practices needs to be followed in defining the
 roles. All processes suggested for =hardening a server= should be
@@ -44,10 +45,23 @@ all the deployed servers, including the ansible.
 The diagram can be edited [[https://docs.google.com/a/vlabs.ac.in/drawings/d/1NHBwOSxikqlg5cXbgnKMfnUS_K_iMGkCClktXMOBTw8/edit][HERE]] 
 
 * Implementation:
+ The requirements will be accomplished the following way:
+    + *Ensure the consistency in IP table rules* - Restarting the IP
+      tables
+    + *Mailing the log summary at the end of the day* - Installing and
+      configuring the logwatch
+    + *Securing the system by not allowing password based access* -
+      Disabling password-based ssh
+    + *Capturing and banning the IP's of the suspected malicious
+      attacks* - Installing and configuring fail2ban for ssh)
+    + *Keeping the OS updated* - Updating / patching the OS
+    + *Provision to audit the commonds run on the servers* - Logging /
+      Modfying the history behavior
+
 ** Structure of the scripts
 The implementation of this system is in terms of a collection of
-Ansible scripts that configure the machine.  These scripts need to be
-organized in a certain way:
+Ansible scripts that configure the machine.  These scripts are
+organized in following way:
 
 #+BEGIN_EXAMPLE
 |-- ansible.yml
@@ -66,15 +80,24 @@ organized in a certain way:
 |   |   |-- tasks
 |   |   |   |-- aliases.yml
 |   |   |   |-- history_config.yml
+|   |   |   |-- common_pkg.yml
 |   |   |   |-- restart_iptables.yml
 |   |   |   |-- logwatch.yml
+|   |   |   |-- sendmail_configure.yml
 |   |   |   |-- main.yml
 |   |   |   |-- fail2ban.yml
-|   |   |   |-- sshd_config.yml
-|   |   |   `-- update-os.yml
+|   |   |   `-- sshd_config.yml
 |   |   |-- templates
 |   |   `-- vars
 #+END_EXAMPLE
+
+*** Configuring the Fail2ban local file
+The Fail2ban local configuration file called =jail.local= has all the
+common rules which will be applied through Fail2ban.
+#+BEGIN_SRC shell :tangle roles/common/files/jail.local
+
+#+END_SRC 
+
 
 *** History
 History parameters will be exported for the following:
@@ -88,7 +111,7 @@ History parameters will be exported for the following:
                      and are stored in the history file at the end of
                      bash session for use in future sessions.
 
-#+BEGIN_SRC SHELL :tangle roles/common/files/history.sh
+#+BEGIN_SRC shell :tangle roles/common/files/history.sh
 #!/bin/bash
 HISTTIMEFORMAT  = "%y %m %d %T"
 HISTSIZE        = 100000
@@ -96,20 +119,180 @@ HISTFILESIZE    = 100000
 export HISTTIMEFORMAT HISTSIZE HISTFILESIZE
 #+END_SRC 
 
+*** Main file for Handlers
+The main file in handlers restarts all the services to update the
+changes made to the services. 
 
-#+BEGIN_SRC SHELL :tangle roles/common/tasks/history_config.yml
+*Note:* The aliases services is commented as no functionality is
+applicable currently.
+#+BEGIN_SRC yaml :tangle roles/common/handlers/main.yml
+---
+#  - name: rebuild aliases
+#    shell: newaliases
+
+  - name: restart iptables
+    service: name=iptables state=restarted
+
+  - name: restart sshd
+    service: name=sshd state=restarted
+  
+  - name: restart sendmail
+    service: name=sendmail state=restarted
+
+  - name: restart fail2ban
+    service: name=fail2ban state=restarted
+#+END_SRC
+
+*** Main file for meta
+Main file includes the common vaiables defined in =common_vars=.
+#+BEGIN_SRC yaml :tangle roles/common/meta/main.yml
+---
+dependencies:
+  - role: common_vars
+#+END_SRC
+
+
+*** Aliases
+This files configures the aliases. 
+#+BEGIN_SRC yaml :tangle roles/common/tasks/aliases.yml
+---
+- name: Configure aliases file
+  lineinfile: 'dest=/etc/aliases regexp=^root: line="root: alerts@vlabs.ac.in"'
+  notify:
+    - rebuild aliases
+#+END_SRC
+
+
+*** History Logs
+This file calls the =history.sh= and configures the history log for
+the commands run everyday.
+#+BEGIN_SRC yaml :tangle roles/common/tasks/history_config.yml
 ---
 #This play copies a stock history file
  - name: copying history
    copy: src=history.sh dest=/etc/profile.d/history.sh owner=root group=root mode=0655
 #+END_SRC 
 
+*** Common Packages
+This file installs the common packages (bind utils) required by admins
+to troubleshoot the issues
+#+BEGIN_SRC yaml :tangle roles/common/tasks/common_pkg.yml
+---
+#this play installs the common packages needed by admins to troubleshoot issues
+ - name: install bind-utils
+   yum: name=bind-utils state=present
+   environment:
+    proxy_env
+#+END_SRC 
+
+*** Restarting the IP tables
+This file copies the firewall rules and ensures that they are the
+recent updated rules.
+#+BEGIN_SRC yaml :tangle roles/common/tasks/restart_iptables.yml
+---
+- name: restart iptables
+  service: name=iptables state=restarted 
+#+END_SRC 
+
+*** Configuring the logwatch
+This file installs the logwatch  and copies the configuration
+
+#+BEGIN_SRC yaml :tangle roles/common/tasks/logwatch.yml
+---
+#install and copy logwatch configuration
+
+ - name: install logwatch
+   yum: name=logwatch state=present
+   environment: proxy_env
+
+# - name: copy logwatch.conf
+#   copy: src=logwatch.conf dest=/etc/logwatch/conf/logwatch.conf owner=root group=root mode=0644
+
+ - name: copy logwatch.conf from default directory /etc/
+   command: /bin/cp -p /usr/share/logwatch/default.conf/logwatch.conf /etc/logwatch/conf/logwatch.conf
+
+ - name: changing the mail to in logwatch.conf, ensure proper owner,group, mode
+   lineinfile: dest=/etc/logwatch/conf/logwatch.conf state=present regexp='^MailTo =' line='MailTo = alerts@vlabs.ac.in' owner=root group=root mode=0644
+
+ - name: change the level of detail to medium
+   lineinfile: dest=/etc/logwatch/conf/logwatch.conf state=present regexp='^Detail =' line='Detail = Med'
+
+#+END_SRC
+
+
+*** Configuring the Mail Records
+#+BEGIN_SRC yaml :tangle roles/common/tasks/sendmail_configure.yml
+---
+#This play configures smart hosts
+
+ - name: Change the smart host entry in /etc/mail/sendmail.mc
+   lineinfile: dest=/etc/mail/sendmail.mc regexp="SMART_HOST" line="define(`SMART_HOST', `{{iiit_mail_server}}')dnl"  state=present mode=0644
+   notify: 
+     - restart sendmail
+#+END_SRC
+
+
+*** Main file under tasks
+#+BEGIN_SRC yaml :tangle roles/common/tasks/main.yml
+---
+ - name: restart iptables
+   include: restart_iptables.yml
+
+#- name: Include /etc/aliases configuration
+#  include: aliases.yml
+
+ - name: sshd_config
+   include: sshd_config.yml
+
+ - name: history file
+   include: history_config.yml
+
+ - name: logwatch install
+   include: logwatch.yml
+
+ - name: sendmail configure
+   include: sendmail_configure.yml
+
+ - name: install common packages
+   include: common_pkg.yml
+#+END_SRC
+
+
+*** Fail2ban
+Fail2ban scans log files and bans IPs that show the malicious signs of
+agents seeking for exploits. It comes with filters for various
+services like ssh, apache, mysql etc. Fail2Ban can be used to update
+firewall rules to reject the IP addresses for a specified amount of
+time. Even other services like sending mails, alerts can be
+configured.
+
+*Python* is the pre-requisite package to be installed to run Fail2ban
+service. More details can be found in the [[http://www.fail2ban.org/wiki/index.php/Main_Page][WIKI]] page of Fail2ban. 
+
+The objective is to install Fail2ban on all the servers and apply the
+local rules.
+#+BEGIN_SRC yaml :tangle roles/common/tasks/fail2ban.yml
+---
+tasks:
+   - name: install fail2ban package
+     apt: pkg=fail2ban state=present
+     when: ansible_distribution=='Debian' or ansible_distribution=='Ubuntu'
+     sudo: yes
+   
+   - name: copy fail2ban local config
+     file: src=jail.local dest=/etc/fail2ban/jail.local owner=root group=root  mode=0644
+     sudo: yes 
+#+END_SRC
+
+The configuration file =jail.local= applies the required rules on all
+the servers.
+
 
 *** Calling the SSHD Configuration
 This file copies the modified sshd configuration and restarts using
 the handler.
 
-#+BEGIN_SRC YAML :tangle roles/common/tasks/sshd_config.yml
+#+BEGIN_SRC yaml :tangle roles/common/tasks/sshd_config.yml
 
 #Modify  sshd_config and call ssh restart handler
 
@@ -133,168 +316,4 @@ the handler.
      - restart sshd
 
 #+END_SRC
-
-
-*** Configuring the logwatch
-This file installs the logwatch  and copies the configuration
-
-#+BEGIN_SRC YAML :tangle roles/common/tasks/logwatch.yml
----
-#install and copy logwatch configuration
-
- - name: install logwatch
-   yum: name=logwatch state=present
-   environment: proxy_env
-
-# - name: copy logwatch.conf
-#   copy: src=logwatch.conf dest=/etc/logwatch/conf/logwatch.conf owner=root group=root mode=0644
-
- - name: copy logwatch.conf from default directory /etc/
-   command: /bin/cp -p /usr/share/logwatch/default.conf/logwatch.conf /etc/logwatch/conf/logwatch.conf
-
- - name: changing the mail to in logwatch.conf, ensure proper owner,group, mode
-   lineinfile: dest=/etc/logwatch/conf/logwatch.conf state=present regexp='^MailTo =' line='MailTo = alerts@vlabs.ac.in' owner=root group=root mode=0644
-
- - name: change the level of detail to medium
-   lineinfile: dest=/etc/logwatch/conf/logwatch.conf state=present regexp='^Detail =' line='Detail = Med'
-
-#+END_SRC
-
-*** Aliases
-This files configures the aliases
-#+BEGIN_SRC YAML :tangle roles/common/tasks/aliases.yml
----
-- name: Configure aliases file
-  lineinfile: 'dest=/etc/aliases regexp=^root: line="root: alerts@vlabs.ac.in"'
-  notify:
-    - rebuild aliases
-#+END_SRC
-
-
-** Main file under tasks
-#+BEGIN_SRC YAML :tangle roles/common/tasks/main.yml
----
- - name: restart iptables
-   include: restart_iptables.yml
-
-#- name: Include /etc/aliases configuration
-#  include: aliases.yml
-
- - name: sshd_config
-   include: sshd_config.yml
-
- - name: history file
-   include: history_config.yml
-
- - name: logwatch install
-   include: logwatch.yml
-
-# - name: update-os
-#   include: update_os.yml
-
- - name: sendmail configure
-   include: sendmail_configure.yml
-
- - name: install common packages
-   include: common_pkg.yml
-#+END_SRC
-
-
-
-#+BEGIN_SRC YAML :tangle roles/common/handlers/main.yml
----
-#  - name: rebuild aliases
-#    shell: newaliases
-
-  - name: restart iptables
-    service: name=iptables state=restarted
-
-  - name: restart sshd
-    service: name=sshd state=restarted
-  
-  - name: restart sendmail
-    service: name=sendmail state=restarted
-
-  - name: restart fail2ban
-    service: name=fail2ban state=restarted
-#+END_SRC
-
-
-#+BEGIN_SRC YAML :tangle roles/common/meta/main.yml
----
-dependencies:
-  - role: common_vars
-#+END_SRC
-
-
-
-*** Fail2ban
-Fail2ban scans log files and bans IPs that show the malicious signs of
-agents seeking for exploits. It comes with filters for various
-services like ssh, apache, mysql etc. Fail2Ban can be used to update
-firewall rules to reject the IP addresses for a specified amount of
-time. Even other services like sending mails, alerts can be
-configured.
-
-*Python* is the pre-requisite package to be installed to run Fail2ban
-service. More details can be found in the [[http://www.fail2ban.org/wiki/index.php/Main_Page][WIKI]] page of Fail2ban. 
-
-The objective is to install Fail2ban on all the servers and apply the
-local rules.
-#+BEGIN_SRC YAML :tangle roles/common/tasks/fail2ban.yml
----
-tasks:
-   - name: install fail2ban package
-     apt: pkg=fail2ban state=present
-     when: ansible_distribution=='Debian' or ansible_distribution=='Ubuntu'
-     sudo: yes
-   
-   - name: copy fail2ban local config
-     file: src=jail.local dest=/etc/fail2ban/jail.local owner=root group=root  mode=0644
-     sudo: yes 
-#+END_SRC
-
-The configuration file =jail.local= applies the required rules on all
-the servers.
-
-*** Configuring the Fail2ban local file
-The Fail2ban local configuration file called =jail.local= has all the
-common rules which will be applied through Fail2ban.
-#+BEGIN_SRC SHELL :tangle roles/common/files/jail.local
-
-#+END_SRC 
-
-
-#+BEGIN_SRC YAML :tangle roles/common/tasks/restart_iptables.yml
----
-#- stat: path=/etc/sysconfig/iptables
-#  register: iptables_rules
-
-#- name: Copy iptables file if not present already
-#  template: src=iptables dest=/etc/sysconfig/iptables 
-#  when: iptables_rules.stat.exists == False
-
-- name: Ensure that iptables service is running with latest rules
-  service: name=iptables state=restarted 
-#+END_SRC 
-
-
-#+BEGIN_SRC YAML :tangle roles/common/tasks/common_pkg.yml
----
-#this play installs the common packages needed by admins to troubleshoot issues
- - name: install bind-utils
-   yum: name=bind-utils state=present
-   environment:
-    proxy_env
-#+END_SRC 
-
-
-#+BEGIN_SRC YAML :tangle roles/common/tasks/sendmail_configure.yml
----
-#This play configures smart hosts
-
- - name: Change the smart host entry in /etc/mail/sendmail.mc
-   lineinfile: dest=/etc/mail/sendmail.mc regexp="SMART_HOST" line="define(`SMART_HOST', `{{iiit_mail_server}}')dnl"  state=present mode=0644
-   notify: 
-     - restart sendmail
-#+END_SRC
+       
