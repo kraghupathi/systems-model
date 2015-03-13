@@ -7,12 +7,12 @@
 
 * Introduction
 
-This document describes the requirements, design and implementation of the
-ansible server which is part of the cluster.
+This document describes the requirements, design and implementation of
+the ansible server which is part of the cluster.
 
-This server is used to configure all other servers in the cluster.  Using
-Ansible, a machine is configured using multiple roles.  A role is a specific set
-of configurations.
+This server is used to configure all other servers in the cluster.
+Using Ansible, a machine is configured using multiple roles.  A role
+is a specific set of configurations.
 
 * Requirements
 
@@ -43,10 +43,10 @@ Ansible server
 [[./diagrams/ansible.png]]
 
 
-The design of the firewall rules will ensure that this server is accessible
-only via port 22. All other ports are disabled. The port 22 is accessible only
-from VLEAD IP range.  Only key-based login to this server is allowed. This
-server can be pinged from anywhere.
+The design of the firewall rules will ensure that this server is
+accessible only via port 22. All other ports are disabled. The port 22
+is accessible only from VLEAD IP range.  Only key-based login to this
+server is allowed. This server can be pinged from anywhere.
 
 * Implementation
 ** Structure of the scripts
@@ -162,7 +162,7 @@ dependencies:
     - ansible
 #+END_SRC
 
-* Provisioning Ansible machine
+* Provisioning Of Ansible Machine
 This section describes the provisioning of ansible machine on cluster.
 
 ** Creation of Ansible machine
@@ -179,11 +179,12 @@ This section describes the provisioning of ansible machine on cluster.
 *** Domain name and IP address of Ansible machine
     - Domain name :: =ansible.virtual-labs.ac.in=
     - IP Address :: =10.4.14.102=
+** Access to Ansible machine
+   - VLEAD engineers who have their keys placed in =authorized_keys=
+     of ansible machine can *only* access.
 ** Key based authentication is enabled on the Ansible machine.
    LDAP is disabled. Engineers with their public keys added to
    authorized_keys will only be able to ssh.
-** Access to Ansible machine
-   - VLEAD engineers who have their keys placed in =authorized_keys= of ansible machine can *only* access.
 ** List of VLEAD engineers who have access to Ansible machine
    1. Dr.Venkatesh Choppella
    2. Thirumal Ravula
