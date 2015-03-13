@@ -1,8 +1,8 @@
 #+title:  A simple one system cluster
 #+PROPERTY: session *scratch*
 #+PROPERTY: results output
-#+PROPERTY: tangle ../build/site.yml
 #+PROPERTY: exports code
+#+SETUPFILE: org-templates/level-0.org
 
 * Introduction
 We describe here the specification, design and implementation of a cluster of
