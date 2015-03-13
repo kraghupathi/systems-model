@@ -60,10 +60,10 @@
       (append '((:eval . "no") (:mkdirp . "yes"))
 	    ;;; if mkdirp is already there, delete it
 	    ;;; if eval is already there, delete it
-	    (progn  
+	    (progn
 	      (assq-delete-all :mkdirp  org-babel-default-header-args)
 	      (assq-delete-all :eval    org-babel-default-header-args))))
-	    
+
 
 ;;; https://groups.google.com/forum/#!topic/comp.emacs/iiYJL04M7lA
 ;;; eliminate annoying messages from emacs about following
@@ -144,7 +144,7 @@
   :publishing-function org-publish-attachment
   ))
 
-(setq snag  
+(setq snag
       '("snag" :components ("org-code" "org-docs"
       "org-static" "org-tangled")))
 

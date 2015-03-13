@@ -1,6 +1,6 @@
 BUILD_DEST=build
 
-all:  build 
+all:  build
 
 build: init
 	emacs  --script elisp/publish.el

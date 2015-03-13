@@ -20,17 +20,24 @@ The functional and security requirements for Ansible server are:
 
 ** Functional Requirements
 
-  1. Ansible server should manage itself 
+  1. Ansible server should manage itself
      + At regular intervals, it should apply firewall rules.
      + At regular intervals, it should update the packages of the OS and other
        software.
 
+  2. Only one user called `ansible` is created on the Ansible server. This
+     user has sudo permissions.
+
+  3. Authorized VLEAD users log-in as ansible user.
+     Copy the VLEAD authorized_keys file to the Ansible server, under the ansible user.
+
 ** Security Requirements
-   1. Apply Firewall Rules. 
+   1. Apply Firewall Rules.
    2. SSH/Port 22 accessible *ONLY* from VLEAD IP range.
    3. Allow ICMP (Ping)
    4. Limit rate of new connections on port 22.
-      
+   5. Disable root login via ssh.
+
 * Design
 
 Ansible server
@@ -67,7 +74,7 @@ configure the machine.   These scripts need to be organized in a certain way:
 |   |   `-- templates
 |   |       `-- iptables
 |   |-- common
-|   |   ... 
+|   |   ...
 #+END_EXAMPLE
 
 ** Hardening, OS Updates etc.
@@ -93,7 +100,7 @@ The ansible server needs to accept all connections from loop back.
 #+END_SRC
 
 *** Ongoing Connections
-The server should allow the ongoing connections 
+The server should allow the ongoing connections
 
 #+BEGIN_SRC YAML :tangle roles/ansible/templates/iptables
 #Allow ongoing connections
@@ -117,7 +124,7 @@ The server should accept ping requests(ICMP) from anywhere
 *** All other packets should be rejected
 The incoming and outgoing packets on all other ports should be rejected.
 
-#+BEGIN_SRC YAML :tangle roles/ansible/templates/iptables :eval no 
+#+BEGIN_SRC YAML :tangle roles/ansible/templates/iptables :eval no
 -A INPUT -j REJECT
 -A FORWARD -j REJECT
 COMMIT
@@ -130,15 +137,16 @@ COMMIT
     template: src=iptables dest=/etc/sysconfig/iptables mode=600 owner=root group=root
     notify: restart iptables
 #+END_SRC
+
 ** Applying firewall rules
    Whenever iptables are changed, the iptables service will be restarted.
- 
-#+BEGIN_SRC YAML :tangle roles/ansible/handlers/main.yml :eval no 
+
+#+BEGIN_SRC YAML :tangle roles/ansible/handlers/main.yml :eval no
 ---
   - name: restart iptables
     service: name=iptables state=restarted
 #+END_SRC
-   
+
 ** Dependencies
    All the variables go here. For Ansible server, currently no variables are
    used.
@@ -148,10 +156,11 @@ dependencies:
 - role: common_vars
 #+END_SRC
 
-** Putting it together   
+** Putting it together
    The ansible server is managed with all the above rules. The implementation
    is done in terms of defining suitable scripts for each role.  The top level
    script is =build/code/ansible.yml=
+
 #+BEGIN_SRC YAML :tangle ansible.yml
 ---
 - name: Configure ansible server
@@ -173,8 +182,8 @@ This section describes the provisioning of ansible machine on cluster.
    + Memory: 256MB
    + Disk space: 2GB
 *** Ansible machine is created using:
-   #+BEGIN_SRC shell 
-   vzctl create 14102 --ostemplate centos-6-x86_64-point6 --hostname ansible.virtual-labs.ac.in --ipadd 10.4.14.102 
+   #+BEGIN_SRC shell
+   vzctl create 14102 --ostemplate centos-6-x86_64-point6 --hostname ansible.virtual-labs.ac.in --ipadd 10.4.14.102
    #+END_SRC
 *** Domain name and IP address of Ansible machine
     - Domain name :: =ansible.virtual-labs.ac.in=
@@ -200,7 +209,7 @@ This section describes the provisioning of ansible machine on cluster.
   12. Khushpreet
   13. Sripathi
   14. Madhavi
-  15. Sanchita 
+  15. Sanchita
 
 * Testcases
 ** SSH should be allowed only from STPI(196.12.53.130).
