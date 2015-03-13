@@ -279,7 +279,7 @@ common rules which will be applied through Fail2ban.
 #+END_SRC 
 
 
-#+BEGIN_SRC YAML :tangle roles/common/tasks/commom_pkg.yml
+#+BEGIN_SRC YAML :tangle roles/common/tasks/common_pkg.yml
 ---
 #this play installs the common packages needed by admins to troubleshoot issues
  - name: install bind-utils
