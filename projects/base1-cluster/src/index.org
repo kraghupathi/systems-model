@@ -136,8 +136,13 @@ Network
 ** Nodes
    The cluster contains the following machines:
  - [[./ansible.org][Ansible]]
- - [[./common.org][Common]]
+#+BEGIN_SRC YAML :tangle hosts
+[ansible-server]
+10.4.14.102
+#+END_SRC
 
+
+   
 * Testing of the cluster
 
 
