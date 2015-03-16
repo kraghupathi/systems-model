@@ -273,8 +273,11 @@ dependencies:
 #+END_SRC
 
 *** Handlers
-Handlers catch the notification to restart the various services. This
-service is used by ssh, mail and fail2ban.
+The things listed in the ‘notify’ section of a task are called handlers.
+Handlers are lists of tasks that are referenced by name. Regardless of
+how many things notify a handler, it will run only once, after all of
+the tasks complete in a particular play. Handlers is used by
+ssh, mail and fail2ban.
 #+BEGIN_SRC yaml :tangle roles/common/handlers/main.yml
 ---
   - name: restart sshd
