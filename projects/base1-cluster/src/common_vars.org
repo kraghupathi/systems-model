@@ -19,11 +19,11 @@ settings and configurations.
   proxy_env:
     http_proxy: http://proxy.virtual-labs.ac.in:8080/
     https_proxy: http://proxy.virtual-labs.ac.in:8080/
-  vars:
-    ossec_server_ip:
-    nagios_server_ip:
-    ansible_server_ip:
-    dns_public_ip:
-    dns_private_ip:
-    iiit_mail_server: mail.iiit.ac.in.
+
+  ossec_server_ip:
+  nagios_server_ip:
+  ansible_server_ip:
+  dns_public_ip:
+  dns_private_ip:
+  iiit_mail_server: mail.iiit.ac.in
 #+END_SRC

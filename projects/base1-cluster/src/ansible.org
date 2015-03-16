@@ -145,30 +145,21 @@ configures the machine. Scripts are organized as follows:
      -A FORWARD -j REJECT
      COMMIT
     #+END_SRC
-    
-** Copy the firewall rules to the appropriate location
-   - Firewall rules are set by following steps:
+
+
+** Copy and apply the firewall rules for the Ansible server
+- Firewall rules are set by following steps:
      1) Setting up ansible server for the first time, iptables
         configuration file is copied to the ansible machine.
      2) Restart iptables service to enforce the configuration.
 
-   #+BEGIN_SRC yaml :tangle roles/ansible/tasks/main.yml
-   ---
-     - name: Copy iptables configuration file for ansible server
-       template: src=iptables dest=/etc/sysconfig/iptables mode=600 owner=root group=root
-       notify: restart iptables
-   #+END_SRC
+#+BEGIN_SRC yaml :tangle roles/ansible/tasks/main.yml
+---
+  - name: Copy iptables configuration file for ansible server
+    template: src=iptables dest=/etc/sysconfig/iptables mode=600 owner=root group=root
+    notify: restart iptables
+#+END_SRC
 
-** Applying firewall rules
-   Any changes in iptables configuration file to update the firewall is enforced
-   by restarting the iptables service.
-
-
-   #+BEGIN_SRC yaml :tangle roles/ansible/handlers/main.yml :eval no
-   ---
-     - name: restart iptables
-       service: name=iptables state=restarted
-   #+END_SRC
 
 ** Disable root login via ssh
 

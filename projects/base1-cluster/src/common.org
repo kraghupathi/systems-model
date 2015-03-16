@@ -185,14 +185,6 @@ to troubleshoot the issues
     proxy_env
 #+END_SRC 
 
-*** Restarting the IP tables
-This file copies the firewall rules and ensures that they are the
-recent updated rules.
-#+BEGIN_SRC yaml :tangle roles/common/tasks/restart_iptables.yml
----
-- name: restart iptables
-  service: name=iptables state=restarted 
-#+END_SRC 
 
 *** Configuring the logwatch
 This file installs the logwatch  and copies the configuration
@@ -235,11 +227,6 @@ This file installs the logwatch  and copies the configuration
 *** Main file under tasks
 #+BEGIN_SRC yaml :tangle roles/common/tasks/main.yml
 ---
- - name: restart iptables
-   include: restart_iptables.yml
-
-#- name: Include /etc/aliases configuration
-#  include: aliases.yml
 
  - name: sshd_config
    include: sshd_config.yml
