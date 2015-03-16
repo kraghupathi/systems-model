@@ -263,8 +263,8 @@ trouble shoot the network related issues.
     proxy_env
 #+END_SRC 
 
-*** Comman Variables
-Several comman variables which are common to network are defined in
+*** Common Variables
+Several common variables which are common to network are defined in
 =common_vars= file which needs to be included as a dependency. 
 #+BEGIN_SRC yaml :tangle roles/common/meta/main.yml
 ---
