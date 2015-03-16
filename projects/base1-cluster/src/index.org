@@ -5,23 +5,64 @@
 #+SETUPFILE: org-templates/level-0.org
 
 * Introduction
-We describe here the specification, design and implementation of a cluster of
-one machine, the ansible server.
+
+We describe here the specification, design and
+implementation of a cluster of one machine consisting of one
+server running ansible.
+
+A cluster is network of /servers/.  Each server runs
+/services/ (e.g., firewall, sshd, etc.) and the server and
+the services need to be /configured/.  A configuration is
+either a set of rules (as in firewall and sshd) or a mapping
+(in the the case of network interfaces, hostname, etc.).
+
+Configurations are installed either by populating
+configuration files (e.g., =/etc/sysconfig/iptables= or
+=/etc/sshd_config=) or by running shell commands that effect
+a particular configuration (e.g., =adduser ansible= for
+adding a user on the server).
+
+=Ansible= is a tool that allows installation of
+configurations on a target server via ansible scripts
+written in the =yml= notation.  Ansible also allows
+arbitrary commands to be specified for execution on a target
+server.  Ansible simplifies the process of configuring a
+server by (a) keeping all the configuration information in
+related files, and (b) paramterizing (using variables and
+other mechanisms) configuration information across servers.
+
 
 * Requirements of the Cluster
 
-** Functional Requirements of Cluster
+** Functional Requirements 
 
-Build a cluster consisting of the following:
+The cluster allows its ansible server to be accessed (via
+ssh) and populated with a set of ansible scripts.  These
+scripts are then run on the ansible server periodically to
+configure the following: 
 
-  - Ansible :: this machine runs the ansible server.
+|------------------+----------------------------+---+---+---|
+| service/property | file or command            |   |   |   |
+|------------------+----------------------------+---+---+---|
+| firewall         | =/etc/sysconfig/iptables/= |   |   |   |
+|------------------+----------------------------+---+---+---|
+| sshd             | =/etc/sshd_config=         |   |   |   |
+|------------------+----------------------------+---+---+---|
+| IP               |                            |   |   |   |
+|------------------+----------------------------+---+---+---|
+| hostname         |                            |   |   |   |
+|------------------+----------------------------+---+---+---|
+| ADD MORE HERE    |                            |   |   |   |
+|------------------+----------------------------+---+---+---|
 
-** Security Requirements of Cluster
 
- 1) The only way to reach the network is through ssh and that too from a fixed
-    IP network (IIIT).
+** Security Requirements
 
-** Performance Requirements of Cluster
+ 1) The cluster's ansible server is accessible from the
+    outside only through =ssh= and that too from a fixed IP
+    network (IIIT).
+
+** Performance Requirements
 
 * Design of the cluster
 
@@ -65,11 +106,6 @@ Network
         One ethernet port for LAN is connected to 10.4.5.57 switch gig1/0/1. Corresponding IP of server for the port is 10.4.12.22/22. 
         The other LAN port is not connected anywhere 
 
-
-
-
-
-
 **** Software Configuration
        - IP address: 10.4.12.21
        - Operating System: Cent-OS 6.5
@@ -86,17 +122,37 @@ Network
        - Primary admin:
          Zubair
          
-
 *** Access Control
     SSH access using key based authentication is allowed on this machine.
     Zubair, Jayanth, Thirumal and Saurabh will have access to this machine by
     having their public keys placed on this machine.
+    - Disable LDAP based authentication on base1 by running following command
+    #+BEGIN_EXAMPLE
+    authconfig --disableldap --update
+    #+END_EXAMPLE
+    - copy the public keys of listed users to authorized keys of root account.
 
 ** Nodes
    The cluster contains the following machines:
- - [[./ansible.org][Ansible]]
- - [[./common.org][Common]]
+ - [[./ansible.org][Configuration Server]]
 
-* Testing of the cluster
+#+BEGIN_SRC yaml :tangle hosts :eval no
+[configuration-server]
+10.4.14.101
+#+END_SRC
+   
+** Configure the whole cluster
+#+BEGIN_SRC yaml :tangle site.yml :eval no
+  ---
+  # This Playbook would deploy the whole base1 cluster
+
+  - hosts: all
+  roles:
+    - role: common
+
+  - hosts: configuration_server
+  roles:
+    - role: configuration_server
+#+END_SRC
 
 

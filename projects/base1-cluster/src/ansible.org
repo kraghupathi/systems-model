@@ -18,15 +18,15 @@ is a specific set of configurations.
 The functional and security requirements for Ansible server are:
 ** Functional Requirements 
    <<requirement>>
-  1. Ansible server should manage itself
-     + At regular intervals, it should apply firewall rules.
-     + At regular intervals, it should update the packages of the OS and other
+  1. Ansible server manages itself as well as others listed below:
+     + At regular intervals, it applies firewall rules.
+     + At regular intervals, it updates the packages of the OS and other
        software.
 
-  2. Only one user called `ansible` is created on the Ansible server. This
-     user has sudo permissions, to run all commands.
+  2. Ansible server has only one `ansible` user and it has sudo permissions to
+     run all commands.
 
-  3. Only authorized VLEAD users log-in as ansible user.
+  3. Only authorized VLEAD users can log-in as ansible user.
      Copy the VLEAD authorized_keys file to the Ansible server, under the ansible user.
 
 ** Security Requirements
@@ -58,7 +58,7 @@ This server can be reached via ICMP (ping) requests.
 * Implementation
 ** Structure of the scripts
 The implementation of this system is in terms of a collection of Ansible scripts that
-configure the machine. These scripts are organized in the following way:
+configures the machine. Scripts are organized as follows:
 
 #+BEGIN_EXAMPLE
 
@@ -78,51 +78,67 @@ configure the machine. These scripts are organized in the following way:
 #+END_EXAMPLE
 
 ** Hardening, OS Updates etc.
-    [[Requirement]] is taken care by the common role.  More
-   information is [[./common.org][here]]
+   Common role takes care of  [[Requirement]]. More
+   information is [[./common.org][here]].
 
 ** Building the firewall rules
 
-*** The default contents of the firewall
+*** The default rules for filter table
+    Default policy for input, forward and output is set as ACCEPT. If
+    packet does not match any rule then this default action is applied
+    to the packet.  Packet counters are set to [0:0].  First counter
+    represents the number of packets that matched the rule for the
+    chain, and second counter represents the total size of the packets
+    that matched the rule.
     #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
      *filter
-     :INPUT ACCEPT [773:1200054]
+     :INPUT ACCEPT [0:0]
      :FORWARD ACCEPT [0:0]
-     :OUTPUT ACCEPT [940:1161060]
+     :OUTPUT ACCEPT [0:0]
     #+END_SRC
 
-*** Loop Back
-    The ansible server needs to accept all connections from loop back.
+
+*** Rule for INPUT loopback packets
+    Allow internal communication between services running within the
+    ansible, over loopback interface. Input interface is also
+    specified to avoid any security breach. The ansible server needs
+    to accept all connections from loop back.
 
     #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
-     #Accept all connections from loop-back
      -A INPUT -i lo -j ACCEPT
     #+END_SRC
 
-*** Ongoing Connections
-    The server should allow the ongoing connections
+
+*** Rule for ongoing connection from other machine 
+    Allow ansible to continue already related and established
+    connections. If a previous connection was passed and established
+    through the firewall, it is allowed to continue.
+
 
     #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
-     #Allow ongoing connections
      -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
     #+END_SRC
 
-*** SSH Rule
-    The server should allow *only* the VLEAD network to ssh to it on port 22.
+*** Rule for incoming SSH connection
+
+    The base1-cluster is on IIIT-H's local network
+    (10.0.0.0/8).  The ansible server is accessible 
+    via ssh (port 22) *only* from the IIIT-H local network. 
+
 
     #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
      -A INPUT -p tcp -m tcp --dport 22 -s 10.0.0.0/8 -j ACCEPT
     #+END_SRC
 
 *** ICMP Rule
-    The server should accept ping requests(ICMP) from anywhere
+    The server accepts ping requests(ICMP) from anywhere
 
     #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
      -A INPUT -p icmp -m icmp --icmp-type echo-request -j ACCEPT
     #+END_SRC
-
+    
 *** All other packets should be rejected
-    The incoming and outgoing packets on all other ports should be rejected.
+    The incoming and outgoing packets on all other ports are rejected.
 
     #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables :eval no
      -A INPUT -j REJECT
@@ -132,6 +148,11 @@ configure the machine. These scripts are organized in the following way:
 
 
 ** Copy and apply the firewall rules for the Ansible server
+- Firewall rules are set by following steps:
+     1) Setting up ansible server for the first time, iptables
+        configuration file is copied to the ansible machine.
+     2) Restart iptables service to enforce the configuration.
+
 #+BEGIN_SRC yaml :tangle roles/ansible/tasks/main.yml
 ---
   - name: Copy iptables configuration file for ansible server
@@ -141,46 +162,49 @@ configure the machine. These scripts are organized in the following way:
 
 
 ** Disable root login via ssh
-   Common role of ansible ensures that root login is enabled on all machines
-   but only via public key authentication. But for the Ansible server we want
-   to disable root login altogether via ssh.
+
+   Ansible role ensures that root login is enabled on all
+   machines but only via public key authentication. But for the
+   Ansible server we want to disable root login altogether via ssh.
 
    Hence, we modify the =sshd_config= file to disable root login.
    We assume =PermitRootLogin= parameter is already set to some value.
 
-#+BEGIN_SRC yaml :tangle roles/ansible/tasks/main.yml :eval no
+   #+BEGIN_SRC yaml :tangle roles/ansible/tasks/main.yml :eval no
 
-  - name: Disable root login via ssh
-    lineinfile: dest=/etc/sshd_config regexp="^PermitRootLogin .*" state=present line="PermitRootLogin no"
-#+END_SRC
+     - name: Disable root login via ssh
+       lineinfile: dest=/etc/sshd_config regexp="^PermitRootLogin .*" state=present line="PermitRootLogin no"
+   #+END_SRC
 
 ** Dependencies
-   All the variables go here. For Ansible server, currently no variables are
-   used.
-#+BEGIN_SRC yaml :tangle roles/ansible/meta/main.yml
----
-dependencies:
-- role: common_vars
-#+END_SRC
+   All the variables go here. For Ansible server, currently no
+   variables are used.
+   #+BEGIN_SRC yaml :tangle roles/ansible/meta/main.yml
+   ---
+   dependencies:
+   - role: common_vars
+   #+END_SRC
 
 ** Putting it together
-   The ansible server is managed with all the above rules. The implementation
-   is done in terms of defining suitable scripts for each role.  The top level
-   script is =build/code/ansible.yml=
+   The ansible server is managed with all the above rules. The
+   implementation is done in terms of defining suitable scripts for
+   each role.  The top level script is =build/code/ansible.yml=
 
-#+BEGIN_SRC yaml :tangle ansible.yml
----
-- name: Configure ansible server
-  hosts: ansible-server
-  remote_user: ansible
-  sudo: yes
-  roles:
-    - common
-    - ansible
-#+END_SRC
+   #+BEGIN_SRC yaml :tangle ansible.yml
+   ---
+   - name: Configure ansible server
+     hosts: ansible-server
+     remote_user: ansible
+     sudo: yes
+     roles:
+       - common
+       - ansible
+   #+END_SRC
 
 * Provisioning Of Ansible Machine
-This section describes the provisioning of ansible machine on cluster.
+ *How is this provisioning done? Please describe!*
+
+From the base1 machine (10.4.12.21).   
 
 ** Creation of Ansible machine
    + How ansible machine is created, IP-address of machine, Domain
@@ -199,7 +223,7 @@ This section describes the provisioning of ansible machine on cluster.
     - Domain name :: =ansible.staging.virtual-labs.ac.in=
     - IP Address :: =10.4.14.101=
    #+END_EXAMPLE
-*** Create user ansible
+*** Create user =ansible=
     #+BEGIN_EXAMPLE
     useradd ansible
     #+END_EXAMPLE
@@ -226,30 +250,24 @@ This section describes the provisioning of ansible machine on cluster.
      PermitRootLogin no
     #+END_SRC
 ** Access to Ansible machine
-   - VLEAD engineers who have their keys placed in =authorized_keys=
+   - Only VLEAD engineers who have their keys placed in =authorized_keys=
      of ansible machine can *only* access.
 ** Key based authentication is enabled on the Ansible machine.
    LDAP is disabled. Engineers with their public keys added to
    authorized_keys will only be able to ssh.
 ** List of VLEAD engineers who have access to Ansible machine
-   1. Dr.Venkatesh Choppella
-   2. Thirumal Ravula
-   3. Saurabh Barjatiya
-   4. Anon Ray
-   5. Zubair
-   6. Prakash B Hegde
-   7. Jayanth Sagar
-   8. Yogesh
-   9. Shiva Shankar
-  10. Soumya
-  11. Ambika
-  12. Khushpreet
-  13. Sripathi
-  14. Madhavi
-  15. Sanchita
+   - . Thirumal Ravula
+   - . Saurabh Barjatiya
+   - . Anon Ray
+   - . Zubair
+   - . Jayanth Sagar
+   - . Shiv Shankar
 
-* Testcases
+
+* Test Cases
+
 ** SSH should be allowed only from IIIT ip  using ansible user.
+
    Test ansible is allowed to ssh ansible user from IIIT network 
    #+BEGIN_SRC 
     ssh ansible@<Ansible machine IP>
