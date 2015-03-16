@@ -272,23 +272,118 @@ From the base1 machine (10.4.12.21).
    - . Jayanth Sagar
    - . Shiv Shankar
 
-
 * Test Cases
-
-** SSH should be allowed only from IIIT ip  using ansible user.
-
+** Test case ID :: ansible-test-case-1
+*** Description
+    SSH should be allowed only from IIIT network using ansible user.
+*** Steps to run the test case
    Test ansible is allowed to ssh ansible user from IIIT network 
    #+BEGIN_SRC 
-    ssh ansible@<Ansible machine IP>
+    ssh ansible@10.4.14.101
    #+END_SRC
-** Ansible machine must be pingable(ICMP) only from IIIT network.
+*** Expected result
+   #+BEGIN_EXAMPLE
+    Last login: ---Details of last login---
+    [ansible@localhost ~]$ 
+   #+END_EXAMPLE
+*** Result 
+    #+BEGIN_EXAMPLE
+    Last login: Mon Mar 16 02:28:31 2015 from ansible.staging.virtual-labs.ac.in
+    [ansible@localhost ~]$ 
+    #+END_EXAMPLE
+ 
+*** Test Passed :: Yes
+** Test case ID :: ansible-test-case-2
+*** Description
+    Ansible machine must be pingable(ICMP) only from IIIT network.
+*** Steps to run the test case
    Test ansible machine allow ping only from IIIT network
    #+BEGIN_SRC 
-   ping <Ansible machine IP>
+   ping 10.4.14.101
    #+END_SRC
-** All the other ports are blocked.
-   Test ansible machine to block all ports except 22
-   #+BEGIN_SRC 
-   telnet <Ansible machine IP> <Port Number>
-   #+END_SRC
+*** Expected result
+    #+BEGIN_EXAMPLE
+    PING 10.4.14.101 (10.4.14.101) 56(84) bytes of data.
+    64 bytes from 10.4.14.101: icmp_seq=1 ttl=64 time=0.038 ms
+    64 bytes from 10.4.14.101: icmp_seq=2 ttl=64 time=0.024 ms
+    64 bytes from 10.4.14.101: icmp_seq=3 ttl=64 time=0.024 ms
+    64 bytes from 10.4.14.101: icmp_seq=4 ttl=64 time=0.032 ms
+    --- 10.4.14.101 ping statistics ---
+    4 packets transmitted, 4 received, 0% packet loss, time 3482ms
+    rtt min/avg/max/mdev = 0.024/0.029/0.038/0.008 ms
+   #+END_EXAMPLE
+*** Result 
+    #+BEGIN_EXAMPLE
+    PING 10.4.14.101 (10.4.14.101) 56(84) bytes of data.
+    64 bytes from 10.4.14.101: icmp_seq=1 ttl=64 time=0.038 ms
+    64 bytes from 10.4.14.101: icmp_seq=2 ttl=64 time=0.024 ms
+    64 bytes from 10.4.14.101: icmp_seq=3 ttl=64 time=0.024 ms
+    64 bytes from 10.4.14.101: icmp_seq=4 ttl=64 time=0.032 ms
+    --- 10.4.14.101 ping statistics ---
+    4 packets transmitted, 4 received, 0% packet loss, time 3482ms
+    rtt min/avg/max/mdev = 0.024/0.029/0.038/0.008 ms
+
+    #+END_EXAMPLE
+*** Test Passed :: Yes
+** Test case ID :: ansible-test-case-3
+*** Description
+    All the other ports are blocked.
+*** Steps to run the test case
+    Test ansible machine to block all ports except 22
+    -Test port 22 
+    #+BEGIN_SRC 
+    telnet 10.4.14.101 22
+    #+END_SRC
+    -Test port 443 
+    #+BEGIN_SRC 
+    telnet 10.4.14.101 443
+    #+END_SRC
+    -Test port 80
+    #+BEGIN_SRC 
+    telnet 10.4.14.101 80
+    #+END_SRC
+*** Expected result
+    -Result for port 22 is expected to be opened
+    #+BEGIN_EXAMPLE
+    $ telnet 10.4.14.101 22
+      Trying 10.4.14.101...
+      Connected to 10.4.14.101.
+      Escape character is '^]'.
+      SSH-2.0-OpenSSH_5.3
+    #+END_EXAMPLE
+    -Result for port 443 is expected to be closed 
+    #+BEGIN_EXAMPLE
+    $ telnet 10.4.14.101 443
+      Trying 10.4.14.101...
+      telnet: Unable to connect to remote host: Connection refused
+    #+END_EXAMPLE
+    -Result for port 80 is expected to be closed
+    #+BEGIN_EXAMPLE
+    $ telnet 10.4.14.101 80
+      Trying 10.4.14.101...
+      telnet: Unable to connect to remote host: Connection refused
+    #+END_EXAMPLE
+
+*** Result 
+    -Result os testing port 22 
+    #+BEGIN_EXAMPLE
+    $ telnet 10.4.14.101 22
+      Trying 10.4.14.101...
+      Connected to 10.4.14.101.
+      Escape character is '^]'.
+      SSH-2.0-OpenSSH_5.3
+    #+END_EXAMPLE
+    -Result of testing port 443  
+    #+BEGIN_EXAMPLE
+    $ telnet 10.4.14.101 443
+      Trying 10.4.14.101...
+      telnet: Unable to connect to remote host: Connection refused
+    #+END_EXAMPLE
+    -Result of testing port 80 
+    #+BEGIN_EXAMPLE
+    $ telnet 10.4.14.101 80
+      Trying 10.4.14.101...
+      telnet: Unable to connect to remote host: Connection refused
+    #+END_EXAMPLE
+*** Test Passed :: Yes
 
