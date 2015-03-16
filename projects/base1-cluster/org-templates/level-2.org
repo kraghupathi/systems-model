@@ -1,5 +1,6 @@
-#+AUTHOR:    (C) Venkatesh Choppella
-#+EMAIL:     venkatesh.choppella@iiit.ac.in
+#+AUTHOR:    VLEAD
+#+EMAIL:     engg@virtual-labs.ac.in
+
 
 #+DESCRIPTION: 
 #+KEYWORDS: 
