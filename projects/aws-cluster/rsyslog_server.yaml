@@ -1,0 +1,9 @@
+---
+- name: This file configures rsyslog server
+  hosts: rsyslog_server
+  remote_user: root
+
+  roles:
+    - common
+    - ossec_client
+    - rsyslog_server

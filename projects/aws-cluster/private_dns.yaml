@@ -1,0 +1,17 @@
+---
+- name: This file configures private dns server
+  hosts: private_dns
+  remote_user: root
+
+  vars:
+    zone_file_prefix: private. 
+    zone_names: 
+      - virtual-labs.ac.in.
+      - vlabs.ac.in.
+    allow_query_from: "10.0.0.0/8; 172.16.0.0/12; 192.168.0.0/16;"
+
+  roles:
+    - common
+    - rsyslog_client
+    - ossec_client
+    - named_server

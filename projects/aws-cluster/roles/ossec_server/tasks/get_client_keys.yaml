@@ -1,0 +1,12 @@
+---
+- name: Copy add_agent.sh script
+  copy: src=add_agent.sh dest=/root/add_agent.sh mode=755 owner=root group=root
+
+- name: Add agent to the server
+  shell: /root/add_agent.sh "{{item}}"
+  with_items: ossec_client_ips
+  notify: 
+  - restart ossec
+
+- name: Get all client keys from OSSEC server to ansible server
+  fetch: src=/var/ossec/etc/client.keys dest=fetched 

@@ -1,0 +1,8 @@
+---
+ossec_url: https://github.com/ossec/ossec-hids/releases/download/v2.8.0/ossec-hids-2.8.tar.gz
+ossec_path: /root/ossec-hids-2.8
+webui_url: http://www.ossec.net/files/ossec-wui-0.8.tar.gz
+webui_path: /root/ossec-wui-0.8
+webui_install_path: /var/www/html/ossec
+extract_path: /root
+document_root: /var/www/html

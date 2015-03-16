@@ -1,0 +1,4 @@
+---
+  - name: start redmine
+    shell: runuser -l redmine -c "cd /home/redmine/redmine-2.6.2; ruby script/rails server webrick -e production -d >run.log 2>&1 &"
+

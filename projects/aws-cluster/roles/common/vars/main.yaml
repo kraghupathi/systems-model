@@ -1,0 +1,3 @@
+---
+epel_download_url: http://dl.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm
+epel_download_path: /root/epel-release-6-8.noarch.rpm

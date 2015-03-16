@@ -1,0 +1,124 @@
+* Machine creation and initial setup
+** Ansible machine creation
+   Create a machine for ansible installation.  Setup rpmfusion-free,
+   rpmfusion-nonfree, rpmforge and epel repos on the system.  Use
+   #+BEGIN_EXAMPLE
+   yum -y install ansible
+   #+END_EXAMPLE
+   to install ansible
+
+** Version control setup
+   Setup version control on ansible machine using:
+   #+BEGIN_EXAMPLE
+   yum -y install bzr
+   #+END_EXAMPLE
+
+** Setup basic ansible server
+   Setup trust based ssh from ansible_server to itself.  Edit or
+   create hosts file to point to correct ansible server.  Ensure that
+   run.sh refers to correct hosts file.  
+   
+   Ensure that roles/common_vars/vars/main.yaml has:
+   1. Correct ansible_server_ips.
+   2. Private_dns_ips and private_dns_zone are set to none.  
+
+   Use only roles common and ansible to setup ansible server
+   directly using ansible.yaml.
+
+** Setup ossec server
+   Create ossec server and setup trust based SSH to it.  Edit hosts
+   file to reflect correct IP of ossec-server.  Ensure that
+   roles/common_vars/vars/main.yaml has correct ossec_server_ip and
+   ossec_client_ips.  Ossec server should be setup with common and
+   ossec-server roles only.
+
+** Enable ossec-client role on ansible server
+   Enable ossec-client role on ansible server and other additional
+   servers that have been configured earlier.  Ensure that
+   roles/common_vars/vars/main.yaml clearly includes ansible server ip
+   under ossec_client_ips.
+
+** Create DNS servers
+   Create following servers:
+   - public DNS
+   - private DNS
+   For each of these servers do the following:
+   - Copy authorized keys from ansible server to these servers
+   - Add server IP in ossec_client_ips in
+     roles/common_vars/vars/main.yaml
+   - Add server IPs in hosts file 
+   
+   Specifically for DNS servers look at variables in respective DNS
+   server files.  Also ensure that roles/named_server/files has
+   correct zone files for each zone with necessary zone_file_prefix.
+
+** Configure machines to use private DNS
+   Edit roles/common_vars/vars/main.yaml and set private_dns_ips and
+   private_dns_zone values appropriately.
+
+** Create rsyslog server
+   Create a machine to setup rsyslog server.  Configure authorized
+   keys from ansible server to this machine.  Add the machine IP to
+   hosts file appropriately.  Add server IP to ossec_client_ips list.
+   Also add the rsyslog server to IP binding in private and public DNS
+   zone files.  Configure rsyslog server with common, ossec_client and
+   rsyslog_server roles.
+
+** Configure machines to send logs to rsyslog server
+   Add or uncomment role rsyslog_client on all servers except rsyslog_servers
+
+** Create machine for configuring reverseproxy
+   Note that proper configuration of this and future steps depends
+   upon availability of a few test labs.  Hence create a few lab
+   VMs/containers as necessary before continuing.  Also update private
+   DNS so that lab containers can be resolved using FQDN.
+
+   Create a machine for reverseproxy.  Add its IP to private DNS.  Add
+   its IP to ossec_client_IPs.  Configure reverseproxy with roles
+   common, ossec_client, rsyslog_client and reverseproxy_server roles.
+   Ensure that proxy_domains is set appropriately in
+   common_vars/vars/main.yaml file.  Private DNS must be setup
+   completely before reverseproxy is created.  
+   
+   Append following to /etc/httpd/conf/httpd.conf once after
+   =NameVirtualHost *:80= line
+   #+BEGIN_EXAMPLE
+   <VirtualHost *:80>
+    ServerAdmin contact@rekallsoftware.com
+    DocumentRoot /var/www/html
+    ServerName reverseproxy.virtual-labs.ac.in
+    ServerAlias reverseproxy.vlabs.ac.in
+    ErrorLog logs/reverseproxy.virtual-labs.ac.in-error_log
+    CustomLog logs/reverseproxy.virtual-labs.ac.in-access_log common
+   </VirtualHost>
+   #+END_EXAMPLE
+   and restart httpd.  This will help in seeing awstats statics on
+   reverseproxy machine.
+   
+** Create and configure router
+   Create a router machine.  Add its ip in private zone files.  Add it
+   to ossec_client_ips.  Ensure that values of following common_vars
+   is set appropriately:
+   - reverseproxy_ip
+   - public_dns_ip
+   - local_subnet
+   - router_interface_ip
+   Add authorized access from ansible server to router
+   
+   Update public DNS entries such that all requests resolve to router
+   public IP except ansible for which there is a dedicated public IP.
+
+* COMMENT time-record
+  |------------+---------+---------+---+---|
+  | 2015-03-13 | 06:23am | 07:26am |   |   |
+  |            | 07:54am | 08:44am |   |   |
+  |            | 06:20pm | 06:56pm |   |   |
+  |------------+---------+---------+---+---|
+  | 2015-03-14 | 08:00am | 09:00am |   |   |
+  |            | 10:00am | 11:43am |   |   |
+  |            | 07:32pm | 09:00pm |   |   |
+  |------------+---------+---------+---+---|
+  | 2015-03-16 | 12:30pm | 01:40pm |   |   |
+  |            | 03:50pm | 04:41pm |   |   |
+  |------------+---------+---------+---+---|
+

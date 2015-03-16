@@ -1,0 +1,26 @@
+[ansible_server]
+#multiple-ok
+192.168.122.101
+
+[ossec_server]
+#Only one allowed
+192.168.122.102
+
+[public_dns]
+#multiple ok
+192.168.122.103
+
+[private_dns]
+#multiple ok
+192.168.122.104
+
+[rsyslog_server]
+#multiple ok
+192.168.122.105
+
+[reverseproxy_server]
+#multiple ok
+192.168.122.106
+
+[router]
+192.168.122.107

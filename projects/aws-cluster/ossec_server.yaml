@@ -1,0 +1,9 @@
+---
+- name: This file configures ossec server
+  hosts: ossec_server 
+  remote_user: root
+
+  roles:
+    - common
+    - rsyslog_client
+    - ossec_server

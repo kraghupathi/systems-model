@@ -1,0 +1,48 @@
+---
+  - name: Download GLPI from Internet
+    get_url: url="{{ glpi_download_url }}"  dest="{{ glpi_local_path }}"
+    environment: proxy_env
+
+  - name: Install apache, mod_ssl, php, php-ldap, mysql-server, php-mysql, php-mbstring, php-gd 
+    yum: name={{ item }} state=present
+    with_items:
+      - httpd
+      - mod_ssl
+      - php
+      - php-ldap
+      - mysql-server
+      - php-mysql
+      - php-mbstring
+      - php-gd
+      - MySQL-python
+    environment: proxy_env
+    notify:
+      - restart apache
+   
+  - name: Extract glpi downloaded sources in /var/www/html
+    unarchive: copy=no src="{{ glpi_local_path }}" dest="{{ httpd_document_root }}" owner=apache group=apache #creates="{{ httpd_document_root }}"/index.html
+
+  - name: Copy index.html file to documentroot
+    copy: src=index.html dest="{{ httpd_document_root }}" owner=apache group=apache
+
+  - name: Ensure files are owned by apache user
+    file: dest="{{ httpd_document_root }}" owner=apache group=apache recurse=yes
+
+  - name: Start and Enable httpd, mysqld
+    service: name={{ item }} state=started enabled=yes
+    with_items:
+      - httpd
+      - mysqld
+
+  - name: Create glpi database in mysql
+    mysql_db: name=glpi
+  
+  - name: Create glpi user and give all permissions on glpi database
+    mysql_user: name=glpi password="{{ mysql_glpi_password }}" priv=glpi.*:ALL
+
+  - name: Print web instructions
+    debug: msg="Please visit http://{{ ansible_default_ipv4.address }} and setup glpi using MySQL username glpi, password {{ mysql_glpi_password }} and host localhost.  Login using glpi:glpi"
+  
+  - name: Print post setup instructions
+    debug: msg="After setup is complete also run glpi_postsetup.yaml playbook to remove install/install.php file from glpi server"
+

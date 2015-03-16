@@ -1,0 +1,10 @@
+---
+- name: Enable IP forwarding
+  lineinfile: line="net.ipv4.ip_forward = 1" regexp="^net.ipv4.ip_forward" dest=/etc/sysctl.conf
+  notify:
+    - enable_ip_forwarding
+
+- name: Set firewall rules
+  template: src=router_iptables dest=/etc/sysconfig/iptables
+  notify:
+    - restart iptables

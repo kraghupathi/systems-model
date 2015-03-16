@@ -1,0 +1,10 @@
+---
+- name: This file configures machine as router 
+  hosts: router
+  remote_user: root
+
+  roles:
+    - common
+    - ossec_client
+    - rsyslog_client
+    - router

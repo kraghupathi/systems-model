@@ -1,0 +1,19 @@
+$TTL 3600 
+@ SOA ns.rekallsoftware.com. root.rekallsoftware.com. (1 15m 5m 30d 1h) 
+       		IN	NS 	ns.rekallsoftware.com. 
+		IN	A 	192.168.122.107 
+
+ns		IN	A	192.168.122.107 
+www		IN	A	192.168.122.107
+ansible		IN	A	192.168.122.101 
+ossec-server	IN	CNAME   ns
+public-dns	IN	CNAME   ns 
+private-dns	IN	CNAME   ns
+rsyslog-server	IN	CNAME   ns
+reverseproxy	IN	CNAME   ns
+router		IN	CNAME   ns
+lab1		IN	CNAME   ns
+lab2		IN	CNAME   ns
+
+
+

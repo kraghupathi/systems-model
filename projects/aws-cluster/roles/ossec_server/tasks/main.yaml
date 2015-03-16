@@ -1,0 +1,10 @@
+---
+- include: setup_ossec_server.yaml
+- include: setup_webui.yaml
+- include: get_client_keys.yaml
+
+- name: Setup appropriate firewall for OSSEC server
+  template: src=ossec_iptables dest=/etc/sysconfig/iptables 
+  notify:
+    - restart iptables
+

@@ -1,0 +1,5 @@
+---
+- name: Configure strong firewall on ansible-server
+  template: src=ansible_iptables dest=/etc/sysconfig/iptables 
+  notify:
+    - restart iptables

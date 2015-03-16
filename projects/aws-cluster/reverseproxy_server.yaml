@@ -1,0 +1,10 @@
+---
+- name: This file configures reverseproxy server
+  hosts: reverseproxy_server
+  remote_user: root
+
+  roles:
+    - common
+    - ossec_client
+    - rsyslog_client
+    - reverseproxy_server

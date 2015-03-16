@@ -1,0 +1,18 @@
+---
+#Complete site configuration file
+#One yaml file for each server is included here
+#Server yaml file matches server FQDN
+
+- include: ansible_server.yaml
+
+- include: ossec_server.yaml
+
+- include: public_dns.yaml
+
+- include: private_dns.yaml
+
+- include: rsyslog_server.yaml
+
+- include: reverseproxy_server.yaml
+
+- include: router.yaml

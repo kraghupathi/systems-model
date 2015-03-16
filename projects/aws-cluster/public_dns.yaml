@@ -1,0 +1,17 @@
+---
+- name: This file configures public dns server
+  hosts: public_dns
+  remote_user: root
+
+  vars:
+    zone_file_prefix: public.
+    zone_names: 
+      - virtual-labs.ac.in.
+      - vlabs.ac.in.
+    allow_query_from: "any; "
+
+  roles:
+    - common
+    - rsyslog_client
+    - ossec_client
+    - named_server

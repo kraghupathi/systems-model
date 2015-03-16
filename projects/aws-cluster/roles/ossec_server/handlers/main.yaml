@@ -1,0 +1,9 @@
+---
+- name: restart ossec
+  service: name=ossec state=restarted
+
+- name: restart apache
+  service: name=httpd state=restarted
+
+- name: restart iptables
+  service: name=iptables state=restarted
