@@ -271,7 +271,8 @@ This section describes the provisioning of ansible machine on cluster.
   14. Madhavi
   15. Sanchita
 
-* Testcases
+* Test Cases
+
 ** SSH should be allowed only from IIIT ip  using ansible user.
    Test ansible is allowed to ssh ansible user from IIIT network 
    #+BEGIN_SRC 
