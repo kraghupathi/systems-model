@@ -146,7 +146,6 @@ configures the machine. Scripts are organized as follows:
      COMMIT
     #+END_SRC
 
-
 ** Copy and apply the firewall rules for the Ansible server
 - Firewall rules are set by following steps:
      1) Setting up ansible server for the first time, iptables
@@ -200,10 +199,10 @@ configures the machine. Scripts are organized as follows:
       - ansible
 #+END_SRC
 
-* Provisioning Of Ansible Machine
- *How is this provisioning done? Please describe!*
-
-From the base1 machine (10.4.12.21).   
+* Provisioning of Ansible Machine
+ 
+Provisioning is done by creating a bare new machine on base1.  
+From the base1 machine (10.4.12.21) execute following:   
 
 ** Creation of Ansible machine
    + How ansible machine is created, IP-address of machine, Domain
@@ -212,13 +211,14 @@ From the base1 machine (10.4.12.21).
    + Operating System: Centos-6.6
    + Memory: 256MB
    + Disk space: 2GB
-*** Creation of Ansible machine is created using:
+*** Ansible machine is created using:
    #+BEGIN_EXAMPLE
     vzctl create <ctid> --ostemplate centos-6-x86_64 --hostname <hostname> --ipadd <ip address>
     vzctl start <ctid>
     vzctl set <ctid> --nameserver inherit --ram 256M --swap 512M --onboot yes --save
    #+END_EXAMPLE 
 *** Domain name and IP address of Ansible machine
+   #+BEGIN_EXAMPLE
     - Domain name :: =ansible.staging.virtual-labs.ac.in=
     - IP Address :: =10.4.14.101=
    #+END_EXAMPLE
@@ -226,8 +226,17 @@ From the base1 machine (10.4.12.21).
     #+BEGIN_EXAMPLE
     useradd ansible
     #+END_EXAMPLE
-*** Generate ssh key and place it in git server
 *** Copy VLEAD users public keys to ansible user's authorized keys
+    #+BEGIN_SRC 
+    mkdir /home/ansible/.ssh
+    #+END_SRC
+   Copy all the public keys into /home/ansible/.ssh/authorized_keys 
+*** Generate ssh key for ansible user and copy it to it's own authorized_keys(to allow ssh from localhost)
+    #+BEGIN_SRC 
+    ssh-keygen -t rsa
+    cd /home/ansible/.ssh/
+    cat id_rsa.pub >> authorized_keys
+    #+END_SRC
 *** Provide root privilages to ansible user
     The below line is added to /etc/sudoers.
    #+BEGIN_EXAMPLE
@@ -267,7 +276,7 @@ From the base1 machine (10.4.12.21).
 *** Description
     SSH should be allowed only from IIIT network.
 *** Steps to run the test case
-    Test ansible is allowed to ssh from IIIT network 
+    Test ansible is allowed to ssh from IIIT network. 
    #+BEGIN_SRC 
     ssh ansible@10.4.14.101
    #+END_SRC
@@ -283,63 +292,57 @@ From the base1 machine (10.4.12.21).
     #+END_EXAMPLE
  
 *** Test Passed :: Yes
-** Test case ID :: ansible-test-case-2ked except port 22.
+** Test case ID :: ansible-test-case-2
+      Checking ports
 *** Steps to run the test case
-    Test ansible machine to block all ports except 22
-    -Test port 22 
+    Test ansible machine to block all ports except port 22
     #+BEGIN_SRC 
-    telnet 10.4.14.101 22
-    #+END_SRC
-    -Test port 443 
-    #+BEGIN_SRC 
-    telnet 10.4.14.101 443
-    #+END_SRC
-    -Test port 80
-    #+BEGIN_SRC 
-    telnet 10.4.14.101 80
+    $ nmap -v 10.4.14.101
     #+END_SRC
 *** Expected result
-    -Result for port 22 is expected to be opened
+   
     #+BEGIN_EXAMPLE
-    $ telnet 10.4.14.101 22
-      Trying 10.4.14.101...
-      Connected to 10.4.14.101.
-      Escape character is '^]'.
-      SSH-2.0-OpenSSH_5.3
-    #+END_EXAMPLE
-    -Result for port 443 is expected to be closed 
-    #+BEGIN_EXAMPLE
-    $ telnet 10.4.14.101 443
-      Trying 10.4.14.101...
-      telnet: Unable to connect to remote host: Connection refused
-    #+END_EXAMPLE
-    -Result for port 80 is expected to be closed
-    #+BEGIN_EXAMPLE
-    $ telnet 10.4.14.101 80
-      Trying 10.4.14.101...
-      telnet: Unable to connect to remote host: Connection refused
+     Starting Nmap 6.40 ( http://nmap.org ) at 2015-03-16 16:34 IST
+     Initiating Ping Scan at 16:34
+     Scanning 10.4.14.101 [2 ports]
+     Completed Ping Scan at 16:34, 0.02s elapsed (1 total hosts)
+     Initiating Parallel DNS resolution of 1 host. at 16:34
+     Completed Parallel DNS resolution of 1 host. at 16:34, 0.01s elapsed
+     Initiating Connect Scan at 16:34
+     Scanning 10.4.14.101 [1000 ports]
+     Discovered open port 22/tcp on 10.4.14.101
+     Completed Connect Scan at 16:34, 1.86s elapsed (1000 total ports)
+     Nmap scan report for 10.4.14.101
+     Host is up (0.033s latency).
+     Not shown: 999 closed ports
+     PORT   STATE SERVICE
+     22/tcp open  ssh
+
+     Read data files from: /usr/bin/../share/nmap
+     Nmap done: 1 IP address (1 host up) scanned in 1.92 seconds
     #+END_EXAMPLE
 
 *** Result 
-    -Result os testing port 22 
-    #+BEGIN_EXAMPLE
-    $ telnet 10.4.14.101 22
-      Trying 10.4.14.101...
-      Connected to 10.4.14.101.
-      Escape character is '^]'.
-      SSH-2.0-OpenSSH_5.3
-    #+END_EXAMPLE
-    -Result of testing port 443  
-    #+BEGIN_EXAMPLE
-    $ telnet 10.4.14.101 443
-      Trying 10.4.14.101...
-      telnet: Unable to connect to remote host: Connection refused
-    #+END_EXAMPLE
-    -Result of testing port 80 
-    #+BEGIN_EXAMPLE
-    $ telnet 10.4.14.101 80
-      Trying 10.4.14.101...
-      telnet: Unable to connect to remote host: Connection refused
+    -Result on running test
+     #+BEGIN_EXAMPLE
+     Starting Nmap 6.40 ( http://nmap.org ) at 2015-03-16 16:34 IST
+     Initiating Ping Scan at 16:34
+     Scanning 10.4.14.101 [2 ports]
+     Completed Ping Scan at 16:34, 0.02s elapsed (1 total hosts)
+     Initiating Parallel DNS resolution of 1 host. at 16:34
+     Completed Parallel DNS resolution of 1 host. at 16:34, 0.01s elapsed
+     Initiating Connect Scan at 16:34
+     Scanning 10.4.14.101 [1000 ports]
+     Discovered open port 22/tcp on 10.4.14.101
+     Completed Connect Scan at 16:34, 1.86s elapsed (1000 total ports)
+     Nmap scan report for 10.4.14.101
+     Host is up (0.033s latency).
+     Not shown: 999 closed ports
+     PORT   STATE SERVICE
+     22/tcp open  ssh
+
+     Read data files from: /usr/bin/../share/nmap
+     Nmap done: 1 IP address (1 host up) scanned in 1.92 seconds
     #+END_EXAMPLE
 *** Test Passed :: Yes
 
