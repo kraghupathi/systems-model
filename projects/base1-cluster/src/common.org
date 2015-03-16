@@ -5,8 +5,7 @@
 #+PROPERTY: exports code
 #+SETUPFILE: org-templates/level-0.org
 
-
-* Introduction:
+* Introduction
 This document describes the requirements, design and implementation of
 the common roles which is part of the cluster. A role is a specific
 set of configurations. Common Roles are the roles which will be
@@ -16,51 +15,69 @@ applied on all the deployed servers.
 
 The functional requirements for common roles are:
 
-** Functional Requirements
+|------------------+--------------------+-------------------------------|
+| *Requirement ID* | *Requirement*      | *Descritpion*                 |
+|------------------+--------------------+-------------------------------|
+| reqC-1.1         | Log file           | Summary of log files          |
+|                  | summary            | is mailed on daily            |
+|                  |                    | basis                         |
+|------------------+--------------------+-------------------------------|
+| reqC-1.2         | Securing the       | System is secured by not      |
+|                  | systems            | allowing the password         |
+|                  |                    | based access                  |
+|------------------+--------------------+-------------------------------|
+| reqC-1.3         | Auditing the       | Provision is made to          |
+|                  | servers            | audit all the commands run    |
+|                  |                    | on servers                    |
+|------------------+--------------------+-------------------------------|
+| reqC-1.4         | Blocking malicious | Suspected malicious attackers |
+|                  | attacks            | IP is captured and banned     |
+|------------------+--------------------+-------------------------------|
 
-  1. Below common roles are applied at periodic intervals:
-    + Ensure the consistency in IP table rules 
-    + Mailing the log summary at the end of the day
-    + Securing the system by not allowing password based access
-    + Capturing and banning the IP's of the suspected malicious
-      attacks
-    + Keeping the OS updated 
-    + Provision to audit the commonds run on the servers
+*Note:* the convention followed in naming the requirement is: 
+   + abbreviation for requirement: req
+   + state that they belong to commons: C
+   + identity number: starting from 1.1
 
-The security best practices needs to be followed in defining the
-roles. All processes suggested for =hardening a server= should be
-implemented. A good documentation can be found here: [[http://www.serverhardening.com/][Server Hardening]].
+The security best practices is to followed in defining the
+functionalities. Processes suggested for =hardening a server= is
+implemented. A good documentation on hardening a server can be found
+here: [[http://www.serverhardening.com/][Server Hardening]].
 
-* Design:    
-Common Roles Diagram
-#+CAPTION:  Common Roles Diagram
-#+LABEL:  fig-common-diagram
-#+NAME: fig-common-diagram
+* Design    
+Common roles will ensure that the functionalities will be applied on
+all the deployed servers.
 
-[[./diagrams/common-roles.png]]
+* Implementation
+The mentioned requirements are addressed and implemented the following
+way:
 
-Common roles will ensure that all the common roles will be applied on
-all the deployed servers, including the ansible.
-
-The diagram can be edited [[https://docs.google.com/a/vlabs.ac.in/drawings/d/1NHBwOSxikqlg5cXbgnKMfnUS_K_iMGkCClktXMOBTw8/edit][HERE]] 
-
-* Implementation:
- The requirements will be accomplished the following way:
-    + *Ensure the consistency in IP table rules* - Restarting the IP
-      tables
-    + *Mailing the log summary at the end of the day* - Installing and
-      configuring the logwatch
-    + *Securing the system by not allowing password based access* -
-      Disabling password-based ssh
-    + *Capturing and banning the IP's of the suspected malicious
-      attacks* - Installing and configuring fail2ban for ssh)
-    + *Keeping the OS updated* - Updating / patching the OS
-    + *Provision to audit the commonds run on the servers* - Logging /
-      Modfying the history behavior
-
+|------------------+--------------------+---------------------------------|
+| *Requirement ID* | *Requirement*      | *Implementation*                |
+|------------------+--------------------+---------------------------------|
+| reqC-1.1         | Log file           | Log file summary is obtained    |
+|                  | summary            | by installing and configuring   |
+|                  |                    | the tool - *logwatch*           |
+|------------------+--------------------+---------------------------------|
+| reqC-1.2         | Securing the       | The system is secured by        |
+|                  | systems            | allowing only the ssh based     |
+|                  |                    | acces. *sshd-config* file is    |
+|                  |                    | disabled for password based     |
+|                  |                    | access.                         |
+|------------------+--------------------+---------------------------------|
+| reqC-1.3         | Auditing the       | The commands run on the servers |
+|                  | servers            | is logged along with the time   |
+|                  |                    | stamp. The history settings is  |
+|                  |                    | configured to log the commands. |
+|------------------+--------------------+---------------------------------|
+| reqC-1.4         | Blocking malicious | Suspicious attackers IP is      |
+|                  | attacks            | captured and blocked using      |
+|                  |                    | using the tool - *fail2ban*.    |
+|------------------+--------------------+---------------------------------|
+  
 ** Structure of the scripts
 The implementation of this system is in terms of a collection of
-Ansible scripts that configure the machine.  These scripts are
+ansible scripts that configure the machine.  These scripts are
 organized in following way:
 
 #+BEGIN_EXAMPLE
@@ -78,28 +95,51 @@ organized in following way:
 |   |   |-- meta
 |   |   |   `-- main.yml
 |   |   |-- tasks
-|   |   |   |-- aliases.yml
 |   |   |   |-- history_config.yml
 |   |   |   |-- common_pkg.yml
-|   |   |   |-- restart_iptables.yml
 |   |   |   |-- logwatch.yml
 |   |   |   |-- sendmail_configure.yml
 |   |   |   |-- main.yml
 |   |   |   |-- fail2ban.yml
 |   |   |   `-- sshd_config.yml
-|   |   |-- templates
-|   |   `-- vars
 #+END_EXAMPLE
 
-*** Configuring the Fail2ban local file
-The Fail2ban local configuration file called =jail.local= has all the
-common rules which will be applied through Fail2ban.
-#+BEGIN_SRC shell :tangle roles/common/files/jail.local
+*** Log file summary
+Servers and applications generally create "log files" to keep track of
+activities taking place at any given time. Understanding the log files
+is of vital importance to know the past events and analyzing them to
+provide quick solutions, if needed any. *logwatch* is one of such
+available tool to capture and analyze the log file summary. The
+logwatch project page can be found [[http://sourceforge.net/projects/logwatch/][HERE]].
 
-#+END_SRC 
+The list of tasks to be carried out are:
+   + Installing the logwatch
+   + copying the configuration file
+   + setting up the mail server to mail the summary
+   + setting the detail to log to medium   
+
+#+BEGIN_SRC yaml :tangle roles/common/tasks/logwatch.yml
+---
+#install and copy logwatch configuration
+
+ - name: install logwatch
+   yum: name=logwatch state=present
+   environment: proxy_env
+
+ - name: copy logwatch.conf from default directory /etc/
+   command: /bin/cp -p /usr/share/logwatch/default.conf/logwatch.conf /etc/logwatch/conf/logwatch.conf
+
+ - name: changing the mail to in logwatch.conf, ensure proper owner,group, mode
+   lineinfile: dest=/etc/logwatch/conf/logwatch.conf state=present regexp='^MailTo =' line='MailTo = alerts@vlabs.ac.in' owner=root group=root mode=0644
+
+ - name: change the level of detail to medium
+   lineinfile: dest=/etc/logwatch/conf/logwatch.conf state=present regexp='^Detail =' line='Detail = Med'
+#+END_SRC
+
 
 
 *** History
+what, what who?
 History parameters will be exported for the following:
  - HISTTIMEFORMAT :: display the time stamp along with the command
                      history
@@ -119,16 +159,22 @@ HISTFILESIZE    = 100000
 export HISTTIMEFORMAT HISTSIZE HISTFILESIZE
 #+END_SRC 
 
+*** Configuring the Fail2ban local file
+The Fail2ban local configuration file called =jail.local= has all the
+common rules which will be applied through Fail2ban.
+#+BEGIN_SRC shell :tangle roles/common/files/jail.local
+
+#+END_SRC 
+
 *** Main file for Handlers
+describe the structure. 
 The main file in handlers restarts all the services to update the
 changes made to the services. 
 
-*Note:* The aliases services is commented as no functionality is
-applicable currently.
+here is a handler which restarts the services. Read about handlers. 
+
 #+BEGIN_SRC yaml :tangle roles/common/handlers/main.yml
 ---
-#  - name: rebuild aliases
-#    shell: newaliases
 
   - name: restart iptables
     service: name=iptables state=restarted
@@ -144,24 +190,13 @@ applicable currently.
 #+END_SRC
 
 *** Main file for meta
+Explain about meta.
 Main file includes the common vaiables defined in =common_vars=.
 #+BEGIN_SRC yaml :tangle roles/common/meta/main.yml
 ---
 dependencies:
   - role: common_vars
 #+END_SRC
-
-
-*** Aliases
-This files configures the aliases. 
-#+BEGIN_SRC yaml :tangle roles/common/tasks/aliases.yml
----
-- name: Configure aliases file
-  lineinfile: 'dest=/etc/aliases regexp=^root: line="root: alerts@vlabs.ac.in"'
-  notify:
-    - rebuild aliases
-#+END_SRC
-
 
 *** History Logs
 This file calls the =history.sh= and configures the history log for
@@ -185,33 +220,6 @@ to troubleshoot the issues
     proxy_env
 #+END_SRC 
 
-
-*** Configuring the logwatch
-This file installs the logwatch  and copies the configuration
-
-#+BEGIN_SRC yaml :tangle roles/common/tasks/logwatch.yml
----
-#install and copy logwatch configuration
-
- - name: install logwatch
-   yum: name=logwatch state=present
-   environment: proxy_env
-
-# - name: copy logwatch.conf
-#   copy: src=logwatch.conf dest=/etc/logwatch/conf/logwatch.conf owner=root group=root mode=0644
-
- - name: copy logwatch.conf from default directory /etc/
-   command: /bin/cp -p /usr/share/logwatch/default.conf/logwatch.conf /etc/logwatch/conf/logwatch.conf
-
- - name: changing the mail to in logwatch.conf, ensure proper owner,group, mode
-   lineinfile: dest=/etc/logwatch/conf/logwatch.conf state=present regexp='^MailTo =' line='MailTo = alerts@vlabs.ac.in' owner=root group=root mode=0644
-
- - name: change the level of detail to medium
-   lineinfile: dest=/etc/logwatch/conf/logwatch.conf state=present regexp='^Detail =' line='Detail = Med'
-
-#+END_SRC
-
-
 *** Configuring the Mail Records
 #+BEGIN_SRC yaml :tangle roles/common/tasks/sendmail_configure.yml
 ---
@@ -219,15 +227,14 @@ This file installs the logwatch  and copies the configuration
 
  - name: Change the smart host entry in /etc/mail/sendmail.mc
    lineinfile: dest=/etc/mail/sendmail.mc regexp="SMART_HOST" line="define(`SMART_HOST', `{{iiit_mail_server}}')dnl"  state=present mode=0644
+   
    notify: 
      - restart sendmail
 #+END_SRC
 
-
 *** Main file under tasks
 #+BEGIN_SRC yaml :tangle roles/common/tasks/main.yml
 ---
-
  - name: sshd_config
    include: sshd_config.yml
 
@@ -243,7 +250,6 @@ This file installs the logwatch  and copies the configuration
  - name: install common packages
    include: common_pkg.yml
 #+END_SRC
-
 
 *** Fail2ban
 Fail2ban scans log files and bans IPs that show the malicious signs of
@@ -274,10 +280,13 @@ tasks:
 The configuration file =jail.local= applies the required rules on all
 the servers.
 
-
 *** Calling the SSHD Configuration
 This file copies the modified sshd configuration and restarts using
 the handler.
+
+rework on the word call to  realize.
+
+
 
 #+BEGIN_SRC yaml :tangle roles/common/tasks/sshd_config.yml
 
