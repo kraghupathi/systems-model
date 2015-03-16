@@ -18,15 +18,15 @@ is a specific set of configurations.
 The functional and security requirements for Ansible server are:
 ** Functional Requirements 
    <<requirement>>
-  1. Ansible server should manage itself
-     + At regular intervals, it should apply firewall rules.
-     + At regular intervals, it should update the packages of the OS and other
+  1. Ansible server manages itself as well as others listed below:
+     + At regular intervals, it applies firewall rules.
+     + At regular intervals, it updates the packages of the OS and other
        software.
 
-  2. Only one user called `ansible` is created on the Ansible server. This
-     user has sudo permissions, to run all commands.
+  2. Ansible server has only one `ansible` user and it has sudo permissions to
+     run all commands.
 
-  3. Only authorized VLEAD users log-in as ansible user.
+  3. Only authorized VLEAD users can log-in as ansible user.
      Copy the VLEAD authorized_keys file to the Ansible server, under the ansible user.
 
 ** Security Requirements
@@ -58,7 +58,7 @@ This server can be reached via ICMP (ping) requests.
 * Implementation
 ** Structure of the scripts
 The implementation of this system is in terms of a collection of Ansible scripts that
-configure the machine. These scripts are organized in the following way:
+configures the machine. Scripts are organized as follows:
 
 #+BEGIN_EXAMPLE
 
@@ -78,8 +78,8 @@ configure the machine. These scripts are organized in the following way:
 #+END_EXAMPLE
 
 ** Hardening, OS Updates etc.
-    [[Requirement]] is taken care by the common role.  More
-   information is [[./common.org][here]]
+   Common role takes care of  [[Requirement]]. More
+   information is [[./common.org][here]].
 
 ** Building the firewall rules
 
@@ -233,7 +233,7 @@ This section describes the provisioning of ansible machine on cluster.
      PermitRootLogin no
     #+END_SRC
 ** Access to Ansible machine
-   - VLEAD engineers who have their keys placed in =authorized_keys=
+   - Only VLEAD engineers who have their keys placed in =authorized_keys=
      of ansible machine can *only* access.
 ** Key based authentication is enabled on the Ansible machine.
    LDAP is disabled. Engineers with their public keys added to
