@@ -97,7 +97,7 @@ configures the machine. Scripts are organized as follows:
      :OUTPUT ACCEPT [0:0]
     #+END_SRC
 
-
+    
 *** Rule for INPUT loopback packets
     Allow internal communication between services running within the
     ansible, over loopback interface. Input interface is also
@@ -222,6 +222,11 @@ From the base1 machine (10.4.12.21) execute following:
     - Domain name :: =ansible.staging.virtual-labs.ac.in=
     - IP Address :: =10.4.14.101=
    #+END_EXAMPLE
+*** Stop and uninstall httpd if it is present in template used to craete ansible machine
+    #+BEGIN_EXAMPLE
+    service httpd stop
+    yum remove httpd
+    #+END_EXAMPLE
 *** Create user =ansible=
     #+BEGIN_EXAMPLE
     useradd ansible
