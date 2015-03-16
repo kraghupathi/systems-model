@@ -135,14 +135,25 @@ Network
 
 ** Nodes
    The cluster contains the following machines:
- - [[./ansible.org][Ansible]]
-#+BEGIN_SRC YAML :tangle hosts
-[ansible-server]
-10.4.14.102
+ - [[./ansible.org][Configuration Server]]
+
+#+BEGIN_SRC yaml :tangle hosts :eval no
+[configuration-server]
+10.4.14.101
 #+END_SRC
 
+** Configure the whole cluster
+#+BEGIN_SRC yaml :tangle site.yml :eval no
+  ---
+  # This Playbook would deploy the whole base1 cluster
 
-   
-* Testing of the cluster
+  - hosts: all
+  roles:
+    - role: common
+
+  - hosts: configuration_server
+  roles:
+    - role: configuration_server
+#+END_SRC
 
 
