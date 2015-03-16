@@ -83,108 +83,124 @@ configures the machine. Scripts are organized as follows:
 
 ** Building the firewall rules
 
-*** The default contents of the firewall
+*** The default rules for filter table
+    Default policy for input, forward and output is set as ACCEPT. If
+    packet does not match any rule then this default action is applied
+    to the packet.  Packet counters are set to [0:0].  First counter
+    represents the number of packets that matched the rule for the
+    chain, and second counter represents the total size of the packets
+    that matched the rule.
     #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
      *filter
-     :INPUT ACCEPT [773:1200054]
+     :INPUT ACCEPT [0:0]
      :FORWARD ACCEPT [0:0]
-     :OUTPUT ACCEPT [940:1161060]
+     :OUTPUT ACCEPT [0:0]
     #+END_SRC
 
-*** Loop Back
-    The ansible server needs to accept all connections from loop back.
+*** Rule for INPUT loopback packets
+    Allow internal communication between services running within the
+    ansible, over loopback interface. Input interface is also
+    specified to avoid any security breach. The ansible server needs
+    to accept all connections from loop back.
 
     #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
-     #Accept all connections from loop-back
      -A INPUT -i lo -j ACCEPT
     #+END_SRC
 
-*** Ongoing Connections
-    The server should allow the ongoing connections
+*** Rule for ongoing connection from other machine 
+    Allow ansible to continue already related and established
+    connections. Previous connection would have passed through the
+    firewall and if they got established, connection is allowed to
+    continue.
 
     #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
-     #Allow ongoing connections
      -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
     #+END_SRC
 
-*** SSH Rule
-    The server should allow *only* the VLEAD network to ssh to it on port 22.
+*** Rule for incoming SSH connection
+    The server allows *only* the IIIT-H network to ssh to it on port 22.
 
     #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
      -A INPUT -p tcp -m tcp --dport 22 -s 10.0.0.0/8 -j ACCEPT
     #+END_SRC
 
 *** ICMP Rule
-    The server should accept ping requests(ICMP) from anywhere
+    The server accepts ping requests(ICMP) from anywhere
 
     #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
      -A INPUT -p icmp -m icmp --icmp-type echo-request -j ACCEPT
     #+END_SRC
 
 *** All other packets should be rejected
-    The incoming and outgoing packets on all other ports should be rejected.
+    The incoming and outgoing packets on all other ports are rejected.
 
     #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables :eval no
      -A INPUT -j REJECT
      -A FORWARD -j REJECT
      COMMIT
     #+END_SRC
-
+    
 ** Copy the firewall rules to the appropriate location
-#+BEGIN_SRC yaml :tangle roles/ansible/tasks/main.yml
----
-  - name: Copy iptables configuration file for ansible server
-    template: src=iptables dest=/etc/sysconfig/iptables mode=600 owner=root group=root
-    notify: restart iptables
-#+END_SRC
+   - Firewall rules are set by following steps:
+     1) Setting up ansible server for the first time, iptables
+        configuration file is copied to the ansible machine.
+     2) Restart iptables service to enforce the configuration.
+
+   #+BEGIN_SRC yaml :tangle roles/ansible/tasks/main.yml
+   ---
+     - name: Copy iptables configuration file for ansible server
+       template: src=iptables dest=/etc/sysconfig/iptables mode=600 owner=root group=root
+       notify: restart iptables
+   #+END_SRC
 
 ** Applying firewall rules
-   Whenever iptables are changed, the iptables service will be restarted.
+   Any changes in iptables configuration file to update the firewall is enforced
+   by restarting the iptables service.
 
-#+BEGIN_SRC yaml :tangle roles/ansible/handlers/main.yml :eval no
----
-  - name: restart iptables
-    service: name=iptables state=restarted
-#+END_SRC
+   #+BEGIN_SRC yaml :tangle roles/ansible/handlers/main.yml :eval no
+   ---
+     - name: restart iptables
+       service: name=iptables state=restarted
+   #+END_SRC
 
 ** Disable root login via ssh
-   Common role of ansible ensures that root login is enabled on all machines
-   but only via public key authentication. But for the Ansible server we want
-   to disable root login altogether via ssh.
+   Common role of ansible ensures that root login is enabled on all
+   machines but only via public key authentication. But for the
+   Ansible server we want to disable root login altogether via ssh.
 
    Hence, we modify the =sshd_config= file to disable root login.
    We assume =PermitRootLogin= parameter is already set to some value.
 
-#+BEGIN_SRC yaml :tangle roles/ansible/tasks/main.yml :eval no
+   #+BEGIN_SRC yaml :tangle roles/ansible/tasks/main.yml :eval no
 
-  - name: Disable root login via ssh
-    lineinfile: dest=/etc/sshd_config regexp="^PermitRootLogin .*" state=present line="PermitRootLogin no"
-#+END_SRC
+     - name: Disable root login via ssh
+       lineinfile: dest=/etc/sshd_config regexp="^PermitRootLogin .*" state=present line="PermitRootLogin no"
+   #+END_SRC
 
 ** Dependencies
-   All the variables go here. For Ansible server, currently no variables are
-   used.
-#+BEGIN_SRC yaml :tangle roles/ansible/meta/main.yml
----
-dependencies:
-- role: common_vars
-#+END_SRC
+   All the variables go here. For Ansible server, currently no
+   variables are used.
+   #+BEGIN_SRC yaml :tangle roles/ansible/meta/main.yml
+   ---
+   dependencies:
+   - role: common_vars
+   #+END_SRC
 
 ** Putting it together
-   The ansible server is managed with all the above rules. The implementation
-   is done in terms of defining suitable scripts for each role.  The top level
-   script is =build/code/ansible.yml=
+   The ansible server is managed with all the above rules. The
+   implementation is done in terms of defining suitable scripts for
+   each role.  The top level script is =build/code/ansible.yml=
 
-#+BEGIN_SRC yaml :tangle ansible.yml
----
-- name: Configure ansible server
-  hosts: ansible-server
-  remote_user: ansible
-  sudo: yes
-  roles:
-    - common
-    - ansible
-#+END_SRC
+   #+BEGIN_SRC yaml :tangle ansible.yml
+   ---
+   - name: Configure ansible server
+     hosts: ansible-server
+     remote_user: ansible
+     sudo: yes
+     roles:
+       - common
+       - ansible
+   #+END_SRC
 
 * Provisioning Of Ansible Machine
 This section describes the provisioning of ansible machine on cluster.
