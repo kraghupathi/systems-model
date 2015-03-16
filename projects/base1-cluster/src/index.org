@@ -5,23 +5,64 @@
 #+SETUPFILE: org-templates/level-0.org
 
 * Introduction
-We describe here the specification, design and implementation of a cluster of
-one machine, the ansible server.
+
+We describe here the specification, design and
+implementation of a cluster of one machine consisting of one
+server running ansible.
+
+A cluster is network of /servers/.  Each server runs
+/services/ (e.g., firewall, sshd, etc.) and the server and
+the services need to be /configured/.  A configuration is
+either a set of rules (as in firewall and sshd) or a mapping
+(in the the case of network interfaces, hostname, etc.).
+
+Configurations are installed either by populating
+configuration files (e.g., =/etc/sysconfig/iptables= or
+=/etc/sshd_config=) or by running shell commands that effect
+a particular configuration (e.g., =adduser ansible= for
+adding a user on the server).
+
+=Ansible= is a tool that allows installation of
+configurations on a target server via ansible scripts
+written in the =yml= notation.  Ansible also allows
+arbitrary commands to be specified for execution on a target
+server.  Ansible simplifies the process of configuring a
+server by (a) keeping all the configuration information in
+related files, and (b) paramterizing (using variables and
+other mechanisms) configuration information across servers.
+
 
 * Requirements of the Cluster
 
-** Functional Requirements of Cluster
+** Functional Requirements 
 
-Build a cluster consisting of the following:
+The cluster allows its ansible server to be accessed (via
+ssh) and populated with a set of ansible scripts.  These
+scripts are then run on the ansible server periodically to
+configure the following: 
 
-  - Ansible :: this machine runs the ansible server.
+|------------------+----------------------------+---+---+---|
+| service/property | file or command            |   |   |   |
+|------------------+----------------------------+---+---+---|
+| firewall         | =/etc/sysconfig/iptables/= |   |   |   |
+|------------------+----------------------------+---+---+---|
+| sshd             | =/etc/sshd_config=         |   |   |   |
+|------------------+----------------------------+---+---+---|
+| IP               |                            |   |   |   |
+|------------------+----------------------------+---+---+---|
+| hostname         |                            |   |   |   |
+|------------------+----------------------------+---+---+---|
+| ADD MORE HERE    |                            |   |   |   |
+|------------------+----------------------------+---+---+---|
 
-** Security Requirements of Cluster
 
- 1) The only way to reach the network is through ssh and that too from a fixed
-    IP network (IIIT).
+** Security Requirements
 
-** Performance Requirements of Cluster
+ 1) The cluster's ansible server is accessible from the
+    outside only through =ssh= and that too from a fixed IP
+    network (IIIT).
+
+** Performance Requirements
 
 * Design of the cluster
 

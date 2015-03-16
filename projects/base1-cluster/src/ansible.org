@@ -92,7 +92,7 @@ configures the machine. Scripts are organized as follows:
     #+END_SRC
 
 *** Loop Back
-    The ansible server needs to accept all connections from loop back.
+    The ansible server accepts all connections from loop back.
 
     #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
      #Accept all connections from loop-back
@@ -100,7 +100,7 @@ configures the machine. Scripts are organized as follows:
     #+END_SRC
 
 *** Ongoing Connections
-    The server should allow the ongoing connections
+    The server allows all  ongoing connections
 
     #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
      #Allow ongoing connections
@@ -108,21 +108,23 @@ configures the machine. Scripts are organized as follows:
     #+END_SRC
 
 *** SSH Rule
-    The server should allow *only* the VLEAD network to ssh to it on port 22.
+    The base1-cluster is on IIIT-H's local network
+    (10.0.0.0/8).  The ansible server is accessible 
+    via ssh (port 22) *only* from the IIIT-H local network. 
 
     #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
      -A INPUT -p tcp -m tcp --dport 22 -s 10.0.0.0/8 -j ACCEPT
     #+END_SRC
 
 *** ICMP Rule
-    The server should accept ping requests(ICMP) from anywhere
+    The server accepts ping requests(ICMP) from anywhere
 
     #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
      -A INPUT -p icmp -m icmp --icmp-type echo-request -j ACCEPT
     #+END_SRC
 
 *** All other packets should be rejected
-    The incoming and outgoing packets on all other ports should be rejected.
+    The incoming and outgoing packets on all other ports are rejected.
 
     #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables :eval no
      -A INPUT -j REJECT
@@ -139,6 +141,7 @@ configures the machine. Scripts are organized as follows:
 #+END_SRC
 
 ** Applying firewall rules
+
    Whenever iptables are changed, the iptables service will be restarted.
 
 #+BEGIN_SRC yaml :tangle roles/ansible/handlers/main.yml :eval no
@@ -148,9 +151,8 @@ configures the machine. Scripts are organized as follows:
 #+END_SRC
 
 ** Disable root login via ssh
-   Common role of ansible ensures that root login is enabled on all machines
-   but only via public key authentication. But for the Ansible server we want
-   to disable root login altogether via ssh.
+  On the Ansible server, root login via =ssh= is disable
+  altogether. 
 
    Hence, we modify the =sshd_config= file to disable root login.
    We assume =PermitRootLogin= parameter is already set to some value.
@@ -187,7 +189,9 @@ dependencies:
 #+END_SRC
 
 * Provisioning Of Ansible Machine
-This section describes the provisioning of ansible machine on cluster.
+ *How is this provisioning done? Please describe!*
+
+From the base1 machine (10.4.12.21).   
 
 ** Creation of Ansible machine
    + How ansible machine is created, IP-address of machine, Domain
@@ -206,7 +210,7 @@ This section describes the provisioning of ansible machine on cluster.
     - Domain name :: =ansible.staging.virtual-labs.ac.in=
     - IP Address :: =10.4.14.101=
    #+END_EXAMPLE
-*** Create user ansible
+*** Create user =ansible=
     #+BEGIN_EXAMPLE
     useradd ansible
     #+END_EXAMPLE
@@ -239,24 +243,15 @@ This section describes the provisioning of ansible machine on cluster.
    LDAP is disabled. Engineers with their public keys added to
    authorized_keys will only be able to ssh.
 ** List of VLEAD engineers who have access to Ansible machine
-   1. Dr.Venkatesh Choppella
-   2. Thirumal Ravula
-   3. Saurabh Barjatiya
-   4. Anon Ray
-   5. Zubair
-   6. Prakash B Hegde
-   7. Jayanth Sagar
-   8. Yogesh
-   9. Shiva Shankar
-  10. Soumya
-  11. Ambika
-  12. Khushpreet
-  13. Sripathi
-  14. Madhavi
-  15. Sanchita
+   - . Thirumal Ravula
+   - . Saurabh Barjatiya
+   - . Anon Ray
+   - . Zubair
+   - . Jayanth Sagar
+   - . Shiv Shankar
 
 * Testcases
-** SSH should be allowed only from IIIT ip  using ansible user.
+** SSH should be allowed only from the IIIT network using =ansible= user.
    Test ansible is allowed to ssh ansible user from IIIT network 
    #+BEGIN_SRC 
     ssh ansible@<Ansible machine IP>
