@@ -130,7 +130,8 @@ configure the machine. These scripts are organized in the following way:
      COMMIT
     #+END_SRC
 
-** Copy the firewall rules to the appropriate location
+
+** Copy and apply the firewall rules for the Ansible server
 #+BEGIN_SRC yaml :tangle roles/ansible/tasks/main.yml
 ---
   - name: Copy iptables configuration file for ansible server
@@ -138,14 +139,6 @@ configure the machine. These scripts are organized in the following way:
     notify: restart iptables
 #+END_SRC
 
-** Applying firewall rules
-   Whenever iptables are changed, the iptables service will be restarted.
-
-#+BEGIN_SRC yaml :tangle roles/ansible/handlers/main.yml :eval no
----
-  - name: restart iptables
-    service: name=iptables state=restarted
-#+END_SRC
 
 ** Disable root login via ssh
    Common role of ansible ensures that root login is enabled on all machines
