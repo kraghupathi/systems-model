@@ -131,7 +131,7 @@ COMMIT
 #+END_SRC
 
 ** Copy the firewall rules to the appropriate location
-#+BEGIN_SRC YAML :tangle roles/ansible/tasks/main.yml
+#+BEGIN_SRC yaml :tangle roles/ansible/tasks/main.yml
 ---
   - name: Copy iptables configuration file for ansible server
     template: src=iptables dest=/etc/sysconfig/iptables mode=600 owner=root group=root
@@ -141,10 +141,10 @@ COMMIT
 ** Applying firewall rules
    Whenever iptables are changed, the iptables service will be restarted.
 
-#+BEGIN_SRC YAML :tangle roles/ansible/handlers/main.yml :eval no
----
-  - name: restart iptables
-    service: name=iptables state=restarted
+#+BEGIN_SRC yaml :tangle roles/ansible/handlers/main.yml :eval no
+  ---
+    - name: restart iptables
+      service: name=iptables state=restarted
 #+END_SRC
 
 ** Disable root login via ssh
@@ -155,16 +155,15 @@ COMMIT
    Hence, we modify the =sshd_config= file to disable root login.
    We assume =PermitRootLogin= parameter is already set to some value.
 
-#+BEGIN_SRC YAML :tangle roles/ansible/tasks/main.yml :eval no
-
-  - name: Disable root login via ssh
-    lineinfile: dest=/etc/sshd_config regexp="^PermitRootLogin .*" state=present line="PermitRootLogin no"
+#+BEGIN_SRC yaml :tangle roles/ansible/tasks/main.yml :eval no
+    - name: Disable root login via ssh
+      lineinfile: dest=/etc/sshd_config regexp="^PermitRootLogin .*" state=present line="PermitRootLogin no"
 #+END_SRC
 
 ** Dependencies
    All the variables go here. For Ansible server, currently no variables are
    used.
-#+BEGIN_SRC YAML :tangle roles/ansible/meta/main.yml
+#+BEGIN_SRC yaml :tangle roles/ansible/meta/main.yml
 ---
 dependencies:
 - role: common_vars
@@ -254,7 +253,7 @@ This section describes the provisioning of ansible machine on cluster.
   14. Madhavi
   15. Sanchita
 
-* Testcases
+* Test Cases
 ** SSH should be allowed only from STPI(196.12.53.130).
    Test ansible is able to ssh from STPI
    #+BEGIN_SRC shell
