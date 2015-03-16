@@ -265,9 +265,9 @@ From the base1 machine (10.4.12.21).
 * Test Cases
 ** Test case ID :: ansible-test-case-1
 *** Description
-    SSH should be allowed only from IIIT network using ansible user.
+    SSH should be allowed only from IIIT network.
 *** Steps to run the test case
-   Test ansible is allowed to ssh ansible user from IIIT network 
+    Test ansible is allowed to ssh from IIIT network 
    #+BEGIN_SRC 
     ssh ansible@10.4.14.101
    #+END_SRC
@@ -283,41 +283,7 @@ From the base1 machine (10.4.12.21).
     #+END_EXAMPLE
  
 *** Test Passed :: Yes
-** Test case ID :: ansible-test-case-2
-*** Description
-    Ansible machine must be pingable(ICMP) only from IIIT network.
-*** Steps to run the test case
-   Test ansible machine allow ping only from IIIT network
-   #+BEGIN_SRC 
-   ping 10.4.14.101
-   #+END_SRC
-*** Expected result
-    #+BEGIN_EXAMPLE
-    PING 10.4.14.101 (10.4.14.101) 56(84) bytes of data.
-    64 bytes from 10.4.14.101: icmp_seq=1 ttl=64 time=0.038 ms
-    64 bytes from 10.4.14.101: icmp_seq=2 ttl=64 time=0.024 ms
-    64 bytes from 10.4.14.101: icmp_seq=3 ttl=64 time=0.024 ms
-    64 bytes from 10.4.14.101: icmp_seq=4 ttl=64 time=0.032 ms
-    --- 10.4.14.101 ping statistics ---
-    4 packets transmitted, 4 received, 0% packet loss, time 3482ms
-    rtt min/avg/max/mdev = 0.024/0.029/0.038/0.008 ms
-   #+END_EXAMPLE
-*** Result 
-    #+BEGIN_EXAMPLE
-    PING 10.4.14.101 (10.4.14.101) 56(84) bytes of data.
-    64 bytes from 10.4.14.101: icmp_seq=1 ttl=64 time=0.038 ms
-    64 bytes from 10.4.14.101: icmp_seq=2 ttl=64 time=0.024 ms
-    64 bytes from 10.4.14.101: icmp_seq=3 ttl=64 time=0.024 ms
-    64 bytes from 10.4.14.101: icmp_seq=4 ttl=64 time=0.032 ms
-    --- 10.4.14.101 ping statistics ---
-    4 packets transmitted, 4 received, 0% packet loss, time 3482ms
-    rtt min/avg/max/mdev = 0.024/0.029/0.038/0.008 ms
-
-    #+END_EXAMPLE
-*** Test Passed :: Yes
-** Test case ID :: ansible-test-case-3
-*** Description
-    All the other ports are blocked.
+** Test case ID :: ansible-test-case-2ked except port 22.
 *** Steps to run the test case
     Test ansible machine to block all ports except 22
     -Test port 22 
