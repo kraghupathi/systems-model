@@ -142,17 +142,6 @@ Network
 #+END_SRC
    
 ** Configure the whole cluster
-#+BEGIN_SRC yaml :tangle site.yml :eval no
-  ---
-  # This Playbook would deploy the whole base1 cluster
 
-  - hosts: all
-  roles:
-    - role: common
-
-  - hosts: configuration_server
-  roles:
-    - role: configuration_server
-#+END_SRC
 
 

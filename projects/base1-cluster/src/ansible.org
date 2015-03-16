@@ -90,7 +90,7 @@ configures the machine. Scripts are organized as follows:
     represents the number of packets that matched the rule for the
     chain, and second counter represents the total size of the packets
     that matched the rule.
-    #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
+    #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables :eval no
      *filter
      :INPUT ACCEPT [0:0]
      :FORWARD ACCEPT [0:0]
@@ -105,7 +105,7 @@ configures the machine. Scripts are organized as follows:
     to accept all connections from loop back.
 
     #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
-     -A INPUT -i lo -j ACCEPT
+    -A INPUT -i lo -j ACCEPT
     #+END_SRC
 
 
@@ -153,13 +153,13 @@ configures the machine. Scripts are organized as follows:
         configuration file is copied to the ansible machine.
      2) Restart iptables service to enforce the configuration.
 
-#+BEGIN_SRC yaml :tangle roles/ansible/tasks/main.yml
----
-  - name: Copy iptables configuration file for ansible server
-    template: src=iptables dest=/etc/sysconfig/iptables mode=600 owner=root group=root
-    notify: restart iptables
-#+END_SRC
 
+#+BEGIN_SRC yaml :tangle roles/ansible/tasks/main.yml :eval no
+---
+- name: Copy iptables configuration file for ansible server
+  template: src=iptables dest=/etc/sysconfig/iptables mode=600 owner=root group=root
+  notify: restart iptables
+#+END_SRC
 
 ** Disable root login via ssh
 
@@ -170,36 +170,35 @@ configures the machine. Scripts are organized as follows:
    Hence, we modify the =sshd_config= file to disable root login.
    We assume =PermitRootLogin= parameter is already set to some value.
 
-   #+BEGIN_SRC yaml :tangle roles/ansible/tasks/main.yml :eval no
-
-     - name: Disable root login via ssh
-       lineinfile: dest=/etc/sshd_config regexp="^PermitRootLogin .*" state=present line="PermitRootLogin no"
-   #+END_SRC
+#+BEGIN_SRC yaml :tangle roles/ansible/tasks/main.yml :eval no
+- name: Disable root login via ssh
+  lineinfile: dest=/etc/sshd_config regexp="^PermitRootLogin .*" state=present line="PermitRootLogin no"
+#+END_SRC
 
 ** Dependencies
    All the variables go here. For Ansible server, currently no
    variables are used.
-   #+BEGIN_SRC yaml :tangle roles/ansible/meta/main.yml
-   ---
-   dependencies:
-   - role: common_vars
-   #+END_SRC
+#+BEGIN_SRC yaml :tangle roles/ansible/meta/main.yml
+---
+  dependencies:
+  - role: common_vars
+#+END_SRC
 
 ** Putting it together
    The ansible server is managed with all the above rules. The
    implementation is done in terms of defining suitable scripts for
    each role.  The top level script is =build/code/ansible.yml=
 
-   #+BEGIN_SRC yaml :tangle ansible.yml
-   ---
-   - name: Configure ansible server
-     hosts: ansible-server
-     remote_user: ansible
-     sudo: yes
-     roles:
-       - common
-       - ansible
-   #+END_SRC
+#+BEGIN_SRC yaml :tangle site.yml
+---
+  - name: Configure ansible server
+    hosts: configuration-server
+    remote_user: ansible
+    sudo: yes
+    roles:
+      - common
+      - ansible
+#+END_SRC
 
 * Provisioning Of Ansible Machine
  *How is this provisioning done? Please describe!*
@@ -213,7 +212,7 @@ From the base1 machine (10.4.12.21).
    + Operating System: Centos-6.6
    + Memory: 256MB
    + Disk space: 2GB
-*** Ansible machine is created using:
+*** Creation of Ansible machine is created using:
    #+BEGIN_EXAMPLE
     vzctl create <ctid> --ostemplate centos-6-x86_64 --hostname <hostname> --ipadd <ip address>
     vzctl start <ctid>

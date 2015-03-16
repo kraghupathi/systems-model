@@ -9,6 +9,10 @@ build: init
 init:
 	mkdir -p ${BUILD_DEST}
 
+export:
+	rsync -auvz ${BUILD_DEST}/code ansible@10.4.14.101:/home/ansible/
+
+
 clean:
 	rm -rf ${BUILD_DEST}
 
