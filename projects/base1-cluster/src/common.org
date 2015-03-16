@@ -104,19 +104,19 @@ organized in following way:
 |   |   |   `-- sshd_config.yml
 #+END_EXAMPLE
 
-*** Log file summary
+*** Log File Summary
 Servers and applications generally create "log files" to keep track of
 activities taking place at any given time. Understanding the log files
 is of vital importance to know the past events and analyzing them to
 provide quick solutions, if needed any. *logwatch* is one of such
-available tool to capture and analyze the log file summary. The
+available tools to capture and analyze the log file summary. The
 logwatch project page can be found [[http://sourceforge.net/projects/logwatch/][HERE]].
 
 The list of tasks to be carried out are:
    + Installing the logwatch
-   + copying the configuration file
-   + setting up the mail server to mail the summary
-   + setting the detail to log to medium   
+   + Copying the configuration file
+   + Setting up the mail server to mail the summary
+   + Setting the detail of log level to =medium=   
 
 #+BEGIN_SRC yaml :tangle roles/common/tasks/logwatch.yml
 ---
@@ -128,7 +128,7 @@ The list of tasks to be carried out are:
 
  - name: copy logwatch.conf from default directory /etc/
    command: /bin/cp -p /usr/share/logwatch/default.conf/logwatch.conf /etc/logwatch/conf/logwatch.conf
-
+  
  - name: changing the mail to in logwatch.conf, ensure proper owner,group, mode
    lineinfile: dest=/etc/logwatch/conf/logwatch.conf state=present regexp='^MailTo =' line='MailTo = alerts@vlabs.ac.in' owner=root group=root mode=0644
 
@@ -137,10 +137,57 @@ The list of tasks to be carried out are:
 #+END_SRC
 
 
+*** Mail Exchange Records
+The log summary is mailed to the admins periodically to the email-id
+=alerts@vlabs.ac.in= . The mail exchange records is configured to
+look-up and send emails via iiit-h network.
 
-*** History
-what, what who?
-History parameters will be exported for the following:
+#+BEGIN_SRC yaml :tangle roles/common/tasks/sendmail_configure.yml
+---
+#This play configures smart hosts
+
+ - name: Change the smart host entry in /etc/mail/sendmail.mc
+   lineinfile: dest=/etc/mail/sendmail.mc regexp="SMART_HOST" line="define(`SMART_HOST', `{{iiit_mail_server}}')dnl"  state=present mode=0644
+   
+   notify: 
+     - restart sendmail
+#+END_SRC
+
+
+*** Securing The Systems
+The systems are secured by allowing only the ssh based
+access. Password based access is diabled. A good documentation on SSH
+can be found [[http://en.wikipedia.org/wiki/Secure_Shell][HERE]].
+
+#+BEGIN_SRC yaml :tangle roles/common/tasks/sshd_config.yml
+---
+#Modify  sshd_config and call ssh restart handler
+   
+ - name: Permit root login without-pasword(key based)
+   lineinfile: dest=/etc/ssh/sshd_config regexp='PermitRootLogin ' line='PermitRootLogin without-password' state=present
+
+ - name: Disable Password authentication
+   lineinfile: dest=/etc/ssh/sshd_config regexp='PasswordAuthentication ' line='PasswordAuthentication no' 
+
+ - name: Enable Public key authentication
+   lineinfile: dest=/etc/ssh/sshd_config regexp='PubkeyAuthentication ' line='PubkeyAuthentication yes'
+
+ - name: Do not permit empty password, also ensure proper owner, group and permissions
+   lineinfile: dest=/etc/ssh/sshd_config regexp='PermitEmptyPasswords ' line='PermitEmptyPasswords no' mode=0600 owner=root group=root
+
+#Call handler to restart sshd
+   notify:
+     - restart sshd
+
+#+END_SRC
+       
+
+
+*** Auditing the Servers
+Servers are audited by maintainig a log of all the commands run on
+them  along with the time stamp.
+
+Following history parameters are set for audit purpose:
  - HISTTIMEFORMAT :: display the time stamp along with the command
                      history
  - HISTSIZE       :: is the number of lines or commands that are stored in
@@ -159,26 +206,87 @@ HISTFILESIZE    = 100000
 export HISTTIMEFORMAT HISTSIZE HISTFILESIZE
 #+END_SRC 
 
-*** Configuring the Fail2ban local file
-The Fail2ban local configuration file called =jail.local= has all the
-common rules which will be applied through Fail2ban.
-#+BEGIN_SRC shell :tangle roles/common/files/jail.local
-
+The above parameters are set and configured everyday.
+#+BEGIN_SRC yaml :tangle roles/common/tasks/history_config.yml
+---
+#This play copies a stock history file
+ - name: copying history
+   copy: src=history.sh dest=/etc/profile.d/history.sh owner=root group=root mode=0655
 #+END_SRC 
 
-*** Main file for Handlers
-describe the structure. 
-The main file in handlers restarts all the services to update the
-changes made to the services. 
 
-here is a handler which restarts the services. Read about handlers. 
 
+
+*** Blocking Malicious Attacks
+Fail2ban tool is used to block the malicious attackers. Fail2ban scans
+log files and bans IPs that show the malicious signs of agents seeking
+for exploits. It comes with filters for various services like ssh,
+apache, mysql etc. Fail2Ban can be used to update firewall rules to
+reject the IP addresses for a specified amount of time. Even other
+services like sending mails, alerts can be configured.
+
+*Python* is the pre-requisite package to be installed to run Fail2ban
+service. More details can be found in the [[http://www.fail2ban.org/wiki/index.php/Main_Page][WIKI]] page of Fail2ban. 
+
+The objective is to install Fail2ban on all the servers and apply the
+local rules.
+#+BEGIN_SRC yaml :tangle roles/common/tasks/fail2ban.yml
+---
+#this play will install and configure fail2ban
+
+- name: install fail2ban
+  yum: name=fail2ban state=installed
+
+- name: copy jail.local
+  copy: src=jail.local dest=/etc/fail2ban owner=root group=root mode=0644
+  
+  notify:
+   - restart fail2ban
+#+END_SRC
+
+The configuration file =jail.local= applies the required rules on all
+the servers.
+#+BEGIN_SRC shell :tangle roles/common/files/jail.local
+[ssh-iptables]
+
+enabled  = true
+filter   = sshd
+action   = iptables[name=SSH, port=ssh, protocol=tcp]
+           sendmail-whois[name=SSH, dest=you@example.com, sender=fail2ban@example.com, sendername="Fail2Ban"]
+logpath  = /var/log/secure
+maxretry = 5
+#+END_SRC 
+
+
+*** Bind Utilities
+Bind utilities is a common package which includes the client side
+programs nslookup, dig and host. The utilities are used by admins to
+trouble shoot the network related issues.
+#+BEGIN_SRC yaml :tangle roles/common/tasks/common_pkg.yml
+---
+#this play installs the common packages needed by admins to troubleshoot issues
+ - name: install bind-utils
+   yum: name=bind-utils state=present
+   environment:
+    proxy_env
+#+END_SRC 
+
+
+*** Comman Variables
+Several comman variables which are common to network are defined in
+=common_vars= file which needs to be included. 
+#+BEGIN_SRC yaml :tangle roles/common/meta/main.yml
+---
+dependencies:
+  - role: common_vars
+#+END_SRC
+
+
+*** Handlers
+Handlers catch the notification to restart the various services. This
+service is used by ssh, mail and fail2ban.
 #+BEGIN_SRC yaml :tangle roles/common/handlers/main.yml
 ---
-
-  - name: restart iptables
-    service: name=iptables state=restarted
-
   - name: restart sshd
     service: name=sshd state=restarted
   
@@ -189,50 +297,9 @@ here is a handler which restarts the services. Read about handlers.
     service: name=fail2ban state=restarted
 #+END_SRC
 
-*** Main file for meta
-Explain about meta.
-Main file includes the common vaiables defined in =common_vars=.
-#+BEGIN_SRC yaml :tangle roles/common/meta/main.yml
----
-dependencies:
-  - role: common_vars
-#+END_SRC
 
-*** History Logs
-This file calls the =history.sh= and configures the history log for
-the commands run everyday.
-#+BEGIN_SRC yaml :tangle roles/common/tasks/history_config.yml
----
-#This play copies a stock history file
- - name: copying history
-   copy: src=history.sh dest=/etc/profile.d/history.sh owner=root group=root mode=0655
-#+END_SRC 
-
-*** Common Packages
-This file installs the common packages (bind utils) required by admins
-to troubleshoot the issues
-#+BEGIN_SRC yaml :tangle roles/common/tasks/common_pkg.yml
----
-#this play installs the common packages needed by admins to troubleshoot issues
- - name: install bind-utils
-   yum: name=bind-utils state=present
-   environment:
-    proxy_env
-#+END_SRC 
-
-*** Configuring the Mail Records
-#+BEGIN_SRC yaml :tangle roles/common/tasks/sendmail_configure.yml
----
-#This play configures smart hosts
-
- - name: Change the smart host entry in /etc/mail/sendmail.mc
-   lineinfile: dest=/etc/mail/sendmail.mc regexp="SMART_HOST" line="define(`SMART_HOST', `{{iiit_mail_server}}')dnl"  state=present mode=0644
-   
-   notify: 
-     - restart sendmail
-#+END_SRC
-
-*** Main file under tasks
+*** Collaborating the tasks
+All the tasks are collaborated in single main file. 
 #+BEGIN_SRC yaml :tangle roles/common/tasks/main.yml
 ---
  - name: sshd_config
@@ -251,65 +318,4 @@ to troubleshoot the issues
    include: common_pkg.yml
 #+END_SRC
 
-*** Fail2ban
-Fail2ban scans log files and bans IPs that show the malicious signs of
-agents seeking for exploits. It comes with filters for various
-services like ssh, apache, mysql etc. Fail2Ban can be used to update
-firewall rules to reject the IP addresses for a specified amount of
-time. Even other services like sending mails, alerts can be
-configured.
 
-*Python* is the pre-requisite package to be installed to run Fail2ban
-service. More details can be found in the [[http://www.fail2ban.org/wiki/index.php/Main_Page][WIKI]] page of Fail2ban. 
-
-The objective is to install Fail2ban on all the servers and apply the
-local rules.
-#+BEGIN_SRC yaml :tangle roles/common/tasks/fail2ban.yml
----
-tasks:
-   - name: install fail2ban package
-     apt: pkg=fail2ban state=present
-     when: ansible_distribution=='Debian' or ansible_distribution=='Ubuntu'
-     sudo: yes
-   
-   - name: copy fail2ban local config
-     file: src=jail.local dest=/etc/fail2ban/jail.local owner=root group=root  mode=0644
-     sudo: yes 
-#+END_SRC
-
-The configuration file =jail.local= applies the required rules on all
-the servers.
-
-*** Calling the SSHD Configuration
-This file copies the modified sshd configuration and restarts using
-the handler.
-
-rework on the word call to  realize.
-
-
-
-#+BEGIN_SRC yaml :tangle roles/common/tasks/sshd_config.yml
-
-#Modify  sshd_config and call ssh restart handler
-
-# - name: copy sshd_config
-#   copy: src=sshd_config dest=/etc/ssh/sshd_config owner=root group=root mode=0644
-
- - name: Permit root login without-pasword(key based)
-   lineinfile: dest=/etc/ssh/sshd_config regexp='PermitRootLogin ' line='PermitRootLogin without-password' state=present
-
- - name: Disable Password authentication
-   lineinfile: dest=/etc/ssh/sshd_config regexp='PasswordAuthentication ' line='PasswordAuthentication no'
-
- - name: Enable Public key authentication
-   lineinfile: dest=/etc/ssh/sshd_config regexp='PubkeyAuthentication ' line='PubkeyAuthentication yes'
-
- - name: Do not permit empty password, also ensure proper owner, group and permissions
-   lineinfile: dest=/etc/ssh/sshd_config regexp='PermitEmptyPasswords ' line='PermitEmptyPasswords no' mode=0600 owner=root group=root
-
-#Call handler to restart sshd
-   notify:
-     - restart sshd
-
-#+END_SRC
-       
