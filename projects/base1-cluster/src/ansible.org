@@ -109,9 +109,8 @@ configures the machine. Scripts are organized as follows:
 
 *** Rule for ongoing connection from other machine 
     Allow ansible to continue already related and established
-    connections. Previous connection would have passed through the
-    firewall and if they got established, connection is allowed to
-    continue.
+    connections. If a previous connection was passed and established
+    through the firewall, it is allowed to continue.
 
     #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
      -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
@@ -130,7 +129,7 @@ configures the machine. Scripts are organized as follows:
     #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
      -A INPUT -p icmp -m icmp --icmp-type echo-request -j ACCEPT
     #+END_SRC
-
+    
 *** All other packets should be rejected
     The incoming and outgoing packets on all other ports are rejected.
 
@@ -164,7 +163,7 @@ configures the machine. Scripts are organized as follows:
    #+END_SRC
 
 ** Disable root login via ssh
-   Common role of ansible ensures that root login is enabled on all
+   Ansible role ensures that root login is enabled on all
    machines but only via public key authentication. But for the
    Ansible server we want to disable root login altogether via ssh.
 
