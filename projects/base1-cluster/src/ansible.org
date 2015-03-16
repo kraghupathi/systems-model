@@ -172,7 +172,7 @@ configures the machine. Scripts are organized as follows:
 
 #+BEGIN_SRC yaml :tangle roles/ansible/tasks/main.yml :eval no
 - name: Disable root login via ssh
-  lineinfile: dest=/etc/sshd_config regexp="^PermitRootLogin .*" state=present line="PermitRootLogin no"
+  lineinfile: dest=/etc/ssh/sshd_config regexp="^PermitRootLogin .*" state=present line="PermitRootLogin no"
 #+END_SRC
 
 ** Dependencies
