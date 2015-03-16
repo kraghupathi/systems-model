@@ -136,7 +136,6 @@ The list of tasks to be carried out are:
    lineinfile: dest=/etc/logwatch/conf/logwatch.conf state=present regexp='^Detail =' line='Detail = Med'
 #+END_SRC
 
-
 *** Mail Exchange Records
 The log summary is mailed to the admins periodically to the email-id
 =alerts@vlabs.ac.in= . The mail exchange records is configured to
@@ -152,7 +151,6 @@ look-up and send emails via iiit-h network.
    notify: 
      - restart sendmail
 #+END_SRC
-
 
 *** Securing The Systems
 The systems are secured by allowing only the ssh based
@@ -251,7 +249,6 @@ action   = iptables[name=SSH, port=ssh, protocol=tcp]
 logpath  = /var/log/secure
 maxretry = 5
 #+END_SRC 
-
 
 *** Bind Utilities
 Bind utilities is a common package which includes the client side
