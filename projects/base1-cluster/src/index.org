@@ -106,11 +106,6 @@ Network
         One ethernet port for LAN is connected to 10.4.5.57 switch gig1/0/1. Corresponding IP of server for the port is 10.4.12.22/22. 
         The other LAN port is not connected anywhere 
 
-
-
-
-
-
 **** Software Configuration
        - IP address: 10.4.12.21
        - Operating System: Cent-OS 6.5
@@ -127,11 +122,15 @@ Network
        - Primary admin:
          Zubair
          
-
 *** Access Control
     SSH access using key based authentication is allowed on this machine.
     Zubair, Jayanth, Thirumal and Saurabh will have access to this machine by
     having their public keys placed on this machine.
+    - Disable LDAP based authentication on base1 by running following command
+    #+BEGIN_EXAMPLE
+    authconfig --disableldap --update
+    #+END_EXAMPLE
+    - copy the public keys of listed users to authorized keys of root account.
 
 ** Nodes
    The cluster contains the following machines:
@@ -141,7 +140,7 @@ Network
 [configuration-server]
 10.4.14.101
 #+END_SRC
-
+   
 ** Configure the whole cluster
 #+BEGIN_SRC yaml :tangle site.yml :eval no
   ---
