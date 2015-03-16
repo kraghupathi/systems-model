@@ -298,7 +298,8 @@ From the base1 machine (10.4.12.21) execute following:
  
 *** Test Passed :: Yes
 ** Test case ID :: ansible-test-case-2
-      Checking ports
+*** Description
+   Checking ports
 *** Steps to run the test case
     Test ansible machine to block all ports except port 22
     #+BEGIN_SRC 
