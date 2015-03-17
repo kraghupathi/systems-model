@@ -13,10 +13,11 @@ This server configures all other servers in the cluster, through
 multiple roles.  A role is a specific set of configurations.
 
 * Requirements
-The functional and security requirements for Ansible server are:
+The functional and security requirements for Configuration server are:
 ** Functional Requirements 
 
-  1. <<1>> Ansible server manages itself as well as others listed below:
+  1. <<1>> Configuration server manages itself as well as others
+     listed below:
   *COMMENT* - Instead of manages itself, Ansible configures all the nodes
 in the cluster including itself and ensures that the configuration is
 consistent. Rephrase point 3.
@@ -32,7 +33,7 @@ consistent. Rephrase point 3.
      Copy the VLEAD authorized_keys file to the Ansible server, under the ansible user.
 
 ** Security Requirements
-  *COMMENT* Enumerate the firewall rules. (1 is not applicable probably)
+   *COMMENT* Enumerate the firewall rules. (1 is not applicable probably)
    1. Apply Firewall Rules.
    2. SSH/Port 22 accessible *ONLY* from VLEAD IP range.
    3. Allow ICMP (Ping)
@@ -155,7 +156,7 @@ configures the machine. Scripts are organized as follows:
     #+END_SRC
 
 ** Copy and apply the firewall rules for the Ansible server
-   *COMMENT*- Rephrase the entire description and heading
+    *COMMENT*- Rephrase the entire description and heading
  
    - Firewall rules are set by following steps:
       1) Copy the iptables to the ansible machine.
@@ -170,7 +171,7 @@ configures the machine. Scripts are organized as follows:
 #+END_SRC
 
 ** Disable root login via ssh
-  *COMMENT*- For Configuration server, root is disabled. Rephrase the
+   *COMMENT*- For Configuration server, root is disabled. Rephrase the
   description.
 
    Ansible role ensures that root login is enabled on all
@@ -186,7 +187,7 @@ configures the machine. Scripts are organized as follows:
 #+END_SRC
 
 ** Dependencies
-  *COMMENT*- Rephrase  
+   *COMMENT*- Rephrase  
 
    All the variables go here. For Ansible server, currently no
    variables are used.
@@ -197,7 +198,7 @@ configures the machine. Scripts are organized as follows:
 #+END_SRC
 
 ** Putting it together
-   The ansible server is managed with all the above rules. The
+   The configuration server is managed with all the above rules. The
    implementation is done in terms of defining suitable scripts for
    each role.  The top level script is =build/code/ansible.yml=
 
@@ -291,11 +292,11 @@ From the base1 machine (10.4.12.21) execute following:
    - Sripathi
    - Soumya
    - Yogesh
-   - Madhavi
-   - Sanchita
    - Ambika
+   - Madhavi
    - Khushpreet
    - Prakash
+   - Sanchita
 
 * Test Cases
 ** Test case ID :: ansible-test-case-1
