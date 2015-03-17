@@ -28,18 +28,22 @@ written in the =yml= notation.  Ansible also allows
 arbitrary commands to be specified for execution on a target
 server.  Ansible simplifies the process of configuring a
 server by (a) keeping all the configuration information in
-related files, and (b) paramterizing (using variables and
+related files, and (b) parameterizing (using variables and
 other mechanisms) configuration information across servers.
 
 
 * Requirements of the Cluster
-
+#+BEGIN_COMMENT
+ remove of the Cluster in this and next two
+#+END_COMMENT
 ** Functional Requirements 
+COMMENT Cluster should contain a configuration manager, also table gets
+shifted to the design part. Also, in table mention which service is
+done as part of common or ansible. Explain a little if possible 
 
-The cluster allows its ansible server to be accessed (via
-ssh) and populated with a set of ansible scripts.  These
-scripts are then run on the ansible server periodically to
-configure the following: 
+The cluster allows its ansible server to be accessed (via ssh) and
+populated with a set of ansible scripts.  These scripts are then run
+on the ansible server periodically to configure the following:
 
 |------------------+----------------------------+---+---+---|
 | service/property | file or command            |   |   |   |
@@ -57,13 +61,15 @@ configure the following:
 
 
 ** Security Requirements
-
+#+BEGIN_COMMENT
+ ansible server to configuration server
+#+END_COMMENT
  1) The cluster's ansible server is accessible from the
     outside only through =ssh= and that too from a fixed IP
     network (IIIT).
 
 ** Performance Requirements
-
+COMMENT - Not in this release
 * Design of the cluster
 
 Network
