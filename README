@@ -14,12 +14,7 @@
 * How to run
   To build both sources and documentation use make.  Then build
   directory can be copied to ansible server and executed with
+
   #+BEGIN_EXAMPLE
   ansible-playbook -i hosts/default site.yaml
   #+END_EXAMPLE
-
-** TODO Makefile
-   Makefile needs to be created and added
-
-
-

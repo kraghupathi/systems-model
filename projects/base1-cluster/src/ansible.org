@@ -6,19 +6,22 @@
 #+options: ^:nil
 
 * Introduction
-
 This document describes the requirements, design and implementation of
-the ansible server which is part of the cluster.
+the configuration server which is part of the cluster.
 
-This server configures all other servers in the cluster.
-Using Ansible, a machine is configured using multiple roles.  A role
-is a specific set of configurations.
+This server configures all other servers in the cluster, through
+multiple roles.  A role is a specific set of configurations.
 
 * Requirements
-The functional and security requirements for Ansible server are:
+The functional and security requirements for Configuration server are:
 ** Functional Requirements 
 
-  1. <<1>> Ansible server manages itself as well as others listed below:
+  1. <<1>> Configuration server manages itself as well as others
+     listed below:
+  *COMMENT* - Instead of manages itself, Ansible configures all the nodes
+in the cluster including itself and ensures that the configuration is
+consistent. Rephrase point 3.
+
      + At regular intervals, it applies firewall rules.
      + At regular intervals, it updates the packages of the OS and other
        software.
@@ -30,15 +33,18 @@ The functional and security requirements for Ansible server are:
      Copy the VLEAD authorized_keys file to the Ansible server, under the ansible user.
 
 ** Security Requirements
+   *COMMENT* Enumerate the firewall rules. (1 is not applicable probably)
    1. Apply Firewall Rules.
    2. SSH/Port 22 accessible *ONLY* from VLEAD IP range.
    3. Allow ICMP (Ping)
    4. Limit rate of new connections on port 22.
    5. Disable root login via ssh.
-
+      
 * Design
   
-Ansible server
+  *COMMENT* Put design table and define what does manages itself means.
+
+Configuration server
 [[https://docs.google.com/a/vlabs.ac.in/drawings/d/1KRicWtnWvtqb06uNl5hYipeAH5KDQywWy7aOVStVAmo/edit?usp=sharing][Edit Image]]
 
 #+CAPTION:  Ansible Design Diagram
@@ -49,9 +55,9 @@ Ansible server
 
 
 The design of the firewall rules ensures that this server is
-accessible only via port 22. All other ports are disabled. Moreover, port 22
-is accessible only from VLEAD IP range.  Only key-based login to this
-server is allowed.
+accessible only via port 22. All other ports are disabled. Moreover,
+port 22 is accessible only from IIIT IP range.  Only key-based login
+to this server is allowed.
 
 This server can be reached via ICMP (ping) requests.
 
@@ -99,17 +105,19 @@ configures the machine. Scripts are organized as follows:
 
     
 *** Rule for INPUT loopback packets
+   *COMMENT* This rule is not working
+
     Allow internal communication between services running within the
     ansible, over loopback interface. Input interface is also
-    specified to avoid any security breach. The ansible server needs
-    to accept all connections from loop back.
+    specified to avoid any security breach. The configuration server
+    needs to accept all connections from loop back.
 
 #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
  -A INPUT -i lo -j ACCEPT
 #+END_SRC
 
 
-*** Rule for ongoing connection from other machine 
+*** Rule for related and established connections from other machines
     Allow ansible to continue already related and established
     connections. If a previous connection was passed and established
     through the firewall, it is allowed to continue.
@@ -131,6 +139,7 @@ configures the machine. Scripts are organized as follows:
 #+END_SRC
 
 *** ICMP Rule
+   *COMMENT* Update the test cases for ICMP 
     The server accepts ping requests(ICMP) from anywhere
 
 #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
@@ -147,10 +156,11 @@ configures the machine. Scripts are organized as follows:
 #+END_SRC
 
 ** Copy and apply the firewall rules for the Ansible server
-- Firewall rules are set by following steps:
-     1) Setting up ansible server for the first time, iptables
-        configuration file is copied to the ansible machine.
-     2) Restart iptables service to enforce the configuration.
+    *COMMENT*- Rephrase the entire description and heading
+ 
+   - Firewall rules are set by following steps:
+      1) Copy the iptables to the ansible machine.
+      2) Restart iptables service to enforce the configuration.
 
 
 #+BEGIN_SRC yaml :tangle roles/ansible/tasks/main.yml :eval no
@@ -161,6 +171,8 @@ configures the machine. Scripts are organized as follows:
 #+END_SRC
 
 ** Disable root login via ssh
+   *COMMENT*- For Configuration server, root is disabled. Rephrase the
+  description.
 
    Ansible role ensures that root login is enabled on all
    machines but only via public key authentication. But for the
@@ -175,6 +187,8 @@ configures the machine. Scripts are organized as follows:
 #+END_SRC
 
 ** Dependencies
+   *COMMENT*- Rephrase  
+
    All the variables go here. For Ansible server, currently no
    variables are used.
 #+BEGIN_SRC yaml :tangle roles/ansible/meta/main.yml
@@ -184,7 +198,7 @@ configures the machine. Scripts are organized as follows:
 #+END_SRC
 
 ** Putting it together
-   The ansible server is managed with all the above rules. The
+   The configuration server is managed with all the above rules. The
    implementation is done in terms of defining suitable scripts for
    each role.  The top level script is =build/code/ansible.yml=
 
@@ -218,9 +232,9 @@ From the base1 machine (10.4.12.21) execute following:
     vzctl set <ctid> --nameserver inherit --ram 256M --swap 512M --onboot yes --save
    #+END_EXAMPLE 
 *** Domain name and IP address of Ansible machine
-   #+BEGIN_EXAMPLE
-    - Domain name :: =ansible.staging.virtual-labs.ac.in=
-    - IP Address :: =10.4.14.101=
+    #+BEGIN_EXAMPLE
+    - Domain name :: ansible.staging.virtual-labs.ac.in
+    - IP Address :: 10.4.14.101
    #+END_EXAMPLE
 *** Stop and uninstall httpd if it is present in template used to craete ansible machine
     #+BEGIN_EXAMPLE
@@ -265,21 +279,29 @@ From the base1 machine (10.4.12.21) execute following:
 ** Access to Ansible machine
    - Only VLEAD engineers who have their keys placed in =authorized_keys=
      of ansible machine can *only* access.
-** Key based authentication is enabled on the Ansible machine.
+**  Key based authentication is enabled on the Ansible machine.
    LDAP is disabled. Engineers with their public keys added to
    authorized_keys will only be able to ssh.
 ** List of VLEAD engineers who have access to Ansible machine
-   - . Thirumal Ravula
-   - . Saurabh Barjatiya
-   - . Anon Ray
-   - . Zubair
-   - . Jayanth Sagar
-   - . Shiv Shankar
-     
+   - Thirumal Ravula
+   - Saurabh Barjatiya
+   - Anon Ray
+   - Zubair
+   - Jayanth Sagar
+   - Shiv Shankar
+   - Sripathi
+   - Soumya
+   - Yogesh
+   - Ambika
+   - Madhavi
+   - Khushpreet
+   - Prakash
+   - Sanchita
+
 * Test Cases
 ** Test case ID :: ansible-test-case-1
 *** Description
-    SSH should be allowed only from IIIT network.
+    SSH is allowed only from IIIT network.
 *** Steps to run the test case
     Test ansible is allowed to ssh from IIIT network. 
    #+BEGIN_SRC 
