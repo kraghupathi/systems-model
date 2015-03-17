@@ -10,61 +10,40 @@ We describe here the specification, design and
 implementation of a cluster of one machine consisting of one
 server running ansible.
 
-A cluster is network of /servers/.  Each server runs
-/services/ (e.g., firewall, sshd, etc.) and the server and
-the services need to be /configured/.  A configuration is
-either a set of rules (as in firewall and sshd) or a mapping
-(in the the case of network interfaces, hostname, etc.).
+A cluster is a network of /servers/.  Each server runs /services/
+(e.g., firewall, sshd, etc.) and the server and the services need to
+be /configured/.  A configuration is either a set of rules (as in
+firewall and sshd) or a mapping (in the the case of network
+interfaces, hostname, etc.).
 
-Configurations are installed either by populating
-configuration files (e.g., =/etc/sysconfig/iptables= or
-=/etc/sshd_config=) or by running shell commands that effect
-a particular configuration (e.g., =adduser ansible= for
-adding a user on the server).
+Configurations are installed either by populating configuration files
+(e.g., =/etc/sysconfig/iptables= or =/etc/sshd_config=) or by running
+shell commands that effect a particular configuration (e.g., =adduser
+ansible= for adding a user on the server).
 
-=Ansible= is a tool that allows installation of
-configurations on a target server via ansible scripts
-written in the =yml= notation.  Ansible also allows
-arbitrary commands to be specified for execution on a target
-server.  Ansible simplifies the process of configuring a
-server by (a) keeping all the configuration information in
-related files, and (b) paramterizing (using variables and
-other mechanisms) configuration information across servers.
+=Ansible= is a tool that allows installation of configurations on a
+target server via ansible scripts written in the =yml= notation.
+Ansible also allows arbitrary commands to be specified for execution
+on a target server.  Ansible simplifies the process of configuring a
+server by (a) keeping all the configuration information in related
+files, and (b) parameterizing (using variables and other mechanisms)
+configuration information across servers.
 
 
-* Requirements of the Cluster
-
+* Requirements 
 ** Functional Requirements 
-
-The cluster allows its ansible server to be accessed (via
-ssh) and populated with a set of ansible scripts.  These
-scripts are then run on the ansible server periodically to
-configure the following: 
-
-|------------------+----------------------------+---+---+---|
-| service/property | file or command            |   |   |   |
-|------------------+----------------------------+---+---+---|
-| firewall         | =/etc/sysconfig/iptables/= |   |   |   |
-|------------------+----------------------------+---+---+---|
-| sshd             | =/etc/sshd_config=         |   |   |   |
-|------------------+----------------------------+---+---+---|
-| IP               |                            |   |   |   |
-|------------------+----------------------------+---+---+---|
-| hostname         |                            |   |   |   |
-|------------------+----------------------------+---+---+---|
-| ADD MORE HERE    |                            |   |   |   |
-|------------------+----------------------------+---+---+---|
-
+   Cluster contains a configuration manager, and allows it to be accessed
+   (via ssh) and populated with a set of ansible scripts.  These scripts
+   are then run on the configuration server periodically.
 
 ** Security Requirements
 
- 1) The cluster's ansible server is accessible from the
-    outside only through =ssh= and that too from a fixed IP
-    network (IIIT).
+  The cluster's configuration server is accessible from the outside
+  only through =ssh= and that too from a fixed IP network (IIIT).
 
 ** Performance Requirements
 
-* Design of the cluster
+* Design 
 
 Network
 [[https://docs.google.com/a/vlabs.ac.in/drawings/d/1KRicWtnWvtqb06uNl5hYipeAH5KDQywWy7aOVStVAmo/edit][Edit Image]]
@@ -75,7 +54,29 @@ Network
 
 [[./diagrams/network.png]]
 
-* Implementation of the cluster
+
+- The table below summarizes the configurations of the machine
+  
+|--------------------+-------------------------------+------------------------|
+| *Service/Property* | *Relevant File or Command*    | *Associated with Role* |
+|--------------------+-------------------------------+------------------------|
+| firewall           | =/etc/sysconfig/iptables/=    | Ansible                |
+|--------------------+-------------------------------+------------------------|
+| sshd               | =/etc/sshd_config=            | Ansible                |
+|--------------------+-------------------------------+------------------------|
+| nameserver         | =/etc/resolve.conf=           | NA                     |
+|--------------------+-------------------------------+------------------------|
+| hostname           | =/etc/hostname=               | Provisioning           |
+|--------------------+-------------------------------+------------------------|
+| IP                 | ifconfig                      | NA                     |
+|--------------------+-------------------------------+------------------------|
+| fail2ban           | =/etc/fail2ban/jail.local=    | Common                 |
+|--------------------+-------------------------------+------------------------|
+| logwatch           | =/etc/logwatch/logwatch.conf= | Common                 |
+|--------------------+-------------------------------+------------------------|
+
+
+* Implementation
 ** Provisioning of the cluster
    The nodes in the cluster are openVZ containers running on the base
    machine.  [[http://openvz.org/Main_Page][OpenVZ]] is container-based virtualization for Linux.
@@ -133,7 +134,7 @@ Network
     - copy the public keys of listed users to authorized keys of root account.
 
 ** Nodes
-   The cluster contains the following machines:
+   The cluster contains the following machine:
  - [[./ansible.org][Configuration Server]]
 
 #+BEGIN_SRC yaml :tangle hosts :eval no
