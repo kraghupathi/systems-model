@@ -16,18 +16,21 @@ multiple roles.  A role is a specific set of configurations.
 The functional and security requirements for Configuration server are:
 ** Functional Requirements
 
-  1. <<<req1>>> Configuration server will configure all the nodes in the
+  1. <<<freq1>>> Configuration server will configure all the nodes in the
      cluster including itself and ensures that the configuration is consistent.
 
-  2. <<<req2>>> Configuration server has only one `vlead-jockey' user and
+     Being =consistent= implies that the configuration currently running on the
+     machine does not deviate from the release configuration.
+
+  2. <<<freq2>>> Configuration server has only one `vlead-jockey' user and
      it has sudo permissions to run all commands.
 
-  3. <<<req3>>> Only authorized VLEAD users can log-in as 'vlead-jockey' user.
+  3. <<<freq3>>> Only authorized VLEAD members can log-in as 'vlead-jockey' user.
 
 ** Security Requirements
-   1. SSH/Port 22 accessible *ONLY* from IIIT IP range.
-   2. Disable root login via ssh.
-   3. Limit rate of new connections on port 22.
+   1. <<<sreq1>>> SSH/Port 22 accessible *ONLY* from IIIT IP range.
+   2. <<<sreq2>>> Disable root login via ssh.
+   3. <<<sreq3>>> Limit rate of new connections on port 22.
 
 * Design
 ** Snapshot
@@ -50,14 +53,23 @@ requests.
 |-----------------+-----------------------------------------------------------------|
 | Requirement No. | Design                                                          |
 |-----------------+-----------------------------------------------------------------|
-| req1            | At regular intervals, defined firewall rules are applied        |
+| [[freq1]]           | At regular intervals, defined firewall rules are applied        |
 |                 | thus ensuring consistency                                       |
 |-----------------+-----------------------------------------------------------------|
-| req2            | A user 'vlead-jockey' is created and sudo permissions are given |
+| [[freq2]]           | A user 'vlead-jockey' is created and sudo permissions are given |
 |                 | to it.                                                          |
 |-----------------+-----------------------------------------------------------------|
-| req3            | public keys of VLEAD users are copied to the authorized keys    |
+| [[freq3]]           | public keys of VLEAD users are copied to the authorized keys    |
 |                 | of the Configuration server.                                    |
+|-----------------+-----------------------------------------------------------------|
+| [[sreq1]]           | This is achieved by building the appropriate rules and          |
+|                 | ensuring iptables service is running.                           |
+|-----------------+-----------------------------------------------------------------|
+| [[sreq2]]           | This is achieved by configuring the sshd_config file and        |
+|                 | ensuring sshd service is running                                |
+|-----------------+-----------------------------------------------------------------|
+| [[sreq3]]           | This is taken care by the common role. For more information     |
+|                 | refer to [[common.org]]                                             |
 |-----------------+-----------------------------------------------------------------|
 
 * Implementation
