@@ -196,9 +196,9 @@ Following history parameters are set for audit purpose:
 
 #+BEGIN_SRC shell :tangle roles/common/files/history.sh
 #!/bin/bash
-HISTTIMEFORMAT  = "%y %m %d %T"
-HISTSIZE        = 100000
-HISTFILESIZE    = 100000
+HISTTIMEFORMAT="%y %m %d %T"
+HISTSIZE=100000
+HISTFILESIZE=100000
 export HISTTIMEFORMAT HISTSIZE HISTFILESIZE
 #+END_SRC 
 
