@@ -16,34 +16,30 @@ multiple roles.  A role is a specific set of configurations.
 The functional and security requirements for Configuration server are:
 ** Functional Requirements 
 
-  1. <<1>> Configuration server manages itself as well as others
-     listed below:
-  *COMMENT* - Instead of manages itself, Ansible configures all the nodes
-in the cluster including itself and ensures that the configuration is
-consistent. Rephrase point 3.
+  1. <<1>> Configuration server will configure all the nodes in the
+     cluster including itself and ensures that the configuration is
+     [[consistent]].
+     
+  2. <<2>> Configuration server has only one `vlead-jockey' user and
+     it has sudo permissions to run all commands.
 
-     + At regular intervals, it applies firewall rules.
-     + At regular intervals, it updates the packages of the OS and other
-       software.
+  3. <<3>> Only authorized VLEAD users can log-in as 'vlead-jockey' user.
 
-  2. Ansible server has only one `ansible` user and it has sudo permissions to
-     run all commands.
-
-  3. Only authorized VLEAD users can log-in as ansible user.
-     Copy the VLEAD authorized_keys file to the Ansible server, under the ansible user.
 
 ** Security Requirements
-   *COMMENT* Enumerate the firewall rules. (1 is not applicable probably)
-   1. Apply Firewall Rules.
-   2. SSH/Port 22 accessible *ONLY* from VLEAD IP range.
-   3. Allow ICMP (Ping)
-   4. Limit rate of new connections on port 22.
-   5. Disable root login via ssh.
-      
-* Design
-  
-  *COMMENT* Put design table and define what does manages itself means.
+   1. SSH/Port 22 accessible *ONLY* from IIIT IP range.
+   2. Allow ICMP (Ping).
+   3. Disable root login via ssh.
+   4. Define default rules for filter table. 
+   5. Define rule for INPUT loopback packets.  
+   6. Define rule for related and established connections from other
+      machines.
+   7. Limit rate of new connections on port 22.
 
+
+* Design
+   
+** Snapshot
 Configuration server
 [[https://docs.google.com/a/vlabs.ac.in/drawings/d/1KRicWtnWvtqb06uNl5hYipeAH5KDQywWy7aOVStVAmo/edit?usp=sharing][Edit Image]]
 
@@ -52,6 +48,20 @@ Configuration server
 #+NAME: fig-ansible-diagram
 
 [[./diagrams/ansible.png]]
+** Design Specifications
+|-----------------+-----------------------------------------------------------------|
+| Requirement No. | Design                                                          |
+|-----------------+-----------------------------------------------------------------|
+| [[1]]               | At regular intervals, defined firewall rules are applied        |
+|                 | thus ensuring consistency <<consistent>>                        |
+|-----------------+-----------------------------------------------------------------|
+| [[2]]               | A user 'vlead-jockey' is created and sudo permissions are given |
+|                 | to it.                                                          |
+|-----------------+-----------------------------------------------------------------|
+| [[3]]               | public keys of VLEAD users are copied to the authorized keys    |
+|                 | of the Ansible server.                                          |
+|-----------------+-----------------------------------------------------------------|
+
 
 
 The design of the firewall rules ensures that this server is
@@ -88,7 +98,7 @@ configures the machine. Scripts are organized as follows:
    information is [[./common.org][here]].
 
 ** Building the firewall rules
-
+   
 *** The default rules for filter table
     Default policy for input, forward and output is set as ACCEPT. If
     packet does not match any rule then this default action is applied
@@ -105,8 +115,7 @@ configures the machine. Scripts are organized as follows:
 
     
 *** Rule for INPUT loopback packets
-   *COMMENT* This rule is not working
-
+   
     Allow internal communication between services running within the
     ansible, over loopback interface. Input interface is also
     specified to avoid any security breach. The configuration server
@@ -139,7 +148,6 @@ configures the machine. Scripts are organized as follows:
     #+END_SRC
 
 *** ICMP Rule
-   *COMMENT* Update the test cases for ICMP 
     The server accepts ping requests(ICMP) from anywhere
 
     #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
@@ -155,13 +163,10 @@ configures the machine. Scripts are organized as follows:
      COMMIT
     #+END_SRC
 
-** Copy and apply the firewall rules for the Ansible server
-    *COMMENT*- Rephrase the entire description and heading
- 
-   - Firewall rules are set by following steps:
-      1) Copy the iptables to the ansible machine.
-      2) Restart iptables service to enforce the configuration.
-
+** Apply firewall rules to Configuration server
+   Firewall rules are applied by following steps:
+    1) Copy the iptables template to the configuration server.
+    2) Restart iptables service to apply the configuration.
 
 #+BEGIN_SRC yaml :tangle roles/ansible/tasks/main.yml :eval no
 ---
@@ -171,15 +176,9 @@ configures the machine. Scripts are organized as follows:
 #+END_SRC
 
 ** Disable root login via ssh
-   *COMMENT*- For Configuration server, root is disabled. Rephrase the
-  description.
-
-   Ansible role ensures that root login is enabled on all
-   machines but only via public key authentication. But for the
-   Ansible server we want to disable root login altogether via ssh.
-
-   Hence, we modify the =sshd_config= file to disable root login.
-   We assume =PermitRootLogin= parameter is already set to some value.
+   Root login is disabled for configuration server. This is achieved
+   by modifying the =sshd_config= file .  We assume =PermitRootLogin=
+   parameter is already set to some value.
 
 #+BEGIN_SRC yaml :tangle roles/ansible/tasks/main.yml :eval no
 - name: Disable root login via ssh
@@ -187,8 +186,6 @@ configures the machine. Scripts are organized as follows:
 #+END_SRC
 
 ** Dependencies
-   *COMMENT*- Rephrase  
-
    All the variables go here. For Ansible server, currently no
    variables are used.
 #+BEGIN_SRC yaml :tangle roles/ansible/meta/main.yml
@@ -279,7 +276,7 @@ From the base1 machine (10.4.12.21) execute following:
 ** Access to Ansible machine
    - Only VLEAD engineers who have their keys placed in =authorized_keys=
      of ansible machine can *only* access.
-**  Key based authentication is enabled on the Ansible machine.
+** Key based authentication is enabled on the Ansible machine.
    LDAP is disabled. Engineers with their public keys added to
    authorized_keys will only be able to ssh.
 ** List of VLEAD engineers who have access to Ansible machine
