@@ -28,14 +28,9 @@ The functional and security requirements for Configuration server are:
 
 ** Security Requirements
    1. SSH/Port 22 accessible *ONLY* from IIIT IP range.
-   2. Allow ICMP (Ping).
-   3. Disable root login via ssh.
-   4. Define default rules for filter table. 
-   5. Define rule for INPUT loopback packets.  
-   6. Define rule for related and established connections from other
-      machines.
-   7. Limit rate of new connections on port 22.
-
+   2. Disable root login via ssh.
+   3. Limit rate of new connections on port 22.
+      
 
 * Design
    
@@ -66,7 +61,7 @@ requests.
 |                 | to it.                                                          |
 |-----------------+-----------------------------------------------------------------|
 | [[3]]               | public keys of VLEAD users are copied to the authorized keys    |
-|                 | of the Ansible server.                                          |
+|                 | of the Configuration server.                                    |
 |-----------------+-----------------------------------------------------------------|
 
 * Implementation
@@ -137,7 +132,7 @@ configures the machine. Scripts are organized as follows:
 *** Rule for incoming SSH connection
 
     The base1-cluster is on IIIT-H's local network
-    The ansible server is accessible 
+    The configuration server is accessible 
     via ssh (port 22) *only* from the IIIT-H local network. 
     (A variable is defined in =common_vars=. Currently it is 10.0.0.0/8
 
@@ -168,7 +163,7 @@ configures the machine. Scripts are organized as follows:
 
 #+BEGIN_SRC yaml :tangle roles/ansible/tasks/main.yml :eval no
 ---
-- name: Copy iptables configuration file for ansible server
+- name: Copy iptables configuration file for configuration server
   template: src=iptables dest=/etc/sysconfig/iptables mode=600 owner=root group=root
   notify: restart iptables
 #+END_SRC
@@ -184,7 +179,7 @@ configures the machine. Scripts are organized as follows:
 #+END_SRC
 
 ** Dependencies
-   All the variables go here. For Ansible server, currently no
+   All the variables go here. For configuration server, currently no
    variables are used.
 #+BEGIN_SRC yaml :tangle roles/ansible/meta/main.yml
 ---
@@ -199,85 +194,85 @@ configures the machine. Scripts are organized as follows:
 
 #+BEGIN_SRC yaml :tangle site.yml
 ---
-  - name: Configure ansible server
+  - name: Setup configuration server
     hosts: configuration-server
-    remote_user: ansible
+    remote_user: vlead-jockey
     sudo: yes
     roles:
       - common
       - ansible
 #+END_SRC
 
-* Provisioning of Ansible Machine
+* Provisioning 
  
 Provisioning is done by creating a bare new machine on base1.  
 From the base1 machine (10.4.12.21) execute following:   
 
-** Creation of Ansible machine
-   + How ansible machine is created, IP-address of machine, Domain
+** Creation of Configuration server
+   + How configuration server is created, its IP-address, and Domain
      name.
-*** Ansible machine configuration
+*** Machine configuration
    + Operating System: Centos-6.6
    + Memory: 256MB
    + Disk space: 2GB
-*** Ansible machine is created using:
+*** Configuration server is created using:
    #+BEGIN_EXAMPLE
     vzctl create <ctid> --ostemplate centos-6-x86_64 --hostname <hostname> --ipadd <ip address>
     vzctl start <ctid>
     vzctl set <ctid> --nameserver inherit --ram 256M --swap 512M --onboot yes --save
    #+END_EXAMPLE 
-*** Domain name and IP address of Ansible machine
+*** Domain name and IP address of server s
     #+BEGIN_EXAMPLE
     - Domain name :: ansible.staging.virtual-labs.ac.in
     - IP Address :: 10.4.14.101
    #+END_EXAMPLE
-*** Stop and uninstall httpd if it is present in template used to craete ansible machine
+*** Stop and uninstall httpd if it is present in template used to create configuration server
     #+BEGIN_EXAMPLE
     service httpd stop
     yum remove httpd
     #+END_EXAMPLE
-*** Create user =ansible=
+*** Create user =vlead-jockey=
     #+BEGIN_EXAMPLE
-    useradd ansible
+    useradd vlead-jockey
     #+END_EXAMPLE
-*** Copy VLEAD users public keys to ansible user's authorized keys
+*** Copy VLEAD users public keys to vlead-jockey user's authorized keys
     #+BEGIN_SRC 
-    mkdir /home/ansible/.ssh
+    mkdir /home/vlead-jockey/.ssh
     #+END_SRC
-   Copy all the public keys into /home/ansible/.ssh/authorized_keys 
-*** Generate ssh key for ansible user and copy it to it's own authorized_keys(to allow ssh from localhost)
+   Copy all the public keys into =/home/vlead-jockey/.ssh/authorized_keys= 
+*** Generate ssh key for vlead-jockey user and copy it to it's own authorized_keys(to allow ssh from localhost)
     #+BEGIN_SRC 
     ssh-keygen -t rsa
-    cd /home/ansible/.ssh/
+    cd /home/vlead-jockey/.ssh/
     cat id_rsa.pub >> authorized_keys
     #+END_SRC
-*** Provide root privilages to ansible user
+*** Provide root privilages to vlead-jockey user
     The below line is added to /etc/sudoers.
-   #+BEGIN_EXAMPLE
-   ansible ALL=(ALL)       NOPASSWD: ALL
-   #+END_EXAMPLE
+  #+BEGIN_EXAMPLE
+   vlead-jockey ALL=(ALL)       NOPASSWD: ALL
+  #+END_EXAMPLE
 *** Set proxy in /etc/yum.conf
    The following line is added to etc/yum.conf
-   #+BEGIN_EXAMPLE
+  #+BEGIN_EXAMPLE
     proxy=http://proxy.iiit.ac.in:8080
-   #+END_EXAMPLE
+  #+END_EXAMPLE
 *** Install ansible(version 1.8.4) and git
-   #+BEGIN_SRC
+  #+BEGIN_SRC
    rpm -Uvh http://download.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm
    yum install ansible git -y
-   #+END_SRC
+  #+END_SRC
 *** Disable SSH login for root user
-    Change the PermitRootLogin to no in /etc/ssh/sshd_config
+    Change the =PermitRootLogin= to no in =/etc/ssh/sshd_config=
     #+BEGIN_SRC
      PermitRootLogin no
     #+END_SRC
-** Access to Ansible machine
+** Access to Configuration Server
    - Only VLEAD engineers who have their keys placed in =authorized_keys=
-     of ansible machine can *only* access.
-** Key based authentication is enabled on the Ansible machine.
+     of server can *only* access.
+** Key based authentication is enabled on the Configuration Server
    LDAP is disabled. Engineers with their public keys added to
    authorized_keys will only be able to ssh.
-** List of VLEAD engineers who have access to Ansible machine
+** List of VLEAD engineers who have access to Server
    - Thirumal Ravula
    - Saurabh Barjatiya
    - Anon Ray
@@ -298,19 +293,19 @@ From the base1 machine (10.4.12.21) execute following:
 *** Description
     SSH is allowed only from IIIT network.
 *** Steps to run the test case
-    Test ansible is allowed to ssh from IIIT network. 
+    Test ssh login is allowed for =vlead-jockey= user from IIIT network. 
    #+BEGIN_SRC 
-    ssh ansible@10.4.14.101
+    ssh vlead-jockey@10.4.14.101
    #+END_SRC
 *** Expected result
    #+BEGIN_EXAMPLE
     Last login: ---Details of last login---
-    [ansible@localhost ~]$ 
+    [vlead-jockey@localhost ~]$ 
    #+END_EXAMPLE
 *** Result 
     #+BEGIN_EXAMPLE
     Last login: Mon Mar 16 02:28:31 2015 from ansible.staging.virtual-labs.ac.in
-    [ansible@localhost ~]$ 
+    [vlead-jockey@localhost ~]$ 
     #+END_EXAMPLE
  
 *** Test Passed :: Yes
@@ -318,7 +313,8 @@ From the base1 machine (10.4.12.21) execute following:
 *** Description
     Checking ports
 *** Steps to run the test case
-    Test ansible machine to block all ports except port 22
+    Test if all ports of configuration server are blocked except for
+    port 22
     #+BEGIN_SRC 
     $ nmap -v 10.4.14.101
     #+END_SRC
