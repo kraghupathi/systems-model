@@ -137,7 +137,7 @@ configures the machine. Scripts are organized as follows:
     (A variable is defined in =common_vars=. Currently it is 10.0.0.0/8
 
 #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
- -A INPUT -p tcp -m tcp --dport 22 -s {{vlead_ip_range}} -j ACCEPT
+ -A INPUT -p tcp -m tcp -s {{vlead_ip_range}} --dport 22 -j ACCEPT
 #+END_SRC
 
 *** ICMP Rule
