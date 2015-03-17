@@ -106,12 +106,12 @@ configures the machine. Scripts are organized as follows:
     represents the number of packets that matched the rule for the
     chain, and second counter represents the total size of the packets
     that matched the rule.
-    #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables :eval no
-     *filter
-     :INPUT ACCEPT [0:0]
-     :FORWARD ACCEPT [0:0]
-     :OUTPUT ACCEPT [0:0]
-    #+END_SRC
+#+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables :eval no
+ *filter
+ :INPUT ACCEPT [0:0]
+ :FORWARD ACCEPT [0:0]
+ :OUTPUT ACCEPT [0:0]
+#+END_SRC
 
     
 *** Rule for INPUT loopback packets
@@ -121,9 +121,9 @@ configures the machine. Scripts are organized as follows:
     specified to avoid any security breach. The configuration server
     needs to accept all connections from loop back.
 
-    #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
-    -A INPUT -i lo -j ACCEPT
-    #+END_SRC
+#+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
+ -A INPUT -i lo -j ACCEPT
+#+END_SRC
 
 
 *** Rule for related and established connections from other machines
@@ -132,36 +132,36 @@ configures the machine. Scripts are organized as follows:
     through the firewall, it is allowed to continue.
 
 
-    #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
-     -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
-    #+END_SRC
+#+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
+ -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+#+END_SRC
 
 *** Rule for incoming SSH connection
 
     The base1-cluster is on IIIT-H's local network
-    (10.0.0.0/8).  The ansible server is accessible 
+    The ansible server is accessible 
     via ssh (port 22) *only* from the IIIT-H local network. 
+    (A variable is defined in =common_vars=. Currently it is 10.0.0.0/8
 
-
-    #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
-     -A INPUT -p tcp -m tcp --dport 22 -s 10.0.0.0/8 -j ACCEPT
-    #+END_SRC
+#+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
+ -A INPUT -p tcp -m tcp --dport 22 -s {{vlead_ip_range}} -j ACCEPT
+#+END_SRC
 
 *** ICMP Rule
     The server accepts ping requests(ICMP) from anywhere
 
-    #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
-     -A INPUT -p icmp -m icmp --icmp-type echo-request -j ACCEPT
-    #+END_SRC
+#+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
+ -A INPUT -p icmp -m icmp --icmp-type echo-request -j ACCEPT
+#+END_SRC
     
 *** All other packets should be rejected
     The incoming and outgoing packets on all other ports are rejected.
 
-    #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables :eval no
-     -A INPUT -j REJECT
-     -A FORWARD -j REJECT
-     COMMIT
-    #+END_SRC
+#+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables :eval no
+ -A INPUT -j REJECT
+ -A FORWARD -j REJECT
+  COMMIT
+#+END_SRC
 
 ** Apply firewall rules to Configuration server
    Firewall rules are applied by following steps:

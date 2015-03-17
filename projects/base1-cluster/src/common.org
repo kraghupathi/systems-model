@@ -282,6 +282,9 @@ ssh, mail and fail2ban.
 ---
   - name: restart sshd
     service: name=sshd state=restarted
+ 
+  - name: restart iptables
+    service: name=iptables state=restarted
   
   - name: restart sendmail
     service: name=sendmail state=restarted
