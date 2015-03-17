@@ -15,24 +15,23 @@ applied on all the deployed servers.
 
 The functional requirements for common roles are:
 
-|------------------+--------------------+-------------------------------|
-| *Requirement ID* | *Requirement*      | *Descritpion*                 |
-|------------------+--------------------+-------------------------------|
-| reqC-1.1         | Log file           | Summary of log files          |
-|                  | summary            | is mailed on daily            |
-|                  |                    | basis                         |
-|------------------+--------------------+-------------------------------|
-| reqC-1.2         | Securing the       | System is secured by          |
-|                  | systems            | allowing only the ssh         |
-|                  |                    | based access                  |
-|------------------+--------------------+-------------------------------|
-| reqC-1.3         | Auditing the       | Provision is made to          |
-|                  | servers            | audit all the commands run    |
-|                  |                    | on servers                    |
-|------------------+--------------------+-------------------------------|
-| reqC-1.4         | Blocking malicious | Suspected malicious attackers |
-|                  | attacks            | IP is captured and banned     |
-|------------------+--------------------+-------------------------------|
+|------------------+--------------------+--------------------------------|
+| *Requirement ID* | *Requirement*      | *Descritpion*                  |
+|------------------+--------------------+--------------------------------|
+| reqC-1.1         | Log file           | Summary of log files           |
+|                  | summary            | is mailed periodically         |
+|------------------+--------------------+--------------------------------|
+| reqC-1.2         | Securing the       | System is secured by           |
+|                  | systems            | allowing only the ssh          |
+|                  |                    | based access                   |
+|------------------+--------------------+--------------------------------|
+| reqC-1.3         | Auditing the       | Provision is made to           |
+|                  | servers            | audit all the commands run     |
+|                  |                    | on servers                     |
+|------------------+--------------------+--------------------------------|
+| reqC-1.4         | Blocking malicious | Suspected malicious attacker's |
+|                  | attacks            | are captured and banned        |
+|------------------+--------------------+--------------------------------|
 
 *Note:* the convention followed in naming the requirement is: 
    + abbreviation for requirement: req
@@ -180,8 +179,8 @@ can be found [[http://en.wikipedia.org/wiki/Secure_Shell][HERE]].
 #+END_SRC
        
 *** Auditing the Servers
-Servers are audited by maintainig a log of all the commands run on
-them  along with the time stamp.
+Servers are audited by maintaining a log of all the commands run on
+them along with the time stamp.
 
 Following history parameters are set for audit purpose:
  - HISTTIMEFORMAT :: display the time stamp along with the command
@@ -202,7 +201,8 @@ HISTFILESIZE=100000
 export HISTTIMEFORMAT HISTSIZE HISTFILESIZE
 #+END_SRC 
 
-The above parameters are set and configured everyday.
+The above parameters are set and configured using a history
+configuration file.
 #+BEGIN_SRC yaml :tangle roles/common/tasks/history_config.yml
 ---
 #This play copies a stock history file
@@ -245,7 +245,7 @@ the servers.
 enabled  = true
 filter   = sshd
 action   = iptables[name=SSH, port=ssh, protocol=tcp]
-           sendmail-whois[name=SSH, dest=you@example.com, sender=fail2ban@example.com, sendername="Fail2Ban"]
+           sendmail-whois[name=SSH, dest=alerts@vlabs.ac.in, sender=fail2ban@example.com, sendername="Fail2Ban"]
 logpath  = /var/log/secure
 maxretry = 5
 #+END_SRC 
