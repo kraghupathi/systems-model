@@ -25,5 +25,6 @@ settings and configurations.
   ansible_server_ip:
   dns_public_ip:
   dns_private_ip:
+  vlead_ip_range: 10.0.0.0/8
   iiit_mail_server: mail.iiit.ac.in
 #+END_SRC
