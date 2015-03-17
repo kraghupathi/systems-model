@@ -14,12 +14,12 @@ multiple roles.  A role is a specific set of configurations.
 
 * Requirements
 The functional and security requirements for Configuration server are:
-** Functional Requirements 
+** Functional Requirements
 
   1. <<1>> Configuration server will configure all the nodes in the
      cluster including itself and ensures that the configuration is
      [[consistent]].
-     
+
   2. <<2>> Configuration server has only one `vlead-jockey' user and
      it has sudo permissions to run all commands.
 
@@ -30,10 +30,10 @@ The functional and security requirements for Configuration server are:
    1. SSH/Port 22 accessible *ONLY* from IIIT IP range.
    2. Disable root login via ssh.
    3. Limit rate of new connections on port 22.
-      
+
 
 * Design
-   
+
 ** Snapshot
 Configuration server
 [[https://docs.google.com/a/vlabs.ac.in/drawings/d/1KRicWtnWvtqb06uNl5hYipeAH5KDQywWy7aOVStVAmo/edit?usp=sharing][Edit Image]]
@@ -91,7 +91,7 @@ configures the machine. Scripts are organized as follows:
    information is [[./common.org][here]].
 
 ** Building the firewall rules
-   
+
 *** The default rules for filter table
     Default policy for input, forward and output is set as ACCEPT. If
     packet does not match any rule then this default action is applied
@@ -99,23 +99,24 @@ configures the machine. Scripts are organized as follows:
     represents the number of packets that matched the rule for the
     chain, and second counter represents the total size of the packets
     that matched the rule.
+
 #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables :eval no
- *filter
- :INPUT ACCEPT [0:0]
- :FORWARD ACCEPT [0:0]
- :OUTPUT ACCEPT [0:0]
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
 #+END_SRC
 
-    
+
 *** Rule for INPUT loopback packets
-   
+
     Allow internal communication between services running within the
     ansible, over loopback interface. Input interface is also
     specified to avoid any security breach. The configuration server
     needs to accept all connections from loop back.
 
 #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
- -A INPUT -i lo -j ACCEPT
+-A INPUT -i lo -j ACCEPT
 #+END_SRC
 
 
@@ -126,34 +127,34 @@ configures the machine. Scripts are organized as follows:
 
 
 #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
- -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
 #+END_SRC
 
 *** Rule for incoming SSH connection
 
     The base1-cluster is on IIIT-H's local network
-    The configuration server is accessible 
-    via ssh (port 22) *only* from the IIIT-H local network. 
+    The configuration server is accessible
+    via ssh (port 22) *only* from the IIIT-H local network.
     (A variable is defined in =common_vars=. Currently it is 10.0.0.0/8
 
 #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
- -A INPUT -p tcp -m tcp -s {{vlead_ip_range}} --dport 22 -j ACCEPT
+-A INPUT -p tcp -m tcp -s {{vlead_ip_range}} --dport 22 -j ACCEPT
 #+END_SRC
 
 *** ICMP Rule
     The server accepts ping requests(ICMP) from anywhere
 
 #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
- -A INPUT -p icmp -m icmp --icmp-type echo-request -j ACCEPT
+-A INPUT -p icmp -m icmp --icmp-type echo-request -j ACCEPT
 #+END_SRC
-    
+
 *** All other packets should be rejected
     The incoming and outgoing packets on all other ports are rejected.
 
 #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables :eval no
- -A INPUT -j REJECT
- -A FORWARD -j REJECT
-  COMMIT
+-A INPUT -j REJECT
+-A FORWARD -j REJECT
+COMMIT
 #+END_SRC
 
 ** Apply firewall rules to Configuration server
@@ -203,10 +204,10 @@ configures the machine. Scripts are organized as follows:
       - ansible
 #+END_SRC
 
-* Provisioning 
- 
-Provisioning is done by creating a bare new machine on base1.  
-From the base1 machine (10.4.12.21) execute following:   
+* Provisioning
+
+Provisioning is done by creating a bare new machine on base1.
+From the base1 machine (10.4.12.21) execute following:
 
 ** Creation of Configuration server
    + How configuration server is created, its IP-address, and Domain
@@ -220,7 +221,7 @@ From the base1 machine (10.4.12.21) execute following:
     vzctl create <ctid> --ostemplate centos-6-x86_64 --hostname <hostname> --ipadd <ip address>
     vzctl start <ctid>
     vzctl set <ctid> --nameserver inherit --ram 256M --swap 512M --onboot yes --save
-   #+END_EXAMPLE 
+   #+END_EXAMPLE
 *** Domain name and IP address of server s
     #+BEGIN_EXAMPLE
     - Domain name :: ansible.staging.virtual-labs.ac.in
@@ -236,12 +237,12 @@ From the base1 machine (10.4.12.21) execute following:
     useradd vlead-jockey
     #+END_EXAMPLE
 *** Copy VLEAD users public keys to vlead-jockey user's authorized keys
-    #+BEGIN_SRC 
+    #+BEGIN_SRC
     mkdir /home/vlead-jockey/.ssh
     #+END_SRC
-   Copy all the public keys into =/home/vlead-jockey/.ssh/authorized_keys= 
+   Copy all the public keys into =/home/vlead-jockey/.ssh/authorized_keys=
 *** Generate ssh key for vlead-jockey user and copy it to it's own authorized_keys(to allow ssh from localhost)
-    #+BEGIN_SRC 
+    #+BEGIN_SRC
     ssh-keygen -t rsa
     cd /home/vlead-jockey/.ssh/
     cat id_rsa.pub >> authorized_keys
@@ -293,21 +294,21 @@ From the base1 machine (10.4.12.21) execute following:
 *** Description
     SSH is allowed only from IIIT network.
 *** Steps to run the test case
-    Test ssh login is allowed for =vlead-jockey= user from IIIT network. 
-   #+BEGIN_SRC 
+    Test ssh login is allowed for =vlead-jockey= user from IIIT network.
+   #+BEGIN_SRC
     ssh vlead-jockey@10.4.14.101
    #+END_SRC
 *** Expected result
    #+BEGIN_EXAMPLE
     Last login: ---Details of last login---
-    [vlead-jockey@localhost ~]$ 
+    [vlead-jockey@localhost ~]$
    #+END_EXAMPLE
-*** Result 
+*** Result
     #+BEGIN_EXAMPLE
     Last login: Mon Mar 16 02:28:31 2015 from ansible.staging.virtual-labs.ac.in
-    [vlead-jockey@localhost ~]$ 
+    [vlead-jockey@localhost ~]$
     #+END_EXAMPLE
- 
+
 *** Test Passed :: Yes
 ** Test case ID :: ansible-test-case-2
 *** Description
@@ -315,11 +316,11 @@ From the base1 machine (10.4.12.21) execute following:
 *** Steps to run the test case
     Test if all ports of configuration server are blocked except for
     port 22
-    #+BEGIN_SRC 
+    #+BEGIN_SRC
     $ nmap -v 10.4.14.101
     #+END_SRC
 *** Expected result
-   
+
     #+BEGIN_EXAMPLE
      Starting Nmap 6.40 ( http://nmap.org ) at 2015-03-16 16:34 IST
      Initiating Ping Scan at 16:34
@@ -341,7 +342,7 @@ From the base1 machine (10.4.12.21) execute following:
      Nmap done: 1 IP address (1 host up) scanned in 1.92 seconds
     #+END_EXAMPLE
 
-*** Result 
+*** Result
     -Result on running test
      #+BEGIN_EXAMPLE
      Starting Nmap 6.40 ( http://nmap.org ) at 2015-03-16 16:34 IST
