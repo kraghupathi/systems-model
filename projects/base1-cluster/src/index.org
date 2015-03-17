@@ -10,37 +10,53 @@ We describe here the specification, design and
 implementation of a cluster of one machine consisting of one
 server running ansible.
 
-A cluster is network of /servers/.  Each server runs
-/services/ (e.g., firewall, sshd, etc.) and the server and
-the services need to be /configured/.  A configuration is
-either a set of rules (as in firewall and sshd) or a mapping
-(in the the case of network interfaces, hostname, etc.).
+A cluster is a network of /servers/.  Each server runs /services/
+(e.g., firewall, sshd, etc.) and the server and the services need to
+be /configured/.  A configuration is either a set of rules (as in
+firewall and sshd) or a mapping (in the the case of network
+interfaces, hostname, etc.).
 
-Configurations are installed either by populating
-configuration files (e.g., =/etc/sysconfig/iptables= or
-=/etc/sshd_config=) or by running shell commands that effect
-a particular configuration (e.g., =adduser ansible= for
-adding a user on the server).
+Configurations are installed either by populating configuration files
+(e.g., =/etc/sysconfig/iptables= or =/etc/sshd_config=) or by running
+shell commands that effect a particular configuration (e.g., =adduser
+ansible= for adding a user on the server).
 
-=Ansible= is a tool that allows installation of
-configurations on a target server via ansible scripts
-written in the =yml= notation.  Ansible also allows
-arbitrary commands to be specified for execution on a target
-server.  Ansible simplifies the process of configuring a
-server by (a) keeping all the configuration information in
-related files, and (b) parameterizing (using variables and
-other mechanisms) configuration information across servers.
+=Ansible= is a tool that allows installation of configurations on a
+target server via ansible scripts written in the =yml= notation.
+Ansible also allows arbitrary commands to be specified for execution
+on a target server.  Ansible simplifies the process of configuring a
+server by (a) keeping all the configuration information in related
+files, and (b) parameterizing (using variables and other mechanisms)
+configuration information across servers.
 
 
 * Requirements 
 ** Functional Requirements 
-*COMMENT* Cluster should contain a configuration manager, also table gets
-shifted to the design part. Also, in table mention which service is
-done as part of common or ansible. Explain a little if possible 
+   Cluster contains a configuration manager, and allows it to be accessed
+   (via ssh) and populated with a set of ansible scripts.  These scripts
+   are then run on the configuration server periodically.
 
-The cluster allows its configuration server to be accessed (via ssh)
-and populated with a set of ansible scripts.  These scripts are then
-run on the configuration server periodically to configure the following:
+** Security Requirements
+
+  The cluster's configuration server is accessible from the outside
+  only through =ssh= and that too from a fixed IP network (IIIT).
+
+** Performance Requirements
+
+* Design 
+
+Network
+[[https://docs.google.com/a/vlabs.ac.in/drawings/d/1KRicWtnWvtqb06uNl5hYipeAH5KDQywWy7aOVStVAmo/edit][Edit Image]]
+
+#+CAPTION:  Network Diagram
+#+LABEL:  fig-network-diagram
+#+NAME: fig-network-diagram
+
+[[./diagrams/network.png]]
+
+
+ *Comment* In table mention which service is
+done as part of common or ansible. Explain a little if possible 
 
 |------------------+----------------------------+---+---+---|
 | service/property | file or command            |   |   |   |
@@ -57,25 +73,7 @@ run on the configuration server periodically to configure the following:
 |------------------+----------------------------+---+---+---|
 
 
-** Security Requirements
-
- 1) The cluster's configuration server is accessible from the outside
-    only through =ssh= and that too from a fixed IP network (IIIT).
-
-** Performance Requirements
-*COMMENT* - Not in this release
-* Design of the cluster
-
-Network
-[[https://docs.google.com/a/vlabs.ac.in/drawings/d/1KRicWtnWvtqb06uNl5hYipeAH5KDQywWy7aOVStVAmo/edit][Edit Image]]
-
-#+CAPTION:  Network Diagram
-#+LABEL:  fig-network-diagram
-#+NAME: fig-network-diagram
-
-[[./diagrams/network.png]]
-
-* Implementation of the cluster
+* Implementation
 ** Provisioning of the cluster
    The nodes in the cluster are openVZ containers running on the base
    machine.  [[http://openvz.org/Main_Page][OpenVZ]] is container-based virtualization for Linux.
