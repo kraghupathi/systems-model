@@ -48,6 +48,13 @@ Configuration server
 #+NAME: fig-ansible-diagram
 
 [[./diagrams/ansible.png]]
+
+The design of the firewall rules ensures that this server is
+accessible only via port 22. All other ports are disabled. Moreover,
+port 22 is accessible only from IIIT IP range.  Only key-based login
+to this server is allowed. This server can be reached via ICMP (ping)
+requests.
+
 ** Design Specifications
 |-----------------+-----------------------------------------------------------------|
 | Requirement No. | Design                                                          |
@@ -61,15 +68,6 @@ Configuration server
 | [[3]]               | public keys of VLEAD users are copied to the authorized keys    |
 |                 | of the Ansible server.                                          |
 |-----------------+-----------------------------------------------------------------|
-
-
-
-The design of the firewall rules ensures that this server is
-accessible only via port 22. All other ports are disabled. Moreover,
-port 22 is accessible only from IIIT IP range.  Only key-based login
-to this server is allowed.
-
-This server can be reached via ICMP (ping) requests.
 
 * Implementation
 ** Structure of the scripts
