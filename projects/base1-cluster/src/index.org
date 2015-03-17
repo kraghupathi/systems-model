@@ -44,7 +44,7 @@ configuration information across servers.
 ** Performance Requirements
 
 * Design 
-
+** Snapshot
 Network
 [[https://docs.google.com/a/vlabs.ac.in/drawings/d/1KRicWtnWvtqb06uNl5hYipeAH5KDQywWy7aOVStVAmo/edit][Edit Image]]
 
@@ -55,25 +55,26 @@ Network
 [[./diagrams/network.png]]
 
 
-- The table below summarizes the configurations of the machine
+** Configuration Summary 
+   The table below summarizes the configurations of the machine
   
-|--------------------+-------------------------------+------------------------|
-| *Service/Property* | *Relevant File or Command*    | *Associated with Role* |
-|--------------------+-------------------------------+------------------------|
-| firewall           | =/etc/sysconfig/iptables/=    | Ansible                |
-|--------------------+-------------------------------+------------------------|
-| sshd               | =/etc/sshd_config=            | Ansible                |
-|--------------------+-------------------------------+------------------------|
-| nameserver         | =/etc/resolve.conf=           | NA                     |
-|--------------------+-------------------------------+------------------------|
-| hostname           | =/etc/hostname=               | Provisioning           |
-|--------------------+-------------------------------+------------------------|
-| IP                 | ifconfig                      | NA                     |
-|--------------------+-------------------------------+------------------------|
-| fail2ban           | =/etc/fail2ban/jail.local=    | Common                 |
-|--------------------+-------------------------------+------------------------|
-| logwatch           | =/etc/logwatch/logwatch.conf= | Common                 |
-|--------------------+-------------------------------+------------------------|
+|--------------------+-------------------------------+-------------------|
+| *Service/Property* | *Relevant File or Command*    | *Associated with* |
+|--------------------+-------------------------------+-------------------|
+| firewall           | =/etc/sysconfig/iptables/=    | Ansible Role      |
+|--------------------+-------------------------------+-------------------|
+| sshd               | =/etc/sshd_config=            | Ansible Role      |
+|--------------------+-------------------------------+-------------------|
+| nameserver         | =/etc/resolve.conf=           | NA                |
+|--------------------+-------------------------------+-------------------|
+| hostname           | =/etc/hostname=               | Provisioning      |
+|--------------------+-------------------------------+-------------------|
+| IP                 | ifconfig                      | NA                |
+|--------------------+-------------------------------+-------------------|
+| fail2ban           | =/etc/fail2ban/jail.local=    | Common Role       |
+|--------------------+-------------------------------+-------------------|
+| logwatch           | =/etc/logwatch/logwatch.conf= | Common Role       |
+|--------------------+-------------------------------+-------------------|
 
 
 * Implementation
