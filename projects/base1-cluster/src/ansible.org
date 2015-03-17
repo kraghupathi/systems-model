@@ -17,8 +17,8 @@ is a specific set of configurations.
 * Requirements
 The functional and security requirements for Ansible server are:
 ** Functional Requirements 
-   <<requirement>>
-  1. Ansible server manages itself as well as others listed below:
+
+  1. <<1>> Ansible server manages itself as well as others listed below:
      + At regular intervals, it applies firewall rules.
      + At regular intervals, it updates the packages of the OS and other
        software.
@@ -78,7 +78,7 @@ configures the machine. Scripts are organized as follows:
 #+END_EXAMPLE
 
 ** Hardening, OS Updates etc.
-   Common role takes care of  [[Requirement]]. More
+   Common role takes care of functional requirement [[1]]. More
    information is [[./common.org][here]].
 
 ** Building the firewall rules
@@ -275,7 +275,7 @@ From the base1 machine (10.4.12.21) execute following:
    - . Zubair
    - . Jayanth Sagar
    - . Shiv Shankar
-
+     
 * Test Cases
 ** Test case ID :: ansible-test-case-1
 *** Description
@@ -299,7 +299,7 @@ From the base1 machine (10.4.12.21) execute following:
 *** Test Passed :: Yes
 ** Test case ID :: ansible-test-case-2
 *** Description
-   Checking ports
+    Checking ports
 *** Steps to run the test case
     Test ansible machine to block all ports except port 22
     #+BEGIN_SRC 
