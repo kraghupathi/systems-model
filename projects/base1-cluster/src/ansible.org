@@ -16,14 +16,14 @@ multiple roles.  A role is a specific set of configurations.
 The functional and security requirements for Configuration server are:
 ** Functional Requirements 
 
-  1. <<1>> Configuration server will configure all the nodes in the
+  1. <<1>>Configuration server will configure all the nodes in the
      cluster including itself and ensures that the configuration is
-     [[consistent]].
+     [[consistent][consistent]]
      
   2. <<2>> Configuration server has only one `vlead-jockey' user and
      it has sudo permissions to run all commands.
 
-  3. <<3>> Only authorized VLEAD users can log-in as 'vlead-jockey' user.
+  3. <<3>> Only authorized VLEAD members can log-in as 'vlead-jockey' user.
 
 
 ** Security Requirements
