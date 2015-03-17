@@ -6,10 +6,8 @@
 #+options: ^:nil
 
 * Introduction
-* COMMENT Rename Ansible everywhere with Configuration server.
-
 This document describes the requirements, design and implementation of
-the ansible server which is part of the cluster.
+the configuration server which is part of the cluster.
 
 This server configures all other servers in the cluster, through
 multiple roles.  A role is a specific set of configurations.
@@ -19,7 +17,7 @@ The functional and security requirements for Ansible server are:
 ** Functional Requirements 
 
   1. <<1>> Ansible server manages itself as well as others listed below:
-* COMMENT - Instead of manages itself, Ansible configures all the nodes
+  *COMMENT* - Instead of manages itself, Ansible configures all the nodes
 in the cluster including itself and ensures that the configuration is
 consistent. Rephrase point 3.
 
@@ -34,7 +32,7 @@ consistent. Rephrase point 3.
      Copy the VLEAD authorized_keys file to the Ansible server, under the ansible user.
 
 ** Security Requirements
-* COMMENT Enumerate the firewall rules. (1 is not applicable probably)
+  *COMMENT* Enumerate the firewall rules. (1 is not applicable probably)
    1. Apply Firewall Rules.
    2. SSH/Port 22 accessible *ONLY* from VLEAD IP range.
    3. Allow ICMP (Ping)
@@ -43,9 +41,9 @@ consistent. Rephrase point 3.
       
 * Design
   
-* COMMENT Put design table and define what does manages itself means.
+  *COMMENT* Put design table and define what does manages itself means.
 
-Ansible server
+Configuration server
 [[https://docs.google.com/a/vlabs.ac.in/drawings/d/1KRicWtnWvtqb06uNl5hYipeAH5KDQywWy7aOVStVAmo/edit?usp=sharing][Edit Image]]
 
 #+CAPTION:  Ansible Design Diagram
@@ -106,12 +104,12 @@ configures the machine. Scripts are organized as follows:
 
     
 *** Rule for INPUT loopback packets
-* COMMENT This rule is not working, get it checked by Saurabh
+   *COMMENT* This rule is not working
 
     Allow internal communication between services running within the
     ansible, over loopback interface. Input interface is also
-    specified to avoid any security breach. The ansible server needs
-    to accept all connections from loop back.
+    specified to avoid any security breach. The configuration server
+    needs to accept all connections from loop back.
 
     #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
     -A INPUT -i lo -j ACCEPT
@@ -140,7 +138,7 @@ configures the machine. Scripts are organized as follows:
     #+END_SRC
 
 *** ICMP Rule
-* COMMENT Update the test cases for ICMP 
+   *COMMENT* Update the test cases for ICMP 
     The server accepts ping requests(ICMP) from anywhere
 
     #+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
@@ -157,7 +155,7 @@ configures the machine. Scripts are organized as follows:
     #+END_SRC
 
 ** Copy and apply the firewall rules for the Ansible server
-********  COMMENT- Rephrase the entire description and heading
+   *COMMENT*- Rephrase the entire description and heading
  
    - Firewall rules are set by following steps:
       1) Copy the iptables to the ansible machine.
@@ -172,7 +170,7 @@ configures the machine. Scripts are organized as follows:
 #+END_SRC
 
 ** Disable root login via ssh
-* COMMENT- For Configuration server, root is disabled. Rephrase the
+  *COMMENT*- For Configuration server, root is disabled. Rephrase the
   description.
 
    Ansible role ensures that root login is enabled on all
@@ -188,7 +186,7 @@ configures the machine. Scripts are organized as follows:
 #+END_SRC
 
 ** Dependencies
-*  COMMENT- Rephrase  
+  *COMMENT*- Rephrase  
 
    All the variables go here. For Ansible server, currently no
    variables are used.
@@ -233,8 +231,7 @@ From the base1 machine (10.4.12.21) execute following:
     vzctl set <ctid> --nameserver inherit --ram 256M --swap 512M --onboot yes --save
    #+END_EXAMPLE 
 *** Domain name and IP address of Ansible machine
-* COMMENT - remove equals inside example
-   #+BEGIN_EXAMPLE
+    #+BEGIN_EXAMPLE
     - Domain name :: ansible.staging.virtual-labs.ac.in
     - IP Address :: 10.4.14.101
    #+END_EXAMPLE
@@ -281,17 +278,24 @@ From the base1 machine (10.4.12.21) execute following:
 ** Access to Ansible machine
    - Only VLEAD engineers who have their keys placed in =authorized_keys=
      of ansible machine can *only* access.
-** Key based authentication is enabled on the Ansible machine.
+**  Key based authentication is enabled on the Ansible machine.
    LDAP is disabled. Engineers with their public keys added to
    authorized_keys will only be able to ssh.
 ** List of VLEAD engineers who have access to Ansible machine
-*  COMMENT - Complete the list.
    - Thirumal Ravula
    - Saurabh Barjatiya
    - Anon Ray
    - Zubair
    - Jayanth Sagar
    - Shiv Shankar
+   - Sripathi
+   - Soumya
+   - Yogesh
+   - Madhavi
+   - Sanchita
+   - Ambika
+   - Khushpreet
+   - Prakash
 
 * Test Cases
 ** Test case ID :: ansible-test-case-1
