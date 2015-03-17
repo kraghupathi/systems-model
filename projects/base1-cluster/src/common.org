@@ -23,7 +23,7 @@ The functional requirements for common roles are:
 |                  |                    | basis                         |
 |------------------+--------------------+-------------------------------|
 | reqC-1.2         | Securing the       | System is secured by          |
-|                  | systems            | allowing only the shh         |
+|                  | systems            | allowing only the ssh         |
 |                  |                    | based access                  |
 |------------------+--------------------+-------------------------------|
 | reqC-1.3         | Auditing the       | Provision is made to          |
@@ -39,7 +39,7 @@ The functional requirements for common roles are:
    + type of requirement that they belong to commons: C
    + identity number: starting from 1.1
 
-The security best practices is to followed in defining the
+The security best practices is to be followed while defining the
 functionalities. Processes suggested for =hardening a server= is
 implemented. A good documentation on hardening a server can be found
 here: [[http://www.serverhardening.com/][Server Hardening]].
@@ -293,8 +293,8 @@ ssh, mail and fail2ban.
     service: name=fail2ban state=restarted
 #+END_SRC
 
-*** Collaborating the tasks
-All the tasks are collaborated in single main file. 
+*** Collating the tasks
+All the tasks are collated in a single main file. 
 #+BEGIN_SRC yaml :tangle roles/common/tasks/main.yml
 ---
  - name: sshd_config
