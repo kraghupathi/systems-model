@@ -7,7 +7,7 @@
 * Introduction
 
 This document describes the specification, design and implementation of a cluster
-of one machine consisting of one server running the ansible software.
+of one machine consisting of one server running the [[http://ansible.com][ansible]] software.
 
 A cluster is a network of /servers/.  Each server runs /services/
 (e.g., firewall, sshd, etc.) and the server and the services need to
@@ -18,7 +18,7 @@ interfaces, hostname, etc.).
 Configurations are installed either by populating configuration files
 (e.g., =/etc/sysconfig/iptables= or =/etc/sshd_config=) or by running
 shell commands that effect a particular configuration (e.g., =adduser
-ansible= for adding a user on the server).
+vlead-jockey= for adding a user on the server).
 
 =Ansible= is a tool that allows installation of configurations on a
 target server via ansible scripts written in the =yml= notation.
@@ -46,9 +46,7 @@ configuration information across servers.
   only through =ssh=
 
 ** TODO Performance Requirements
- 
 * Design 
-
 Network
 [[https://docs.google.com/a/vlabs.ac.in/drawings/d/1KRicWtnWvtqb06uNl5hYipeAH5KDQywWy7aOVStVAmo/edit][Edit Image]]
 
@@ -68,7 +66,7 @@ Network
      IP address of the base machine is 10.4.12.21.
 **** Hardware Configuration
       - IBM System x3650 M3 server (http://www-03.ibm.com/systems/in/x/hardware/rack/x3650m3/specs.html)
-      - Product ID: 7945D2A 
+      - Product ID: 7945D2A
       - 32GB RAM
       - Two Intel(R) Xeon(R) CPU E5620 processors
         Each Intel Xeon E5620 Processor has 4 Cores (8 threads) which operate
@@ -86,8 +84,8 @@ Network
        - 4gbps brocade fc HBA.
        - 2 ethernet ports
 
-        One ethernet port for LAN is connected to 10.4.5.57 switch gig1/0/1. Corresponding IP of server for the port is 10.4.12.22/22. 
-        The other LAN port is not connected anywhere 
+        One ethernet port for LAN is connected to 10.4.5.57 switch gig1/0/1. Corresponding IP of server for the port is 10.4.12.22/22.
+        The other LAN port is not connected anywhere
 
 **** Software Configuration
        - IP address: 10.4.12.21
@@ -97,14 +95,14 @@ Network
           /dev/sda2 - / - 60GB
           /dev/sda3 - swap - 34GB
           /dev/sda4 - lvm - 1.6TB
-          /dev/sdb1 - lvm - 1.7 TB 
+          /dev/sdb1 - lvm - 1.7 TB
        - Logical Volumes
-          /dev/sda4 and /dev/sdb1 are combined in single VolumeGroup vg_base1. One logical volume LogVol00 is created on it. This logical volume is formatted with ext4 and mounted at /mnt/das1. All openVZ files and VM images are stored in this volume. 
+          /dev/sda4 and /dev/sdb1 are combined in single VolumeGroup vg_base1. One logical volume LogVol00 is created on it. This logical volume is formatted with ext4 and mounted at /mnt/das1. All openVZ files and VM images are stored in this volume.
        - Storage volumes
-         /dev/sdc1 - /mnt/san1 - 1.8TB 
+         /dev/sdc1 - /mnt/san1 - 1.8TB
        - Primary admin:
          Zubair
-         
+
 *** Access Control
     SSH access using key based authentication is allowed on this machine.
     Zubair, Jayanth, Thirumal and Saurabh will have access to this machine by
@@ -123,7 +121,7 @@ Network
 [config-server]
 10.4.14.101
 #+END_SRC
-   
+
 ** Configure the whole cluster
 
 
