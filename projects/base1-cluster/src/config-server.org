@@ -16,30 +16,30 @@ multiple roles.  A role is a specific set of configurations.
 The functional and security requirements for Configuration server are:
 ** Functional Requirements
 
-  1. <<<freq1>>> Configuration server will configure all the nodes in the
+  1. <<freq1>> Configuration server will configure all the nodes in the
      cluster including itself and ensures that the configuration is consistent.
 
      Being =consistent= implies that the configuration currently running on the
      machine does not deviate from the release configuration.
 
-  2. <<<freq2>>> Configuration server has only one `vlead-jockey' user and
+  2. <<freq2>> Configuration server has only one `vlead-jockey' user and
      it has sudo permissions to run all commands.
 
-  3. <<<freq3>>> Only authorized VLEAD members can log-in as 'vlead-jockey' user.
+  3. <<freq3>> Only authorized VLEAD members can log-in as 'vlead-jockey' user.
 
 ** Security Requirements
-   1. <<<sreq1>>> SSH/Port 22 accessible *ONLY* from IIIT IP range.
-   2. <<<sreq2>>> Disable root login via ssh.
-   3. <<<sreq3>>> Limit rate of new connections on port 22.
+   1. <<sreq1>> SSH/Port 22 accessible *ONLY* from IIIT IP range.
+   2. <<sreq2>> Disable root login via ssh.
+   3. <<sreq3>> Limit rate of new connections on port 22.
 
 * Design
 ** Snapshot
 Configuration server
 [[https://docs.google.com/a/vlabs.ac.in/drawings/d/1KRicWtnWvtqb06uNl5hYipeAH5KDQywWy7aOVStVAmo/edit?usp=sharing][Edit Image]]
 
-#+CAPTION:  Ansible Design Diagram
-#+LABEL:  fig-ansible-diagram
-#+NAME: fig-ansible-diagram
+#+CAPTION:  Config Server Design Diagram
+#+LABEL:  fig-config-diagram
+#+NAME: fig-config-diagram
 
 [[./diagrams/ansible.png]]
 
@@ -72,16 +72,35 @@ requests.
 |                 | refer to [[common.org]]                                             |
 |-----------------+-----------------------------------------------------------------|
 
+** Configuration Summary
+|--------------------+-------------------------------+-------------------|
+| *Service/Property* | *Relevant File or Command*    | *Associated with* |
+|--------------------+-------------------------------+-------------------|
+| firewall           | =/etc/sysconfig/iptables/=    | ansible Role      |
+|--------------------+-------------------------------+-------------------|
+| sshd               | =/etc/sshd_config=            | ansible Role      |
+|--------------------+-------------------------------+-------------------|
+| nameserver         | =/etc/resolve.conf=           | NA                |
+|--------------------+-------------------------------+-------------------|
+| hostname           | =/etc/hosts=                  | Provisioning      |
+|--------------------+-------------------------------+-------------------|
+| IP                 | ifconfig                      | NA                |
+|--------------------+-------------------------------+-------------------|
+| fail2ban           | =/etc/fail2ban/jail.local=    | Common Role       |
+|--------------------+-------------------------------+-------------------|
+| logwatch           | =/etc/logwatch/logwatch.conf= | Common Role       |
+|--------------------+-------------------------------+-------------------|
+
 * Implementation
 ** Structure of the scripts
-The implementation of this system is in terms of a collection of Ansible scripts that
+The implementation of this system is in terms of a collection of ansible scripts that
 configures the machine. Scripts are organized as follows:
 
 #+BEGIN_EXAMPLE
 
-|-- ansible.yml
+|-- config-server.yml
 |-- roles
-|   |-- ansible
+|   |-- config-server
 |   |   |-- handlers
 |   |   |   `-- main.yml
 |   |   |-- meta
@@ -108,7 +127,7 @@ configures the machine. Scripts are organized as follows:
     chain, and second counter represents the total size of the packets
     that matched the rule.
 
-#+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables :eval no
+#+BEGIN_SRC yaml :tangle roles/config-server/templates/iptables :eval no
 *filter
 :INPUT ACCEPT [0:0]
 :FORWARD ACCEPT [0:0]
@@ -119,22 +138,22 @@ configures the machine. Scripts are organized as follows:
 *** Rule for INPUT loopback packets
 
     Allow internal communication between services running within the
-    ansible, over loopback interface. Input interface is also
+    config-server, over loopback interface. Input interface is also
     specified to avoid any security breach. The configuration server
     needs to accept all connections from loop back.
 
-#+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
+#+BEGIN_SRC yaml :tangle roles/config-server/templates/iptables
 -A INPUT -i lo -j ACCEPT
 #+END_SRC
 
 
 *** Rule for related and established connections from other machines
-    Allow ansible to continue already related and established
+    Allow config-server to continue already related and established
     connections. If a previous connection was passed and established
     through the firewall, it is allowed to continue.
 
 
-#+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
+#+BEGIN_SRC yaml :tangle roles/config-server/templates/iptables
 -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
 #+END_SRC
 
@@ -145,21 +164,21 @@ configures the machine. Scripts are organized as follows:
     via ssh (port 22) *only* from the IIIT-H local network.
     (A variable is defined in =common_vars=. Currently it is 10.0.0.0/8
 
-#+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
+#+BEGIN_SRC yaml :tangle roles/config-server/templates/iptables
 -A INPUT -p tcp -m tcp -s {{vlead_ip_range}} --dport 22 -j ACCEPT
 #+END_SRC
 
 *** ICMP Rule
     The server accepts ping requests(ICMP) from anywhere
 
-#+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables
+#+BEGIN_SRC yaml :tangle roles/config-server/templates/iptables
 -A INPUT -p icmp -m icmp --icmp-type echo-request -j ACCEPT
 #+END_SRC
 
 *** All other packets should be rejected
     The incoming and outgoing packets on all other ports are rejected.
 
-#+BEGIN_SRC yaml :tangle roles/ansible/templates/iptables :eval no
+#+BEGIN_SRC yaml :tangle roles/config-server/templates/iptables :eval no
 -A INPUT -j REJECT
 -A FORWARD -j REJECT
 COMMIT
@@ -170,7 +189,7 @@ COMMIT
     1) Copy the iptables template to the configuration server.
     2) Restart iptables service to apply the configuration.
 
-#+BEGIN_SRC yaml :tangle roles/ansible/tasks/main.yml :eval no
+#+BEGIN_SRC yaml :tangle roles/config-server/tasks/main.yml :eval no
 ---
 - name: Copy iptables configuration file for configuration server
   template: src=iptables dest=/etc/sysconfig/iptables mode=600 owner=root group=root
@@ -182,7 +201,7 @@ COMMIT
    by modifying the =sshd_config= file .  We assume =PermitRootLogin=
    parameter is already set to some value.
 
-#+BEGIN_SRC yaml :tangle roles/ansible/tasks/main.yml :eval no
+#+BEGIN_SRC yaml :tangle roles/config-server/tasks/main.yml :eval no
 - name: Disable root login via ssh
   lineinfile: dest=/etc/ssh/sshd_config regexp="^PermitRootLogin .*" state=present line="PermitRootLogin no"
 #+END_SRC
@@ -190,7 +209,7 @@ COMMIT
 ** Dependencies
    All the variables go here. For configuration server, currently no
    variables are used.
-#+BEGIN_SRC yaml :tangle roles/ansible/meta/main.yml
+#+BEGIN_SRC yaml :tangle roles/config-server/meta/main.yml
 ---
   dependencies:
   - role: common_vars
@@ -199,17 +218,17 @@ COMMIT
 ** Putting it together
    The configuration server is managed with all the above rules. The
    implementation is done in terms of defining suitable scripts for
-   each role.  The top level script is =build/code/ansible.yml=
+   each role.  The top level script is =build/code/config-server.yml=
 
 #+BEGIN_SRC yaml :tangle site.yml
 ---
   - name: Setup configuration server
-    hosts: configuration-server
+    hosts: config-server
     remote_user: vlead-jockey
     sudo: yes
     roles:
       - common
-      - ansible
+      - config-server
 #+END_SRC
 
 * Provisioning
@@ -232,9 +251,16 @@ From the base1 machine (10.4.12.21) execute following:
    #+END_EXAMPLE
 *** Domain name and IP address of server s
     #+BEGIN_EXAMPLE
-    - Domain name :: ansible.staging.virtual-labs.ac.in
-    - IP Address :: 10.4.14.101
+    - <hostname> :: config-server.staging.virtual-labs.ac.in
+    - <ip address> :: 10.4.14.101
    #+END_EXAMPLE
+    
+    Edit =/etc/hosts= to set the hostname of the configuration server and
+    ensure that the below line is the first entry in the file.
+   #+BEGIN_SRC 
+   127.0.0.1 config-server.staging.virtual-labs.ac.in config-server
+   #+END_SRC
+
 *** Stop and uninstall httpd if it is present in template used to create configuration server
     #+BEGIN_EXAMPLE
     service httpd stop
@@ -298,7 +324,7 @@ From the base1 machine (10.4.12.21) execute following:
    - Sanchita
 
 * Test Cases
-** Test case ID :: ansible-test-case-1
+** Test case ID :: config-server-test-case-1
 *** Description
     SSH is allowed only from IIIT network.
 *** Steps to run the test case
@@ -313,12 +339,12 @@ From the base1 machine (10.4.12.21) execute following:
    #+END_EXAMPLE
 *** Result
     #+BEGIN_EXAMPLE
-    Last login: Mon Mar 16 02:28:31 2015 from ansible.staging.virtual-labs.ac.in
+    Last login: Mon Mar 16 02:28:31 2015 from config-server.staging.virtual-labs.ac.in
     [vlead-jockey@localhost ~]$
     #+END_EXAMPLE
 
 *** Test Passed :: Yes
-** Test case ID :: ansible-test-case-2
+** Test case ID :: config-server-test-case-2
 *** Description
     Checking ports
 *** Steps to run the test case

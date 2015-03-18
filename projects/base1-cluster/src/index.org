@@ -29,7 +29,6 @@ server by (a) keeping all the configuration information in related
 files, and (b) parameterizing (using variables and other mechanisms)
 configuration information across servers.
 
-
 * Requirements 
 ** Functional Requirements 
    Cluster contains a configuration manager, and allows it to be accessed
@@ -44,7 +43,7 @@ configuration information across servers.
 ** Performance Requirements
 
 * Design 
-** Snapshot
+
 Network
 [[https://docs.google.com/a/vlabs.ac.in/drawings/d/1KRicWtnWvtqb06uNl5hYipeAH5KDQywWy7aOVStVAmo/edit][Edit Image]]
 
@@ -53,29 +52,6 @@ Network
 #+NAME: fig-network-diagram
 
 [[./diagrams/network.png]]
-
-
-** Configuration Summary 
-   The table below summarizes the configurations of the machine
-  
-|--------------------+-------------------------------+-------------------|
-| *Service/Property* | *Relevant File or Command*    | *Associated with* |
-|--------------------+-------------------------------+-------------------|
-| firewall           | =/etc/sysconfig/iptables/=    | Ansible Role      |
-|--------------------+-------------------------------+-------------------|
-| sshd               | =/etc/sshd_config=            | Ansible Role      |
-|--------------------+-------------------------------+-------------------|
-| nameserver         | =/etc/resolve.conf=           | NA                |
-|--------------------+-------------------------------+-------------------|
-| hostname           | =/etc/hostname=               | Provisioning      |
-|--------------------+-------------------------------+-------------------|
-| IP                 | ifconfig                      | NA                |
-|--------------------+-------------------------------+-------------------|
-| fail2ban           | =/etc/fail2ban/jail.local=    | Common Role       |
-|--------------------+-------------------------------+-------------------|
-| logwatch           | =/etc/logwatch/logwatch.conf= | Common Role       |
-|--------------------+-------------------------------+-------------------|
-
 
 * Implementation
 ** Provisioning of the cluster
@@ -136,10 +112,10 @@ Network
 
 ** Nodes
    The cluster contains the following machine:
- - [[./ansible.org][Configuration Server]]
+ - [[./config-server.org][Configuration Server]]
 
 #+BEGIN_SRC yaml :tangle hosts :eval no
-[configuration-server]
+[config-server]
 10.4.14.101
 #+END_SRC
    

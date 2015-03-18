@@ -1,5 +1,9 @@
 BUILD_DEST=build
 VER_BRANCH=build-release
+CONFIG_SERVER=10.4.14.101
+CONFIG_SERVER_USER=vlead-jockey
+CONFIG_SERVER_HOME_DIR=/home/${CONFIG_SERVER_USER}
+
 
 all:  build write-version
 
@@ -50,7 +54,7 @@ rm-ver-branch:
 
 # copy the code dir to our configuration-server
 export:
-	rsync -auvz ${BUILD_DEST}/code ansible@10.4.14.101:/home/ansible/
+	rsync -auvz ${BUILD_DEST}/code ${CONFIG_SERVER_USER}@${CONFIG_SERVER}:${CONFIG_SERVER_HOME_DIR}
 
 clean:
 	rm -rf ${BUILD_DEST}
