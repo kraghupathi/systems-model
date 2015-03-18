@@ -6,9 +6,8 @@
 
 * Introduction
 
-We describe here the specification, design and
-implementation of a cluster of one machine consisting of one
-server running ansible.
+This document describes the specification, design and implementation of a cluster
+of one machine consisting of one server running the ansible software.
 
 A cluster is a network of /servers/.  Each server runs /services/
 (e.g., firewall, sshd, etc.) and the server and the services need to
@@ -31,17 +30,23 @@ configuration information across servers.
 
 * Requirements 
 ** Functional Requirements 
-   Cluster contains a configuration manager, and allows it to be accessed
-   (via ssh) and populated with a set of ansible scripts.  These scripts
-   are then run on the configuration server periodically.
+   Current version - =v0.0.1= - of the cluster contains one node - configuration
+   manager.  The cluster is configured and managed by the configuration
+   manager.  The entry point to the cluster is configuration server.
+
+   Access to the configuration manager is via ssh.  Configuration and management
+   of the cluster is done using a set of ansible scripts.  The configuration
+   server ensures there is no deviation in the current configuration of the
+   cluster from the released version by periodically applying the
+   configuration.
 
 ** Security Requirements
 
-  The cluster's configuration server is accessible from the outside
-  only through =ssh= and that too from a fixed IP network (IIIT).
+  The configuration server is accessible from a fixed IP network (IIIT)
+  only through =ssh=
 
-** Performance Requirements
-
+** TODO Performance Requirements
+ 
 * Design 
 
 Network

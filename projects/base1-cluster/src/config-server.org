@@ -28,9 +28,9 @@ The functional and security requirements for Configuration server are:
   3. <<freq3>> Only authorized VLEAD members can log-in as 'vlead-jockey' user.
 
 ** Security Requirements
-   1. <<sreq1>> SSH/Port 22 accessible *ONLY* from IIIT IP range.
-   2. <<sreq2>> Disable root login via ssh.
-   3. <<sreq3>> Limit rate of new connections on port 22.
+   4. <<sreq4>> SSH/Port 22 accessible *ONLY* from IIIT IP range.
+   5. <<sreq5>> Disable root login via ssh.
+   6. <<sreq6>> Limit rate of new connections on port 22.
 
 * Design
 ** Snapshot
@@ -62,13 +62,13 @@ requests.
 | [[freq3]]           | public keys of VLEAD users are copied to the authorized keys    |
 |                 | of the Configuration server.                                    |
 |-----------------+-----------------------------------------------------------------|
-| [[sreq1]]           | This is achieved by building the appropriate rules and          |
+| [[sreq4]]           | This is achieved by building the appropriate rules and          |
 |                 | ensuring iptables service is running.                           |
 |-----------------+-----------------------------------------------------------------|
-| [[sreq2]]           | This is achieved by configuring the sshd_config file and        |
+| [[sreq5]]           | This is achieved by configuring the sshd_config file and        |
 |                 | ensuring sshd service is running                                |
 |-----------------+-----------------------------------------------------------------|
-| [[sreq3]]           | This is taken care by the common role. For more information     |
+| [[sreq6]]           | This is taken care by the common role. For more information     |
 |                 | refer to [[common.org]]                                             |
 |-----------------+-----------------------------------------------------------------|
 
@@ -113,12 +113,11 @@ configures the machine. Scripts are organized as follows:
 |   |   ...
 #+END_EXAMPLE
 
-** Hardening, OS Updates etc.
-   Common role takes care of functional requirement [[1]]. More
+** Hardening
+   Common role takes care of functional requirement [[freq1]]. More
    information is [[./common.org][here]].
 
 ** Building the firewall rules
-
 *** The default rules for filter table
     Default policy for input, forward and output is set as ACCEPT. If
     packet does not match any rule then this default action is applied
@@ -134,9 +133,7 @@ configures the machine. Scripts are organized as follows:
 :OUTPUT ACCEPT [0:0]
 #+END_SRC
 
-
-*** Rule for INPUT loopback packets
-
+*** Rule for allowing packets within the machine
     Allow internal communication between services running within the
     config-server, over loopback interface. Input interface is also
     specified to avoid any security breach. The configuration server
@@ -145,7 +142,6 @@ configures the machine. Scripts are organized as follows:
 #+BEGIN_SRC yaml :tangle roles/config-server/templates/iptables
 -A INPUT -i lo -j ACCEPT
 #+END_SRC
-
 
 *** Rule for related and established connections from other machines
     Allow config-server to continue already related and established
@@ -162,7 +158,7 @@ configures the machine. Scripts are organized as follows:
     The base1-cluster is on IIIT-H's local network
     The configuration server is accessible
     via ssh (port 22) *only* from the IIIT-H local network.
-    (A variable is defined in =common_vars=. Currently it is 10.0.0.0/8
+    (A variable is defined in [[./common_vars.org][common_vars]]
 
 #+BEGIN_SRC yaml :tangle roles/config-server/templates/iptables
 -A INPUT -p tcp -m tcp -s {{vlead_ip_range}} --dport 22 -j ACCEPT
@@ -249,18 +245,7 @@ From the base1 machine (10.4.12.21) execute following:
     vzctl start <ctid>
     vzctl set <ctid> --nameserver inherit --ram 256M --swap 512M --onboot yes --save
    #+END_EXAMPLE
-*** Domain name and IP address of server s
-    #+BEGIN_EXAMPLE
-    - <hostname> :: config-server.staging.virtual-labs.ac.in
-    - <ip address> :: 10.4.14.101
-   #+END_EXAMPLE
-    
-    Edit =/etc/hosts= to set the hostname of the configuration server and
-    ensure that the below line is the first entry in the file.
-   #+BEGIN_SRC 
-   127.0.0.1 config-server.staging.virtual-labs.ac.in config-server
-   #+END_SRC
-
+*** Domain name and IP address
 *** Stop and uninstall httpd if it is present in template used to create configuration server
     #+BEGIN_EXAMPLE
     service httpd stop
@@ -326,9 +311,10 @@ From the base1 machine (10.4.12.21) execute following:
 * Test Cases
 ** Test case ID :: config-server-test-case-1
 *** Description
-    SSH is allowed only from IIIT network.
+    Test to check if SSH is allowed only from IIIT network for the user
+    vlead-jockey.
 *** Steps to run the test case
-    Test ssh login is allowed for =vlead-jockey= user from IIIT network.
+    From IIIT network, ssh to the config-server using command below
    #+BEGIN_SRC
     ssh vlead-jockey@10.4.14.101
    #+END_SRC
@@ -346,10 +332,9 @@ From the base1 machine (10.4.12.21) execute following:
 *** Test Passed :: Yes
 ** Test case ID :: config-server-test-case-2
 *** Description
-    Checking ports
+    Test if all ports of configuration server are blocked except for TCP port 22
 *** Steps to run the test case
-    Test if all ports of configuration server are blocked except for
-    port 22
+    Issue the below command.
     #+BEGIN_SRC
     $ nmap -v 10.4.14.101
     #+END_SRC
@@ -397,6 +382,6 @@ From the base1 machine (10.4.12.21) execute following:
 
      Read data files from: /usr/bin/../share/nmap
      Nmap done: 1 IP address (1 host up) scanned in 1.92 seconds
-    #+END_EXAMPLE
+     #+END_EXAMPLE
 *** Test Passed :: Yes
 
