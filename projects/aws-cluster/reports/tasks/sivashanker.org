@@ -1,0 +1,13 @@
+#+TITLE: Tasks Report 
+#+Author: siva shanker
+#+Email: shankar@vlabs.ac.in
+* Daily tasks report 
+** <2015-03-24 Tue>
+- worked on designing network diagram of reverseproxy and incoming
+  and outgoing connections of reverseproxy
+- Added some more firewall rules to reverseproxy 
+  + incoming http packets allowing from internal_vpc and from the
+    router
+  + Added ssh access to reverseproxy from management IPs
+- Updated functional and security requirements of reverseproxy model
+- Took some feedback from Yogesh on reverseproxy model
