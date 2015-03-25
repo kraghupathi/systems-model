@@ -6,3 +6,8 @@
  - Reviewed Yogesh's document on lab deployment procedure with Professor
  - Discussion with Arnuv for the security model, fixed an appointment for his task
  - Bootstrapped rsyslog and private DNS servers
+** 25 March 2015 Wednesday
+ - Meeting with Arnav for security model
+ - Bootstrapped router, reverseproxy
+ - Bootstrapped private DNS and logged the errors
+ - Team standup meeting with Saurabh
