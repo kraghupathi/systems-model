@@ -1,0 +1,8 @@
+
+** 24 March 2015 Tuesday
+ - Team standup with Saurabh, Professor, Dinesh
+ - Helped Siva with issues regarding common role
+ - Got Jayanth and Yogesh to log email, LDAP account creation on bit bucket
+ - Reviewed Yogesh's document on lab deployment procedure with Professor
+ - Discussion with Arnuv for the security model, fixed an appointment for his task
+ - Bootstrapped rsyslog and private DNS servers
