@@ -5,4 +5,14 @@
 
 ** Month:: March
 
-*** Day::
+*** Date:: 24 March 2015
+1) Created document of procedure for hosting labs on base machines. Document is
+   hosted on vlead-wiki server.
+2) Reviewed reverseproxy server aws model created by Mr. Siva.
+
+*** Date:: 25 March 2015
+1) Contanct integration engineers of IIT-Kanpur regarding hosting of their labs
+   in IIIT infrastrcture.
+2) Once again review the aws model of reverseproxy with Mr. Siva.
+3) Help Miss. Soumya in her work to structure aws repository properly.
+4) Provide vlead engineers and their email ids to Mrs. Geeta. 
