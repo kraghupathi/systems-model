@@ -15,4 +15,7 @@
    in IIIT infrastrcture.
 2) Once again review the aws model of reverseproxy with Mr. Siva.
 3) Help Miss. Soumya in her work to structure aws repository properly.
-4) Provide vlead engineers and their email ids to Mrs. Geeta. 
+4) Provide list of vlead engineers and their email ids to Mrs. Geeta.
+5) Help Mr. Arnav to build threat model for vlead infrastructure.
+6) Completed rsyslog aws model; test cases are to be implemented.
+
