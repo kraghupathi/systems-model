@@ -1,0 +1,69 @@
+#+TITLE: Private DNS
+#+PROPERTY: session *scratch*
+#+PROPERTY: results output
+#+PROPERTY: exports code
+#+SETUPFILE: org-templates/level-0.org
+
+* Introduction
+This document describes the requirements, design and implementation of
+the Domain name server which is part of the AWS cluster.
+
+This server is used to provide domain name resolution for all other servers in the cluster.  Using
+Ansible, a machine is configured using multiple roles.  A role is a specific set
+of configurations.
+
+* Requirements
+** Functional
+   - Resolve our authoritative domain names for all internal clients
+   - Zone entries should be configurable (from a particular file on
+     ansible server)
+   - Resolve all domain names for internal clients (Peer DNS).
+
+** Security
+   - Port 22 accessible only from ansible server.
+   - Allow port 53 (UDP) from the cluster.
+   - Allow ICMP (ping echo request & reply) from the internal network.
+   - Allow port 5666 accessible only from nagios to monitor the
+     machine.
+* Design
+** Snapshot
+** Design specifications
+** Configuration summary 
+* Implementation
+** Structure of the scripts
+   - The implementation of this system is in terms of a collection of
+     Ansible scripts that configure the machine. These scripts are
+     organized as follows:
+
+#+BEGIN_EXAMPLE
+|-code
+|   |-- privatedns.yml
+|   |-- roles
+|   |   |-- privatedns
+|   |   |   |-- handlers
+|   |   |   |   `--main.yaml
+|   |   |   |-- tasks
+|   |   |   |   `--main.yaml
+|   |   |   |-- templates
+|   |   |   |   `--main.yaml
+|   |   |   |-- vars
+|   |   |   |   `--main.yaml
+|   |   |   |-- meta
+|   |   |       `--main.yaml
+#+END_EXAMPLE
+
+** Installin the bind service
+   - The BIND service has to be setup for configuring the machine as a
+     DNS. This is done by the following code:
+#+BEGIN_SRC YAML :tangle roles/dns/tasks/main.yaml
+
+#+END_SRC
+** Building the firewall rules
+** Apply firewall rules
+** Disable root login via ssh
+** Dependencies
+** Putting it together
+* Provisioning
+** Creation
+** Access 
+* Test Cases
