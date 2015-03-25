@@ -1,0 +1,27 @@
+#+TITLE:     The AWS cluster
+#+AUTHOR:    M.S.Soumya
+#+EMAIL:     ms@ms
+#+DATE:      2015-03-25 Wed
+#+PROPERTY: session *scratch*
+#+PROPERTY: results output
+#+PROPERTY: exports code
+#+SETUPFILE: org-templates/level-0.org
+
+* Introduction
+* Requirements
+** Functional
+** Security
+* Design
+* Iplementation
+** Provisioning of the cluster
+** Nodes
+- Ossec
+- Rsyslog
+- Private DNS
+- Public DNS
+- ReverseProxy
+- Nagios
+- Router
+** Configuring the whole cluster
+- Common role
+- Common_vars role
