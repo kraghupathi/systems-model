@@ -487,3 +487,17 @@ dependencies:
 2. http://www.slashroot.in/linux-kernel-rpfilter-settings-reverse-path-filtering
 
 * Test Cases
+** Test Case-1
+*** Link: http://help.papertrailapp.com/kb/configuration/troubleshooting-remote-syslog-reachability/
+*** Objective: Test rsyslog server's firewall rules to accept incoming connections on port UDP 514
+*** Apparatus:
+1) Rsyslog server
+2) Rsyslog client
+
+*** Theory
+- Rsyslog server accepts log messages from rsyslog clients on UDP port 514. For
+  machine to be configured as rsyslog server firewall rule of the machine has to
+  allow incoming connections on port 514.
+
+*** Experiment
+- 
