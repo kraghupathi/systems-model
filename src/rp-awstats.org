@@ -2060,16 +2060,68 @@ configuration file
                 reverseproxy and returns the content of particular
                 lab.
 - Apparatus :: 
-            + Two containers 
+            + Three containers ::
               1) reverseproxy server
-              2) container with lab deployed
-            + /etc/hosts
-              to add hostnames of the labs, so these names are used
-              in virtual-hosts.
-              for name resolving internally 
-            + PC/extra container
-              to test reverseproxy is working or not using browser
-- 
+              2) lab1 container  
+              3) lab2 container 
+            + /etc/hosts of reverseproxy  ::
+              1) To add hostnames of two lab, so these names are used
+                 in virtual-hosts. and
+	      2) For internal name resolving
+            + PC/extra container ::
+              1) To add hostname of the lab to =/etc/hosts= file 
+             
+              
+- Procedure ::
+           1) Create two new containers and install dependencies 
+              + Dependencies ::
+                  a) http
+                  b) php(if needed)
+           2) create dummy index.html file in each container  
+           3) Add virtual host entries in reverseproxy in
+              =/etc/httpd/conf.d/virtual-labs.ac.in= of two labs
+             
+           4) Add hostname of each lab in =/etc/hosts= by giving ip of
+              lab in reverseproxy and for internal name resolving
+- Experiments ::
+   + From command line ::
+     - To test whether the reverseproxy is working or not 
+        from command line , follow the steps shown below
+     - added hostnames to =/etc/hosts= to my PC
+     #+BEGIN_SRC 
+     reverseproxy_ip lab1.virtual-labs.ac.in
+     reverseproxy_ip lab2.virtual-labs.ac.in
+     #+END_SRC
+     - use *wget* command to get the content of each lab
+     #+BEGIN_SRC 
+     $wget --no-proxy lab1.virtual-labs.ac.in
+     $wget --no-proxy lab2.virtual-labs.ac.in
+     #+END_SRC
+    - the above two commands passes through reverseproxy and gives you *index.html* file content of
+      each lab
+  + From Browser ::
+    - Assume you have added hostnames to =/etc/hosts= in your PC
+      + like below
+      #+BEGIN_SRC 
+      reverseproxy_ip lab1.virtual-labs.ac.in
+      reverseproxy_ip lab2.virtual-labs.ac.in
+      #+END_SRC
+    - set no proxy for *virtual-labs.ac.in in the browser 
+    -  browse the lab URLs http://lab1.virtual-labs.ac.in  and
+       http://lab2.virtual-labs.ac.in from your browser
+
+- Result :: Reverse Proxy is working
+- Observation ::
+    - Absence of --no-proxy, if network uses any proxy server, gives
+      you following error
+     #+BEGIN_SRC 
+     Proxy request sent, awaiting response... 503 Service Unavailable
+     2015-03-26 02:06:09 ERROR 503: Service Unavailable.
+     #+END_SRC     
+** Test Case ID : TC02
+- Objective :: Ana     
+
+             
            
 
 
