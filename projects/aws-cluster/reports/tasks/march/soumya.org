@@ -13,12 +13,21 @@
   - Tried creating a new interface for the container and connecting it
     to the bridge, it still didnt work.
   - All these didnt work because the IP was not a part of that subnet.
-+ Tested the scripts removing the ossec and rsyslog roles. The common
-  roles was causing some problem, so I commented the common roles to
-  test the execution of my scripts. They seem to work fine. Have to be
-  reviewed by Saurabh.
 ** TODO Create a new folder called "aws2" and add the makefile and see that it works properly.
 ** TODO Start modelling the scripts written by Saurabh into a rough Literate version such that 
 **      the code tangles properly in the right structure.
 ** TODO Collaborate with yogesh and siva to add in their models of the rsyslog server and the reverseproxy server.
 
+* [2015-03-25 Wed]
++ Tested the scripts removing the ossec and rsyslog roles. The common
+  roles was causing some problem, so I commented the common roles to
+  test the execution of my scripts. They seem to work fine. Have to be
+  reviewed by Saurabh.
++ Created the aws2 container an added the makefile and the necessary
+  folders to it.
++ Tested the makefile to check if the code tangles properly.
++ Created a rough structure for the model in aws2.
++ Started modelling the Private DNS. Wrote a few requirements, and
+  made a rought diagram.
+** TODO Start modelling Private DNS
+** TODO Send a mail stating the issues faced with the common role.

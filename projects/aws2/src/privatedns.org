@@ -68,6 +68,7 @@ of configurations.
 
 ** Building the firewall rules
 ** Apply firewall rules
+
 ** Disable root login via ssh
 ** Dependencies
 ** Putting it together
