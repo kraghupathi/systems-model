@@ -52,12 +52,20 @@ of configurations.
 |   |   |       `--main.yaml
 #+END_EXAMPLE
 
-** Installin the bind service
+** Installing the bind service
    - The BIND service has to be setup for configuring the machine as a
      DNS. This is done by the following code:
-#+BEGIN_SRC YAML :tangle roles/dns/tasks/main.yaml
 
+#+BEGIN_SRC YAML :tangle roles/privatedns/tasks/main.yaml
+---
+  - name: Install Bind service on the machine
+    yum : name={{item}} state=latest
+    with_items:
+     - bind
+     - bind-utils
+    environment: "{{proxy}}"
 #+END_SRC
+
 ** Building the firewall rules
 ** Apply firewall rules
 ** Disable root login via ssh
