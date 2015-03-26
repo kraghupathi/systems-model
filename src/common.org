@@ -1,0 +1,316 @@
+#+Title: Common Roles
+#+Date: 10 March 2015
+#+PROPERTY: session *scratch*
+#+PROPERTY: results output
+#+PROPERTY: exports code
+#+SETUPFILE: org-templates/level-0.org
+
+* Introduction
+This document describes the requirements, design and implementation of
+the common roles which is part of the cluster. A =role= is a specific
+set of configuration and =common roles= are the roles which will be
+applied on all the deployed servers.
+
+* Requirements
+
+The functional requirements for common roles are:
+
+|------------------+--------------------+--------------------------------|
+| *Requirement ID* | *Requirement*      | *Descritpion*                  |
+|------------------+--------------------+--------------------------------|
+| reqC-1.1         | Log file           | Summary of log files           |
+|                  | summary            | is mailed periodically         |
+|------------------+--------------------+--------------------------------|
+| reqC-1.2         | Securing the       | System is secured by           |
+|                  | systems            | allowing only the ssh          |
+|                  |                    | based access                   |
+|------------------+--------------------+--------------------------------|
+| reqC-1.3         | Auditing the       | Provision is made to           |
+|                  | servers            | audit all the commands run     |
+|                  |                    | on servers                     |
+|------------------+--------------------+--------------------------------|
+| reqC-1.4         | Blocking malicious | Suspected malicious attacker's |
+|                  | attacks            | are captured and banned        |
+|------------------+--------------------+--------------------------------|
+
+*Note:* the convention followed in naming the requirement is: 
+   + abbreviation for requirement: req
+   + type of requirement that they belong to commons: C
+   + identity number: starting from 1.1
+
+The security best practices is to be followed while defining the
+functionalities. Processes suggested for =hardening a server= is
+implemented. A good documentation on hardening a server can be found
+here: [[http://www.serverhardening.com/][Server Hardening]].
+
+* Design    
+Common roles will ensure that the functionalities will be applied on
+all the deployed servers.
+
+* Implementation
+The mentioned requirements are addressed and implemented in the following
+way:
+
+|------------------+--------------------+---------------------------------|
+| *Requirement ID* | *Requirement*      | *Implementation*                |
+|------------------+--------------------+---------------------------------|
+| reqC-1.1         | Log file           | Log file summary is obtained    |
+|                  | summary            | by installing and configuring   |
+|                  |                    | the tool - *logwatch*           |
+|------------------+--------------------+---------------------------------|
+| reqC-1.2         | Securing the       | The system is secured by        |
+|                  | systems            | allowing only the ssh based     |
+|                  |                    | access. *sshd-config* file is   |
+|                  |                    | disabled for password based     |
+|                  |                    | access.                         |
+|------------------+--------------------+---------------------------------|
+| reqC-1.3         | Auditing the       | The commands run on the servers |
+|                  | servers            | is logged along with the time   |
+|                  |                    | stamp. The history settings is  |
+|                  |                    | configured to log the commands. |
+|------------------+--------------------+---------------------------------|
+| reqC-1.4         | Blocking malicious | Suspicious attackers IP is      |
+|                  | attacks            | captured and blocked            |
+|                  |                    | using the tool - *fail2ban*.    |
+|------------------+--------------------+---------------------------------|
+  
+** Structure of the scripts
+The implementation of this system is in terms of a collection of
+ansible scripts that configure the machine.  These scripts are
+organized in the following way:
+
+#+BEGIN_EXAMPLE
+|-- ansible.yml
+|-- roles
+|   |-- ansible
+|   |   |...
+|   |   |...
+|   |-- common
+|   |   |-- files
+|   |   |    |-- jail.local
+|   |   |    `-- history.sh
+|   |   |-- handlers
+|   |   |    `-- main.yml
+|   |   |-- meta
+|   |   |   `-- main.yml
+|   |   |-- tasks
+|   |   |   |-- history_config.yml
+|   |   |   |-- common_pkg.yml
+|   |   |   |-- logwatch.yml
+|   |   |   |-- sendmail_configure.yml
+|   |   |   |-- main.yml
+|   |   |   |-- fail2ban.yml
+|   |   |   `-- sshd_config.yml
+#+END_EXAMPLE
+
+*** Log File Summary
+Servers and applications generally create "log files" to keep track of
+activities taking place at any given time. Understanding the log files
+is of vital importance to know the past events and analyzing them to
+provide quick solutions, if needed any. *logwatch* is one of such
+available tools to capture and analyze the log file summary. The
+logwatch project page can be found [[http://sourceforge.net/projects/logwatch/][HERE]].
+
+The list of tasks to be carried out are:
+   + Installing the logwatch
+   + Copying the configuration file
+   + Setting up the mail server to mail the summary
+   + Setting the detail of log level to =medium=   
+
+#+BEGIN_SRC yaml :tangle roles/common/tasks/logwatch.yml
+---
+#install and copy logwatch configuration
+
+ - name: install logwatch
+   yum: name=logwatch state=present
+   environment: proxy_env
+
+ - name: copy logwatch.conf from default directory /etc/
+   command: /bin/cp -p /usr/share/logwatch/default.conf/logwatch.conf /etc/logwatch/conf/logwatch.conf
+  
+ - name: changing the mail to in logwatch.conf, ensure proper owner,group, mode
+   lineinfile: dest=/etc/logwatch/conf/logwatch.conf state=present regexp='^MailTo =' line='MailTo = alerts@vlabs.ac.in' owner=root group=root mode=0644
+
+ - name: change the level of detail to medium
+   lineinfile: dest=/etc/logwatch/conf/logwatch.conf state=present regexp='^Detail =' line='Detail = Med'
+#+END_SRC
+
+*** Mail Exchange Records
+The log summary is mailed to the admins periodically to the email-id
+=alerts@vlabs.ac.in= . The mail exchange records is configured to
+look-up and send emails via iiit-h network.
+
+#+BEGIN_SRC yaml :tangle roles/common/tasks/sendmail_configure.yml
+---
+#This play configures smart hosts
+
+ - name: Change the smart host entry in /etc/mail/sendmail.mc
+   lineinfile: dest=/etc/mail/sendmail.mc regexp="SMART_HOST" line="define(`SMART_HOST', `{{iiit_mail_server}}')dnl"  state=present mode=0644
+   
+   notify: 
+     - restart sendmail
+#+END_SRC
+
+*** Securing The Systems
+The systems are secured by allowing only the ssh based
+access. Password based access is diabled. A good documentation on SSH
+can be found [[http://en.wikipedia.org/wiki/Secure_Shell][HERE]].
+
+#+BEGIN_SRC yaml :tangle roles/common/tasks/sshd_config.yml
+---
+#Modify  sshd_config and call ssh restart handler
+   
+ - name: Permit root login without-pasword(key based)
+   lineinfile: dest=/etc/ssh/sshd_config regexp='PermitRootLogin ' line='PermitRootLogin without-password' state=present
+
+ - name: Disable Password authentication
+   lineinfile: dest=/etc/ssh/sshd_config regexp='PasswordAuthentication ' line='PasswordAuthentication no' 
+
+ - name: Enable Public key authentication
+   lineinfile: dest=/etc/ssh/sshd_config regexp='PubkeyAuthentication ' line='PubkeyAuthentication yes'
+
+ - name: Do not permit empty password, also ensure proper owner, group and permissions
+   lineinfile: dest=/etc/ssh/sshd_config regexp='PermitEmptyPasswords ' line='PermitEmptyPasswords no' mode=0600 owner=root group=root
+
+#Call handler to restart sshd
+   notify:
+     - restart sshd
+
+#+END_SRC
+       
+*** Auditing the Servers
+Servers are audited by maintaining a log of all the commands run on
+them along with the time stamp.
+
+Following history parameters are set for audit purpose:
+ - HISTTIMEFORMAT :: display the time stamp along with the command
+                     history
+ - HISTSIZE       :: is the number of lines or commands that are stored in
+                     memory in a history list while bash session is
+                     ongoing
+ - HISTFILESIZE   :: is the number of lines or commands that are allowed
+                     in the history file at startup time of a session,
+                     and are stored in the history file at the end of
+                     bash session for use in future sessions.
+
+#+BEGIN_SRC shell :tangle roles/common/files/history.sh
+#!/bin/bash
+HISTTIMEFORMAT="%y %m %d %T"
+HISTSIZE=100000
+HISTFILESIZE=100000
+export HISTTIMEFORMAT HISTSIZE HISTFILESIZE
+#+END_SRC 
+
+The above parameters are set and configured using a history
+configuration file.
+#+BEGIN_SRC yaml :tangle roles/common/tasks/history_config.yml
+---
+#This play copies a stock history file
+ - name: copying history
+   copy: src=history.sh dest=/etc/profile.d/history.sh owner=root group=root mode=0655
+#+END_SRC 
+
+*** Blocking Malicious Attacks
+Fail2ban tool is used to block the malicious attackers. Fail2ban scans
+log files and bans IPs that show the malicious signs of agents seeking
+for exploits. It comes with filters for various services like ssh,
+apache, mysql etc. Fail2Ban can be used to update firewall rules to
+reject the IP addresses for a specified amount of time. Even other
+services like sending mails, alerts can be configured.
+
+*Python* is the pre-requisite package to be installed to run Fail2ban
+service. More details can be found in the [[http://www.fail2ban.org/wiki/index.php/Main_Page][WIKI]] page of Fail2ban. 
+
+The objective is to install Fail2ban on all the servers and apply the
+local rules.
+#+BEGIN_SRC yaml :tangle roles/common/tasks/fail2ban.yml
+---
+#this play will install and configure fail2ban
+
+- name: install fail2ban
+  yum: name=fail2ban state=installed
+
+- name: copy jail.local
+  copy: src=jail.local dest=/etc/fail2ban owner=root group=root mode=0644
+  
+  notify:
+   - restart fail2ban
+#+END_SRC
+
+The configuration file =jail.local= applies the required rules on all
+the servers.
+#+BEGIN_SRC shell :tangle roles/common/files/jail.local
+[ssh-iptables]
+
+enabled  = true
+filter   = sshd
+action   = iptables[name=SSH, port=ssh, protocol=tcp]
+           sendmail-whois[name=SSH, dest=alerts@vlabs.ac.in, sender=fail2ban@example.com, sendername="Fail2Ban"]
+logpath  = /var/log/secure
+maxretry = 5
+#+END_SRC 
+
+*** Bind Utilities
+Bind utilities is a common package which includes the client side
+programs nslookup, dig and host. The utilities are used by admins to
+trouble shoot the network related issues.
+#+BEGIN_SRC yaml :tangle roles/common/tasks/common_pkg.yml
+---
+#this play installs the common packages needed by admins to troubleshoot issues
+ - name: install bind-utils
+   yum: name=bind-utils state=present
+   environment:
+    proxy_env
+#+END_SRC 
+
+*** Common Variables
+Several common variables which are common to network are defined in
+=common_vars= file which needs to be included as a dependency. 
+#+BEGIN_SRC yaml :tangle roles/common/meta/main.yml
+---
+dependencies:
+  - role: common_vars
+#+END_SRC
+
+*** Handlers
+The things listed in the ‘notify’ section of a task are called handlers.
+Handlers are lists of tasks that are referenced by name. Regardless of
+how many things notify a handler, it will run only once, after all of
+the tasks complete in a particular play. Handlers is used by
+ssh, mail and fail2ban.
+#+BEGIN_SRC yaml :tangle roles/common/handlers/main.yml
+---
+  - name: restart sshd
+    service: name=sshd state=restarted
+ 
+  - name: restart iptables
+    service: name=iptables state=restarted
+  
+  - name: restart sendmail
+    service: name=sendmail state=restarted
+
+  - name: restart fail2ban
+    service: name=fail2ban state=restarted
+#+END_SRC
+
+*** Collating the tasks
+All the tasks are collated in a single main file. 
+#+BEGIN_SRC yaml :tangle roles/common/tasks/main.yml
+---
+ - name: sshd_config
+   include: sshd_config.yml
+
+ - name: history file
+   include: history_config.yml
+
+ - name: logwatch install
+   include: logwatch.yml
+
+ - name: sendmail configure
+   include: sendmail_configure.yml
+
+ - name: install common packages
+   include: common_pkg.yml
+#+END_SRC
+
+
