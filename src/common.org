@@ -103,7 +103,7 @@ organized in the following way:
 |   |   |   `-- sshd_config.yml
 #+END_EXAMPLE
 
-*** Log File Summary
+** Log File Summary
 Servers and applications generally create "log files" to keep track of
 activities taking place at any given time. Understanding the log files
 is of vital importance to know the past events and analyzing them to
@@ -135,7 +135,7 @@ The list of tasks to be carried out are:
    lineinfile: dest=/etc/logwatch/conf/logwatch.conf state=present regexp='^Detail =' line='Detail = Med'
 #+END_SRC
 
-*** Mail Exchange Records
+** Mail Exchange Records
 The log summary is mailed to the admins periodically to the email-id
 =alerts@vlabs.ac.in= . The mail exchange records is configured to
 look-up and send emails via iiit-h network.
@@ -151,7 +151,7 @@ look-up and send emails via iiit-h network.
      - restart sendmail
 #+END_SRC
 
-*** Securing The Systems
+** Securing The Systems
 The systems are secured by allowing only the ssh based
 access. Password based access is diabled. A good documentation on SSH
 can be found [[http://en.wikipedia.org/wiki/Secure_Shell][HERE]].
@@ -178,7 +178,7 @@ can be found [[http://en.wikipedia.org/wiki/Secure_Shell][HERE]].
 
 #+END_SRC
        
-*** Auditing the Servers
+** Auditing the Servers
 Servers are audited by maintaining a log of all the commands run on
 them along with the time stamp.
 
@@ -210,7 +210,7 @@ configuration file.
    copy: src=history.sh dest=/etc/profile.d/history.sh owner=root group=root mode=0655
 #+END_SRC 
 
-*** Blocking Malicious Attacks
+** Blocking Malicious Attacks
 Fail2ban tool is used to block the malicious attackers. Fail2ban scans
 log files and bans IPs that show the malicious signs of agents seeking
 for exploits. It comes with filters for various services like ssh,
@@ -250,7 +250,7 @@ logpath  = /var/log/secure
 maxretry = 5
 #+END_SRC 
 
-*** Bind Utilities
+** Bind Utilities
 Bind utilities is a common package which includes the client side
 programs nslookup, dig and host. The utilities are used by admins to
 trouble shoot the network related issues.
@@ -263,7 +263,7 @@ trouble shoot the network related issues.
     proxy_env
 #+END_SRC 
 
-*** Common Variables
+** Common Variables
 Several common variables which are common to network are defined in
 =common_vars= file which needs to be included as a dependency. 
 #+BEGIN_SRC yaml :tangle roles/common/meta/main.yml
@@ -272,7 +272,7 @@ dependencies:
   - role: common_vars
 #+END_SRC
 
-*** Handlers
+** Handlers
 The things listed in the ‘notify’ section of a task are called handlers.
 Handlers are lists of tasks that are referenced by name. Regardless of
 how many things notify a handler, it will run only once, after all of
@@ -293,7 +293,7 @@ ssh, mail and fail2ban.
     service: name=fail2ban state=restarted
 #+END_SRC
 
-*** Collating the tasks
+** Collating the tasks
 All the tasks are collated in a single main file. 
 #+BEGIN_SRC yaml :tangle roles/common/tasks/main.yml
 ---
@@ -314,7 +314,8 @@ All the tasks are collated in a single main file.
 #+END_SRC
 
 
-* Common Firewall Rule
+** Common Firewall Rule
+
 *** Default rules for filter table
 - Default policy for input, forward and output is set to be as ACCEPT. If packet
   does not match any rule then the default action is applied to the packet.
@@ -489,4 +490,5 @@ All the tasks are collated in a single main file.
 #+BEGIN_EXAMPLE
 COMMIT
 #+END_EXAMPLE
+    
     
