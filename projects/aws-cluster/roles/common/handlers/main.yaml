@@ -1,4 +1,0 @@
----
-- name: restart sendmail
-  service: name=sendmail state=restarted
-

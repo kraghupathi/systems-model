@@ -1,5 +1,0 @@
----
-  ossec_url: https://github.com/ossec/ossec-hids/releases/download/v2.8.0/ossec-hids-2.8.tar.gz
-  ossec_path: /root/ossec-hids-2.8
-  ossec_manage_agent_input: /root/ossec_manage_agent_input.txt
-  ossec_extract_path: /root

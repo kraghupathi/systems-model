@@ -1,3 +1,0 @@
----
-- name: enable_ip_forwarding
-  shell: sysctl net.ipv4.ip_forward=1
