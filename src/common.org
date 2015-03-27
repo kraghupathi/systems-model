@@ -43,7 +43,7 @@ functionalities. Processes suggested for =hardening a server= is
 implemented. A good documentation on hardening a server can be found
 here: [[http://www.serverhardening.com/][Server Hardening]].
 
-* Design    
+* Design
 Common roles will ensure that the functionalities will be applied on
 all the deployed servers.
 
@@ -313,7 +313,6 @@ All the tasks are collated in a single main file.
    include: common_pkg.yml
 #+END_SRC
 
-
 ** Common Firewall Rule
 
 *** Default rules for filter table
@@ -332,15 +331,16 @@ All the tasks are collated in a single main file.
 #+END_EXAMPLE 
 
 *** Rule for INPUT loopback packets
-- Allow internal communication between services running within the rsyslog
-  server, over loopback interface. Destination ip is also specified to avoid any
-  security breach.
+- Allow internal communication between services running within the server, over
+  loopback interface. Destination ip is also specified to avoid any security
+  breach.
 #+BEGIN_EXAMPLE
 #Allow internal process to process communication over loopback interface
 -A INPUT -i lo -d 127.0.0.0/8 -j ACCEPT
 #+END_EXAMPLE
  
 *** Rate limiting new connections
+- Limit new TCP connections. Limit is set to a proper value which 
 #+BEGIN_EXAMPLE
 #Rate limit new connections to 20 new connections per 30 seconds
 -A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --set
@@ -349,7 +349,7 @@ All the tasks are collated in a single main file.
 #+END_EXAMPLE
 
 *** Rule for incoming ping request with rate limiting
-- Allow rsyslog server to accept incoming ping requests from anywhere.
+- Allow server to accept incoming ping requests from anywhere.
 #+BEGIN_EXAMPLE
 #Allow to accept incoming ping requests from anywhere
 -A INPUT -p icmp --icmp-type echo-request -m limit --limit 60/minute --limit-burst 120 -j ACCEPT
@@ -358,35 +358,29 @@ All the tasks are collated in a single main file.
 #+END_EXAMPLE
 
 *** Rule for ongoing connection to other machine
-- Allow rsyslog server to continue already related and established
-  connections. Previous connection would have passed through the firewall and if
-  they got established, connection is allowed to continue.
+- Allow server to continue already related and established connections. Previous
+  connection would have passed through the firewall and if they got established,
+  connection is allowed to continue.
 #+BEGIN_EXAMPLE
 #Allow to continue already related and established connections
 -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
 #+END_EXAMPLE
 
 *** Rule for incoming ssh connection
-- Allowing rsyslog server to accept incoming ssh TCP port 22 connections *only*
-  from the ansible and nagios. For loop is used to enable rule for multiple
-  management server and ansible server.
+- Allowing server to accept incoming ssh TCP port 22 connections *only* from the
+  ansible and nagios. For loop is used to enable rule for multiple management
+  server and ansible server.
 #+BEGIN_EXAMPLE
-#Allowing incoming ssh connections only from the management ips. Hopefully fail2ban will take care of bruteforce attacks from management IPs
+#Allowing incoming ssh connections only from the management ips. 
+#Hopefully fail2ban will take care of bruteforce attacks from management IPs
 {% for item in management_ips  %}  
 -A INPUT -m state --state NEW -s {{ item }} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
-#Allowing incoming ssh connections only from ansible server. Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
+#Allowing incoming ssh connections only from ansible server. 
+#Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
 {% for item in ansible_server_ips  %}
 -A INPUT -m state --state NEW -s {{ item }} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
-#+END_EXAMPLE
-
-*** Rule for incoming connection for rsyslog messages
-- Allowing rsyslog server to accept incoming packets on udp port 514 from
-  anywhere.
-#+BEGIN_EXAMPLE
-#Allow to accept incoming rsyslog messages from anywhere
--A INPUT -m state --state NEW -p udp -m udp --dport 514 -j ACCEPT
 #+END_EXAMPLE
 
 *** Rule for incoming NRPE query from Nagios server
@@ -432,16 +426,16 @@ All the tasks are collated in a single main file.
 #+END_EXAMPLE
 
 *** Rule for ongoing connection from other machine
-- Allow rsyslog server to continue already related and established
-  connections. Previous connection must have passed through the firewall and if
-  they got established, connection is allowed to continue.
+- Allow server to continue already related and established connections. Previous
+  connection must have passed through the firewall and if they got established,
+  connection is allowed to continue.
 #+BEGIN_EXAMPLE
 #Allow to continue already related and established connections
 -A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
 #+END_EXAMPLE
 
 *** Rule for outgoing dns request
-- Allow rsyslog server to make dns queries.
+- Allow server to make dns queries.
 #+BEGIN_EXAMPLE
 #Allow to make dns queries
 -A OUTPUT -p udp -m udp --dport 53 -j ACCEPT
@@ -467,7 +461,7 @@ All the tasks are collated in a single main file.
 #+END_EXAMPLE
     
 *** Rule for outgoing ping request
-- Allow rsyslog server to send ping requests to anywhere.
+- Allow server to send ping requests to anywhere.
 #+BEGIN_EXAMPLE
 #Allow to send ping requests to anywhere.
 -A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT
