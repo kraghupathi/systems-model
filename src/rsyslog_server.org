@@ -285,7 +285,7 @@ COMMIT
      authpriv.*      ?TmplAuth
      *.info,mail.none,authpriv.none,cron.none   ?TmplAuth
      #+END_EXAMPLE
-**** Uncomment following directives: 
+**** Uncomment following directives:
      #+BEGIN_EXAMPLE
      $ModLoad imudp
      $UDPServerRun 514
@@ -379,6 +379,118 @@ $template TmplAuth, "/var/log/%HOSTNAME%/%PROGRAMNAME%.log"
 authpriv.*      ?TmplAuth
 *.info,mail.none,authpriv.none,cron.none   ?TmplAuth
 
+#+END_SRC
+
+** COMMENT Build Configuration file version-2 
+*** Steps to configure
+- Rsyslog service is configured by =/etc/rsyslog.conf= configuration file.
+  Default configuration setup is edited according to our requirement as follows:
+**** Append following lines at the bottom of the file
+     #+BEGIN_EXAMPLE
+     $template TmplAuth, "/var/log/%HOSTNAME%/%PROGRAMNAME%.log"
+     *.*      ?TmplAuth
+     #+END_EXAMPLE
+**** Uncomment following directives:
+     #+BEGIN_EXAMPLE
+     $ModLoad imudp
+     $UDPServerRun 514
+     #+END_EXAMPLE
+**** Comment following rules
+     #+BEGIN_EXAMPLE
+     *.info;mail.none;authpriv.none;cron.none                -/var/log/messages
+     authpriv.*                                              -/var/log/secure
+     mail.*                                                  -/var/log/maillog
+     cron.*                                                  -/var/log/cron
+     *.emerg                                                 *
+     uucp,news.crit                                          -/var/log/spooler
+     local7.*                                                -/var/log/boot.log
+     #+END_EXAMPLE
+*** Complete configuration file
+- Configuration file after making modifications is shown below
+#+BEGIN_SRC yml :tangle roles/rsyslog_server/files/rsyslog_server_version2.conf :eval no
+# rsyslog v5 configuration file
+
+# For more information see /usr/share/doc/rsyslog-*/rsyslog_conf.html
+# If you experience problems, see http://www.rsyslog.com/doc/troubleshoot.html
+
+#### MODULES ####
+
+$ModLoad imuxsock # provides support for local system logging (e.g. via logger command)
+$ModLoad imklog   # provides kernel logging support (previously done by rklogd)
+#$ModLoad immark  # provides --MARK-- message capability
+
+# Provides UDP syslog reception
+$ModLoad imudp
+$UDPServerRun 514
+
+# Provides TCP syslog reception
+#$ModLoad imtcp
+#$InputTCPServerRun 514
+
+
+#### GLOBAL DIRECTIVES ####
+
+# Use default timestamp format
+$ActionFileDefaultTemplate RSYSLOG_TraditionalFileFormat
+
+# File syncing capability is disabled by default. This feature is usually not required,
+# not useful and an extreme performance hit
+#$ActionFileEnableSync on
+
+# Include all config files in /etc/rsyslog.d/
+$IncludeConfig /etc/rsyslog.d/*.conf
+
+
+#### RULES ####
+
+# Log all kernel messages to the console.
+# Logging much else clutters up the screen.
+#kern.*                                                 /dev/console
+
+# Log anything (except mail) of level info or higher.
+# Don't log private authentication messages!
+#*.info;mail.none;authpriv.none;cron.none                -/var/log/messages
+
+# The authpriv file has restricted access.
+#authpriv.*                                              -/var/log/secure
+
+# Log all the mail messages in one place.
+#mail.*                                                  -/var/log/maillog
+
+
+# Log cron stuff
+#cron.*                                                  -/var/log/cron
+
+# Everybody gets emergency messages
+#*.emerg                                                 *
+
+# Save news errors of level crit and higher in a special file.
+#uucp,news.crit                                          -/var/log/spooler
+
+# Save boot messages also to boot.log
+#local7.*                                                -/var/log/boot.log
+
+
+# ### begin forwarding rule ###
+# The statement between the begin ... end define a SINGLE forwarding
+# rule. They belong together, do NOT split them. If you create multiple
+# forwarding rules, duplicate the whole block!
+# Remote Logging (we use TCP for reliable delivery)
+#
+# An on-disk queue is created for this action. If the remote host is
+# down, messages are spooled to disk and sent when it is up again.
+#$WorkDirectory /var/lib/rsyslog # where to place spool files
+#$ActionQueueFileName fwdRule1 # unique name prefix for spool files
+#$ActionQueueMaxDiskSpace 1g   # 1gb space limit (use as much as possible)
+#$ActionQueueSaveOnShutdown on # save messages to disk on shutdown
+#$ActionQueueType LinkedList   # run asynchronously
+#$ActionResumeRetryCount -1    # infinite retries if host is down
+# remote host is: name/ip:port, e.g. 192.168.0.1:514, port optional
+#*.* @@remote-host:514
+# ### end of the forwarding rule ###
+$template TmplAuth, "/var/log/%HOSTNAME%/%PROGRAMNAME%.log"
+
+*.*      ?TmplAuth
 #+END_SRC
 
 ** Install rsyslog package
@@ -478,18 +590,10 @@ dependencies:
    - rsyslog_server
 #+END_SRC
 
-* COMMENT Thoughts
-1) On rsyslogserver /var/log/secure contains same data as in
-   /var/log/<rsyslog-client>/su.log.
-
-* COMMENT Links
-1. http://www.rsyslog.com/doc/v8-stable/configuration/index.html
-2. http://www.slashroot.in/linux-kernel-rpfilter-settings-reverse-path-filtering
-
 * Test Cases
 ** Test Case-1
-*** Link: http://help.papertrailapp.com/kb/configuration/troubleshooting-remote-syslog-reachability/
-*** Objective: Test rsyslog server's firewall rules to accept incoming connections on port UDP 514
+*** Objective: 
+- Test firewall rules to accept incoming connections on port UDP 514
 *** Apparatus:
 1) Rsyslog server
 2) Rsyslog client
@@ -500,4 +604,107 @@ dependencies:
   allow incoming connections on port 514.
 
 *** Experiment
-- 
+- Login to rsyslog server from one terminal and go to
+  =/var/log/<clienthostname>= directory. Do "tail -f su.log". Now from another
+  terminal login to rsyslog client machine. Execute "sudo su -" command. When we
+  login to the client machine a session gets created for the user and a system
+  log is generated. The log message will be forwareded to rsyslog server and
+  saved in a file. As a result messages should appear in the first terminal
+  screen.
+
+*** Result
+- Sample output is shown below for above procedure.
+#+BEGIN_EXAMPLE
+Mar 27 09:33:38 rsyslog-client su: pam_unix(su-l:session): session opened for user root by (uid=0)
+Mar 27 09:33:43 rsyslog-client su: pam_unix(su-l:session): session closed for user root
+#+END_EXAMPLE
+
+*** Obeservation
+- Messages are getting logged in the server in =su.log= file inside
+  =/var/log/<client-hostname>= directory with proper date and time.
+
+*** Conclusion
+- If the messages are getting logged in =su.log= file inside
+  =/var/log/<client-hostname>= directory with proper date and time that means rsyslog
+  server is configured properly.
+
+** Test Case-2
+*** Objective:
+- Test ssh log are getting logged in rsyslog server
+
+*** Apparatus:
+1) Rsyslog server
+2) Rsyslog client
+
+*** Theory
+- System generates log message everytime an event occurs in the system. When we
+  login inside the system using ssh, machine generates "ssh log" message. This
+  message is then forwarded to rsyslog server.
+
+*** Experiment
+- Login to rsyslog server from one terminal and go to
+  =/var/log/<client-hostname>= directory. Monitor =sshd.log= file using 
+  "tail -f sshd.log" command. Now from another terminal login to rsyslog client
+  machine via ssh. The ssh log message is generated which is then forwarded to
+  rsyslog server and saved in a file. As a result messages should appear in the
+  first terminal screen.
+
+*** Result
+- Sample output is shown below for above chain of commands.
+#+BEGIN_EXAMPLE
+Mar 27 09:51:18 rsyslog-client sshd[3565]: Accepted password for root from 192.168.101.106 port 35795 ssh2
+Mar 27 09:51:18 rsyslog-client sshd[3565]: pam_unix(sshd:session): session opened for user root by (uid=0)
+#+END_EXAMPLE
+
+*** Obeservation
+- Messages are getting logged in the server in =sshd.log= file inside
+  =/var/log/<client-hostname>= directory with proper date and time.
+
+*** Conclusion
+- If the messages are getting logged in =sshd.log= file inside
+  =/var/log/<client-hostname>= directory with proper date and time that means rsyslog
+  server is configured properly.
+** Test Case-3
+*** Objective:
+- Test apache logs are getting logged in rsyslog server.
+
+*** Apparatus:
+1) Rsyslog server
+2) Rsyslog client with apache service running
+
+*** Theory
+- Apache saves a log message everytime an an HTTP request is made to apache
+  server.  By default apache saves log messages in
+  =/var/log/httpd/access_log=. These logs can be forwarded to a central rsyslog
+  server.  Configure apache to pipes the log messages to external program by
+  changing the value of "CustomLog" directive as follows:
+   #+BEGIN_EXAMPLE
+   CustomLog "|/usr/bin/logger -t apache -p local6.info" combined
+   #+END_EXAMPLE
+
+*** Experiment
+- Make an http reqeust to rsyslog client using "lynx" program. HTTP service
+  running at the client machine will send a reply.
+  #+BEGIN_EXAMPLE
+  lynx <rsyslog-client-ip>
+  #+END_EXAMPLE
+  After receiving the reply view the file at rsyslog server at
+  =/var/log/<rsyslog-client>/apache.log= location. Log message similar to shown
+  here should appear.
+  #+BEGIN_EXAMPLE
+  Mar 27 14:46:55 rsyslog-client apache: 192.168.101.106 - -
+  [27/Mar/2015:14:46:55 +0530] "GET / HTTP/1.0" 200 10 "-" "Lynx/2.8.6rel.5
+  libwww-FM/2.14 SSL-MM/1.4.1 OpenSSL/1.0.0-fips"\
+  #+END_EXAMPLE
+
+*** Result
+- Apache logs are getting saved at the central server using rsyslog service.
+
+*** Obeservation
+- Messages are getting logged in the server in =apache.log= file inside
+  =/var/log/<client-hostname>= directory with proper date and time.
+
+*** Conclusion
+- If the messages are getting logged in =apache.log= file inside
+  =/var/log/<client-hostname>= directory with proper date and time that means
+  rsyslog server is configured properly.
