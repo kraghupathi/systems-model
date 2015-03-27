@@ -7,9 +7,8 @@
 
 * Introduction
 This Documentation describes the Reverse-proxy server setup and
-AWStats setup for analytics of labs deployed on amazon using
-automated scripts.  These scripts are executed only from configuration
-server.  
+AWStats setup for analytics of labs deployed on amazon using automated
+scripts.  These scripts are executed only from configuration server.
 This server is managed by configuration server.
 
 - Reverse-Proxy :: The client makes requests for content in
@@ -2056,74 +2055,154 @@ configuration file
      
 * Test Cases
 ** Test Case ID: TC01 
--  Objective :: To test whether the client requests are going via
++  Objective :: To test whether the client requests are going via
                 reverseproxy and returns the content of particular
                 lab.
-- Apparatus :: 
-            + Three containers ::
++ Apparatus :: 
+            - Three containers ::
               1) reverseproxy server
               2) lab1 container  
               3) lab2 container 
-            + /etc/hosts of reverseproxy  ::
+            - /etc/hosts of reverseproxy  ::
               1) To add hostnames of two lab, so these names are used
                  in virtual-hosts. and
 	      2) For internal name resolving
-            + PC/extra container ::
+            - PC/extra container ::
               1) To add hostname of the lab to =/etc/hosts= file 
              
               
-- Procedure ::
-           1) Create two new containers and install dependencies 
-              + Dependencies ::
-                  a) http
-                  b) php(if needed)
-           2) create dummy index.html file in each container  
-           3) Add virtual host entries in reverseproxy in
-              =/etc/httpd/conf.d/virtual-labs.ac.in= of two labs
-             
-           4) Add hostname of each lab in =/etc/hosts= by giving ip of
-              lab in reverseproxy and for internal name resolving
-- Experiments ::
-   + From command line ::
-     - To test whether the reverseproxy is working or not 
-        from command line , follow the steps shown below
-     - added hostnames to =/etc/hosts= to my PC
-     #+BEGIN_SRC 
-     reverseproxy_ip lab1.virtual-labs.ac.in
-     reverseproxy_ip lab2.virtual-labs.ac.in
-     #+END_SRC
-     - use *wget* command to get the content of each lab
-     #+BEGIN_SRC 
-     $wget --no-proxy lab1.virtual-labs.ac.in
-     $wget --no-proxy lab2.virtual-labs.ac.in
-     #+END_SRC
-    - the above two commands passes through reverseproxy and gives you *index.html* file content of
-      each lab
-  + From Browser ::
-    - Assume you have added hostnames to =/etc/hosts= in your PC
-      + like below
++ Procedure ::
+  1) Create two new containers and install dependencies 
+     + Dependencies ::
+         a) http
+         b) php(if needed)
+  2) create dummy index.html file in each container  
+  3) Add virtual host entries in reverseproxy in
+     =/etc/httpd/conf.d/virtual-labs.ac.in= of two labs
+  4) Add hostname of each lab in =/etc/hosts= by giving ip of
+     lab in reverseproxy and for internal name resolving
+  5) use ping and wget commands to test reverseproxy
++ Experiments ::
+  - From command line ::
+   To test whether the reverseproxy is working or not from command
+       line , follow the steps shown below
+    + Add hostnames to =/etc/hosts= to my PC
+    #+BEGIN_SRC 
+    reverseproxy_ip lab1.virtual-labs.ac.in
+    reverseproxy_ip lab2.virtual-labs.ac.in
+    #+END_SRC
+    + Use *wget* command to get the content of each lab
+    #+BEGIN_SRC 
+    $wget --no-proxy lab1.virtual-labs.ac.in
+    $wget --no-proxy lab2.virtual-labs.ac.in
+    #+END_SRC
+    the above two commands passes through reverseproxy and gives
+    you *index.html* file content of each lab
+   + ping from reverseproxy container ::
       #+BEGIN_SRC 
-      reverseproxy_ip lab1.virtual-labs.ac.in
-      reverseproxy_ip lab2.virtual-labs.ac.in
+      $ping lab1.virtual-labs.ac.in        
       #+END_SRC
-    - set no proxy for *virtual-labs.ac.in in the browser 
-    -  browse the lab URLs http://lab1.virtual-labs.ac.in  and
-       http://lab2.virtual-labs.ac.in from your browser
-
-- Result :: Reverse Proxy is working
-- Observation ::
-    - Absence of --no-proxy, if network uses any proxy server, gives
-      you following error
+     *Result*
      #+BEGIN_SRC 
-     Proxy request sent, awaiting response... 503 Service Unavailable
-     2015-03-26 02:06:09 ERROR 503: Service Unavailable.
-     #+END_SRC     
+     PING lab1.virtual-labs.ac.in (172.172.172.250) 56(84) bytes of data.
+     64 bytes from lab1.virtual-labs.ac.in (172.172.172.250): icmp_seq=1 ttl=64 time=0.093 ms
+     #+END_SRC
+   + ping from PC ::
+      #+BEGIN_SRC 
+      $ping lab1.virtual-labs.ac.in
+      #+END_SRC
+     *Result*
+    #+BEGIN_SRC 
+    PING lab1.virtual-labs.ac.in (172.172.172.96) 56(84) bytes of data.
+    64 bytes from lab1.virtual-labs.ac.in (172.172.172.96): icmp_seq=1 ttl=64 time=0.061 ms
+    #+END_SRC
+ - From Browser ::
+   + Assume you have added hostnames to =/etc/hosts= in your PC like
+     below
+    #+BEGIN_SRC 
+    reverseproxy_ip lab1.virtual-labs.ac.in
+    reverseproxy_ip lab2.virtual-labs.ac.in
+    #+END_SRC
+   + Set no proxy for *virtual-labs.ac.in in the browser 
+   + Browse the lab URLs http://lab1.virtual-labs.ac.in and
+     http://lab2.virtual-labs.ac.in from your browser and you may get
+     the following result in log file at
+     =/var/log/httpd/lab1.virtual-labs.ac.in-access-log=
+    #+BEGIN_SRC 
+    172.172.172.1 - - [26/Mar/2015:05:50:20 -0400] "GET /awstats/awstats.pl?config=lab1.virtual-labs.ac.in HTTP/1.1" 404 305 "-" "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:36.0) Gecko/20100101 Firefox/36.0"
+    172.172.172.1 - - [26/Mar/2015:05:50:21 -0400] "GET /awstats/awstats.pl?config=lab1.virtual-labs.ac.in HTTP/1.1" 404 305 "-" "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:36.0) Gecko/20100101 Firefox/36.0"
+    #+END_SRC
+  
++ Result :: Reverse Proxy is working
++ Observation ::
+  - Absence of --no-proxy, if network uses any proxy server, gives
+    you following error
+   #+BEGIN_SRC 
+   Proxy request sent, awaiting response... 503 Service Unavailable
+   2015-03-26 02:06:09 ERROR 503: Service Unavailable.
+   #+END_SRC     
 ** Test Case ID : TC02
-- Objective :: Ana     
++ Objective :: Testing AWStats
++ Apparatus :: 
+     1) Default virtual-host entry for reverseproxy to serve awstats
+        from the browser
+     2) Access log file for each lab to check the accepted log messages 
+     3) Error log file for each lab to check the error log messages while
+        trying to access web pages.
+     4) Access awstats from everywhere
++ Procedure :: 
+     - Add virtual host entries in
+       =/etc/httpd/conf.d/virtual-labs.ac.in= along with the following
+       directives
+       #+BEGIN_SRC 
+       CustomLog logs/lab1.virtual-labs.ac.in-access-log combined
+       ErrorLog logs/lab1.virtual-labs.ac.in-error-log
+       #+END_SRC
+       for each lab
+     - Restart the apache webserver
+     - run the following command to update analytics of each lab
+       #+BEGIN_SRC 
+       $perl /usr/share/awstats/tools/awstats_updateall.pl now
+       or
+       $perl /usr/share/awstats/wwwroot/cgi-bin/awstats.pl -config=<labURL> -update
+       #+END_SRC
 
-             
-           
-
++ Experiments ::
+    - From Command Line ::
+       Ran following command from my PC
+      #+BEGIN_SRC 
+      wget --no-proxy  lab1.virtual-labs.ac.in
+      #+END_SRC
+      + Result on reverseproxy  ::
+	 Watched log file by running 
+         #+BEGIN_SRC 
+         tail -f /var/log/http/lab1.virtual-labs.ac.in-access-log* and    
+	 #+END_SRC
+         and got the following result
+         #+BEGIN_SRC 
+         172.172.172.1 - - [26/Mar/2015:06:27:34 -0400] "GET / HTTP/1.1" 200 43 "-" "Wget/1.15 (linux-gnu)"
+         172.172.172.1 - - [26/Mar/2015:06:27:49 -0400] "GET / HTTP/1.1" 200 43 "-" "Wget/1.15 (linux-gnu)"
+         #+END_SRC              
+    - From browser ::   
+      +	Browse the lab URL from any browser and see the log file by
+        running following command in reverseproxy server
+        #+BEGIN_SRC 
+	$tail -f /var/log/httpd/labURL.access-log
+	#+END_SRC
+	You may get the result as follows 
+	#+BEGIN_SRC 
+    172.172.172.1 - - [26/Mar/2015:05:50:20 -0400] "GET /awstats/awstats.pl?config=lab1.virtual-labs.ac.in HTTP/1.1" 404 305 "-" "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:36.0) Gecko/20100101 Firefox/36.0"
+    172.172.172.1 - - [26/Mar/2015:05:50:21 -0400] "GET /awstats/awstats.pl?config=lab1.virtual-labs.ac.in HTTP/1.1" 404 305 "-" "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:36.0) Gecko/20100101 Firefox/36.0"
+	#+END_SRC
+	That means, logs are storing
+    -  Access the analytics of the labs from browser ::
+      + To access the analytics of each lab from the browser use the
+        following link
+        http://reverseproxy_server_IP_or_Hostname_name/awsstats/awstats.pl?config=labURL
++ Result :: Awstats are running fine
++ Conclusion ::
+     Awstats ( analytics of each lab ) are storing and able to access
+               the analytics from browser
 
 
 
