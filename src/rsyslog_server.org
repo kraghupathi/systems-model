@@ -100,13 +100,10 @@ vzctl create <rsyslog_ctid> --ostemplate centos-6-x86_64 --hostname rsyslog-serv
 #+END_EXAMPLE
 
 ** What are the firewall rules for rsyslog server
+- Firwall rules applied to rsyslog server are mentioned here. Description of
+  firewall rule which are common across all the systems are defined in common
+  role. Rule which is specific to only rsyslog server is described [[Rule for incoming connection for rsyslog messages][here]].
 *** Default rules for filter table
-- Default policy for input, forward and output is set to be as ACCEPT. If packet
-  does not match any rule then the default action is applied to the packet.
-  Packets counters are set to [0:0].  First counter represents the number of
-  packets that matched the rule for the chain, and second counter represents the
-  total size of the packets that matched the rule.
-  
 #+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
 #If packet does not match any rule then the default action is applied to the packet
 *filter
@@ -116,9 +113,6 @@ vzctl create <rsyslog_ctid> --ostemplate centos-6-x86_64 --hostname rsyslog-serv
 #+END_SRC
 
 *** Rule for INPUT loopback packets
-- Allow internal communication between services running within the rsyslog
-  server, over loopback interface. Destination ip is also specified to avoid any
-  security breach.
 #+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
 #Allow internal process to process communication over loopback interface
 -A INPUT -i lo -d 127.0.0.0/8 -j ACCEPT
@@ -133,7 +127,6 @@ vzctl create <rsyslog_ctid> --ostemplate centos-6-x86_64 --hostname rsyslog-serv
 #+END_SRC
 
 *** Rule for incoming ping request with rate limiting
-- Allow rsyslog server to accept incoming ping requests from anywhere.
 #+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
 #Allow to accept incoming ping requests from anywhere
 -A INPUT -p icmp --icmp-type echo-request -m limit --limit 60/minute --limit-burst 120 -j ACCEPT
@@ -142,24 +135,20 @@ vzctl create <rsyslog_ctid> --ostemplate centos-6-x86_64 --hostname rsyslog-serv
 #+END_SRC
 
 *** Rule for ongoing connection to other machine
-- Allow rsyslog server to continue already related and established
-  connections. Previous connection would have passed through the firewall and if
-  they got established, connection is allowed to continue.
 #+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
 #Allow to continue already related and established connections
 -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
 #+END_SRC
 
 *** Rule for incoming ssh connection
-- Allowing rsyslog server to accept incoming ssh TCP port 22 connections *only*
-  from the ansible and nagios. For loop is used to enable rule for multiple
-  management server and ansible server.
 #+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
-#Allowing incoming ssh connections only from the management ips. Hopefully fail2ban will take care of bruteforce attacks from management IPs
+#Allowing incoming ssh connections only from the management ips.
+#Hopefully fail2ban will take care of bruteforce attacks from management IPs
 {% for item in management_ips  %}  
 -A INPUT -m state --state NEW -s {{ item }} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
-#Allowing incoming ssh connections only from ansible server. Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
+#Allowing incoming ssh connections only from ansible server. 
+#Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
 {% for item in ansible_server_ips  %}
 -A INPUT -m state --state NEW -s {{ item }} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
@@ -192,8 +181,6 @@ vzctl create <rsyslog_ctid> --ostemplate centos-6-x86_64 --hostname rsyslog-serv
 -A INPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_input_"
 #+END_SRC
 *** Rule for all other incoming packets
-- Reject all the INPUT packets which does not match any of the defined
-  rules. Also send a reply message to the host machine.
 #+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
 #Drop all the INPUT packets which does not match any of the rules
 -A INPUT -j REJECT --reject-with icmp-host-prohibited
@@ -208,24 +195,18 @@ vzctl create <rsyslog_ctid> --ostemplate centos-6-x86_64 --hostname rsyslog-serv
 #+END_SRC
 
 *** Rule for OUTPUT loopback packets
-- Allow internal communication between services running within the system, over
-  loopback interface. Source ip is also specified to avoid any security breach.
 #+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
 #Allow internal process to process communication over loopback interface
 -A OUTPUT -s 127.0.0.0/8 -o lo -j ACCEPT
 #+END_SRC
 
 *** Rule for ongoing connection from other machine
-- Allow rsyslog server to continue already related and established
-  connections. Previous connection must have passed through the firewall and if
-  they got established, connection is allowed to continue.
 #+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
 #Allow to continue already related and established connections
 -A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
 #+END_SRC
 
 *** Rule for outgoing dns request
-- Allow rsyslog server to make dns queries.
 #+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
 #Allow to make dns queries
 -A OUTPUT -p udp -m udp --dport 53 -j ACCEPT
@@ -251,7 +232,6 @@ vzctl create <rsyslog_ctid> --ostemplate centos-6-x86_64 --hostname rsyslog-serv
 #+END_SRC
     
 *** Rule for outgoing ping request
-- Allow rsyslog server to send ping requests to anywhere.
 #+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
 #Allow to send ping requests to anywhere.
 -A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT
@@ -263,8 +243,6 @@ vzctl create <rsyslog_ctid> --ostemplate centos-6-x86_64 --hostname rsyslog-serv
 -A OUTPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_output_"
 #+END_SRC
 *** Rule for all other outgoing packets
-- Reject all the OUTPUT packets which does not match any of the defined rules.
-  Also send a reply message to the host machine.
 #+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
 #Reject all the OUTPUT packets which does not match any of the rules
 -A OUTPUT -j REJECT --reject-with icmp-host-prohibited
