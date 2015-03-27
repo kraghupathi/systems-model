@@ -35,7 +35,8 @@
 * Requirements
 ** Functional Requirement
 1) Allow incoming connections on udp port 514.
-2) Allow incoming ssh connections on TCP port 22 from Ansible and Nagios.
+2) Allow incoming ssh connections on TCP port 22 from Ansible, Nagios and
+   management servers.
 3) Allow incoming connections on TCP port 5666 from Nagios.
 4) Allow incoming connections on UDP port 161 and 162 from Cacti Server.
 5) Allow incoming and outgoing ping requests to anywhere and from anywhere.
@@ -102,7 +103,7 @@ vzctl create <rsyslog_ctid> --ostemplate centos-6-x86_64 --hostname rsyslog-serv
 ** What are the firewall rules for rsyslog server
 - Firwall rules applied to rsyslog server are mentioned here. Description of
   firewall rule which are common across all the systems are defined in common
-  role. Rule which is specific to only rsyslog server is described [[Rule for incoming connection for rsyslog messages][here]].
+  role. Rule [[Rule for FORWARD chain][1]] and [[Rule for incoming connection for rsyslog messages][2]] are specific to only rsyslog server and are described here.
 *** Default rules for filter table
 #+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
 #If packet does not match any rule then the default action is applied to the packet
@@ -142,6 +143,8 @@ vzctl create <rsyslog_ctid> --ostemplate centos-6-x86_64 --hostname rsyslog-serv
 
 *** Rule for incoming ssh connection
 #+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
+#Allowing SSH connection from nagios server ip.
+-A INPUT -m state --state NEW -s {{ nagios_server_ip }} -p tcp -m tcp --dport 22 -j ACCEPT
 #Allowing incoming ssh connections only from the management ips.
 #Hopefully fail2ban will take care of bruteforce attacks from management IPs
 {% for item in management_ips  %}  
