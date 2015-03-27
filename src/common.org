@@ -314,6 +314,9 @@ All the tasks are collated in a single main file.
 #+END_SRC
 
 ** Common Firewall Rule
+- Firewall rules which are applied across all the servers are described here.
+  Rules which are specific to the individual server are described in the
+  individual server documentation itself.
 
 *** Default rules for filter table
 - Default policy for input, forward and output is set to be as ACCEPT. If packet
@@ -321,7 +324,6 @@ All the tasks are collated in a single main file.
   Packets counters are set to [0:0].  First counter represents the number of
   packets that matched the rule for the chain, and second counter represents the
   total size of the packets that matched the rule.
-  
 #+BEGIN_EXAMPLE
 #If packet does not match any rule then the default action is applied to the packet
 *filter
@@ -340,7 +342,11 @@ All the tasks are collated in a single main file.
 #+END_EXAMPLE
  
 *** Rate limiting new connections
-- Limit new TCP connections. Limit is set to a proper value which 
+- This rule limit new connections apart from UDP connections. Limit is set to a
+  proper high value, to secure the system from flooded connections. Packets are
+  dropped if they are received after the limit is exceeded. Dropped packets are
+  logged with a limited rate. Once the rate of incoming packets is under
+  control, system again starts accepting the connections.
 #+BEGIN_EXAMPLE
 #Rate limit new connections to 20 new connections per 30 seconds
 -A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --set
@@ -367,7 +373,7 @@ All the tasks are collated in a single main file.
 #+END_EXAMPLE
 
 *** Rule for incoming ssh connection
-- Allowing server to accept incoming ssh TCP port 22 connections *only* from the
+- Allow server to accept incoming ssh TCP port 22 connections *only* from the
   ansible and nagios. For loop is used to enable rule for multiple management
   server and ansible server.
 #+BEGIN_EXAMPLE
@@ -384,12 +390,14 @@ All the tasks are collated in a single main file.
 #+END_EXAMPLE
 
 *** Rule for incoming NRPE query from Nagios server
+- Nagios monitors systems disk usage, ram usage by sending a NRPE query.
 #+BEGIN_EXAMPLE
 #Allow to accept incoming nrpe queries from nagios server
 -A INPUT -m state --state NEW -p tcp -m tcp --dport 5666 -j ACCEPT
 #+END_EXAMPLE
 
 *** Rule for incoming SNMP queries from Cacti server
+- Allow input connections from cacti server.
 #+BEGIN_EXAMPLE
 #Allow to accept incoming snmp queries from cacti server
 -A INPUT -p udp -m udp --dport 161 -j ACCEPT
@@ -397,10 +405,12 @@ All the tasks are collated in a single main file.
 #+END_EXAMPLE
 
 *** Rule for logging blocked incoming connection
+- Log the packets which are to be rejected with a limited rate.
 #+BEGIN_EXAMPLE
 #Log all other "blocked_input_" attempts with rate limiting
 -A INPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_input_"
 #+END_EXAMPLE
+
 *** Rule for all other incoming packets
 - Reject all the INPUT packets which does not match any of the defined
   rules. Also send a reply message to the host machine.
@@ -441,13 +451,22 @@ All the tasks are collated in a single main file.
 -A OUTPUT -p udp -m udp --dport 53 -j ACCEPT
 #+END_EXAMPLE
 
+*** Rule for sending log messages to rsyslog server
+- Allow system to send log messages to rsyslog server.
+#+BEGIN_EXAMPLE
+#Allow to make dns queries
+-A OUTPUT -p udp -m udp --dport 514 -j ACCEPT
+#+END_EXAMPLE
+
 *** Rule for sending mails by logwatch service
+- Allow logwatch service to send mail alerts.
 #+BEGIN_EXAMPLE
 #Allow to send mails by logwatch service
 -A OUTPUT -p tcp -m tcp --dport 25 -j ACCEPT
 #+END_EXAMPLE
 
 *** Rule for outgoing web request by yum
+- Allow yum service to update packages.
 #+BEGIN_EXAMPLE
 #Allow yum to contact web servers for installing and updating packages
 -A OUTPUT -p tcp -m tcp --dport 80 -j ACCEPT
@@ -455,6 +474,7 @@ All the tasks are collated in a single main file.
 #+END_EXAMPLE
 
 *** Rule for outgoing connection to OSSEC server
+- Allow system to send packets to OSSEC server.
 #+BEGIN_EXAMPLE
 #Allow outgoing connections to OSSEC server
 -A OUTPUT -p udp -m udp --dport 1514 -j ACCEPT
@@ -468,10 +488,12 @@ All the tasks are collated in a single main file.
 #+END_EXAMPLE
 
 *** Rule for logging blocked outgoing connection
+- Log the packets which are to be rejected with a limited rate.
 #+BEGIN_EXAMPLE
 #Log all other "blocked_output_" attempts
 -A OUTPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_output_"
 #+END_EXAMPLE
+
 *** Rule for all other outgoing packets
 - Reject all the OUTPUT packets which does not match any of the defined rules.
   Also send a reply message to the host machine.
