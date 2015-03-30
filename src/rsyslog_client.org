@@ -1,5 +1,5 @@
 #+TITLE:     Rsyslog Client - Design Model and Implementation
-#+DATE:      2015-03-18 Wednesday
+#+DATE:      2015-03-30 Monday
 #+PROPERTY: session *scratch*
 #+PROPERTY: results output
 #+PROPERTY: exports code
@@ -189,7 +189,7 @@ COMMIT
   Default configuration setup is edited as per our requirements. Append
   following line at the bottom of the file
      #+BEGIN_EXAMPLE
-     *.* @<server>:<port>
+     *.* @<rsyslog_server>:<port>
      #+END_EXAMPLE
 *** Complete configuration file
 - Configuration file with modifications is shown below:
@@ -206,8 +206,8 @@ $ModLoad imklog   # provides kernel logging support (previously done by rklogd)
 #$ModLoad immark  # provides --MARK-- message capability
 
 # Provides UDP syslog reception
-$ModLoad imudp
-$UDPServerRun 514
+#$ModLoad imudp
+#$UDPServerRun 514
 
 # Provides TCP syslog reception
 #$ModLoad imtcp
@@ -274,124 +274,7 @@ local7.*                                                -/var/log/boot.log
 # remote host is: name/ip:port, e.g. 192.168.0.1:514, port optional
 #*.* @@remote-host:514
 # ### end of the forwarding rule ###
-$template TmplAuth, "/var/log/%HOSTNAME%/%PROGRAMNAME%.log"
-
-authpriv.*      ?TmplAuth
-*.info,mail.none,authpriv.none,cron.none   ?TmplAuth
-
-#+END_SRC
-
-** COMMENT Build Configuration file version-2 
-*** Steps to configure
-- Rsyslog service is configured using =/etc/rsyslog.conf= configuration file.
-  Default configuration setup is edited as per our requirements.
-**** Append following lines at the bottom of the file
-     #+BEGIN_EXAMPLE
-     $template TmplAuth, "/var/log/%HOSTNAME%/%PROGRAMNAME%.log"
-     *.*      ?TmplAuth
-     #+END_EXAMPLE
-**** Uncomment following directives:
-     #+BEGIN_EXAMPLE
-     $ModLoad imudp
-     $UDPServerRun 514
-     #+END_EXAMPLE
-**** Comment following rules
-     #+BEGIN_EXAMPLE
-     *.info;mail.none;authpriv.none;cron.none                -/var/log/messages
-     authpriv.*                                              -/var/log/secure
-     mail.*                                                  -/var/log/maillog
-     cron.*                                                  -/var/log/cron
-     *.emerg                                                 *
-     uucp,news.crit                                          -/var/log/spooler
-     local7.*                                                -/var/log/boot.log
-     #+END_EXAMPLE
-*** Complete configuration file
-- Configuration file after making modifications is shown below
-
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/files/rsyslog_server_version2.conf :eval no
-# rsyslog v5 configuration file
-
-# For more information see /usr/share/doc/rsyslog-*/rsyslog_conf.html
-# If you experience problems, see http://www.rsyslog.com/doc/troubleshoot.html
-
-#### MODULES ####
-
-$ModLoad imuxsock # provides support for local system logging (e.g. via logger command)
-$ModLoad imklog   # provides kernel logging support (previously done by rklogd)
-#$ModLoad immark  # provides --MARK-- message capability
-
-# Provides UDP syslog reception
-$ModLoad imudp
-$UDPServerRun 514
-
-# Provides TCP syslog reception
-#$ModLoad imtcp
-#$InputTCPServerRun 514
-
-
-#### GLOBAL DIRECTIVES ####
-
-# Use default timestamp format
-$ActionFileDefaultTemplate RSYSLOG_TraditionalFileFormat
-
-# File syncing capability is disabled by default. This feature is usually not required,
-# not useful and an extreme performance hit
-#$ActionFileEnableSync on
-
-# Include all config files in /etc/rsyslog.d/
-$IncludeConfig /etc/rsyslog.d/*.conf
-
-
-#### RULES ####
-
-# Log all kernel messages to the console.
-# Logging much else clutters up the screen.
-#kern.*                                                 /dev/console
-
-# Log anything (except mail) of level info or higher.
-# Don't log private authentication messages!
-#*.info;mail.none;authpriv.none;cron.none                -/var/log/messages
-
-# The authpriv file has restricted access.
-#authpriv.*                                              -/var/log/secure
-
-# Log all the mail messages in one place.
-#mail.*                                                  -/var/log/maillog
-
-
-# Log cron stuff
-#cron.*                                                  -/var/log/cron
-
-# Everybody gets emergency messages
-#*.emerg                                                 *
-
-# Save news errors of level crit and higher in a special file.
-#uucp,news.crit                                          -/var/log/spooler
-
-# Save boot messages also to boot.log
-#local7.*                                                -/var/log/boot.log
-
-
-# ### begin forwarding rule ###
-# The statement between the begin ... end define a SINGLE forwarding
-# rule. They belong together, do NOT split them. If you create multiple
-# forwarding rules, duplicate the whole block!
-# Remote Logging (we use TCP for reliable delivery)
-#
-# An on-disk queue is created for this action. If the remote host is
-# down, messages are spooled to disk and sent when it is up again.
-#$WorkDirectory /var/lib/rsyslog # where to place spool files
-#$ActionQueueFileName fwdRule1 # unique name prefix for spool files
-#$ActionQueueMaxDiskSpace 1g   # 1gb space limit (use as much as possible)
-#$ActionQueueSaveOnShutdown on # save messages to disk on shutdown
-#$ActionQueueType LinkedList   # run asynchronously
-#$ActionResumeRetryCount -1    # infinite retries if host is down
-# remote host is: name/ip:port, e.g. 192.168.0.1:514, port optional
-#*.* @@remote-host:514
-# ### end of the forwarding rule ###
-$template TmplAuth, "/var/log/%HOSTNAME%/%PROGRAMNAME%.log"
-
-*.*      ?TmplAuth
+ *.* @{{ rsyslog_server }}:514
 #+END_SRC
 
 ** Install rsyslog package
@@ -413,25 +296,6 @@ $template TmplAuth, "/var/log/%HOSTNAME%/%PROGRAMNAME%.log"
    copy: src=rsyslog_server.conf dest=/etc/rsyslog.conf owner=root group=root mode=600
    notify:
      - restart rsyslog
-#+END_SRC
-
-** COMMENT Set Rsyslog service Version-2
-
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/tasks/main.yml
-# - name: Editing /etc/rsyslog.conf file
-#   lineinfile: "dest=/etc/rsyslog.conf" regexp=^$template line='$template TmplAuth, "/var/log/%HOSTNAME%/%PROGRAMNAME%.log"'
- 
-# - name: Editing /etc/rsyslog.conf file
-#   lineinfile: "dest=/etc/rsyslog.conf" regexp=^authpriv line='authpriv.*      ?TmplAuth'
-
-# - name: Editing /etc/rsyslog.conf file
-#   lineinfile: "dest=/etc/rsyslog.conf" regexp=^*.info line='*.info,mail.none,authpriv.none,cron.none   ?TmplAuth'
-
-# - name: Editing /etc/rsyslog.conf file to uncomment $ModLoad imdup
-#   lineinfile: "dest=/etc/rsyslog.conf" regexp=^$ModLoad line='$ModLoad imudp'
-
-#  - name: Editing /etc/rsyslog.conf file to uncomment $UDPServerRun 514
-#    lineinfile: "dest=/etc/rsyslog.conf" regexp=^$UDPServerRun line='$UDPServerRun 514'
 #+END_SRC
 
 ** Set firewall service
@@ -473,6 +337,7 @@ $template TmplAuth, "/var/log/%HOSTNAME%/%PROGRAMNAME%.log"
 - Variables are used in the ansible scripts to configure rsyslog server. 
    1) Proxy environment
    2) Anisble server ip
+   3) Nagios server ip
  Values of these variables is fetched from the =common_vars= role.
 #+BEGIN_SRC yaml :tangle roles/rsyslog_server/meta/main.yml
 ---
@@ -495,15 +360,15 @@ dependencies:
 * Test Cases
 ** Test Case-1
 *** Objective: 
-- Test the system to accept incoming connections on port UDP 514
+- Test the system is forwarding log messages to rsyslog server on port UDP 514
 *** Apparatus:
 1) Rsyslog server
 2) Rsyslog client
 
 *** Theory
 - Rsyslog server accepts log messages from rsyslog clients on UDP port 514. For
-  machine to be configured as rsyslog server firewall rule of the machine has to
-  allow incoming connections on port 514.
+  machine to be configured as rsyslog client firewall rule of the machine has to
+  allow outgoing connections on port 514.
 
 *** Experiment
 - Login to rsyslog server from one terminal and navigate to
