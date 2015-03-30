@@ -1,40 +1,20 @@
-#+TITLE:     Rsyslog Server - Design Model and Implementation
+#+TITLE:     Rsyslog Client - Design Model and Implementation
 #+DATE:      2015-03-18 Wednesday
 #+PROPERTY: session *scratch*
 #+PROPERTY: results output
 #+PROPERTY: exports code
 #+SETUPFILE: org-templates/level-0.org
-#+DESCRIPTION: Rsyslog Server - Design and Documentation
+#+DESCRIPTION: Rsyslog Design - Design and Documentation
 
 
 * Introduction
-- Rsyslog server is a central storage system of message logs. Rsyslog service is
-  configured inside the systems to forward the log messages to the rsyslog
-  server for safe storage. Rsyslog service also saves the system log messages
-  locally in each system.
-
-* Description
-
-1) Rsyslog uses the standard BSD syslog protocol on UDP port 514.
-
-2) Rsyslog is able to:
-   - accepts input from a wide variety of sources.
-   - transform them
-   - and output the results to diverse destinations.
-
-3) Messages are passed to ruleset, where rules are conditionally applied. When a
-   rule matches, the message is transferred to an actions such as write it to a
-   file, database or forward it to a remote host.
-
-4) Rulesets and Rules:: A rule is a way how rsyslog shall process a specific
-   message.
-
-5) All configuration directives need to be specified on a line by their own and
-   must start with a dollar-sign.
+- Rsyslog service is configured inside the systems to forward the log messages
+  to the rsyslog server for safe storage. Rsyslog service also saves the system
+  log messages locally in each system.
 
 * Requirements
 ** Functional Requirements
-1) Allow incoming connections on udp port 514.
+1) Allow outgoing connections on UDP port 514.
 2) Allow incoming ssh connections on TCP port 22 from configuration, Nagios and
    management servers.
 3) Allow incoming connections on TCP port 5666 from Nagios.
@@ -45,9 +25,7 @@
 8) Allow outgoing connections on TCP port 25 for sending mails via logwatch.
 9) Add Configuration server's ssh public key to authorized keys.
 10) Run Rsyslog service on udp port 514.
-11) Save log messages forwarded by various client systems in a separate file for
-    each client.
-
+    
 ** Security Requirements
 1) Accept ssh connections *only* from Configuration server, management servers
    and Nagios server.
@@ -55,17 +33,15 @@
 
 * Design
 ** System Design Diagram
-[[./diagrams/rsyslog-design-diagram.png]]
-**** Editable link [[https://docs.google.com/a/vlabs.ac.in/drawings/d/16iv5DYT3_zrf6mrxTF1F7K_XkE9wfZdpaDNbPpDx99A/edit][google drawing editable link]]
+[[./diagrams/rsyslog-client.png]]
+**** Editable link [[https://docs.google.com/a/vlabs.ac.in/drawings/d/1ZqFyzkKmdB3pkqdJUmKOOPUyzYmMa8Vix421-HiZXwk/edit][google drawing editable link]]
 ** System Files
 |------+----------+------------------------------+------------------------|
 | Sno. | Service  | File                         | File Type              |
 |------+----------+------------------------------+------------------------|
 |   1. | rsyslog  | /etc/rsyslog.conf            | System Configuration   |
 |------+----------+------------------------------+------------------------|
-|   2. | rsyslog  | /var/log/<client-hostname>/* | Log Data               |
-|------+----------+------------------------------+------------------------|
-|   3. | IpTables | /etc/sysconfig/iptables      | Firewall Configuration |
+|   2. | IpTables | /etc/sysconfig/iptables      | Firewall Configuration |
 |------+----------+------------------------------+------------------------|
 
 * Provisioning
@@ -83,11 +59,11 @@ vzctl create <rsyslog_ctid> --ostemplate centos-6-x86_64 --hostname rsyslog-serv
 ** Structure of Scripts
 - The implementation of this system is in terms of a collection of Ansible
   scripts which configures the machine. These scripts are organized as follows:
-#+BEGIN_EXAMPLE
+     #+BEGIN_EXAMPLE
 |-code
-|   |-- rsyslog_server.yml
+|   |-- rsyslog_client.yml
 |   |-- roles
-|   |   |-- rsyslog_server
+|   |   |-- rsyslog_client
 |   |   |   |-- handlers
 |   |   |   |   `-- main.yml
 |   |   |   |-- tasks
@@ -95,15 +71,15 @@ vzctl create <rsyslog_ctid> --ostemplate centos-6-x86_64 --hostname rsyslog-serv
 |   |   |   |-- templates
 |   |   |   |   `-- iptables
 |   |   |   |-- files
-|   |   |   |   `-- rsyslog_server.conf
+|   |   |   |   `-- rsyslog_client.conf
 |   |   |   |-- meta
 |   |   |   |   `-- main.yml
 #+END_EXAMPLE
 
-** What are the firewall rules for rsyslog server
-- Firwall rules applied to rsyslog server are mentioned here. Description of
-  firewall rules which are common across all the systems are defined in the
-  common role. Rules [[Rule for incoming connection for rsyslog messages][1]] and [[Rule for FORWARD chain][2]] and are specific to only rsyslog server and are
+** What are the firewall rules
+- Firwall rules applied to rsyslog client system are mentioned here. Description
+  of firewall rules which are common across all the systems are defined in the
+  common role. Rules [[Rule for FORWARD chain][1]] and [[Allow outgoing connections on UDP port 514][2]] and are specific to only rsyslog client and are
   described here.
 *** Common Firewall Rules - Section 1
 #+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
@@ -141,18 +117,7 @@ vzctl create <rsyslog_ctid> --ostemplate centos-6-x86_64 --hostname rsyslog-serv
 {% for item in ansible_server_ips  %}
 -A INPUT -m state --state NEW -s {{ item }} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
-#+END_SRC
- 
-*** Rule for incoming connection for rsyslog messages
-- Allow rsyslog server to accept incoming log messages on UDP port 514 from
-  various systems.
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
-#Allow to accept incoming rsyslog messages from anywhere
--A INPUT -m state --state NEW -p udp -m udp --dport 514 -j ACCEPT
-#+END_SRC
 
-*** Common Firewall Rules - Section 2
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
 #Allow to accept incoming nrpe queries from nagios server
 -A INPUT -m state --state NEW -p tcp -m tcp --dport 5666 -j ACCEPT
 
@@ -168,14 +133,14 @@ vzctl create <rsyslog_ctid> --ostemplate centos-6-x86_64 --hostname rsyslog-serv
 #+END_SRC
 
 *** Rule for FORWARD chain
-- Rsyslog is not responsible for any packet forwarding, hence forwarding rule
-  should be set to reject policy.
+- Rsyslog client is not responsible for any packet forwarding, hence forwarding
+  rule should be set to reject policy.
 #+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
 #Do not allow any packet to be forwarded
 -A FORWARD -j REJECT --reject-with icmp-host-prohibited
 #+END_SRC
 
-*** Common Firewall Rules - Section 3
+*** Common Firewall Rules - Section 2
 #+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
 #Allow internal process to process communication over loopback interface
 -A OUTPUT -s 127.0.0.0/8 -o lo -j ACCEPT
@@ -195,7 +160,17 @@ vzctl create <rsyslog_ctid> --ostemplate centos-6-x86_64 --hostname rsyslog-serv
 
 #Allow outgoing connections to OSSEC server
 -A OUTPUT -p udp -m udp --dport 1514 -j ACCEPT
+#+END_SRC
 
+*** Allow outgoing connections on UDP port 514
+- Rsyslog client machine sends log messages to rsyslog server on UDP port 514.
+#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
+#Allow to send rsyslog log messages to rsyslog server
+-A OUTPUT -p udp -m udp --dport 514 -j ACCEPT
+#+END_SRC
+
+*** Common Firewall Rules - Section 3
+#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
 #Allow to send ping requests to anywhere.
 -A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT
 
@@ -211,19 +186,11 @@ COMMIT
 ** Build Configuration file
 *** Steps to configure
 - Rsyslog service is configured using =/etc/rsyslog.conf= configuration file.
-  Default configuration setup is edited as per our requirements.
-**** Append following lines at the bottom of the file
+  Default configuration setup is edited as per our requirements. Append
+  following line at the bottom of the file
      #+BEGIN_EXAMPLE
-     $template TmplAuth, "/var/log/%HOSTNAME%/%PROGRAMNAME%.log"
-     authpriv.*      ?TmplAuth
-     *.info,mail.none,authpriv.none,cron.none   ?TmplAuth
+     *.* @<server>:<port>
      #+END_EXAMPLE
-**** Uncomment following directives:
-     #+BEGIN_EXAMPLE
-     $ModLoad imudp
-     $UDPServerRun 514
-     #+END_EXAMPLE
-
 *** Complete configuration file
 - Configuration file with modifications is shown below:
 #+BEGIN_SRC yml :tangle roles/rsyslog_server/files/rsyslog_server.conf :eval no
