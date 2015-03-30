@@ -5,88 +5,74 @@
 #+SETUPFILE: org-templates/level-0.org
 #+DESCRIPTION: Reverse Proxy Server - Design and Documentation
 
+   
 * Introduction
-This Documentation describes the Reverse-proxy server setup and
-AWStats setup for analytics of labs deployed on amazon using automated
+This Documentation describes the *Reverse Proxy* server setup and
+*AWStats* setup for analytics of labs deployed on amazon using automated
 scripts.  These scripts are executed only from configuration server.
 This server is managed by configuration server.
 
-- Reverse-Proxy :: The client makes requests for content in
-                   the name-space of the reverse proxy. The reverse
-                   proxy then decides where to send those requests,
-                   and returns the content as if it was itself the
-                   origin.
-- AWStats :: AWStats is powerful log analyzer which creates advanced
-             web, ftp, mail and streaming server statistics reports
-             based server logs.  Data is graphically presented in easy
-             to read web pages
-	     
+- Reverse-Proxy :: The client requests comes from router to
+                   reverseproxy and the reverse proxy then decides
+                   where to send those requests, and returns the
+                   content as if it was itself the destination.
+- AWStats :: AWStats is a one of the log analyzer which creates
+             advanced web related trafic. This log analyzer gives us
+             lab user's web trafic information such as number of
+             visitors and visits, number of pages for a visit,
+             etc. Data is graphically presented in easy to read web
+             pages
+** TODO 
+- configuration server link	     
 * Requirements
-The requirements to configure reverseproxy server are as follows.
+Requirements which are specific to reverseproxy defined below and all
+other requirements are defined in common role's requirements
+section. Please click [[./common.org][here]] for all other requirements.  The
+requirements to configure reverseproxy server are as follows.
 ** Functional Requirements 
-  1) Accept ssh connection from configuration server and
-     management ips on tcp
-     port 22.
-  2) Accept incoming and outgoing connections on tcp port 80
-  3) Accept outgoing connections on udp port 53
-  4) Forward client requests to corresponding lab where
-     the lab has been deployed and sending reply to the client.
+  1) Allow incoming connections on tcp ports 80 and 443 from [[.router][router]]
+     and from internal network
+  2) Allow outgoing connections on tcp port 80
+    +  Forwards client requests to corresponding internal web server
+       where the lab has been deployed and sending reply to the
+       client.
+  3) Allow outgoing connections on tcp port 443
+    + OUTPUT rule for tcp port 443 is required for yum
   5) Store the analytics of each lab using AWStats (Logfile analyzer) 
-  6) Allow outgoing tcp port 25  to logwatch service for sending logwatch emails
-  7) Allow outgoing 1514 udp packets to OSSEC server
-  8) Allow incoming connections on tcp port  5666 from nagios
-     monitoring server for nrpe queries
-  9) Allow the outgoing connections on udp port 514 to rsyslog
-     server 
-  10) Allow the incoming connections on udp ports 161 and 162 from
-     cacti server
-  11) Allow ssh status check from nagios
-      + Nagios monitoring server monitors whether the ssh service
-	is running or not. Just checking the status of the services in
-	reverseproxy. Nagios does not have ssh access to reverseproxy 
-  
-*** TODO 
- - router,configuration links
- - rsyslog, OSSEC server links output rules 
+  for more functional requirements of reverseproxy you can find [[./common.org][here]]
+ 
+** TODO 
+- configuration Server link
 ** Security Requirements 
-  1) Accept ssh connection *only* from configuration server
-     and from management ips
-     + Only configuration server and management ips can be able ssh to reverse-proxy to
-       run the scripts and bringing up the reverseproxy server and
-       awstats 
-  2) Rate limiting to avoid DoS(Denial of Service) attacks 
-  3) Disabling password based authentication for root account
-  4) allow incoming and outgoing http packets from internal
-     network and from the router 
+  1) Accept incoming and outgoing connections on tcp ports 80 and 443 *only* from internal
+     network and from the [[.router][router]] 
+  for more security requirements of reverseproxy you can find [[./common.org][here]]
 * Design of Reverse-Proxy 
 #+CAPTION:  Reverse-Proxy Network Diagram
 #+LABEL:  fig-reverseproxy-diagram
 #+NAME: fig-reverseproxy-diagram
-** Overall Network diagram of reverseproxy
-The following network diagram represents the structure of the
-reverseproxy. In this diagram only reverseproxy is active node. It
-shows the connections from/to reverseproxy to/from other services such
-as cacti, nagios, etc. non active nodes are represented using dotted
+** Overall network diagram of reverseproxy
+The following network diagram represents the reverseproxy server's
+communication with other services and servers. In this diagram only reverseproxy is active node. It
+shows the connections from/to reverseproxy to/from other servers such
+as [[./router.org][router]],[[./ansible.org][configuration server]], etc. non active nodes are represented using dotted
 rectangles.  
-[[./build/diagrams/Network-Diagram-of-ReverseProxy-on-AWS.png]]
+[[./diagrams/Network-Diagram-of-ReverseProxy-on-AWS.png]]
 
-** Incoming and outgoing connections of reverseproxy
-
-The following diagram represents the incoming and outgoing connections
-of reverseproxy server.
-
-[[./build/diagrams/Incoming-and-Outgoing-connections-of-Reverseproxy.png]]
 ** System files 
+The Following tables gives the information about the services and
+their configuration files where modifications are required to setup
+reverseproxy server and AWStats
 |------+----------+-------------------------------------------+--------------------------------------|
 | S.no | Service  | File                                      | File Type                            |
 |------+----------+-------------------------------------------+--------------------------------------|
-|    1 | httpd    | /etc/httpd/conf/httpd.conf                | Httpd Configuration                  |
+|    1 | httpd    | /etc/httpd/conf/httpd.conf                | httpd main Configuration             |
 |------+----------+-------------------------------------------+--------------------------------------|
-|    2 | httpd    | /etc/httpd/conf.d/virtual-labs.ac.in.conf | virtual hosts configuration          |
+|    2 | httpd    | /etc/httpd/conf.d/virtual-labs.ac.in.conf | virtual hosts entries  configuration |
 |------+----------+-------------------------------------------+--------------------------------------|
-|    3 | AWStats  | /etc/awstats/awstats.{{domain}}.conf      | awstats configuration files for labs |
+|    3 | AWStats  | /etc/httpd/conf.d/awstats.conf            | httpd configuration file of AWStats  |
 |------+----------+-------------------------------------------+--------------------------------------|
-|    4 | AWStats  | /etc/httpd/conf.d/awstats.conf            | awstats configuration                |
+|    4 | AWStats  | /etc/awstats/awstats.{{labURL}}.conf      | awstats configuration files for labs |
 |------+----------+-------------------------------------------+--------------------------------------|
 |    5 | iptables | /etc/sysconfig/iptables                   | firewall rules                       |
 |------+----------+-------------------------------------------+--------------------------------------|
@@ -113,223 +99,159 @@ roles/reverseproxy_sever/
 
 #+END_EXAMPLE
 
-** <<firewalls>> Firewall rules
-*** INPUT firewall rules
-**** Default filter rules
-  Default policy for input, forward and output is set to be as
-  ACCEPT. If packet does not match any rule then the default action is
-  applied to the packet.  Packets counters are set to [0:0].  First
-  counter represents the number of packets that matched the rule for
-  the chain, and second counter represents the total size of the
-  packets that matched the rule.
-  
-#+BEGIN_SRC yaml :tangle build/roles/reverseproxy_server/templates/iptables
+** Firewall rules
+- Rules which are specific to reverseproxy server are described [[Allow HTTP(80) packets][here]].
+- Description of each firewall rule of this reverseproxy and which are common
+  across all the systems are defined in [[.common.org][common role]].  
+*** Common firewall rules
+ Description of each following firewall rule is defined in
+ [[./common.org][common role]] 
+#+BEGIN_SRC yaml :tangle roles/reverseproxy_server/templates/iptables
 *filter
 :INPUT ACCEPT [0:0]
 :FORWARD ACCEPT [0:0]
 :OUTPUT ACCEPT [0:0]
-#+END_SRC
-
-**** Rule for INPUT loopback packets
-- Allow internal communication between services running within the reverse proxy, over
-  loopback interface. Input destination interface is specified to avoid any security
-  breach.
-#+BEGIN_SRC yaml :tangle build/roles/reverseproxy_server/templates/iptables 
 #Allow internal process to process communication over loopback interface
 # Accept loopback connections
 -A INPUT -i lo -d 127.0.0.0/8 -j ACCEPT
-#+END_SRC
-**** Rate Limiting on incoming connections 
-Firewall rule to accept 20 new connections per 30 seconds.
-If user tries to accept more than 20 connections per 30 seconds, the
-connection will be rejected.
-#+BEGIN_SRC yaml :tangle build/roles/reverseproxy_server/templates/iptables 
 #Rate limit new connections to 20 new connections per 30 seconds
 -A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --set
 -A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --rcheck --seconds 30 --hitcount 20 -m limit --limit 2/min -j LOG --log-prefix "new_limit_"
 -A INPUT ! -p udp -m state --state NEW -m recent --name ssh_limit --rcheck --seconds 30 --hitcount 20 -j DROP
-#+END_SRC
-The above rule satisfies the security requirements 2
-**** Rate Limit on ICMP 
-
-#+BEGIN_SRC yaml :tangle build/roles/reverseproxy_server/templates/iptables
 #Accept ICMP ping requests at limited rate
 -A INPUT -p icmp --icmp-type echo-request -m limit --limit 60/minute --limit-burst 120 -j ACCEPT
 -A INPUT -p icmp --icmp-type echo-request -m limit --limit 1/minute --limit-burst 2 -j LOG
 -A INPUT -p icmp --icmp-type echo-request -j DROP
-#+END_SRC
-     The above rule satisfies the security requirements 2
-**** Allow ongoing connections
-Allows ongoing connections which are related and established connections
-#+BEGIN_SRC yaml :tangle build/roles/reverseproxy_server/templates/iptables
+
 #Allow ongoing connections
 -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-#+END_SRC
-**** SSH access from management IPs
-Allow incoming SSH connections from management IPs.  Hopefully
-fail2ban will take care of brute-force attacks from management
-IPs. Please look at common role tasks for fail2ban
-#+BEGIN_SRC yaml :tangle build/roles/reverseproxy_server/templates/iptables
+
 #Allow incoming SSH connections from management IPs.  Hopefully fail2ban will take care of bruteforce attacks from management IPs
 {% for item in management_ips  %}
 -A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
-#+END_SRC
-The above rule satisfies the security requirements 5
-**** SSH access from configuration server
-Firewall rule for Accepting ssh connection only from configuration server
-#+BEGIN_SRC yaml :tangle build/roles/reverseproxy_server/templates/iptables
+
 #Allow incoming SSH connections from configuration server IPs.  Hopefully fail2ban will take care of brute force attacks from ansible server IPs
 {% for item in ansible_server_ips  %}
 -A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
-#+END_SRC
-The above rule satisfies the Security Requirements 1
-**** SSH status check from nagios server
-Allow nagios server to monitor ssh service status(up/down). Nagios
-server does not have ssh access to reverseproxy.
-#+BEGIN_SRC yaml :tangle build/roles/reverseproxy_server/templates/iptables
+
 -A INPUT -p tcp -m tcp -s {{nagios_server_ip}} --dport 22 -j ACCEPT
 #+END_SRC
-The above rule satisfies the functional requirements 11
-**** Allow HTTP(80) packets
-This firewall rule allows HTTP(80) packets from internal network and
-from the router
-#+BEGIN_SRC yaml :tangle build/roles/reverseproxy_server/templates/iptables
+*** Allow HTTP(80) and HTTPS(443) packets
+- The firewall rule accepts HTTP(80) and HTTPS(443) packets from internal network and
+from the [[.router.org][router]]. 
+- In this model only HTTP packets are accepted. As a future
+  requirement, accept rule for incoming connections on tcp port 443 is commented.
+
+#+BEGIN_SRC yaml :tangle roles/reverseproxy_server/templates/iptables
 # Allow incoming http packets from internal network and router
 -A INPUT -s {{internal_vpc}} -p tcp -m tcp --dport 80 -j ACCEPT
 -A INPUT -s {{router_ip}} -p tcp -m tcp --dport 80 -j ACCEPT
+
+#Allow incoming https packets from internal network and router
+#-A INPUT -s {{internal_vpc}} -p tcp -m tcp --dport 443 -j ACCEPT
+#-A INPUT -s {{router_ip}} -p tcp -m tcp --dport 443 -j ACCEPT
 #+END_SRC
-The above rule satisfies the security requirements 4
-**** NRPE queries from nagios
-This rule allows incoming connections on tcp port 5666 from nagios server 
-#+BEGIN_SRC yaml :tangle build/roles/reverseproxy_server/templates/iptables
+The above rule satisfies the security requirements 1
+
+*** Common firewall rules
+ Description of each following firewall rule is defined in
+ [[./common.org][common role]] 
+
+#+BEGIN_SRC yaml :tangle roles/reverseproxy_server/templates/iptables
 #Allow incoming NRPE queries for nagios from nagios servers
 -A INPUT -m state --state NEW -p tcp -m tcp --dport 5666 -j ACCEPT
-#+END_SRC
-The above firewall rule satisfies the functional requirements 8
 
-**** SNMP queries from cacti 
- Allows incoming packets on udp ports 161 and 162 from cacti server 
-#+BEGIN_SRC yaml :tangle build/roles/reverseproxy_server/templates/iptables
 #Allow SNMP queries from cacti servers
 -A INPUT -p udp -m udp --dport 161 -j ACCEPT
 -A INPUT -p udp -m udp --dport 162 -j ACCEPT
-#+END_SRC
-The above firewall rule satisfies the functional requirements 10
-**** Logging blocked inputs 
-This firewall rule logs all other input connections made on denied ports
-#+BEGIN_SRC yaml :tangle build/roles/reverseproxy_server/templates/iptables
 #Log all other "blocked_input_" attempts with rate limiting
 -A INPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_input_"
-#+END_SRC
-The above firewall rule satisfies the security requirements 2
-**** ICMP rule
-ICMP rule for replying proper error message
-#+BEGIN_SRC yaml :tangle build/roles/reverseproxy_server/templates/iptables
+
 #Reply with proper ICMP error message and reject the connection
 -A INPUT -j REJECT --reject-with icmp-host-prohibited
 #+END_SRC
-*** FORWARD Rules
-**** Accept forward rule
-This firwal rule enables packet forwarding 
-#+BEGIN_SRC yaml :tangle build/roles/reverseproxy_server/templates/iptables
-#Enable packet forwarding through
--A FORWARD -j ACCEPT
-#
+*** FORWARD rules
+- Reveseproxy is not responsible for any packet forwarding and hence forwarding rule
+  should be set to reject packets.
+#+BEGIN_SRC yml :tangle roles/reverseproxy_server/templates/iptables
+#Do not allow any packet to be forwarded
+-A FORWARD -j REJECT --reject-with icmp-host-prohibited
 #+END_SRC
-*** OUTPUT firewall rules
-**** Outgoing connections to localhost
- Allow internal communication between services running within the
- router, over loopback interface. Output destination interface is also specified
- to avoid any security breach.
-#+BEGIN_SRC yaml :tangle build/roles/reverseproxy_server/templates/iptables
+
+*** Common firewall rules
+ Description of each following firewall rule is defined in
+ [[./common.org][common role]] 
+
+ #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/templates/iptables
 #
 ##Output rules
 #Allow outgoing connections to localhost
 -A OUTPUT -s 127.0.0.0/8 -o lo -j ACCEPT
-#+END_SRC
-**** Ongoing Connections
- Allow reverseproxy to continue already related and established
- connections. Previous connection must have passed through the
- firewall and if they got established, connection is allowed to
- continue.
-#+BEGIN_SRC yaml :tangle build/roles/reverseproxy_server/templates/iptables
+
 #Allow ongoing connections
 -A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
-#+END_SRC
-**** DNS queries
-  This firewall rule allows  dns queries for name resolving 
-#+BEGIN_SRC yaml :tangle build/roles/reverseproxy_server/templates/iptables
+
 #Allow DNS queries
 -A OUTPUT -p udp -m udp --dport 53 -j ACCEPT
-#+END_SRC
-The above firewall rule satisfies the functional requirements 3
-**** Accept logwatch packets
-This Firewall rule allows OUTPUT rule for sending logwatch emails
-#+BEGIN_SRC yaml :tangle build/roles/reverseproxy_server/templates/iptables
+
 #Allow server to send emails.  Required for sending logwatch emails
 -A OUTPUT -p tcp -m tcp --dport 25 -j ACCEPT
 #+END_SRC
-The above rule statisfies the functional requirements 6
-**** Accept http packets
-The following firewall rule accepts http packets coming from internel
-network and router and then forwards the requests to internal web
-servers.
-#+BEGIN_SRC yaml :tangle build/roles/reverseproxy_server/templates/iptables
+*** Accept HTTP and HTTPS packets
+    +  Forwards client requests to corresponding internal web server
+       where the lab has been deployed and sending reply to the
+       client.
+    + OUTPUT rule for tcp port 443 is required for yum
+#+BEGIN_SRC yaml :tangle roles/reverseproxy_server/templates/iptables
 #Allow server to contact web-servers.  This is must for reverseproxy to be able to forward requests to internal web servers
+# 443 OUTPUT is needed for yum
 -A OUTPUT -p tcp -m tcp --dport 80 -j ACCEPT
+-A OUTPUT -p tcp -m tcp --dport 443 -j ACCEPT
 #+END_SRC
-The above rule satisfies functional requirements 2
-**** outgoing PING requests
-Allows outgoing ping requests.
-#+BEGIN_SRC yaml :tangle build/roles/reverseproxy_server/templates/iptables
+The above rule satisfies functional requirements 2 and 3
+*** Common firewall rules
+ Description of each following firewall rule is defined in
+ [[./common.org][common role]] 
+#+BEGIN_SRC yaml :tangle roles/reverseproxy_server/templates/iptables
 #Allow outgoing ping requests
 -A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT
-#+END_SRC
-**** Allowing rsyslog 
-This rule allows outgoing connections on udp port 514 to rsyslog server 
-#+BEGIN_SRC yaml :tangle build/roles/reverseproxy_server/templates/iptables
+
 #Allow outgoing connections to rsyslog server
 -A OUTPUT -p udp -m udp --dport 514 -j ACCEPT
-#+END_SRC
-The above rule satisfies functional requirements 9
-**** Outgoing connections to OSSEC server
-Allowing outgoing connections to OSSEC server on udp port 1514
-#+BEGIN_SRC yaml :tangle build/roles/reverseproxy_server/templates/iptables
+
 #Allow outgoing connections to OSSEC server
 -A OUTPUT -p udp -m udp --dport 1514 -j ACCEPT
-#+END_SRC
-The above rule satisfies functional requirements 7
-**** Log all other denied attempts
-This firewall rule logs all other output connections made on denied ports
-#+BEGIN_SRC yaml :tangle build/roles/reverseproxy_server/templates/iptables
 #Log all other "blocked_output_" attempts
 -A OUTPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_output_"
-#+END_SRC
-The above rule satisfies the security requirements 2
-**** ICMP rule with proper error reply
- Output ICMP rule with proper error reply 
-#+BEGIN_SRC yaml :tangle build/roles/reverseproxy_server/templates/iptables
+
 #Reply with proper ICMP error message and reject the connection
 -A OUTPUT -j REJECT --reject-with icmp-host-prohibited
 #+END_SRC
-** Installing required packages
-  Installing required packages for setting up reverse proxy and
-  awstats 
-#+BEGIN_SRC yaml :tangle build/roles/reverseproxy_server/tasks/main.yaml
+** Install required packages
+  Install required packages for setting up reverse proxy and awstats.
+  Required packages are
+  + httpd
+  + awstats
+  In the following script,use proxy_env variable if network uses any proxy, else comment that or
+  remove the line(while working on amazon)
+- Note :: Install "mod_ssl" for HTTPS access. Currently HTTPS access
+          is not enabled. Enable it if it has a valid certificate and
+          test the implementation using
+          https://www.ssllabs.com/ssltest/index.html
+#+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml
 ---
 - name: Install httpd, awstats, mod_ssl
   yum: name="{{item}}" state=present
   with_items:
     - httpd
     - awstats
-    - mod_ssl
-  environment: proxy_env
+   environment: proxy_env
 #+END_SRC
 ** Configuring firewall rules 
-Copy template =iptables= which was created at [[firewalls]] to reverseproxy.
-#+BEGIN_SRC yaml :tangle build/roles/reverseproxy_server/tasks/main.yaml
+Copy  =iptables= template which was created at [[Firewall rules]] to reverseproxy.
+#+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml
  - name: Configure iptables firewall
    template: src=iptables dest=/etc/sysconfig/iptables owner=root group=root mode=600
    notify:
@@ -338,23 +260,27 @@ Copy template =iptables= which was created at [[firewalls]] to reverseproxy.
 ** Configuring apache web server
  To support multiple virtual-hosts, enable *NameVirtualHost *:80* in =/etc/httpd/conf/httpd.conf=, and
  restart the apache web-server
-#+BEGIN_SRC yaml :tangle build/roles/reverseproxy_server/tasks/main.yaml
+#+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml
 - name: Configure apache to support multiple virtualhosts
   lineinfile: line="NameVirtualHost *:80" regexp="^NameVirtualHost .*:80" dest=/etc/httpd/conf/httpd.conf
   notify:
     - restart httpd
 #+END_SRC
-** Creating template for virtualhosts
-This template =virtual-labs.ac.in.conf= defines virtual-hosts. 
-The template uses "proxy_domains" variable which is defined in
-common_vars role , the "proxy_domains" variable defines the lab's hostname/FQDN
+** Create a template for virtualhosts
+This =virtual-labs.ac.in.conf= template defines virtual-hosts.  The
+template uses "proxy_domains" variable which is defined in common_vars
+role, "proxy_domains" variable defines the lab's hostname/FQDN.  
+In the following template added default virtual host entry to
+reverseproxy server itself to access awstats from browser.
 
-#+BEGIN_SRC yaml :tangle build/roles/reverseproxy_server/templates/virtual-labs.ac.in.conf
+#+BEGIN_SRC yaml :tangle roles/reverseproxy_server/templates/virtual-labs.ac.in.conf
+
 {% for domain in proxy_domains %}
 <VirtualHost *:80>
 ServerAdmin engg@virtual-labs.ac.in
 #DocumentRoot /var/www/html
 ServerName {{domain}}
+ServerAlias {{alias}}
 ErrorLog logs/{{domain}}-error_log
 CustomLog logs/{{domain}}-access_log combined
 <Location />
@@ -368,24 +294,23 @@ ProxyPass http://{{domain}}/
 Copy =virtual-labs.ac.in.conf= template to reverseproxy server's apache
 configuration file  =/etc/httpd/conf.d/virtual-labs.ac.in.conf=  and
 restart the apache web server if configuration file is modified.
- #+BEGIN_SRC yaml :tangle build/roles/reverseproxy_server/tasks/main.yaml
+ #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml
  - name: Configure virtual-host for all proxy_domains
    template: src=virtual-labs.ac.in.conf dest=/etc/httpd/conf.d/virtual-labs.ac.in.conf
    notify:
     - restart httpd
  #+END_SRC
-** <<awstats>> AWStats configuration
+** AWStats configuration
 *** Default template to configure AWStats
 In this following template we modified three fields in order to
 configure AWStats for each lab. ={item}= variable used as domain name
-of each lab which is called by *with-items* with *proxy_domains* in
-main task file =taks/main.yaml=. 
+of each lab which is defined in common role
   + LogFile
   + SiteDomain
   + Hostaliases
 
-The actual default template which we need to copy to reverseproxy is 
-#+BEGIN_SRC yaml :tangle build/roles/reverseproxy_server/templates/awstats.reverseproxy.conf
+The actual default template to be copied to reverseproxy is 
+#+BEGIN_SRC yaml :tangle roles/reverseproxy_server/templates/awstats.reverseproxy.conf
 # AWSTATS CONFIGURE FILE 7.0
 #-----------------------------------------------------------------------------
 # Copy this file into awstats.www.mydomain.conf and edit this new config file
@@ -1938,8 +1863,8 @@ ExtraTrackedRowsLimit=500
 
 #+END_SRC
 *** Configure AWStats for each lab
-Copy default template [[awstats][awstats.reverseproxy.conf]] to reverseproxy 
-#+BEGIN_SRC yaml :tangle build/roles/reverseproxy_server/tasks/main.yaml
+Copy default [[AWStats configuration][awstats.reverseproxy.conf]] template to reverseproxy 
+#+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml
 #Note that extra awstats file which are not deleted when a domain is removed from proxy_domains list 
 #is not an issue
 - name: Create one awstats file for each proxy domain
@@ -1951,7 +1876,7 @@ Copy default template [[awstats][awstats.reverseproxy.conf]] to reverseproxy
 To allow access to awstats from everywhere , configure apache server's
 configuration file =/etc/httpd/conf.d/awstats.conf= by adding *Allow
 from all*
-#+BEGIN_SRC yaml :tangle build/roles/reverseproxy_server/files/httpd_awstats.conf
+#+BEGIN_SRC yaml :tangle roles/reverseproxy_server/files/httpd_awstats.conf
 #
 # Content of this file, with correct values, can be automatically added to
 # your Apache server by using the AWStats configure.pl tool.
@@ -1988,15 +1913,27 @@ ScriptAlias /awstats/ "/usr/share/awstats/wwwroot/cgi-bin/"
 </IfModule>
 #+END_SRC
 *** Apply allow access to awstats from everywhere
-Copy configured =httpd_awstats.conf= file for accessing
+Copy configured [[Allow access to awstats from everywhere][httpd_awstats.conf]] file for accessing
 awstats from everywhere to reverseproxy and apply proper ownership, group and mode
 permissions to the configuration file. Restart the apache web server if
 anything is modified in the configuration file
-#+BEGIN_SRC yaml :tangle build/roles/reverseproxy_server/tasks/main.yaml
+#+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml
 - name: Allow access to awstats from everywhere
   copy: src=httpd_awstats.conf dest=/etc/httpd/conf.d/awstats.conf owner=root group=root mode=644
   notify:
     - restart httpd
+#+END_SRC
+** Restarting services
+Restarting the services (httpd and iptables) if anything is modified in
+configuration file 
+#+BEGIN_SRC yaml :tangle roles/reverseproxy_server/handlers/main.yaml 
+---
+- name: restart httpd
+  service: name=httpd state=restarted
+
+- name: restart iptables
+  service: name=iptables state=restarted
+
 #+END_SRC
 ** Main Configuration file
 This is the main script which includes other tasks/roles mentioned
@@ -2007,7 +1944,7 @@ below which we run on reverseproxy server.
  4) rsyslog_client 
 
 
-#+BEGIN_SRC yaml :tangle build/reverseproxy_server.yaml
+#+BEGIN_SRC yaml :tangle reverseproxy_server.yaml
 ---
 - name: This file configures reverseproxy server
   hosts: reverseproxy_server
@@ -2015,46 +1952,17 @@ below which we run on reverseproxy server.
 
   roles:
     - common
-#    - ossec_client
-#    - rsyslog_client
-#    - common_vars
+    - ossec_client
+    - rsyslog_client
+    - common_vars
     - reverseproxy_server
 #+END_SRC
-** Restarting services
-Restarting the services (httpd and iptables) if anything is modified in
-configuration file 
-#+BEGIN_SRC yaml :tangle build/roles/reverseproxy_server/handlers/main.yaml 
----
-- name: restart httpd
-  service: name=httpd state=restarted
 
-- name: restart iptables
-  service: name=iptables state=restarted
-
-#+END_SRC
-
-* Provisioning for AWS cluster
-  Reverse-Proxy is setup by the Configuration server. Machine configuration is described
-  below.
-
-** Reverse-Proxy machine configuration:
-   + Operating System: Centos6.6
-   + Architecture: x86_64
-   + Memory: 1024MB
-   + Disk space: 25GB
-   + Interface: eth0
-
-** Reverse-Proxy machine is created using:
-   AWS console by giving private ip
-** Domain name and IP address of Reverse-Proxy machine:
-    - Domain name :: reverseproxy.virtual-labs.ac.in
-    - IP Address :: <reverseproxy_ip>
-
-** Access to Reverse-Proxy Machine
-- Only configuration server's public key is to be placed as authorized key in the reverseproxy
-     
 * Test Cases
+  
 ** Test Case ID: TC01 
+
+
 +  Objective :: To test whether the client requests are going via
                 reverseproxy and returns the content of particular
                 lab.
@@ -2072,24 +1980,48 @@ configuration file
              
               
 + Procedure ::
-  1) Create two new containers and install dependencies 
+- Router accepts HTTP and HTTPS packets from external world (lab
+  user)and [[./router.org][router]] forwards the requests to reverseproxy server since
+  router has the forwarding capacity. And then reverseproxy accepts
+  the HTTP and HTTPS packets from [[./router.org][router]] and from internal network,
+  reverseproxy sends these packets to internal web servers and returns
+  reply to internal network and to the router. Router is then gives
+  the reply to lab user with the requested web pages.
+
+- Follow the bellow steps to test the reverseproxy 
+  1) Create two new containers and install dependencies
      + Dependencies ::
-         a) http
+         a) httpd
          b) php(if needed)
   2) create dummy index.html file in each container  
+     + These files are dummy html files just for testing. 
+     + these files are required to test whether the reverseproxy is forwarding
+       the HTTP packets to internal web server based on virtualhost
+       entry or not.
   3) Add virtual host entries in reverseproxy in
      =/etc/httpd/conf.d/virtual-labs.ac.in= of two labs
+    + This virtualhost entry is needed for reverseproxy in order to
+      send the incoming HTTP and HTTPS packets to internal web server
+      and is reverseproxy server is responsible for where to send
+      these packets based on NameServer filed in virtualhost entry
   4) Add hostname of each lab in =/etc/hosts= by giving ip of
      lab in reverseproxy and for internal name resolving
-  5) use ping and wget commands to test reverseproxy
+  5) use ping and wget commands to test reverseproxy and do the
+     following experiments
 + Experiments ::
+
   - From command line ::
-   To test whether the reverseproxy is working or not from command
-       line , follow the steps shown below
-    + Add hostnames to =/etc/hosts= to my PC
+    + To test whether the reverseproxy is working or not from command
+      line , follow the steps shown below
+    + Add hostnames of the labs to =etc/hosts= of reverseproxy server
+       #+BEGIN_SRC 
+    172.172.172.250 lab1.virtual-labs.ac.in
+    172.172.172.81 lab2.virtual-labs.ac.in
+    #+END_SRC
+    + Add hostnames of the labs to =/etc/hosts= to my PC
     #+BEGIN_SRC 
-    reverseproxy_ip lab1.virtual-labs.ac.in
-    reverseproxy_ip lab2.virtual-labs.ac.in
+    172.172.172.96 lab1.virtual-labs.ac.in
+    172.172.172.96 lab2.virtual-labs.ac.in
     #+END_SRC
     + Use *wget* command to get the content of each lab
     #+BEGIN_SRC 
@@ -2099,30 +2031,34 @@ configuration file
     the above two commands passes through reverseproxy and gives
     you *index.html* file content of each lab
    + ping from reverseproxy container ::
+     Bellow command gives actual lab IP
       #+BEGIN_SRC 
       $ping lab1.virtual-labs.ac.in        
       #+END_SRC
      *Result*
-     #+BEGIN_SRC 
+      #+BEGIN_SRC 
      PING lab1.virtual-labs.ac.in (172.172.172.250) 56(84) bytes of data.
      64 bytes from lab1.virtual-labs.ac.in (172.172.172.250): icmp_seq=1 ttl=64 time=0.093 ms
-     #+END_SRC
+      #+END_SRC
+      
    + ping from PC ::
+    Below command gives reverseproxy server IP , because the lab has to go
+    to actual lab container via reverseproxy server.
       #+BEGIN_SRC 
       $ping lab1.virtual-labs.ac.in
       #+END_SRC
      *Result*
-    #+BEGIN_SRC 
-    PING lab1.virtual-labs.ac.in (172.172.172.96) 56(84) bytes of data.
-    64 bytes from lab1.virtual-labs.ac.in (172.172.172.96): icmp_seq=1 ttl=64 time=0.061 ms
-    #+END_SRC
+      #+BEGIN_SRC 
+      PING lab1.virtual-labs.ac.in (172.172.172.96) 56(84) bytes of data.
+      64 bytes from lab1.virtual-labs.ac.in (172.172.172.96): icmp_seq=1 ttl=64 time=0.061 ms
+      #+END_SRC
  - From Browser ::
-   + Assume you have added hostnames to =/etc/hosts= in your PC like
+   + Add hostnames to =/etc/hosts= in your PC like
      below
-    #+BEGIN_SRC 
-    reverseproxy_ip lab1.virtual-labs.ac.in
-    reverseproxy_ip lab2.virtual-labs.ac.in
-    #+END_SRC
+      #+BEGIN_SRC 
+      172.172.172.96 lab1.virtual-labs.ac.in
+      172.172.172.96 lab2.virtual-labs.ac.in
+      #+END_SRC
    + Set no proxy for *virtual-labs.ac.in in the browser 
    + Browse the lab URLs http://lab1.virtual-labs.ac.in and
      http://lab2.virtual-labs.ac.in from your browser and you may get
