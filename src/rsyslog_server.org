@@ -19,7 +19,7 @@
 
 2) Rsyslog is able to:
    - accepts input from a wide variety of sources.
-   - transforms them
+   - transform them
    - and output the results to diverse destinations.
 
 3) Messages are passed to ruleset, where rules are conditionally applied. When a
@@ -33,27 +33,25 @@
    must start with a dollar-sign.
 
 * Requirements
-** Functional Requirement
+** Functional Requirements
 1) Allow incoming connections on udp port 514.
-2) Allow incoming ssh connections on TCP port 22 from Ansible, Nagios and
+2) Allow incoming ssh connections on TCP port 22 from configuration, Nagios and
    management servers.
 3) Allow incoming connections on TCP port 5666 from Nagios.
-4) Allow incoming connections on UDP port 161 and 162 from Cacti Server.
+4) Allow incoming connections on UDP port 161 and 162.
 5) Allow incoming and outgoing ping requests to anywhere and from anywhere.
-6) Allow outgoing connections on UDP port 1514 to Ossec server.
+6) Allow outgoing connections on UDP port 1514.
 7) Allow outgoing connections on TCP port 80 and 443 for yum.
 8) Allow outgoing connections on TCP port 25 for sending mails via logwatch.
-9) Ansible machine ssh public key is to be added to authorized keys.
-10) Rsyslog service has to run on udp port 514.
-11) Log messages being forwarded by the various client systems are to be saved in
-    a separate file for each client.
+9) Add Configuration server's ssh public key to authorized keys.
+10) Run Rsyslog service on udp port 514.
+11) Save log messages forwarded by various client systems in a separate file for
+    each client.
 
-** Security Requirement
-1) Accept ssh connection *only* from Ansible server.
-2) Accept incoming connections on UDP port 161 and 162 *only* from Cacti Server.
-3) Accept incoming connections on TCP port 5666 *only* from Nagios.
-4) Accept outgoing connections on UDP port 1514 *only* to Ossec server.
-5) Rate limiting on all the connections.
+** Security Requirements
+1) Accept ssh connections *only* from Configuration server, management servers
+   and Nagios server.
+2) Apply rate limit on all the connections.
 
 * Design
 ** System Design Diagram
@@ -61,18 +59,20 @@
 **** Editable link [[https://docs.google.com/a/vlabs.ac.in/drawings/d/16iv5DYT3_zrf6mrxTF1F7K_XkE9wfZdpaDNbPpDx99A/edit][google drawing editable link]]
 
 ** System Files
-|------+---------+------------------------------+----------------------|
-| Sno. | Service | File                         | File Type            |
-|------+---------+------------------------------+----------------------|
-|   1. | rsyslog | /etc/rsyslog.conf            | System Configuration |
-|------+---------+------------------------------+----------------------|
-|   2. | rsyslog | /var/log/<client-hostname>/* | Log Data             |
-|------+---------+------------------------------+----------------------|
+|------+----------+------------------------------+------------------------|
+| Sno. | Service  | File                         | File Type              |
+|------+----------+------------------------------+------------------------|
+|   1. | rsyslog  | /etc/rsyslog.conf            | System Configuration   |
+|------+----------+------------------------------+------------------------|
+|   2. | rsyslog  | /var/log/<client-hostname>/* | Log Data               |
+|------+----------+------------------------------+------------------------|
+|   3. | IpTables | /etc/sysconfig/iptables      | Firewall Configuration |
+|------+----------+------------------------------+------------------------|
 
 * Provisioning
 ** Installed packages
-- Latest stable version of rsyslog package is 8.8.0. The package used for this
-  system is =rsyslog-5.8.10-10.el6_6.x86_64=.
+- Latest stable version of rsyslog package is 8.8.0. The package installted on
+  this system is =rsyslog-5.8.10-10.el6_6.x86_64=.
 
 ** System Creation
 - System is instantiated using following command:
@@ -102,47 +102,33 @@ vzctl create <rsyslog_ctid> --ostemplate centos-6-x86_64 --hostname rsyslog-serv
 
 ** What are the firewall rules for rsyslog server
 - Firwall rules applied to rsyslog server are mentioned here. Description of
-  firewall rule which are common across all the systems are defined in common
-  role. Rule [[Rule for FORWARD chain][1]] and [[Rule for incoming connection for rsyslog messages][2]] are specific to only rsyslog server and are described here.
-*** Default rules for filter table
+  firewall rules which are common across all the systems are defined in the
+  common role. Rules [[Rule for incoming connection for rsyslog messages][1]] and [[Rule for FORWARD chain][2]] and are specific to only rsyslog server and are
+  described here.
+*** Common Firewall Rules - Section 1
 #+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
 #If packet does not match any rule then the default action is applied to the packet
 *filter
 :INPUT ACCEPT [0:0]
 :FORWARD ACCEPT [0:0]
 :OUTPUT ACCEPT [0:0]
-#+END_SRC
 
-*** Rule for INPUT loopback packets
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
 #Allow internal process to process communication over loopback interface
 -A INPUT -i lo -d 127.0.0.0/8 -j ACCEPT
-#+END_SRC
- 
-*** Rate limiting new connections
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
+
 #Rate limit new connections to 20 new connections per 30 seconds
 -A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --set
 -A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --rcheck --seconds 30 --hitcount 20 -m limit --limit 2/min -j LOG --log-prefix "new_limit_"
 -A INPUT ! -p udp -m state --state NEW -m recent --name ssh_limit --rcheck --seconds 30 --hitcount 20 -j DROP
-#+END_SRC
 
-*** Rule for incoming ping request with rate limiting
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
 #Allow to accept incoming ping requests from anywhere
 -A INPUT -p icmp --icmp-type echo-request -m limit --limit 60/minute --limit-burst 120 -j ACCEPT
 -A INPUT -p icmp --icmp-type echo-request -m limit --limit 1/minute --limit-burst 2 -j LOG 
 -A INPUT -p icmp --icmp-type echo-request -j DROP
-#+END_SRC
 
-*** Rule for ongoing connection to other machine
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
 #Allow to continue already related and established connections
 -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
-#+END_SRC
 
-*** Rule for incoming ssh connection
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
 #Allowing SSH connection from nagios server ip.
 -A INPUT -m state --state NEW -s {{ nagios_server_ip }} -p tcp -m tcp --dport 22 -j ACCEPT
 #Allowing incoming ssh connections only from the management ips.
@@ -156,110 +142,76 @@ vzctl create <rsyslog_ctid> --ostemplate centos-6-x86_64 --hostname rsyslog-serv
 -A INPUT -m state --state NEW -s {{ item }} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
 #+END_SRC
-
+ 
 *** Rule for incoming connection for rsyslog messages
-- Allowing rsyslog server to accept incoming packets on udp port 514 from
-  anywhere.
+- Allow rsyslog server to accept incoming log messages on UDP port 514 from
+  various systems.
 #+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
 #Allow to accept incoming rsyslog messages from anywhere
 -A INPUT -m state --state NEW -p udp -m udp --dport 514 -j ACCEPT
 #+END_SRC
 
-*** Rule for incoming NRPE query from Nagios server
+*** Common Firewall Rules - Section 2
 #+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
 #Allow to accept incoming nrpe queries from nagios server
 -A INPUT -m state --state NEW -p tcp -m tcp --dport 5666 -j ACCEPT
-#+END_SRC
 
-*** Rule for incoming SNMP queries from Cacti server
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
 #Allow to accept incoming snmp queries from cacti server
 -A INPUT -p udp -m udp --dport 161 -j ACCEPT
 -A INPUT -p udp -m udp --dport 162 -j ACCEPT
-#+END_SRC
 
-*** Rule for logging blocked incoming connection
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
 #Log all other "blocked_input_" attempts with rate limiting
 -A INPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_input_"
-#+END_SRC
-*** Rule for all other incoming packets
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
+
 #Drop all the INPUT packets which does not match any of the rules
 -A INPUT -j REJECT --reject-with icmp-host-prohibited
 #+END_SRC
 
 *** Rule for FORWARD chain
-- Rsyslog is not responsible for any packet forwarding and hence forwarding rule
-  should be set to reject packets.
+- Rsyslog is not responsible for any packet forwarding, hence forwarding rule
+  should be set to reject policy.
 #+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
 #Do not allow any packet to be forwarded
 -A FORWARD -j REJECT --reject-with icmp-host-prohibited
 #+END_SRC
 
-*** Rule for OUTPUT loopback packets
+*** Common Firewall Rules - Section 3
 #+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
 #Allow internal process to process communication over loopback interface
 -A OUTPUT -s 127.0.0.0/8 -o lo -j ACCEPT
-#+END_SRC
 
-*** Rule for ongoing connection from other machine
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
 #Allow to continue already related and established connections
 -A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
-#+END_SRC
 
-*** Rule for outgoing dns request
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
 #Allow to make dns queries
 -A OUTPUT -p udp -m udp --dport 53 -j ACCEPT
-#+END_SRC
 
-*** Rule for sending mails by logwatch service
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
 #Allow to send mails by logwatch service
 -A OUTPUT -p tcp -m tcp --dport 25 -j ACCEPT
-#+END_SRC
 
-*** Rule for outgoing web request by yum
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
 #Allow yum to contact web servers for installing and updating packages
 -A OUTPUT -p tcp -m tcp --dport 80 -j ACCEPT
 -A OUTPUT -p tcp -m tcp --dport 443 -j ACCEPT
-#+END_SRC
 
-*** Rule for outgoing connection to OSSEC server
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
 #Allow outgoing connections to OSSEC server
 -A OUTPUT -p udp -m udp --dport 1514 -j ACCEPT
-#+END_SRC
-    
-*** Rule for outgoing ping request
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
+
 #Allow to send ping requests to anywhere.
 -A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT
-#+END_SRC
 
-*** Rule for logging blocked outgoing connection
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
 #Log all other "blocked_output_" attempts
 -A OUTPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_output_"
-#+END_SRC
-*** Rule for all other outgoing packets
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
+
 #Reject all the OUTPUT packets which does not match any of the rules
 -A OUTPUT -j REJECT --reject-with icmp-host-prohibited
-#+END_SRC
 
-*** Enforce filter rules
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
 COMMIT
 #+END_SRC
     
 ** Build Configuration file
 *** Steps to configure
-- Rsyslog service is configured by =/etc/rsyslog.conf= configuration file.
-  Default configuration setup is edited according to our requirement as follows:
+- Rsyslog service is configured using =/etc/rsyslog.conf= configuration file.
+  Default configuration setup is edited as per our requirements.
 **** Append following lines at the bottom of the file
      #+BEGIN_EXAMPLE
      $template TmplAuth, "/var/log/%HOSTNAME%/%PROGRAMNAME%.log"
@@ -273,7 +225,7 @@ COMMIT
      #+END_EXAMPLE
 
 *** Complete configuration file
-- Configuration file after making modifications is shown below
+- Configuration file with modifications is shown below:
 #+BEGIN_SRC yml :tangle roles/rsyslog_server/files/rsyslog_server.conf :eval no
 # rsyslog v5 configuration file
 
@@ -364,8 +316,8 @@ authpriv.*      ?TmplAuth
 
 ** COMMENT Build Configuration file version-2 
 *** Steps to configure
-- Rsyslog service is configured by =/etc/rsyslog.conf= configuration file.
-  Default configuration setup is edited according to our requirement as follows:
+- Rsyslog service is configured using =/etc/rsyslog.conf= configuration file.
+  Default configuration setup is edited as per our requirements.
 **** Append following lines at the bottom of the file
      #+BEGIN_EXAMPLE
      $template TmplAuth, "/var/log/%HOSTNAME%/%PROGRAMNAME%.log"
@@ -388,6 +340,7 @@ authpriv.*      ?TmplAuth
      #+END_EXAMPLE
 *** Complete configuration file
 - Configuration file after making modifications is shown below
+
 #+BEGIN_SRC yml :tangle roles/rsyslog_server/files/rsyslog_server_version2.conf :eval no
 # rsyslog v5 configuration file
 
@@ -475,6 +428,7 @@ $template TmplAuth, "/var/log/%HOSTNAME%/%PROGRAMNAME%.log"
 #+END_SRC
 
 ** Install rsyslog package
+- Rsyslog package is installed in the system.
 #+BEGIN_SRC yml :tangle roles/rsyslog_server/tasks/main.yml :eval no
 ---
  - name: Install rsyslog package
@@ -541,7 +495,7 @@ $template TmplAuth, "/var/log/%HOSTNAME%/%PROGRAMNAME%.log"
 #+END_SRC
 
 ** Start rsyslog service
-- Any changes in rsyslog configuration file will be enforced to the system by
+- Any changes in rsyslog configuration file is enforced to the system by
   restarting the rsyslog service.
 #+BEGIN_SRC yml :tangle roles/rsyslog_server/handlers/main.yml
  - name: Restart rsyslog
@@ -549,10 +503,10 @@ $template TmplAuth, "/var/log/%HOSTNAME%/%PROGRAMNAME%.log"
 #+END_SRC
 
 ** Variables Definition
-- Variables are used by the ansible scripts to configure rsyslog server. Values
-  of these variables is fetched from the "common_vars" role.
-  1) Proxy environment
-  2) Anisble server ip
+- Variables are used in the ansible scripts to configure rsyslog server. 
+   1) Proxy environment
+   2) Anisble server ip
+ Values of these variables is fetched from the =common_vars= role.
 #+BEGIN_SRC yaml :tangle roles/rsyslog_server/meta/main.yml
 ---
 dependencies:
@@ -560,7 +514,7 @@ dependencies:
 #+END_SRC
 
 ** Rsyslog Server Installation Script
-- Rsyslog server is configured by using common and rsyslog_server role.
+- Rsyslog server is configured using common and =rsyslog_server= role.
 #+BEGIN_SRC yml :tangle rsyslog_server.yml
 ---
 - name: Configure rsyslog server 
@@ -574,7 +528,7 @@ dependencies:
 * Test Cases
 ** Test Case-1
 *** Objective: 
-- Test firewall rules to accept incoming connections on port UDP 514
+- Test the system to accept incoming connections on port UDP 514
 *** Apparatus:
 1) Rsyslog server
 2) Rsyslog client
@@ -585,13 +539,13 @@ dependencies:
   allow incoming connections on port 514.
 
 *** Experiment
-- Login to rsyslog server from one terminal and go to
-  =/var/log/<clienthostname>= directory. Do "tail -f su.log". Now from another
-  terminal login to rsyslog client machine. Execute "sudo su -" command. When we
-  login to the client machine a session gets created for the user and a system
-  log is generated. The log message will be forwareded to rsyslog server and
-  saved in a file. As a result messages should appear in the first terminal
-  screen.
+- Login to rsyslog server from one terminal and navigate to
+  =/var/log/<clienthostname>= directory. Do "tail -f su.log" in the present
+  working directory. Now from another terminal login to rsyslog client
+  machine. Execute "sudo su -" command. Once login to the client machine a
+  session gets created for the user and a system log is generated. The log
+  message are forwareded to rsyslog server and saved there in a file. As a
+  result messages should appear in the first terminal screen.
 
 *** Result
 - Sample output is shown below for above procedure.
@@ -611,24 +565,24 @@ Mar 27 09:33:43 rsyslog-client su: pam_unix(su-l:session): session closed for us
 
 ** Test Case-2
 *** Objective:
-- Test ssh log are getting logged in rsyslog server
+- Test ssh logs are getting logged in rsyslog server
 
 *** Apparatus:
 1) Rsyslog server
 2) Rsyslog client
 
 *** Theory
-- System generates log message everytime an event occurs in the system. When we
-  login inside the system using ssh, machine generates "ssh log" message. This
-  message is then forwarded to rsyslog server.
+- System generates log message everytime an event occurs in the system. When a
+  login is made inside the system using ssh, machine generates "ssh log"
+  message. This message is then forwarded to rsyslog server.
 
 *** Experiment
-- Login to rsyslog server from one terminal and go to
-  =/var/log/<client-hostname>= directory. Monitor =sshd.log= file using 
-  "tail -f sshd.log" command. Now from another terminal login to rsyslog client
-  machine via ssh. The ssh log message is generated which is then forwarded to
-  rsyslog server and saved in a file. As a result messages should appear in the
-  first terminal screen.
+- Login to rsyslog server from one terminal and naviagate to
+  =/var/log/<client-hostname>= directory. Monitor =sshd.log= file using =tail -f
+  sshd.log= command. Now from another terminal login to rsyslog client machine
+  via ssh. The ssh log message is generated which is then forwarded to rsyslog
+  server and saved in a file. As a result messages should appear in the first
+  terminal screen.
 
 *** Result
 - Sample output is shown below for above chain of commands.
@@ -655,10 +609,10 @@ Mar 27 09:51:18 rsyslog-client sshd[3565]: pam_unix(sshd:session): session opene
 
 *** Theory
 - Apache saves a log message everytime an an HTTP request is made to apache
-  server.  By default apache saves log messages in
-  =/var/log/httpd/access_log=. These logs can be forwarded to a central rsyslog
-  server.  Configure apache to pipes the log messages to external program by
-  changing the value of "CustomLog" directive as follows:
+  server.  By default apache saves log messages in =/var/log/httpd/access_log=
+  file. These logs are forwarded to a central rsyslog server.  Apache is
+  configured to pipes the log messages to external program by changing the value
+  of "CustomLog" directive as follows:
    #+BEGIN_EXAMPLE
    CustomLog "|/usr/bin/logger -t apache -p local6.info" combined
    #+END_EXAMPLE
