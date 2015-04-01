@@ -250,7 +250,7 @@ The above rule satisfies functional requirements 2 and 3
    environment: proxy_env
 #+END_SRC
 ** Configuring firewall rules 
-Copy  =iptables= template which was created at [[Firewall rules]] to reverseproxy.
+Copy =iptables= template which was created at [[Firewall rules]] to reverseproxy.
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml
  - name: Configure iptables firewall
    template: src=iptables dest=/etc/sysconfig/iptables owner=root group=root mode=600
@@ -1985,8 +1985,8 @@ below which we run on reverseproxy server.
   router has the forwarding capacity. And then reverseproxy accepts
   the HTTP and HTTPS packets from [[./router.org][router]] and from internal network,
   reverseproxy sends these packets to internal web servers and returns
-  reply to internal network and to the router. Router is then gives
-  the reply to lab user with the requested web pages.
+  reply to internal network and to the router. Router then gives the
+  reply to lab user with the requested web pages.
 
 - Follow the bellow steps to test the reverseproxy 
   1) Create two new containers and install dependencies
@@ -2003,22 +2003,26 @@ below which we run on reverseproxy server.
     + This virtualhost entry is needed for reverseproxy in order to
       send the incoming HTTP and HTTPS packets to internal web server
       and is reverseproxy server is responsible for where to send
-      these packets based on NameServer filed in virtualhost entry
+      these packets based on ServerName field in virtualhost entry
   4) Add hostname of each lab in =/etc/hosts= by giving ip of
      lab in reverseproxy and for internal name resolving
-  5) use ping and wget commands to test reverseproxy and do the
+  5) Use ping and wget commands to test reverseproxy and do the
      following experiments
 + Experiments ::
 
   - From command line ::
     + To test whether the reverseproxy is working or not from command
-      line , follow the steps shown below
-    + Add hostnames of the labs to =etc/hosts= of reverseproxy server
+      line , follow the steps shown below:
+    + Add hostnames of the labs to =etc/hosts= of reverseproxy
+      server. This is because the testing is done without using the
+      internal(Private) DNS.
        #+BEGIN_SRC 
     172.172.172.250 lab1.virtual-labs.ac.in
     172.172.172.81 lab2.virtual-labs.ac.in
     #+END_SRC
-    + Add hostnames of the labs to =/etc/hosts= to my PC
+    + Add hostnames of the labs to =/etc/hosts= to my PC.  This is
+      because the testing is done without using the internal(Private)
+      DNS.
     #+BEGIN_SRC 
     172.172.172.96 lab1.virtual-labs.ac.in
     172.172.172.96 lab2.virtual-labs.ac.in
@@ -2028,7 +2032,7 @@ below which we run on reverseproxy server.
     $wget --no-proxy lab1.virtual-labs.ac.in
     $wget --no-proxy lab2.virtual-labs.ac.in
     #+END_SRC
-    the above two commands passes through reverseproxy and gives
+    The above two commands passes through reverseproxy and gives
     you *index.html* file content of each lab
    + ping from reverseproxy container ::
      Bellow command gives actual lab IP
@@ -2054,12 +2058,12 @@ below which we run on reverseproxy server.
       #+END_SRC
  - From Browser ::
    + Add hostnames to =/etc/hosts= in your PC like
-     below
+     below:
       #+BEGIN_SRC 
       172.172.172.96 lab1.virtual-labs.ac.in
       172.172.172.96 lab2.virtual-labs.ac.in
       #+END_SRC
-   + Set no proxy for *virtual-labs.ac.in in the browser 
+   + Set no proxy for *.virtual-labs.ac.in in the browser 
    + Browse the lab URLs http://lab1.virtual-labs.ac.in and
      http://lab2.virtual-labs.ac.in from your browser and you may get
      the following result in log file at
@@ -2089,17 +2093,18 @@ below which we run on reverseproxy server.
 + Procedure :: 
      - Add virtual host entries in
        =/etc/httpd/conf.d/virtual-labs.ac.in= along with the following
-       directives
+       directives for each lab
        #+BEGIN_SRC 
        CustomLog logs/lab1.virtual-labs.ac.in-access-log combined
        ErrorLog logs/lab1.virtual-labs.ac.in-error-log
        #+END_SRC
-       for each lab
      - Restart the apache webserver
-     - run the following command to update analytics of each lab
+     - Run the following command to update analytics of each lab
        #+BEGIN_SRC 
        $perl /usr/share/awstats/tools/awstats_updateall.pl now
+       #+END_SRC
        or
+       #+BEGIN_SRC 
        $perl /usr/share/awstats/wwwroot/cgi-bin/awstats.pl -config=<labURL> -update
        #+END_SRC
 
@@ -2130,7 +2135,7 @@ below which we run on reverseproxy server.
     172.172.172.1 - - [26/Mar/2015:05:50:20 -0400] "GET /awstats/awstats.pl?config=lab1.virtual-labs.ac.in HTTP/1.1" 404 305 "-" "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:36.0) Gecko/20100101 Firefox/36.0"
     172.172.172.1 - - [26/Mar/2015:05:50:21 -0400] "GET /awstats/awstats.pl?config=lab1.virtual-labs.ac.in HTTP/1.1" 404 305 "-" "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:36.0) Gecko/20100101 Firefox/36.0"
 	#+END_SRC
-	That means, logs are storing
+	This means, logs are being stored.
     -  Access the analytics of the labs from browser ::
       + To access the analytics of each lab from the browser use the
         following link
