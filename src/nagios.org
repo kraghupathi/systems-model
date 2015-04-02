@@ -1,0 +1,65 @@
+#+TITLE:     Nagios - Design Model and Implementation
+#+DATE:      2015-04-01 Wednesday
+#+PROPERTY: session *scratch*
+#+PROPERTY: results output
+#+PROPERTY: exports code
+#+SETUPFILE: org-templates/level-0.org
+#+DESCRIPTION: Nagios Design Model Documentation
+
+* Introduction
+- This document describes the design and implementation of Monitoring System.
+  Nagios system is used to monitor services of our system such as ssh service,
+  cpu usage, ram usage and disk usage.
+
+* Requirements
+** Functional Requirements
+1) Monitor various services such as ssh, ping, http on all the system.
+2) Accept incoming connections on TCP port 22 from ansible.
+3) Accept outgoing connections on TCP port 22.
+4) Accept outgoing connections on UDP port 1514.
+5) Accept outgoing connections on UDP port 514.
+6) Allow incoming and outgoing ping requests to anywhere and from anywhere.
+7) Allow outgoing connections on TCP port 80 and 443 for yum.
+8) Allow outgoing connections on TCP port 25 for sending mails via logwatch.
+9) Ansible machine ssh public key is to be added to authorized keys.
+
+** Security Requirements
+1) Accept SSH login only from Ansible.
+2) Rate limiting on all connections.
+
+* Design
+- Following diagram describes the design of the monitoring server.
+** System Design Diagram
+[[./diagrams/nagios-design-diagram.png][design diagram]]
+
+*** Editable Link
+[[https://docs.google.com/a/vlabs.ac.in/drawings/d/10tc9FolWsVoPfEXI1FbvJmZKg77SjkGbcix2yJMg81Q/edit][google drwaing-link]]
+
+** System Files
+|---+---+---+---+---|
+|   |   |   |   |   |
+|---+---+---+---+---|
+|   |   |   |   |   |
+* Implementation
+
+* Test Cases
+1) Test sendmail service is able to send the mail.
+2) Test all the services are being monitored.
+
+* COMMENT Time Line
+|------+------------------+---------------+----------------------------|
+| S.no | Day              | Time          | Tasks                      |
+|------+------------------+---------------+----------------------------|
+|   1. | Thur Apr 2, 2015 | 9:00 - 11:00  | AWS Security Groups        |
+|------+------------------+---------------+----------------------------|
+|      |                  | 11:00 - 12:00 | Tried resolving            |
+|      |                  |               | Nagios firewall issue      |
+|------+------------------+---------------+----------------------------|
+|      |                  | 12:00 - 12:30 | Personal work, out of      |
+|      |                  |               | office                     |
+|------+------------------+---------------+----------------------------|
+|      |                  | 14:00 - 15:25 | Meeting with Mr. Saurabh   |
+|------+------------------+---------------+----------------------------|
+|      |                  | 15:25 - 15:   | Discussion with Mr. Zubair |
+|------+------------------+---------------+----------------------------|
+|      |                  |               |                            |
