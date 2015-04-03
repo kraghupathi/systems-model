@@ -33,7 +33,8 @@
 2) Rate limiting on all connections.
 
 * Design
-- Following diagram describes the design of the monitoring server.
+- Given diagram describes the design of the monitoring server. Systems files are
+  also listed.
 ** System Design Diagram
 [[./diagrams/nagios-server-design-diagram.png]]
 
