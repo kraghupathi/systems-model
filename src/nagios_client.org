@@ -1,0 +1,191 @@
+#+TITLE:     Nagios Client - Design Model and Implementation
+#+DATE:      2015-04-01 Wednesday
+#+PROPERTY: session *scratch*
+#+PROPERTY: results output
+#+PROPERTY: exports code
+#+SETUPFILE: org-templates/level-0.org
+#+DESCRIPTION: Nagios Client Design Model Documentation
+
+* Introduction
+- The document describes how to use the monitoring service as a
+  client. Monitoring agents are installed inside the system to monitor services
+  of system such as ssh service, cpu usage, ram usage and disk usage.
+
+* Requirements
+** Functional Requirements
+
+** Security Requirements
+1) Rate limiting on all connections.
+
+* Design
+- Following diagram describes the design of the monitoring server.
+** System Design Diagram
+[[./diagrams/nagios-client-design-diagram.png]]
+
+** Editable Link
+[[https://docs.google.com/a/vlabs.ac.in/drawings/d/1TKAGbG8Fj5LcuY-kdZrVjE1ksHJQxFdXeRcWwE6TlWs/edit][Design Diagram]]
+
+** System Files
+|---+---+---+---+---|
+|   |   |   |   |   |
+|---+---+---+---+---|
+|   |   |   |   |   |
+* Implementation
+** Structure of Scripts
+- The implementation of this system is in terms of a collection of Ansible
+  scripts which configures the machine. These scripts are organized as follows:
+#+BEGIN_EXAMPLE
+|-- nagios_client.yml
+|-- roles
+|   |   |-- nagios_client
+|   |   |   |-- defaults
+|   |   |   |   `-- main.yaml
+|   |   |   |-- handlers
+|   |   |   |   `-- main.yaml
+|   |   |   |-- tasks
+|   |   |   |   `-- main.yaml
+|   |   |   |-- templates
+|   |   |   |   `-- xinetd.conf.j2
+#+END_EXAMPLE
+
+** What are the firewall rules for Nagios Client
+- Firewall rules to be applied on nagios clients are mentioned here. Description
+  of firewall rules which are common across all the systems are defined in the
+  common role. Rules [[Allow incoming ssh connections from nagios server][1]], and [[Allow incoming NRPE queries][2]] are specific to only nagios client and are
+  described here.
+*** Allow incoming ssh connections from nagios server
+#+BEGIN_EXAMPLE
+{% for item in nagios_server_ips  %}  
+-A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
+#+END_EXAMPLE
+
+*** Allow incoming NRPE queries
+#+BEGIN_EXAMPLE
+#Allow to accept incoming nrpe queries from nagios server
+-A INPUT -m state --state NEW -p tcp -m tcp --dport 5666 -j ACCEPT
+#+END_EXAMPLE
+
+** Configure xinetd.conf
+#+BEGIN_SRC yml :tangle roles/nagios_client/templateas/xinetd.conf.j2 :eval no
+#
+# This is the master xinetd configuration file. Settings in the
+# default section will be inherited by all service configurations
+# unless explicitly overridden in the service configuration. See
+# xinetd.conf in the man pages for a more detailed explanation of
+# these attributes.
+
+defaults
+{
+# The next two items are intended to be a quick access place to
+# temporarily enable or disable services.
+#
+#       enabled         =
+        disabled        = no
+
+# Define general logging characteristics.
+        log_type        = SYSLOG daemon info 
+        log_on_failure  = HOST
+        log_on_success  = PID HOST DURATION EXIT
+
+# Define access restriction defaults
+#
+#       no_access       =
+        only_from       = {{ nagios_server }}
+#       max_load        = 0
+        cps             = 50 10
+        instances       = 50
+        per_source      = 10
+
+# Address and networking defaults
+#
+#       bind            =
+#       mdns            = yes
+        v6only          = no
+
+# setup environmental attributes
+#
+#       passenv         =
+        groups          = yes 
+        umask           = 002 
+
+# Generally, banners are not used. This sets up their global defaults
+#
+#       banner          =
+#       banner_fail     =
+#       banner_success  =
+}
+
+includedir /etc/xinetd.d
+#+END_SRC
+
+** Update all packages
+#+BEGIN_SRC yml :tangle roles/nagios_client/tasks/main.yml :eval no
+- name: running yum update
+  yum: name=* state=latest
+  environment: proxy_env
+#+END_SRC
+   
+** Install Nagios packages
+- Nagios packages are installed in the system.
+#+BEGIN_SRC yml :tangle roles/nagios_client/tasks/main.yml :eval no
+- name: Installing nagios
+  yum: name=nagios state=installed
+  environment: proxy_env
+
+- name: Installing all nagios plugins 
+  yum: name=nagios-plugins-all state=installed
+  environment: proxy_env
+
+- name: Installing nrpe on client
+  yum: name=nrpe state=installed
+  environment: proxy_env
+
+- name: Installing nrpe nagios plugins
+  yum: name=nagios-plugins-nrpe state=installed
+  environment: proxy_env
+
+- name: Installing xinetd
+  yum: name=xinetd state=installed
+  environment: proxy_env
+#+END_SRC 
+** Set xinetd.conf
+#+BEGIN_SRC yml :tangle roles/nagios_client/tasks/main.yml
+- name: updating xinted.conf with nagios-server details
+  template: src=xinetd.conf.j2 dest=/etc/xinetd.conf
+  notify: restart xinetd
+#+END_SRC
+
+** Set nrpe.cfg
+#+BEGIN_SRC yml :tangle roles/nagios_client/tasks/main.yml
+- name: updating nrpe.cfg with nagios-server details
+  lineinfile: dest=/etc/nagios/nrpe.cfg line="allowed_hosts=127.0.0.1,{{ nagios_server }}" regexp="allowed_hosts\=127.0.0.1"
+  notify: restart nrpe
+#+END_SRC
+** Start xinetd service
+- Any changes in xinetd configuration is enforced by restarting the xinetd
+  service.
+#+BEGIN_SRC yml :tangle roles/nagios_client/handlers/main.yml
+- name: restart xinetd
+  sudo: true
+  service: name=xinetd state=restarted
+#+END_SRC
+
+** Start nrpe service
+- Any changes in nrpe configuration is enforced by restarting the nrpe service.
+#+BEGIN_SRC yml :tangle roles/nagios_client/handlers/main.yml
+- name: restart nrpe
+  sudo: true
+  service: name=nrpe state=restarted
+#+END_SRC
+
+** Default value of parameters
+- Set the default value of parameters 
+#+BEGIN_SRC yml :tangle roles/nagios_client/defaults/main.yml
+nagios_server: 10.100.1.8
+#+END_SRC
+
+* Test Cases
+1) Test sendmail service is able to send the mail.
+2) Test all the services are being monitored.
+

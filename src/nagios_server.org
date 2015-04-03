@@ -1,10 +1,10 @@
-#+TITLE:     Nagios - Design Model and Implementation
+#+TITLE:     Nagios Server - Design Model and Implementation
 #+DATE:      2015-04-01 Wednesday
 #+PROPERTY: session *scratch*
 #+PROPERTY: results output
 #+PROPERTY: exports code
 #+SETUPFILE: org-templates/level-0.org
-#+DESCRIPTION: Nagios Design Model Documentation
+#+DESCRIPTION: Nagios Server Design Model Documentation
 
 * Introduction
 - This document describes the design and implementation of Monitoring System.
@@ -14,32 +14,47 @@
 * Requirements
 ** Functional Requirements
 1) Monitor various services such as ssh, ping, http on all the system.
-2) Accept incoming connections on TCP port 22 from ansible.
-3) Accept outgoing connections on TCP port 22.
-4) Accept outgoing connections on UDP port 1514.
-5) Accept outgoing connections on UDP port 514.
-6) Allow incoming and outgoing ping requests to anywhere and from anywhere.
-7) Allow outgoing connections on TCP port 80 and 443 for yum.
-8) Allow outgoing connections on TCP port 25 for sending mails via logwatch.
-9) Ansible machine ssh public key is to be added to authorized keys.
+2) Accept incoming and outgoing ping requests to anywhere and from anywhere.
+3) Accept incoming connections on TCP port 22 from ansible and management ips.
+4) Accept incoming connections on TCP port 80.
+5) Accept incoming connections on UDP port 161 and 162 for cacti.
+6) Accept outgoing connections on TCP port 25 for logwatch.
+7) Accept outgoing connections on TCP port 22.
+8) Accept outgoing connections on UDP port 514 for rsyslog.
+9) Accept outgoing connections on UDP port 1514 for ossec.
+10) Accept outgoing connections on TCP port 5666 for nrpe.
+11) Accept outgoing connections on TCP port 80 and 443 for yum.
+12) Ansible machine ssh public key is to be added to authorized keys.
+13) Run apache service.
+14) Run nagios service.
 
 ** Security Requirements
-1) Accept SSH login only from Ansible.
+1) Accept incoming SSH connections only from Ansible and management ips.
 2) Rate limiting on all connections.
 
 * Design
 - Following diagram describes the design of the monitoring server.
 ** System Design Diagram
-[[./diagrams/nagios-design-diagram.png][design diagram]]
+[[./diagrams/nagios-server-design-diagram.png]]
 
-*** Editable Link
-[[https://docs.google.com/a/vlabs.ac.in/drawings/d/10tc9FolWsVoPfEXI1FbvJmZKg77SjkGbcix2yJMg81Q/edit][google drwaing-link]]
+** Editable Link
+[[https://docs.google.com/a/vlabs.ac.in/drawings/d/10tc9FolWsVoPfEXI1FbvJmZKg77SjkGbcix2yJMg81Q/edit][Design Diagram Link]]
 
 ** System Files
-|---+---+---+---+---|
-|   |   |   |   |   |
-|---+---+---+---+---|
-|   |   |   |   |   |
+|------+----------+---------------------------------------------+--------------------|
+| S.no | Service  | File                                        | Description        |
+|------+----------+---------------------------------------------+--------------------|
+|   1. | Iptables | /etc/sysconfig/iptables                     | Configuration File |
+|------+----------+---------------------------------------------+--------------------|
+|   2. | Nagios   | /etc/nagios/objects/contacts.cfg            | Configuration File |
+|------+----------+---------------------------------------------+--------------------|
+|   3. | Nagios   | /etc/nagios/objects/servers.cfg             | Configuration File |
+|------+----------+---------------------------------------------+--------------------|
+|   4. | Nagios   | /etc/nagios/objects/additional_commands.cfg | Configuration File |
+|------+----------+---------------------------------------------+--------------------|
+|   5. | Nagios   | /etc/nagios/nagios.cfg                      | Configuration File |
+|------+----------+---------------------------------------------+--------------------|
+  
 * Implementation
 ** Structure of Scripts
 - The implementation of this system is in terms of a collection of Ansible
@@ -65,9 +80,9 @@
 #+END_EXAMPLE
 
 ** What are the firewall rules for Nagios Server
-- Firwall rules applied to Nagios server are mentioned here. Description of
+- Firewall rules applied to Nagios server are mentioned here. Description of
   firewall rules which are common across all the systems are defined in the
-  common role. Rules are specific to only rsyslog server and are
+  common role. Rules [[Rule to allow incoming http connection][1]], [[Rule for FORWARD chain][2]], [[Rule to allow outgoing NRPE queries][3]] and [[Rule to allow outgoing SSH connections][4]] are specific to only nagios server and are
   described here.
 *** Common Firewall Rules - Section 1
 #+BEGIN_SRC yml :tangle roles/nagios_server/templates/nagios_server_iptables :eval no
@@ -93,33 +108,28 @@
 #Allow to continue already related and established connections
 -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
 
-#Allowing SSH connection from nagios server ip.
--A INPUT -m state --state NEW -s {{ nagios_server_ip }} -p tcp -m tcp --dport 22 -j ACCEPT
-#Allowing incoming ssh connections only from the management ips.
+#Allowing incoming ssh connections from the management ips.
 #Hopefully fail2ban will take care of bruteforce attacks from management IPs
 {% for item in management_ips  %}  
 -A INPUT -m state --state NEW -s {{ item }} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
-#Allowing incoming ssh connections only from ansible server. 
+#Allowing incoming ssh connections from ansible server. 
 #Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
 {% for item in ansible_server_ips  %}
 -A INPUT -m state --state NEW -s {{ item }} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
 #+END_SRC
- 
-*** Rule for incoming connection for rsyslog messages
-- Allow rsyslog server to accept incoming log messages on UDP port 514 from
-  various systems.
+
+*** Rule to allow incoming http connection
+- Nagios server hosts a web interface to display monitoring data. Admins need to
+  access this web interface for monitoring purposes.
 #+BEGIN_SRC yml :tangle roles/nagios_server/templates/nagios_server_iptables :eval no
-#Allow to accept incoming rsyslog messages from anywhere
--A INPUT -m state --state NEW -p udp -m udp --dport 514 -j ACCEPT
+#Allow incoming requests on port 80
+-A INPUT -m state --state NEW -p tcp -m tcp --dport 80 -j ACCEPT
 #+END_SRC
 
 *** Common Firewall Rules - Section 2
 #+BEGIN_SRC yml :tangle roles/nagios_server/templates/nagios_server_iptables :eval no
-#Allow to accept incoming nrpe queries from nagios server
--A INPUT -m state --state NEW -p tcp -m tcp --dport 5666 -j ACCEPT
-
 #Allow to accept incoming snmp queries from cacti server
 -A INPUT -p udp -m udp --dport 161 -j ACCEPT
 -A INPUT -p udp -m udp --dport 162 -j ACCEPT
@@ -132,8 +142,8 @@
 #+END_SRC
 
 *** Rule for FORWARD chain
-- Rsyslog is not responsible for any packet forwarding, hence forwarding rule
-  should be set to reject policy.
+- Nagios Server is not responsible for any packet forwarding, hence forwarding
+  rule should be set to reject policy.
 #+BEGIN_SRC yml :tangle roles/nagios_server/templates/nagios_server_iptables :eval no
 #Do not allow any packet to be forwarded
 -A FORWARD -j REJECT --reject-with icmp-host-prohibited
@@ -144,29 +154,58 @@
 #Allow internal process to process communication over loopback interface
 -A OUTPUT -s 127.0.0.0/8 -o lo -j ACCEPT
 
+#Allow outgoing connections to ansible server on port22
+{% for item in ansible_server_ips  %}
+-A OUTPUT -d {{item}} -p tcp -m tcp --sport 22 -j ACCEPT
+{% endfor %}
+
 #Allow to continue already related and established connections
 -A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
 
-#Allow to make dns queries
+#Allow DNS queries
 -A OUTPUT -p udp -m udp --dport 53 -j ACCEPT
 
-#Allow to send mails by logwatch service
+#Allow server to send emails.  Required for sending logwatch emails
 -A OUTPUT -p tcp -m tcp --dport 25 -j ACCEPT
 
-#Allow yum to contact web servers for installing and updating packages
+#Allow https to contact yum
 -A OUTPUT -p tcp -m tcp --dport 80 -j ACCEPT
 -A OUTPUT -p tcp -m tcp --dport 443 -j ACCEPT
+#+END_SRC
+
+*** Rule to allow outgoing NRPE queries
+- Nagios server sends NRPE queries to systems being monitored.
+#+BEGIN_SRC yml :tangle roles/nagios_server/templates/nagios_server_iptables :eval no
+#Allow server to send nrpe queries
+-A OUTPUT -p tcp -m tcp --dport 5666 -j ACCEPT
+#+END_SRC
+
+*** Rule to allow outgoing SSH connections
+- Nagios server sends SSH connection requests to systems being monitored to
+  monitor SSH service.
+#+BEGIN_SRC yml :tangle roles/nagios_server/templates/nagios_server_iptables :eval no
+#Allow server to send ssh requests
+-A OUTPUT -p tcp -m tcp --dport 22 -j ACCEPT
+#+END_SRC
+
+*** Common Firewall Rules - Section 4
+#+BEGIN_SRC yml :tangle roles/nagios_server/templates/nagios_server_iptables :eval no
+#Allow outgoing ping requests
+-A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT
+
+#Allow outgoing connections to rsyslog server
+-A OUTPUT -p udp -m udp --dport 514 -j ACCEPT
 
 #Allow outgoing connections to OSSEC server
 -A OUTPUT -p udp -m udp --dport 1514 -j ACCEPT
 
-#Allow to send ping requests to anywhere.
--A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT
+#Allow outgoing nrpe queries to internal network on port 5666
+-A OUTPUT -d {{local_subnet}} -m state --state NEW -p tcp -m tcp --sport 5666 -j ACCEPT
 
 #Log all other "blocked_output_" attempts
 -A OUTPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_output_"
 
-#Reject all the OUTPUT packets which does not match any of the rules
+#Reply with proper ICMP error message and reject the connection
 -A OUTPUT -j REJECT --reject-with icmp-host-prohibited
 
 COMMIT
@@ -290,8 +329,7 @@ check_command           {{ s.command }}
 #+END_SRC 
 ** Set firewall rules
 - Firewall rules are set by following steps:
-   1) Copy iptables configuration file from the ansible machine to the rsyslog
-      server machine.
+   1) Copy iptables configuration from ansible machine to the server.
    2) Restart iptables service to enforce the configuration.
 #+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
  - name: Copy iptables configuration file
@@ -319,6 +357,7 @@ check_command           {{ s.command }}
   lineinfile: dest="{{nagios_cfg_path}}" line="cfg_file=/etc/nagios/objects/servers.cfg" regexp="cfg_file\=/etc/nagios/objects/servers.cfg"
   notify: restart nagios
 #+END_SRC
+
 ** Update servers by defining hosts and services to be monitored
 #+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
 - tasks:
@@ -427,10 +466,10 @@ nagios_commands:
 #+END_SRC
 ** Nagios Server Installation Script
 - Nagiosg server is configured by using following roles
-  1) common
-  2) ossec_client
-  3) rsyslog_client
-  4) nagios_server
+  1) =common=
+  2) =ossec_client=
+  3) =rsyslog_client=
+  4) =nagios_server=
 #+BEGIN_SRC yml :tangle nagios_server.yml
 ---
 - name: This yml script configures nagios server
@@ -466,11 +505,16 @@ nagios_commands:
 |------+------------------+---------------+----------------------------|
 |      |                  | 15:40 - 17:15 | Nagios Model               |
 |------+------------------+---------------+----------------------------|
-|   2. | Fri Apr 3, 2015  | 11:10 -       | Nagios Modeling            |
+|   2. | Fri Apr 3, 2015  | 11:10 - 12:00 | Nagios Modeling            |
+|------+------------------+---------------+----------------------------|
+|      |                  | 12:10 - 12:50 | Create nagios_client.org   |
+|      |                  |               | Modify IPtables conf       |
+|------+------------------+---------------+----------------------------|
+|      |                  | 12:50 -       | Work on nagios_client.org  |
 
-* Thoughts
+* COMMENT Thoughts
 1) How do we write the requirements for nagios server. Do services monitored on
    actual server are also to be captured in the requirements.
 2) Document basic and web services; Assign services to roles.
 3) state=present v/s state=installed
-4) 
+4) Rsyslog client or nagios client will not apply iptables rules.
