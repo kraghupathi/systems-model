@@ -41,6 +41,289 @@
 |---+---+---+---+---|
 |   |   |   |   |   |
 * Implementation
+** Structure of Scripts
+- The implementation of this system is in terms of a collection of Ansible
+  scripts which configures the machine. These scripts are organized as follows:
+#+BEGIN_EXAMPLE
+|-- nagios_server.yaml
+|-- roles
+|   |   |-- nagios_server
+|   |   |   |-- defaults
+|   |   |   |   `-- main.yaml
+|   |   |   |-- handlers
+|   |   |   |   `-- main.yaml
+|   |   |   |-- tasks
+|   |   |   |   |-- configure_servers.yaml
+|   |   |   |   `-- main.yaml
+|   |   |   |-- templates
+|   |   |   |   |-- commands.cfg
+|   |   |   |   |-- contacts.cfg.j2
+|   |   |   |   |-- nagios_server_iptables
+|   |   |   |   `-- servers.cfg
+|   |   |   `-- vars
+|   |   |       `-- main.yaml
+#+END_EXAMPLE
+
+** What are the firewall rules for Nagios Server
+- Firwall rules applied to Nagios server are mentioned here. Description of
+  firewall rules which are common across all the systems are defined in the
+  common role. Rules are specific to only rsyslog server and are
+  described here.
+*** Common Firewall Rules - Section 1
+#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
+#If packet does not match any rule then the default action is applied to the packet
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+
+#Allow internal process to process communication over loopback interface
+-A INPUT -i lo -d 127.0.0.0/8 -j ACCEPT
+
+#Rate limit new connections to 20 new connections per 30 seconds
+-A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --set
+-A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --rcheck --seconds 30 --hitcount 20 -m limit --limit 2/min -j LOG --log-prefix "new_limit_"
+-A INPUT ! -p udp -m state --state NEW -m recent --name ssh_limit --rcheck --seconds 30 --hitcount 20 -j DROP
+
+#Allow to accept incoming ping requests from anywhere
+-A INPUT -p icmp --icmp-type echo-request -m limit --limit 60/minute --limit-burst 120 -j ACCEPT
+-A INPUT -p icmp --icmp-type echo-request -m limit --limit 1/minute --limit-burst 2 -j LOG 
+-A INPUT -p icmp --icmp-type echo-request -j DROP
+
+#Allow to continue already related and established connections
+-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+
+#Allowing SSH connection from nagios server ip.
+-A INPUT -m state --state NEW -s {{ nagios_server_ip }} -p tcp -m tcp --dport 22 -j ACCEPT
+#Allowing incoming ssh connections only from the management ips.
+#Hopefully fail2ban will take care of bruteforce attacks from management IPs
+{% for item in management_ips  %}  
+-A INPUT -m state --state NEW -s {{ item }} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
+#Allowing incoming ssh connections only from ansible server. 
+#Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
+{% for item in ansible_server_ips  %}
+-A INPUT -m state --state NEW -s {{ item }} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
+#+END_SRC
+ 
+*** Rule for incoming connection for rsyslog messages
+- Allow rsyslog server to accept incoming log messages on UDP port 514 from
+  various systems.
+#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
+#Allow to accept incoming rsyslog messages from anywhere
+-A INPUT -m state --state NEW -p udp -m udp --dport 514 -j ACCEPT
+#+END_SRC
+
+*** Common Firewall Rules - Section 2
+#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
+#Allow to accept incoming nrpe queries from nagios server
+-A INPUT -m state --state NEW -p tcp -m tcp --dport 5666 -j ACCEPT
+
+#Allow to accept incoming snmp queries from cacti server
+-A INPUT -p udp -m udp --dport 161 -j ACCEPT
+-A INPUT -p udp -m udp --dport 162 -j ACCEPT
+
+#Log all other "blocked_input_" attempts with rate limiting
+-A INPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_input_"
+
+#Drop all the INPUT packets which does not match any of the rules
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+#+END_SRC
+
+*** Rule for FORWARD chain
+- Rsyslog is not responsible for any packet forwarding, hence forwarding rule
+  should be set to reject policy.
+#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
+#Do not allow any packet to be forwarded
+-A FORWARD -j REJECT --reject-with icmp-host-prohibited
+#+END_SRC
+
+*** Common Firewall Rules - Section 3
+#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
+#Allow internal process to process communication over loopback interface
+-A OUTPUT -s 127.0.0.0/8 -o lo -j ACCEPT
+
+#Allow to continue already related and established connections
+-A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+
+#Allow to make dns queries
+-A OUTPUT -p udp -m udp --dport 53 -j ACCEPT
+
+#Allow to send mails by logwatch service
+-A OUTPUT -p tcp -m tcp --dport 25 -j ACCEPT
+
+#Allow yum to contact web servers for installing and updating packages
+-A OUTPUT -p tcp -m tcp --dport 80 -j ACCEPT
+-A OUTPUT -p tcp -m tcp --dport 443 -j ACCEPT
+
+#Allow outgoing connections to OSSEC server
+-A OUTPUT -p udp -m udp --dport 1514 -j ACCEPT
+
+#Allow to send ping requests to anywhere.
+-A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT
+
+#Log all other "blocked_output_" attempts
+-A OUTPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_output_"
+
+#Reject all the OUTPUT packets which does not match any of the rules
+-A OUTPUT -j REJECT --reject-with icmp-host-prohibited
+
+COMMIT
+#+END_SRC
+    
+** Update all packages
+#+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml :eval no
+- name: running yum update
+  yum: name=* state=latest
+  environment: proxy_env
+#+END_SRC
+   
+** Install Nagios packages
+- Nagios packages are installed in the system.
+#+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml :eval no
+- name: Installing nagios
+  yum: name=nagios state=installed
+  environment: proxy_env
+
+- name: Installing all nagios plugins 
+  yum: name=nagios-plugins-all state=installed
+  environment: proxy_env
+
+- name: Installing nrpe nagios plugins
+  yum: name=nagios-plugins-nrpe state=installed
+  environment: proxy_env
+
+- name: Installing nrpe
+  yum: name=nrpe state=installed
+  environment: proxy_env
+#+END_SRC 
+** Configure firewall rules
+- Firewall rules are set by following steps:
+   1) Copy iptables configuration file from the ansible machine to the rsyslog
+      server machine.
+   2) Restart iptables service to enforce the configuration.
+#+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
+ - name: Copy iptables configuration file
+   template: src=nagios_server_iptables dest=/etc/sysconfig/iptables owner=root group=root mode=600
+   notify:
+     - restart iptables
+#+END_SRC
+
+** Create Nagios admin user for web interface
+#+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
+- name: creating nagiosadmin user for web interface
+  command: "htpasswd -b /etc/nagios/passwd {{nagios_user}} {{nagios_password}}"
+  notify: restart apache
+#+END_SRC
+
+** Configure contancts.cfg
+#+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
+- name: Updating contacts.cfg
+  template: src=contacts.cfg.j2 dest=/etc/nagios/objects/contacts.cfg
+  notify: restart nagios
+#+END_SRC
+
+** Configure nagios.cfg
+#+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
+- name: updating nagios.cfg
+  lineinfile: dest="{{nagios_cfg_path}}" line="cfg_file=/etc/nagios/objects/servers.cfg" regexp="cfg_file\=/etc/nagios/objects/servers.cfg"
+  notify: restart nagios
+#+END_SRC
+** Update servers by defining hosts and services to be monitored
+#+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
+- tasks:
+  include: configure_servers.yaml
+#+END_SRc
+** Configure servers.cfg
+#+BEGIN_SRC yml :tangle roles/nagios_server/tasks/configure_servers.yml
+---
+#configuring hosts
+- name: "creating servers.cfg"
+  template: src=servers.cfg dest=/etc/nagios/objects/servers.cfg mode=664
+  notify: restart nagios
+#+END_SRC
+** Configure additional commands
+#+BEGIN_SRC yml :tangle roles/nagios_server/tasks/configure_servers.yml
+# Additional Commands
+- name: "create additional_commands.cfg"
+  template: src=commands.cfg dest=/etc/nagios/objects/additional_commands.cfg mode=664
+  notify: restart nagios
+#+END_SRC
+** Load additional commands
+#+BEGIN_SRC yml :tangle roles/nagios_server/tasks/configure_servers.yml
+- name: load additional_commands.cfg
+  lineinfile: dest=/etc/nagios/nagios.cfg line="cfg_file=/etc/nagios/objects/additional_commands.cfg" regexp="cfg_file\=/etc/nagios/objects/additional_commands\.cfg"
+  notify: restart nagios
+#+END_SRC
+** Start nagios service
+- Any changes in nagios configuration is enforced by restarting the nagios
+  service.
+#+BEGIN_SRC yml :tangle roles/nagios_server/handlers/main.yml
+- name: restart nagios
+  sudo: true
+  service: name=nagios state=restarted
+#+END_SRC
+
+** Start apache service
+- Any changes in apache configuration is enforced by restarting the apache
+  service.
+#+BEGIN_SRC yml :tangle roles/nagios_server/handlers/main.yml
+- name: restart apache
+  sudo: true
+  service: name=httpd state=restarted
+#+END_SRC
+
+** Start firewall service
+- Any changes in iptables configuration file to update the firewall is enforced
+  by restarting the iptables service.
+#+BEGIN_SRC yml :tangle roles/nagios_server/handlers/main.yml
+- name: restart iptables
+  sudo: true
+  service: name=iptables state=restarted
+#+END_SRC
+
+** Default value of parameters
+- Set the default value of parameters 
+#+BEGIN_SRC yaml :tangle roles/nagios_server/defaults/main.yml
+nagios_host: nagios.virtual-labs.ac.in
+nagios_user: nagiosadmin
+nagios_password: xxxxxxx
+nagios_admin_name: 'Nagios Admin'
+nagios_admin_email: jayanth@vlabs.ac.in
+nagios_cfg_path: /etc/nagios/nagios.cfg
+nrpe_cfg_path: /etc/nagios/nrpe.cfg
+#+END_SRC
+
+** Variables Definition
+- Variables are used in the ansible scripts to configure rsyslog server. 
+   1) Proxy environment
+   2) Anisble server ip
+ Values of these variables is fetched from the =common_vars= role.
+#+BEGIN_SRC yaml :tangle roles/nagios_server/meta/main.yml
+---
+dependencies:
+- role: common_vars
+#+END_SRC
+
+** Nagios Server Installation Script
+- Nagiosg server is configured by using following roles
+  1) common
+  2) ossec_client
+  3) rsyslog_client
+  4) nagios_server
+#+BEGIN_SRC yml :tangle nagios_server.yml
+---
+- name: This yml script configures nagios server
+  hosts: nagios_server
+  remote_user: root
+
+  roles:
+    - common
+#    - ossec_client
+#    - rsyslog_client
+    - nagios_server
+#+END_SRC
 
 * Test Cases
 1) Test sendmail service is able to send the mail.
@@ -60,6 +343,15 @@
 |------+------------------+---------------+----------------------------|
 |      |                  | 14:00 - 15:25 | Meeting with Mr. Saurabh   |
 |------+------------------+---------------+----------------------------|
-|      |                  | 15:25 - 15:   | Discussion with Mr. Zubair |
+|      |                  | 15:25 - 15:40 | Discussion with Mr. Zubair |
 |------+------------------+---------------+----------------------------|
-|      |                  |               |                            |
+|      |                  | 15:40 - 17:15 | Nagios Model               |
+|------+------------------+---------------+----------------------------|
+|   2. | Fri Apr 3, 2015  | 9:45          |                            |
+
+* Thoughts
+1) How do we write the requirements for nagios server. Do services monitored on
+   actual server are also to be captured in the requirements.
+2) Document basic and web services; Assign services to roles.
+3) state=present v/s state=installed
+4) 
