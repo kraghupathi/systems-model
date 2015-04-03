@@ -14,12 +14,12 @@
 
 * Requirements
 ** Functional Requirements
-1) Allow outgoing connections on UDP port 514.
-2) Allow incoming ssh connections on TCP port 22 from configuration, Nagios and
+1) Allow incoming ssh connections on TCP port 22 from configuration, Nagios and
    management servers.
-3) Allow incoming connections on TCP port 5666 from Nagios.
-4) Allow incoming connections on UDP port 161 and 162.
-5) Allow incoming and outgoing ping requests to anywhere and from anywhere.
+2) Allow incoming connections on TCP port 5666 from Nagios.
+3) Allow incoming connections on UDP port 161 and 162.
+4) Allow incoming and outgoing ping requests to anywhere and from anywhere.
+5) Allow outgoing connections on UDP port 514.
 6) Allow outgoing connections on UDP port 1514.
 7) Allow outgoing connections on TCP port 80 and 443 for yum.
 8) Allow outgoing connections on TCP port 25 for sending mails via logwatch.
@@ -77,112 +77,16 @@ vzctl create <rsyslog_ctid> --ostemplate centos-6-x86_64 --hostname rsyslog-serv
 #+END_EXAMPLE
 
 ** What are the firewall rules
-- Firwall rules applied to rsyslog client system are mentioned here. Description
+- Firewall rules applied to rsyslog client system are mentioned here. Description
   of firewall rules which are common across all the systems are defined in the
-  common role. Rules [[Rule for FORWARD chain][1]] and [[Allow outgoing connections on UDP port 514][2]] and are specific to only rsyslog client and are
-  described here.
-*** Common Firewall Rules - Section 1
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
-#If packet does not match any rule then the default action is applied to the packet
-*filter
-:INPUT ACCEPT [0:0]
-:FORWARD ACCEPT [0:0]
-:OUTPUT ACCEPT [0:0]
-
-#Allow internal process to process communication over loopback interface
--A INPUT -i lo -d 127.0.0.0/8 -j ACCEPT
-
-#Rate limit new connections to 20 new connections per 30 seconds
--A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --set
--A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --rcheck --seconds 30 --hitcount 20 -m limit --limit 2/min -j LOG --log-prefix "new_limit_"
--A INPUT ! -p udp -m state --state NEW -m recent --name ssh_limit --rcheck --seconds 30 --hitcount 20 -j DROP
-
-#Allow to accept incoming ping requests from anywhere
--A INPUT -p icmp --icmp-type echo-request -m limit --limit 60/minute --limit-burst 120 -j ACCEPT
--A INPUT -p icmp --icmp-type echo-request -m limit --limit 1/minute --limit-burst 2 -j LOG 
--A INPUT -p icmp --icmp-type echo-request -j DROP
-
-#Allow to continue already related and established connections
--A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
-
-#Allowing SSH connection from nagios server ip.
--A INPUT -m state --state NEW -s {{ nagios_server_ip }} -p tcp -m tcp --dport 22 -j ACCEPT
-#Allowing incoming ssh connections only from the management ips.
-#Hopefully fail2ban will take care of bruteforce attacks from management IPs
-{% for item in management_ips  %}  
--A INPUT -m state --state NEW -s {{ item }} -p tcp -m tcp --dport 22 -j ACCEPT
-{% endfor %}
-#Allowing incoming ssh connections only from ansible server. 
-#Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
-{% for item in ansible_server_ips  %}
--A INPUT -m state --state NEW -s {{ item }} -p tcp -m tcp --dport 22 -j ACCEPT
-{% endfor %}
-
-#Allow to accept incoming nrpe queries from nagios server
--A INPUT -m state --state NEW -p tcp -m tcp --dport 5666 -j ACCEPT
-
-#Allow to accept incoming snmp queries from cacti server
--A INPUT -p udp -m udp --dport 161 -j ACCEPT
--A INPUT -p udp -m udp --dport 162 -j ACCEPT
-
-#Log all other "blocked_input_" attempts with rate limiting
--A INPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_input_"
-
-#Drop all the INPUT packets which does not match any of the rules
--A INPUT -j REJECT --reject-with icmp-host-prohibited
-#+END_SRC
-
-*** Rule for FORWARD chain
-- Rsyslog client is not responsible for any packet forwarding, hence forwarding
-  rule should be set to reject policy.
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
-#Do not allow any packet to be forwarded
--A FORWARD -j REJECT --reject-with icmp-host-prohibited
-#+END_SRC
-
-*** Common Firewall Rules - Section 2
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
-#Allow internal process to process communication over loopback interface
--A OUTPUT -s 127.0.0.0/8 -o lo -j ACCEPT
-
-#Allow to continue already related and established connections
--A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
-
-#Allow to make dns queries
--A OUTPUT -p udp -m udp --dport 53 -j ACCEPT
-
-#Allow to send mails by logwatch service
--A OUTPUT -p tcp -m tcp --dport 25 -j ACCEPT
-
-#Allow yum to contact web servers for installing and updating packages
--A OUTPUT -p tcp -m tcp --dport 80 -j ACCEPT
--A OUTPUT -p tcp -m tcp --dport 443 -j ACCEPT
-
-#Allow outgoing connections to OSSEC server
--A OUTPUT -p udp -m udp --dport 1514 -j ACCEPT
-#+END_SRC
-
+  common role. Rule [[Rule for FORWARD chain][1]] is specific to only rsyslog client and is described here.
 *** Allow outgoing connections on UDP port 514
 - Rsyslog client machine sends log messages to rsyslog server on UDP port 514.
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
+#+BEGIN_EXAMPLE
 #Allow to send rsyslog log messages to rsyslog server
 -A OUTPUT -p udp -m udp --dport 514 -j ACCEPT
-#+END_SRC
+#+END_EXAMPLE
 
-*** Common Firewall Rules - Section 3
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
-#Allow to send ping requests to anywhere.
--A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT
-
-#Log all other "blocked_output_" attempts
--A OUTPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_output_"
-
-#Reject all the OUTPUT packets which does not match any of the rules
--A OUTPUT -j REJECT --reject-with icmp-host-prohibited
-
-COMMIT
-#+END_SRC
-    
 ** Build Configuration file
 *** Steps to configure
 - Rsyslog service is configured using =/etc/rsyslog.conf= configuration file.
@@ -193,7 +97,7 @@ COMMIT
      #+END_EXAMPLE
 *** Complete configuration file
 - Configuration file with modifications is shown below:
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/files/rsyslog_server.conf :eval no
+#+BEGIN_SRC yml :tangle roles/rsyslog_client/files/rsyslog_client.conf :eval no
 # rsyslog v5 configuration file
 
 # For more information see /usr/share/doc/rsyslog-*/rsyslog_conf.html
@@ -279,56 +183,34 @@ local7.*                                                -/var/log/boot.log
 
 ** Install rsyslog package
 - Rsyslog package is installed in the system.
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/tasks/main.yml :eval no
+#+BEGIN_SRC yml :tangle roles/rsyslog_client/tasks/main.yml :eval no
 ---
  - name: Install rsyslog package
    yum: name=rsyslog state=present
    environment: proxy_env
 #+END_SRC 
 
-** Set Rsyslog service Version-1
+** Set Rsyslog service
 - Rsyslog service is set by following steps:
-   1) Copy configuration file from the ansible machine to the rsyslog server
-      machine.
+   1) Copy configuration file from the ansible machine.
    2) Restart rsyslog service to enforce the configuration.
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/rsyslog_client/tasks/main.yml
  - name: Copying rsyslog configuration files
-   copy: src=rsyslog_server.conf dest=/etc/rsyslog.conf owner=root group=root mode=600
+   copy: src=rsyslog_client.conf dest=/etc/rsyslog.conf owner=root group=root mode=600
    notify:
      - restart rsyslog
 #+END_SRC
 
-** Set firewall service
-- Firewall rules are set by following steps:
-   1) Copy iptables configuration file from the ansible machine to the rsyslog
-      server machine.
-   2) Restart iptables service to enforce the configuration.
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/tasks/main.yml
- - name: Copy iptables configuration file
-   template: src=iptables dest=/etc/sysconfig/iptables owner=root group=root mode=600
-   notify:
-     - restart iptables
-#+END_SRC
-
 ** Set rsyslog service to auto start
-#+BEGIN_SRC yml :tanlge roles/rsyslog_server/tasks/main.yml
+#+BEGIN_SRC yml :tanlge roles/rsyslog_client/tasks/main.yml
  - name: Set rsyslog service for auto startup
    service: name=rsyslog state=started enabled=yes
-#+END_SRC
-
-** Start firewall service
-- Any changes in iptables configuration file to update the firewall is enforced
-  by restarting the iptables service.
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/handlers/main.yml
----
- - name: Restart iptables
-   service: name=iptables state=restarted
 #+END_SRC
 
 ** Start rsyslog service
 - Any changes in rsyslog configuration file is enforced to the system by
   restarting the rsyslog service.
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/handlers/main.yml
+#+BEGIN_SRC yml :tangle roles/rsyslog_client/handlers/main.yml
  - name: Restart rsyslog
    service: name=rsyslog state=restarted
 #+END_SRC
@@ -339,22 +221,22 @@ local7.*                                                -/var/log/boot.log
    2) Anisble server ip
    3) Nagios server ip
  Values of these variables is fetched from the =common_vars= role.
-#+BEGIN_SRC yaml :tangle roles/rsyslog_server/meta/main.yml
+#+BEGIN_SRC yaml :tangle roles/rsyslog_client/meta/main.yml
 ---
 dependencies:
 - role: common_vars
 #+END_SRC
 
-** Rsyslog Server Installation Script
-- Rsyslog server is configured using common and =rsyslog_server= role.
-#+BEGIN_SRC yml :tangle rsyslog_server.yml
+** Rsyslog Installation Script
+- Rsyslog server is configured using common and =rsyslog_client= role.
+#+BEGIN_SRC yml :tangle rsyslog_client.yml
 ---
-- name: Configure rsyslog server 
-  hosts: rsyslog_server
+- name: Configure rsyslog 
+  hosts: rsyslog_client
   remote_user: root
   roles:
    - common
-   - rsyslog_server
+   - rsyslog_client
 #+END_SRC
 
 * Test Cases
