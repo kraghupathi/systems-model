@@ -59,27 +59,24 @@ vzctl create <rsyslog_ctid> --ostemplate centos-6-x86_64 --hostname rsyslog-serv
 ** Structure of Scripts
 - The implementation of this system is in terms of a collection of Ansible
   scripts which configures the machine. These scripts are organized as follows:
-     #+BEGIN_EXAMPLE
+#+BEGIN_EXAMPLE
 |-code
-|   |-- rsyslog_client.yml
-|   |-- roles
-|   |   |-- rsyslog_client
-|   |   |   |-- handlers
-|   |   |   |   `-- main.yml
-|   |   |   |-- tasks
-|   |   |   |   `-- main.yml
-|   |   |   |-- templates
-|   |   |   |   `-- iptables
-|   |   |   |-- files
-|   |   |   |   `-- rsyslog_client.conf
-|   |   |   |-- meta
-|   |   |   |   `-- main.yml
+  |-- roles
+  |   |-- rsyslog_client
+  |   |   |-- files
+  |   |   |   `-- rsyslog_client.conf
+  |   |   |-- handlers
+  |   |   |   `-- main.yml
+  |   |   |-- meta
+  |   |   |   `-- main.yml
+  |   |   `-- tasks
+  |   |       `-- main.yml
 #+END_EXAMPLE
 
 ** What are the firewall rules
 - Firewall rules applied to rsyslog client system are mentioned here. Description
   of firewall rules which are common across all the systems are defined in the
-  common role. Rule [[Rule for FORWARD chain][1]] is specific to only rsyslog client and is described here.
+  common role. Rule [[Allow outgoing connections on UDP port 514][1]] is specific to only rsyslog client and is described here.
 *** Allow outgoing connections on UDP port 514
 - Rsyslog client machine sends log messages to rsyslog server on UDP port 514.
 #+BEGIN_EXAMPLE
