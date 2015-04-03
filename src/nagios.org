@@ -70,7 +70,7 @@
   common role. Rules are specific to only rsyslog server and are
   described here.
 *** Common Firewall Rules - Section 1
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
+#+BEGIN_SRC yml :tangle roles/nagios_server/templates/nagios_server_iptables :eval no
 #If packet does not match any rule then the default action is applied to the packet
 *filter
 :INPUT ACCEPT [0:0]
@@ -110,13 +110,13 @@
 *** Rule for incoming connection for rsyslog messages
 - Allow rsyslog server to accept incoming log messages on UDP port 514 from
   various systems.
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
+#+BEGIN_SRC yml :tangle roles/nagios_server/templates/nagios_server_iptables :eval no
 #Allow to accept incoming rsyslog messages from anywhere
 -A INPUT -m state --state NEW -p udp -m udp --dport 514 -j ACCEPT
 #+END_SRC
 
 *** Common Firewall Rules - Section 2
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
+#+BEGIN_SRC yml :tangle roles/nagios_server/templates/nagios_server_iptables :eval no
 #Allow to accept incoming nrpe queries from nagios server
 -A INPUT -m state --state NEW -p tcp -m tcp --dport 5666 -j ACCEPT
 
@@ -134,13 +134,13 @@
 *** Rule for FORWARD chain
 - Rsyslog is not responsible for any packet forwarding, hence forwarding rule
   should be set to reject policy.
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
+#+BEGIN_SRC yml :tangle roles/nagios_server/templates/nagios_server_iptables :eval no
 #Do not allow any packet to be forwarded
 -A FORWARD -j REJECT --reject-with icmp-host-prohibited
 #+END_SRC
 
 *** Common Firewall Rules - Section 3
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
+#+BEGIN_SRC yml :tangle roles/nagios_server/templates/nagios_server_iptables :eval no
 #Allow internal process to process communication over loopback interface
 -A OUTPUT -s 127.0.0.0/8 -o lo -j ACCEPT
 
@@ -171,6 +171,96 @@
 
 COMMIT
 #+END_SRC
+** Configure commands
+- Define commands.
+#+BEGIN_SRC yml :tangle roles/nagios_server/templates/commands.cfg
+{% for command in nagios_commands %}
+define command {
+  command_name  {{command.name}}
+  command_line  {{command.command}}
+}
+{% endfor %}
+#+END_SRC
+** Configure contacts
+#+BEGIN_SRC yml :tangle roles/nagios_server/templates/contacts.cfg.j2
+###############################################################################
+# CONTACTS.CFG - SAMPLE CONTACT/CONTACTGROUP DEFINITIONS
+#
+#
+# NOTES: This config file provides you with some example contact and contact
+#        group definitions that you can reference in host and service
+#        definitions.
+#       
+#        You don't need to keep these definitions in a separate file from your
+#        other object definitions.  This has been done just to make things
+#        easier to understand.
+#
+###############################################################################
+
+
+
+###############################################################################
+###############################################################################
+#
+# CONTACTS
+#
+###############################################################################
+###############################################################################
+
+# Just one contact defined by default - the Nagios admin (that's you)
+# This contact definition inherits a lot of default values from the 'generic-contact' 
+# template which is defined elsewhere.
+
+define contact{
+        contact_name                    nagiosadmin             ; Short name of user
+        use                             generic-contact         ; Inherit default values from generic-contact template (defined above)
+        alias                           {{nagios_admin_name}}            ; Full name of user
+
+        email                           {{nagios_admin_email}} ; <<***** CHANGE THIS TO YOUR EMAIL ADDRESS ******
+        }
+
+
+###############################################################################
+###############################################################################
+#
+# CONTACT GROUPS
+#
+###############################################################################
+###############################################################################
+
+# We only have one contact in this simple configuration file, so there is
+# no need to create more than one contact group.
+
+define contactgroup{
+        contactgroup_name       admins
+        alias                   Nagios Administrators
+        members                 nagiosadmin
+        }
+
+#+END_SRC
+** Configure servers
+#+BEGIN_SRC yml :tangle roles/nagios_server/templates/servers.cfg
+{#  print filter(lambda x: x['server'] == item, hosts)[0] %}#}
+{% for h in nagios_hosts %}
+define host {
+use             linux-server
+alias           {{ h }}
+host_name       {{ h }}
+address         {{ nagios_hosts[h].hostname }}          
+}
+
+
+{% for s in nagios_host_groups[nagios_hosts[h].group] %}
+
+define service {
+use                     generic-service
+host_name               {{ h }}
+service_description     {{ s.service }}
+check_command           {{ s.command }}
+}
+{% endfor %}
+{% endfor %}
+#+END_SRC
     
 ** Update all packages
 #+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml :eval no
@@ -198,7 +288,7 @@ COMMIT
   yum: name=nrpe state=installed
   environment: proxy_env
 #+END_SRC 
-** Configure firewall rules
+** Set firewall rules
 - Firewall rules are set by following steps:
    1) Copy iptables configuration file from the ansible machine to the rsyslog
       server machine.
@@ -209,7 +299,6 @@ COMMIT
    notify:
      - restart iptables
 #+END_SRC
-
 ** Create Nagios admin user for web interface
 #+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
 - name: creating nagiosadmin user for web interface
@@ -217,14 +306,14 @@ COMMIT
   notify: restart apache
 #+END_SRC
 
-** Configure contancts.cfg
+** Set contacts.cfg
 #+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
 - name: Updating contacts.cfg
   template: src=contacts.cfg.j2 dest=/etc/nagios/objects/contacts.cfg
   notify: restart nagios
 #+END_SRC
 
-** Configure nagios.cfg
+** Set nagios.cfg
 #+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
 - name: updating nagios.cfg
   lineinfile: dest="{{nagios_cfg_path}}" line="cfg_file=/etc/nagios/objects/servers.cfg" regexp="cfg_file\=/etc/nagios/objects/servers.cfg"
@@ -235,7 +324,7 @@ COMMIT
 - tasks:
   include: configure_servers.yaml
 #+END_SRc
-** Configure servers.cfg
+** Set servers.cfg
 #+BEGIN_SRC yml :tangle roles/nagios_server/tasks/configure_servers.yml
 ---
 #configuring hosts
@@ -243,7 +332,7 @@ COMMIT
   template: src=servers.cfg dest=/etc/nagios/objects/servers.cfg mode=664
   notify: restart nagios
 #+END_SRC
-** Configure additional commands
+** Set additional commands
 #+BEGIN_SRC yml :tangle roles/nagios_server/tasks/configure_servers.yml
 # Additional Commands
 - name: "create additional_commands.cfg"
@@ -285,7 +374,7 @@ COMMIT
 
 ** Default value of parameters
 - Set the default value of parameters 
-#+BEGIN_SRC yaml :tangle roles/nagios_server/defaults/main.yml
+#+BEGIN_SRC yml :tangle roles/nagios_server/defaults/main.yml
 nagios_host: nagios.virtual-labs.ac.in
 nagios_user: nagiosadmin
 nagios_password: xxxxxxx
@@ -295,17 +384,47 @@ nagios_cfg_path: /etc/nagios/nagios.cfg
 nrpe_cfg_path: /etc/nagios/nrpe.cfg
 #+END_SRC
 
-** Variables Definition
-- Variables are used in the ansible scripts to configure rsyslog server. 
-   1) Proxy environment
-   2) Anisble server ip
- Values of these variables is fetched from the =common_vars= role.
-#+BEGIN_SRC yaml :tangle roles/nagios_server/meta/main.yml
----
-dependencies:
-- role: common_vars
-#+END_SRC
+** Define Variables
 
+#+BEGIN_SRC yml :tangle roles/nagios_server/vars/main.yml
+nagios_host: nagios.virtual-labs.ac.in
+nagios_user: nagiosadmin
+nagios_password: xxxxxxx
+nagios_admin_name: 'Nagios Admin'
+nagios_admin_email: alerts@vlabs.ac.in
+nagios_cfg_path: /etc/nagios/nagios.cfg
+
+########################################
+## vars used by configure_servers.yml ##
+########################################
+nagios_hosts:
+     router: { hostname: "router.vlabs.ac.in", group: basic_services }
+     ansible: { hostname: "ansible.vlabs.ac.in", group: basic_services }  
+#     ossec_server: { hostname: "ossec-server.vlabs.ac.in", group: web }
+     rsyslog_server: { hostname: "rsyslog-server.vlabs.ac.in", group: basic_services }
+     private_dns: { hostname: "private-dns.vlabs.ac.in", group: basic_services }
+#     public_dns: { hostname: "public-dns.vlabs.ac.in", group: basic_services }
+     reverseproxy: { hostname: "reverseproxy.vlabs.ac.in", group: web }
+  
+nagios_host_groups:
+     basic_services:
+      - { service: "ssh", command: "check_ssh" }
+      - { service: "ping", command: "check_ping!100.0,20%!500.0,60%" }
+      - { service: "nrpe checking users", command: "check_nrpe!check_users"}
+      - { service: "nrpe checking load", command: "check_nrpe!check_load"}
+
+     web:
+      - { service: "ssh", command: "check_ssh" }
+      - { service: "http", command: "check_http" }
+      - { service: "https", command: "check_tcp!443" }
+      - { service: "ping", command: "check_ping!100.0,20%!500.0,60%" }
+      - { service: "nrpe checking users", command: "check_nrpe!check_users"}
+      - { service: "nrpe checking load", command: "check_nrpe!check_load"}
+
+nagios_commands:
+    - {name: 'check_nrpe', command: '$USER1$/check_nrpe -H $HOSTADDRESS$ -c $ARG1$'}
+
+#+END_SRC
 ** Nagios Server Installation Script
 - Nagiosg server is configured by using following roles
   1) common
@@ -347,7 +466,7 @@ dependencies:
 |------+------------------+---------------+----------------------------|
 |      |                  | 15:40 - 17:15 | Nagios Model               |
 |------+------------------+---------------+----------------------------|
-|   2. | Fri Apr 3, 2015  | 9:45          |                            |
+|   2. | Fri Apr 3, 2015  | 11:10 -       | Nagios Modeling            |
 
 * Thoughts
 1) How do we write the requirements for nagios server. Do services monitored on
