@@ -544,7 +544,7 @@ dependencies:
   working directory. Now from another terminal login to rsyslog client
   machine. Execute "sudo su -" command. Once login to the client machine a
   session gets created for the user and a system log is generated. The log
-  message are forwareded to rsyslog server and saved there in a file. As a
+  message are forwarded to rsyslog server and saved there in a file. As a
   result messages should appear in the first terminal screen.
 
 *** Result
@@ -560,8 +560,8 @@ Mar 27 09:33:43 rsyslog-client su: pam_unix(su-l:session): session closed for us
 
 *** Conclusion
 - If the messages are getting logged in =su.log= file inside
-  =/var/log/<client-hostname>= directory with proper date and time that means rsyslog
-  server is configured properly.
+  =/var/log/<client-hostname>= directory with proper date and time that means
+  rsyslog server is configured properly.
 
 ** Test Case-2
 *** Objective:
