@@ -1,16 +1,16 @@
-#+Title: Reverse Proxy server and AWStats 
+#+Title: Reverse Proxy and AWStats 
 #+PROPERTY: session *scratch*
 #+PROPERTY: results output
 #+PROPERTY: exports code
 #+SETUPFILE: org-templates/level-0.org
-#+DESCRIPTION: Reverse Proxy Server - Design and Documentation
+#+DESCRIPTION: Reverse Proxy Model - Design, Implementation and Documentation
 
    
 * Introduction
 This Documentation describes the *Reverse Proxy* server setup and
 *AWStats* setup for analytics of labs deployed on amazon using automated
 scripts.  These scripts are executed only from configuration server.
-This server is managed by configuration server.
+This server is managed by [[./ansible.org][configuration server]].
 
 - Reverse-Proxy :: The client requests comes from router to
                    reverseproxy and the reverse proxy then decides
@@ -22,8 +22,6 @@ This server is managed by configuration server.
              visitors and visits, number of pages for a visit,
              etc. Data is graphically presented in easy to read web
              pages
-** TODO 
-- configuration server link	     
 * Requirements
 Requirements which are specific to reverseproxy defined below and all
 other requirements are defined in common role's requirements
@@ -41,8 +39,6 @@ requirements to configure reverseproxy server are as follows.
   5) Store the analytics of each lab using AWStats (Logfile analyzer) 
   for more functional requirements of reverseproxy you can find [[./common.org][here]]
  
-** TODO 
-- configuration Server link
 ** Security Requirements 
   1) Accept incoming and outgoing connections on tcp ports 80 and 443 *only* from internal
      network and from the [[.router][router]] 
@@ -145,13 +141,11 @@ from the [[.router.org][router]].
   requirement, accept rule for incoming connections on tcp port 443 is commented.
 
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/templates/iptables
-# Allow incoming http packets from internal network and router
--A INPUT -s {{internal_vpc}} -p tcp -m tcp --dport 80 -j ACCEPT
--A INPUT -s {{router_ip}} -p tcp -m tcp --dport 80 -j ACCEPT
+# Allow incoming http packets from internal network
+-A INPUT -s {{local_subnet}} -p tcp -m tcp --dport 80 -j ACCEPT
 
 #Allow incoming https packets from internal network and router
-#-A INPUT -s {{internal_vpc}} -p tcp -m tcp --dport 443 -j ACCEPT
-#-A INPUT -s {{router_ip}} -p tcp -m tcp --dport 443 -j ACCEPT
+#-A INPUT -s {{local_subnet}} -p tcp -m tcp --dport 443 -j ACCEPT
 #+END_SRC
 The above rule satisfies the security requirements 1
 
@@ -217,6 +211,10 @@ The above rule satisfies functional requirements 2 and 3
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/templates/iptables
 #Allow outgoing ping requests
 -A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT
+#Allow incoming SSH connections from configuration server IPs.
+{% for item in ansible_server_ips  %}
+-A OUTPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
 
 #Allow outgoing connections to rsyslog server
 -A OUTPUT -p udp -m udp --dport 514 -j ACCEPT
@@ -276,19 +274,29 @@ reverseproxy server itself to access awstats from browser.
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/templates/virtual-labs.ac.in.conf
 
 {% for domain in proxy_domains %}
+{% if domain.domain == "reverseproxy.virtual-labs.ac.in" %}
+<Virtualhost *:80>
+ServerAdmin engg@vlabs.ac.in
+ServerName {{domain.domain}} 
+ServerAlias {{domain.alias}}
+ErrorLog logs/{{domain.domain}}-error_log
+</Virtualhost>
+{% else %}
+
 <VirtualHost *:80>
-ServerAdmin engg@virtual-labs.ac.in
+ServerAdmin engg@vlabs.ac.in
 #DocumentRoot /var/www/html
-ServerName {{domain}}
-ServerAlias {{alias}}
-ErrorLog logs/{{domain}}-error_log
-CustomLog logs/{{domain}}-access_log combined
+ServerName {{domain.domain}}
+ServerAlias {{domain.alias}}
+ErrorLog logs/{{domain.domain}}-error_log
+CustomLog logs/{{domain.domain}}-access_log combined
 <Location />
-ProxyPass http://{{domain}}/
+ProxyPass http://{{domain.domain}}/
 </Location>
 </VirtualHost>
+{% endif %}
 
-{% endfor %}
+{% endfor %
 #+END_SRC   
 ** Configuring virualhosts
 Copy =virtual-labs.ac.in.conf= template to reverseproxy server's apache
