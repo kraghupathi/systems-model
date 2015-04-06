@@ -6,31 +6,64 @@
 
 * Introduction
 This document describes the requirements, design and implementation of
-the *Domain Name Server* which is part of the AWS cluster.
-
-This server is used to provide domain name resolution for all other servers in the cluster.  Using
-Ansible, a machine is configured using multiple roles.  A role is a specific set
-of configurations.
+the *Private Domain Name Server* which is part of the AWS cluster.
+This server is used to provide domain name resolution for all other
+servers in the cluster. The name "Private" is a term coined by us to
+distinguish the primary functionality of the DNS. This DNS is used for
+internal name resolution.  Also it is used for the internal machines
+to relove Using Ansible, a machine is configured using multiple roles.
+A role is a specific set of configurations.
 
 * Requirements
+The functional and security requirements of the Private DNS are
+mentioned in the following sections. These are specific the Private
+DNS. The requirements which are common to all the roles are mentioned
+in the [[common%20role][common role]].
 ** Functional
    - Resolve our authoritative domain names for all internal clients
    - Zone entries should be configurable (from a particular file on
      ansible server)
    - Resolve all domain names for internal clients (Peer DNS).
-
 ** Security
-   - Port 22 accessible only from ansible server.
-   - Allow port 53 (UDP) from the cluster.
-   - Allow ICMP (ping echo request & reply) from the internal network.
-   - Allow port 5666 accessible only from nagios to monitor the
-     machine.
+   - Allow port 53 (UDP) *only* from any machine in the cluster.
+
 * Design
 ** Overall network diagram of Private DNS
+#+CAPTION:  Private DNS Network Diagram
+#+LABEL:  fig-private-dns-diagram
+#+NAME: fig-private-dns-diagram
+The following network diagram represents the interaction of the
+Private DNS with the other machines in the cluster. This diagram
+primarily focuses on the functionality of the Named server. It shows
+the various machines in the network to which it provides its service
+and also those which are required to help it achieve its
+functionality.\\
 
-** Incoming and Outgoing Connections 
+The Reverse Proxy, Configuration Server and the other machines in the
+cluster use the Private DNS for resolving the hostnames of the
+machines in the cluster. The Private DNS requires the Router to be
+able to contact the root DNS servers for providing the internal
+machines to update or install certain packages.
+
+[[./diagrams/private-dns-network-diagram.png]]
+
+** System files 
+The Following tables gives the information about the services and
+their configuration files where modifications are required to setup
+the Named Server.
+|------+----------+-------------------------------+--------------------------------|
+| S.no | Service  | File                          | File Type                      |
+|------+----------+-------------------------------+--------------------------------|
+|    1 | named    | /etc/name.conf                | named main Configuration       |
+|------+----------+-------------------------------+--------------------------------|
+|    2 | named    | /var/named/<domain_name>.zone | Zone files for the authorized  |
+|      |          |                               | name resolution of that domain |
+|------+----------+-------------------------------+--------------------------------|
+|    3 | iptables | /etc/sysconfig/iptables       | firewall rules                 |
+|------+----------+-------------------------------+--------------------------------|
+
+
 * Implementation
-
 ** Structure of the scripts
    - The implementation of this system is in terms of a collection of
      Ansible scripts that configure the machine. These scripts are
@@ -64,20 +97,22 @@ of configurations.
   with_items:
     - bind
     - bind-utils
-
+#+END_SRC
+** Configuring the Bind service
+#+BEGIN_SRC 
 - name: Create custom named.conf with desired zone
   template: src=named.conf dest=/etc/named.conf owner=root group=named mode=640
   notify:
     - restart bind
 
 - name: Copy zone forward files for all zones to /var/named
-  copy: src="{{zone_file_prefix}}{{item}}forward" dest="/var/named/{{item}}forward" owner=root group=named mode=640
+  template: src="zone.forward" dest="/var/named/{{item}}forward" owner=root group=named mode=640
   with_items: zone_names
   notify:
     - restart bind
 
 - name: Disable IPv6 support
-  lineinfile: dest=/etc/sysconfig/named line='OPTIONS="-4"' regexp="^OPTIONS" 
+  lineinfile: dest=/etc/sysconfig/named line='OPTIONS="-4"' regexp="^OPTIONS"
   notify:
     - restart bind
 
@@ -85,9 +120,10 @@ of configurations.
   service: name=named state=started enabled=yes
 
 - name: Configure strong firewall on bind/named server
-  template: src=named_iptables dest=/etc/sysconfig/iptables 
+  template: src=named_iptables dest=/etc/sysconfig/iptables
   notify:
     - restart iptables
+
 #+END_SRC
 
 ** Building the firewall rules
@@ -197,7 +233,8 @@ dependencies:
     - named_server
 #+END_SRC
 
-* Provisioning
+
+* COMMENT Provisioning
   The Private DNS server is setup by the Configuration management
   server. The machine configurations are as described below :
 
@@ -213,5 +250,6 @@ dependencies:
    + Interface :: eth0
 ** Access 
    This machine can be accessed only by the configuration management server.
+
 
 * Test Cases

@@ -49,10 +49,10 @@ requirements to configure reverseproxy server are as follows.
 #+NAME: fig-reverseproxy-diagram
 ** Overall network diagram of reverseproxy
 The following network diagram represents the reverseproxy server's
-communication with other services and servers. In this diagram only reverseproxy is active node. It
-shows the connections from/to reverseproxy to/from other servers such
-as [[./router.org][router]],[[./ansible.org][configuration server]], etc. non active nodes are represented using dotted
-rectangles.  
+communication with other services and servers. In this diagram only
+reverseproxy is active node. It shows the connections from/to
+reverseproxy to/from other servers such as [[./router.org][router]],[[./ansible.org][configuration
+server]], etc. non active nodes are represented using dotted rectangles.
 [[./diagrams/Network-Diagram-of-ReverseProxy-on-AWS.png]]
 
 ** System files 
