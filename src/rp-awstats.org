@@ -1968,14 +1968,17 @@ below which we run on reverseproxy server.
 
 * Test Cases
 ** Test Case ID: SSH access only from configuration server
-+ Objective :: To test SSH access from only from ansible and
-                management ips
-+ Apparatus :: 
-	       1) Configuration server 
-               2) Reverseproxy server
-+ Experiments ::  Reverseproxy server accepts incoming connections on
-                 tcp port 22 only from configuration server.
-  *ssh from config-serevr*
+*** Objective 
+  To test SSH access from only from ansible and management ips
+*** Apparatus 
+  1) Configuration server 
+  2) Reverseproxy server
+  3) A machine with management IP
+*** Experiments 
+  Reverseproxy server accepts incoming connections on tcp port 22
+   only from configuration server.  
+**** ssh from config-serevr 
+  ssh to reverseproxy from config_server using the bellow command
   #+BEGIN_SRC example
   config-server$ ssh root@<reverseproxy-ip>
   #+END_SRC
@@ -1984,19 +1987,20 @@ below which we run on reverseproxy server.
   Last login: Thu Apr  2 ... other details.....
   reverserproxy$
   #+END_SRC
-  *ssh from management ips*
-  reverseproxy server accepts incoming connections on port 22 only
-  from management ips
+**** ssh from management ips
+  Reverseproxy server accepts incoming connections on port 22 only
+  from management ips ssh from a machine with management ip to
+  reverseproxy using the bellow command
   #+BEGIN_SRC example
   management-ips$ ssh root@reverserproxy-ip
   #+END_SRC
   Result
   #+BEGIN_SRC example
-   Last login: Thu Apr  2 ... other details.....
+   Last login: Thu Apr  2 ---Details of last login---
   reverserproxy$
   #+END_SRC
-  *ssh from any other machine*
-  ssh from any other machine to reverseproxy is to be denied.
+**** ssh from any other machine
+  ssh from any other machine to reverseproxy.
   #+BEGIN_SRC example
   Any-other$ ssh root@reverserproxy-ip
   #+END_SRC
@@ -2004,22 +2008,24 @@ below which we run on reverseproxy server.
   #+BEGIN_SRC example
   Permission Denied ......
   #+END_SRC
-+ Observation :: Reverseproxy is able to accept the incoming
-                 connections on port 22 only from configuration
-                 server and management ips.
-+ Result :: Reverseproxy is working properly with SSH configuration.
-+ Conclusion :: SSH and iptables are configured properly. So
-                Reverseproxy is configured properly and able to accept
-                the connections on port 22 only from specific ips and
-                configuration server.
+  That means reverseproxy server is not accepting ssh connection from
+  other machine.
+*** Observation 
+ Reverseproxy is able to accept the incoming connections on port 22
+ only from configuration server and management ips.
+*** Result 
+ Reverseproxy is working properly with SSH configuration.
+*** Conclusion 
+ SSH and iptables are configured properly. So reverseproxy is
+ configured properly and able to accept the connections on port 22
+ only from specific ips and configuration server.
 
 ** Test Case ID: Reverseproxy test Without internal(Private) DNS  
 - This test case is done without internal (private)DNS configuration.
-
-+  Objective :: To test whether the client requests are going via
-                reverseproxy and returns the content of particular
-                lab.
-+ Apparatus :: 
+***  Objective 
+Test to check whether the client requests are going via reverseproxy
+and returns the content of particular lab.
+*** Apparatus 
             - Three containers ::
               1) reverseproxy server
               2) lab1 container  
@@ -2031,8 +2037,7 @@ below which we run on reverseproxy server.
             - PC/extra container ::
               1) To add hostname of the lab to =/etc/hosts= file 
              
-              
-+ Procedure ::
+*** Procedure 
 + Router accepts HTTP and HTTPS packets from external world (lab
   user)and [[./router.org][router]] forwards the requests to reverseproxy server since
   router has the forwarding capacity. And then reverseproxy accepts
@@ -2061,7 +2066,7 @@ below which we run on reverseproxy server.
      lab in reverseproxy and for internal name resolving
   5) Use ping and wget commands to test reverseproxy and do the
      following experiments
-+ Experiments ::
+*** Experiments 
   - From command line :: To test whether the reverseproxy is working
        or not from command line , follow the steps shown below: 
     + Add hostnames of the labs to =etc/hosts= of reverseproxy server.
@@ -2122,7 +2127,7 @@ below which we run on reverseproxy server.
       172.172.172.1 - - [26/Mar/2015:05:50:21 -0400] "GET /awstats/awstats.pl?config=lab1.virtual-labs.ac.in HTTP/1.1" 404 305 "-" "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:36.0) Gecko/20100101 Firefox/36.0"
       #+END_SRC
   
-+ Observation ::
+*** Observation 
   - Absence of --no-proxy, if network uses any proxy server, gives
     you following error
    #+BEGIN_SRC example
@@ -2130,17 +2135,19 @@ below which we run on reverseproxy server.
    2015-03-26 02:06:09 ERROR 503: Service Unavailable.
    #+END_SRC
   - Logs are being stored in reverseproxy    
-+ Result :: Reverse Proxy is working
+*** Result 
+ Reverse Proxy is working
 ** Test Case ID : AWStats test
-+ Objective :: Testing AWStats
-+ Apparatus :: 
+*** Objective 
+Test to check the AWStats for virtual hosts
+*** Apparatus 
      1) Default virtual-host entry for reverseproxy to serve awstats
         from the browser
      2) Access log file for each lab to check the accepted log messages 
      3) Error log file for each lab to check the error log messages while
         trying to access web pages.
      4) Access awstats from everywhere
-+ Procedure :: 
+*** Procedure  
      - Add virtual host entries in
        =/etc/httpd/conf.d/virtual-labs.ac.in= along with the following
        directives for each lab
@@ -2158,7 +2165,7 @@ below which we run on reverseproxy server.
        $perl /usr/share/awstats/wwwroot/cgi-bin/awstats.pl -config=<labURL> -update
        #+END_SRC
 
-+ Experiments ::
+*** Experiments 
     - From Command Line ::
        Ran following command from my PC
       #+BEGIN_SRC example
@@ -2190,24 +2197,26 @@ below which we run on reverseproxy server.
       + To access the analytics of each lab from the browser use the
         following link
         http://reverseproxy_server_IP_or_Hostname_name/awsstats/awstats.pl?config=labURL
-+ Observation :: Analytics are being stored 
-+ Result :: Awstats are running fine
-+ Conclusion ::
-     Awstats ( analytics of each lab ) are storing and able to access
-               the analytics from browser
+*** Observation 
+ Analytics are being stored 
+*** Result 
+ Awstats are running fine
+*** Conclusion 
+  Awstats ( analytics of each lab ) are storing and able to access the
+  analytics from browser
 
 
 
    
 
-
 ** Test Case ID : Reverseproxy test using internal(private) DNS and Public DNS
 
-+ Objective :: To test reverseproxy using private DNS and Public DN
+*** Objective 
+Test to check the reverseproxy function using private DNS and Public DN
   - Note :: Here Public DNS not yet configured on AWS. So we are using
             existing public DNS(ns1-pub.virtual-labs.ac.in) which is configured in  BASE2
             machine.
-+ Apparatus ::
+*** Apparatus 
   1) *Router*: 
      To forward HTTP(80), HTTPS(443) and DNS(53) packets to specific servers. 
   2) *Revereproxy server*:
@@ -2218,7 +2227,7 @@ below which we run on reverseproxy server.
   4) *Private DNS*: 
      To add DNS entries, so that labs can be accessible anywhere
      within in the internal network using host name of the lab
-+ Procedure :: 
+*** Procedure  
   - Assume private DNS and public DNS are configured and added DNS
     entries of each lab properly. 
   - Now browse the Lab URL from browser. Then the next procedure
@@ -2232,7 +2241,7 @@ below which we run on reverseproxy server.
     internal network and to the router. Router then gives the reply to
     lab user with the requested web pages.
 
-+ Experiment ::
+*** Experiment 
   - Assume we have added lab1's ip to private DNS by giving the
     sub-domain as lab1.
   - Using browser ::
@@ -2241,9 +2250,11 @@ below which we run on reverseproxy server.
    lab1.virtual-labs.ac.in
    #+END_SRC
   Then it gives you the lab content.
-+ Observation :: Displaying lab's content and logs are being stored at
-                 reverseproxy server.
-+ Result :: Reverseproxy working
-+ Conclusion :: Reverseproxy setup properly, we are able to access the
-                lab using domain name of the lab and logs are being
-                stored. 
+*** Observation 
+ Displaying lab's content and logs are being stored at reverseproxy
+ server.
+*** Result 
+Reverseproxy working
+*** Conclusion 
+Reverseproxy setup properly, we are able to access the lab using
+domain name of the lab and logs are being stored.
