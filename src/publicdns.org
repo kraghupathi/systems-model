@@ -681,3 +681,23 @@ dependencies:
 *** Conclusion
     The Private DNS is able to resolve the public domain names as
     well.
+
+dig google.com @10.100.1.6
+
+; <<>> DiG 9.8.2rc1-RedHat-9.8.2-0.30.rc1.el6_6.2 <<>> google.com @10.100.1.6
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: REFUSED, id: 10262
+;; flags: qr rd; QUERY: 1, ANSWER: 0, AUTHORITY: 0, ADDITIONAL: 0
+;; WARNING: recursion requested but not available
+
+;; QUESTION SECTION:
+;google.com.			IN	A
+
+;; Query time: 1 msec
+;; SERVER: 10.100.1.6#53(10.100.1.6)
+;; WHEN: Tue Apr  7 02:54:38 2015
+;; MSG SIZE  rcvd: 28
+
+
+
