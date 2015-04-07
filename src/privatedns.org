@@ -218,7 +218,7 @@ $TTL 3600
 
 ** Building the  firewall rules
 
-#+BEGIN_SRC 
+#+BEGIN_SRC YAML :tangle roles/named_server/templates/named_iptables
 *filter
 :INPUT ACCEPT [-1:0]
 :FORWARD ACCEPT [0:0]
@@ -356,7 +356,7 @@ COMMIT
 #+END_SRC
 
 ** COMMENT Dependencies
-#+BEGIN_SRC YAML :tangle roles/named_server/meta/main.yaml
+#+BEGIN_SRC 
 ---
 dependencies:
   - role: common_vars
