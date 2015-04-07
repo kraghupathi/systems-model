@@ -3,7 +3,7 @@
 #+PROPERTY: session *scratch*
 #+PROPERTY: results output
 #+PROPERTY: exports code
-#+SETUPFILE: org-templates/level-0.org
+//#+SETUPFILE: org-templates/level-0.org
 #+DESCRIPTION: Nagios Server Design Model Documentation
 
 * Introduction
@@ -59,16 +59,16 @@
   
 ** Configuration Design
 - In a system there may be many services of interest which are to be monitored,
-  such as "ssh", "ping" and "http". Services and usage being monitored may be
+  such as =ssh=, =ping= and =http=. Services and usage being monitored may be
   different for various machines. In order to properly define which services
   inside the machine are to be monitored, groups of services are defined. A
-  group consists of various services. For example a "basic_services" group
-  consists of "ssh", "ping", "nrpe check users" and "nrpe checking load".
+  group consists of various services. For example a =basic_services= group
+  consists of =ssh=, =ping=, =nrpe check users= and =nrpe checking load=.
 
 - Groups are assigned to the client system depending on the services that are to
   monitored inside the system. For example in a reverseproxy server, services
-  monitored are "http", "ssh", "https", "ping", "nrpe check users" and "nrpe
-  check load", so the group which consists of all these services i.e. "web" is
+  monitored are =http=, =ssh=, =https=, =ping=, =nrpe check users= and =nrpe
+  check load=, so the group which consists of all these services i.e. =web= is
   assigned to the reverseproxy server.
 
 * Implementation
@@ -603,13 +603,117 @@ nagios_commands:
 #    - rsyslog_client
     - nagios_server
 #+END_SRC
-
 * Test Cases
+** Test Case-1
+*** Objective: 
+- Test the nagios web dashboard.
+*** Apparatus:
+1) Nagios server
+2) Nagios client
+
+*** Theory
+- Nagios server provides a web interface to monitor client machines. Web
+  dashboard runs as an http server on port 80. 
+
+*** Experiment
+- Open the web url of dashboard in a browser. A page similar to shown below will
+  open. [image][image]
+
+*** Result
+- Sample web interface is shown below:
+#+BEGIN_EXAMPLE
+#+END_EXAMPLE
+
+*** Obeservation
+- Web interface displays the services being monitored in the system.
+
+*** Conclusion
+- If the web interface is opening then its assure that server is configure
+  properly.
+
+** Test Case-2
+*** Objective:
+- Test alert mails are send in case of critical situation.
+
+*** Apparatus:
+1) Nagios server
+2) Nagios client
+
+*** Theory
+- Nagios server sends alert messages whenever the client machine goes to
+  a critical state.
+
+*** Experiment
+- Stop a service for example "ssh" inside the client machine manually using
+  "service sshd stop" command. Now see in mail server if the email alerts are
+  received.
+
+*** Result
+- Sample alert mail is shown below:
+#+BEGIN_EXAMPLE
+#+END_EXAMPLE
+
+*** Obeservation
+- Nagios generates a mail alert in a critical situation.
+
+*** Conclusion
+- If the email alerts are being received then the mail service is configured
+  properly.
+
+** Test Case-3
+*** Objective:
+- Test command status by executing them on the client machine from the nagios
+  server.
+
+*** Apparatus:
+1) Nagios server
+2) Nagios client
+
+*** Theory
+- Services can also be monitored by running some commands on the client machine
+  from the nagios server.
+
+*** Experiment
+- Execute following commands from the nagios server:
+**** Check load 
+#+BEGIN_EXAMPLE
+/usr/lib64/nagios/plugins/check_nrpe -H <ipaddress of client> -c check_load
+#+END_EXAMPLE
+
+
+**** Check users 
+#+BEGIN_EXAMPLE
+/usr/lib64/nagios/plugins/check_nrpe -H <ipaddress of client> -c check_users
+#+END_EXAMPLE
+
+**** Check ssh service
+#+BEGIN_EXAMPLE
+/usr/lib64/nagios/plugins/check_ssh -p 22 <ipaddress of client>
+#+END_EXAMPLE
+*** Result
+- Output of commands when executed on client machine: 10.4.15.117 are as
+  follows:
+**** Sample output for command 1.
+#+BEGIN_EXAMPLE
+OK - load average: 0.00, 0.00, 0.00|load1=0.000;15.000;30.000;0; load5=0.000;10.000;25.000;0; load15=0.000;5.000;20.000;0; 
+#+END_EXAMPLE
+**** Sample output for command 2.
+#+BEGIN_EXAMPLE
+USERS OK - 0 users currently logged in |users=0;5;10;0
+#+END_EXAMPLE
+
+**** Sample output for command 3.
+#+BEGIN_EXAMPLE
+SSH OK - OpenSSH_5.3 (protocol 2.0) | time=0.007418s;;;0.000000;10.000000
+#+END_EXAMPLE
+*** Observation
+- Return status of the services is displayed in the command output.
+
+*** Conclusion
+- If the return status of the depicts the status of service in the client machine.
+
+* COMMENT TODO
 1) Test sendmail service is able to send the mail.
 2) Test all the services are being monitored.
-
-* COMMENT Thoughts
-1) How do we write the requirements for nagios server. Do services monitored on
-   actual server are also to be captured in the requirements.
-2) Document basic and web services; Assign services to roles.
-3) state=present v/s state=installed
+3) Image of nagios dashboard.
+4) Sample nagios alert mail.
