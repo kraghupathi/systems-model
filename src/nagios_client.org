@@ -50,52 +50,15 @@
 |------+----------+---------------------------------------------+-------------------------|
 |   1. | Iptables | /etc/sysconfig/iptables                     | Configuration File      |
 |------+----------+---------------------------------------------+-------------------------|
-|   2. | Nagios   | /etc/nagios/nagios.cfg                      | Main Configuration File |
+|   2. | Nagios   | /etc/xinetd.conf                            | Main Configuration File |
 |------+----------+---------------------------------------------+-------------------------|
-|   3. | Nagios   | /etc/nagios/objects/contacts.cfg            | Configuration File      |
-|------+----------+---------------------------------------------+-------------------------|
-|   4. | Nagios   | /etc/nagios/objects/servers.cfg             | Configuration File      |
-|------+----------+---------------------------------------------+-------------------------|
-|   5. | Nagios   | /etc/nagios/objects/additional_commands.cfg | Configuration File      |
+|   3. | Nagios   | /etc/nagios/nrpe.cfg                        | Configuration File      |
 |------+----------+---------------------------------------------+-------------------------|
   
 ** Configuration Design
 - In a system there may be many services of interest which are to be monitored,
   such as =ssh=, =ping= and =http=. Services and usage being monitored may be
-  different for various machines. In order to properly define which services
-  inside the machine are to be monitored, groups of services are defined. A
-  group consists of various services. For example a =basic_services= group
-  consists of =ssh=, =ping=, =nrpe check users= and =nrpe checking load=.
-
-- Groups are assigned to the client system depending on the services that are to
-  monitored inside the system. For example in a reverseproxy server, services
-  monitored are =http=, =ssh=, =https=, =ping=, =nrpe check users= and =nrpe
-  check load=, so the group which consists of all these services i.e. =web= is
-  assigned to the reverseproxy server.
-
-- Nagios sends email whenever a problem is encountered on the client machines.
-  Problems could be like some service is in critical state due to
-  downtime. Example alert mail sent by nagios is shown below:
-#+BEGIN_EXAMPLE
-*****Nagios*****
-
-Notification Type: PROBLEM
-
-Service: DNS checkup
-Host: DNS
-Address: localhost
-State: CRITICAL
-
-Date/Time: Sun Jan 25 11:13:05 UTC 2015
-
-Additional Info:
-
-CRITICAL - Plugin timed out while executing system call
-#+END_EXAMPLE
-
-- Admin monitors client machines via web interface. Web interface runs as an
-  http service on nagios server localhost on port 80.
-[[./diagrams/nagios-dashboard-screenshot.png]]
+  different for various machines.
 
 * Implementation
 ** Structure of Scripts
@@ -116,306 +79,31 @@ CRITICAL - Plugin timed out while executing system call
 #+END_EXAMPLE
 
 ** Firewall rules for Nagios Client
-- Firewall rules applied on Nagios server are mentioned here. Description of
-  firewall rules which are common across all the systems are defined in the
-  common role. Rules [[Rule to allow incoming http connection][1]], [[Rule for FORWARD chain][2]], [[Rule to allow outgoing NRPE queries][3]] and [[Rule to allow outgoing SSH connections][4]] are specific to only nagios server and are
-  described here.
-*** Common Firewall Rules - Section 1
-#+BEGIN_SRC yml :tangle roles/nagios_server/templates/nagios_server_iptables :eval no
-#If packet does not match any rule then the default action is applied to the packet
-*filter
-:INPUT ACCEPT [0:0]
-:FORWARD ACCEPT [0:0]
-:OUTPUT ACCEPT [0:0]
+- Firewall rules applied to nagios client system are mentioned here. Description
+  of firewall rules which are common across all the systems are defined in the
+  common role. Rules [[Rule for incoming NRPE query from Nagios server][1]] and [[Rule for incoming SSH connections from Nagios server][2]] are specific to only nagios client and are described
+  here.
 
-#Allow internal process to process communication over loopback interface
--A INPUT -i lo -d 127.0.0.0/8 -j ACCEPT
-
-#Rate limit new connections to 20 new connections per 30 seconds
--A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --set
--A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --rcheck --seconds 30 --hitcount 20 -m limit --limit 2/min -j LOG --log-prefix "new_limit_"
--A INPUT ! -p udp -m state --state NEW -m recent --name ssh_limit --rcheck --seconds 30 --hitcount 20 -j DROP
-
-#Allow to accept incoming ping requests from anywhere
--A INPUT -p icmp --icmp-type echo-request -m limit --limit 60/minute --limit-burst 120 -j ACCEPT
--A INPUT -p icmp --icmp-type echo-request -m limit --limit 1/minute --limit-burst 2 -j LOG 
--A INPUT -p icmp --icmp-type echo-request -j DROP
-
-#Allow to continue already related and established connections
--A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
-
-#Allowing incoming ssh connections from the management ips.
-#Hopefully fail2ban will take care of bruteforce attacks from management IPs
-{% for item in management_ips  %}  
--A INPUT -m state --state NEW -s {{ item }} -p tcp -m tcp --dport 22 -j ACCEPT
-{% endfor %}
-#Allowing incoming ssh connections from ansible server. 
-#Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
-{% for item in ansible_server_ips  %}
--A INPUT -m state --state NEW -s {{ item }} -p tcp -m tcp --dport 22 -j ACCEPT
-{% endfor %}
-#+END_SRC
-
-*** Rule to allow incoming http connection
-- Nagios server hosts a web interface to display monitoring data. Admins access
-  this web interface for monitoring purposes.
-#+BEGIN_SRC yml :tangle roles/nagios_server/templates/nagios_server_iptables :eval no
-#Allow incoming requests on port 80
--A INPUT -m state --state NEW -p tcp -m tcp --dport 80 -j ACCEPT
-#+END_SRC
-
-*** Common Firewall Rules - Section 2
-#+BEGIN_SRC yml :tangle roles/nagios_server/templates/nagios_server_iptables :eval no
-#Allow to accept incoming snmp queries from cacti server
--A INPUT -p udp -m udp --dport 161 -j ACCEPT
--A INPUT -p udp -m udp --dport 162 -j ACCEPT
-
-#Log all other "blocked_input_" attempts with rate limiting
--A INPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_input_"
-
-#Drop all the INPUT packets which does not match any of the rules
--A INPUT -j REJECT --reject-with icmp-host-prohibited
-#+END_SRC
-
-*** Rule for FORWARD chain
-- Nagios Server is not responsible for any packet forwarding, hence forwarding
-  rule is set to 'reject' policy.
-#+BEGIN_SRC yml :tangle roles/nagios_server/templates/nagios_server_iptables :eval no
-#Do not allow any packet to be forwarded
--A FORWARD -j REJECT --reject-with icmp-host-prohibited
-#+END_SRC
-
-*** Common Firewall Rules - Section 3
-#+BEGIN_SRC yml :tangle roles/nagios_server/templates/nagios_server_iptables :eval no
-#Allow internal process to process communication over loopback interface
--A OUTPUT -s 127.0.0.0/8 -o lo -j ACCEPT
-
-#Allow outgoing connections to ansible server on port22
-{% for item in ansible_server_ips  %}
--A OUTPUT -d {{item}} -p tcp -m tcp --sport 22 -j ACCEPT
-{% endfor %}
-
-#Allow to continue already related and established connections
--A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
-
-#Allow DNS queries
--A OUTPUT -p udp -m udp --dport 53 -j ACCEPT
-
-#Allow server to send emails.  Required for sending logwatch emails
--A OUTPUT -p tcp -m tcp --dport 25 -j ACCEPT
-
-#Allow https to contact yum
--A OUTPUT -p tcp -m tcp --dport 80 -j ACCEPT
--A OUTPUT -p tcp -m tcp --dport 443 -j ACCEPT
-#+END_SRC
-
-*** Rule to allow outgoing NRPE queries
-- Nagios server sends NRPE queries on TCP port 5666 to the client machines being
-  monitored.
-#+BEGIN_SRC yml :tangle roles/nagios_server/templates/nagios_server_iptables :eval no
-#Allow server to send nrpe queries
--A OUTPUT -p tcp -m tcp --dport 5666 -j ACCEPT
-#+END_SRC
-
-*** Rule to allow outgoing SSH connections
-- Nagios server sends SSH requests to systems where ssh service is being
-  monitored.
-#+BEGIN_SRC yml :tangle roles/nagios_server/templates/nagios_server_iptables :eval no
-#Allow server to send ssh requests
--A OUTPUT -p tcp -m tcp --dport 22 -j ACCEPT
-#+END_SRC
-
-*** Common Firewall Rules - Section 4
-#+BEGIN_SRC yml :tangle roles/nagios_server/templates/nagios_server_iptables :eval no
-#Allow outgoing ping requests
--A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT
-
-#Allow outgoing connections to rsyslog server
--A OUTPUT -p udp -m udp --dport 514 -j ACCEPT
-
-#Allow outgoing connections to OSSEC server
--A OUTPUT -p udp -m udp --dport 1514 -j ACCEPT
-
-#Allow outgoing nrpe queries to internal network on port 5666
--A OUTPUT -d {{local_subnet}} -m state --state NEW -p tcp -m tcp --sport 5666 -j ACCEPT
-
-#Log all other "blocked_output_" attempts
--A OUTPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_output_"
-
-#Reply with proper ICMP error message and reject the connection
--A OUTPUT -j REJECT --reject-with icmp-host-prohibited
-
-COMMIT
-#+END_SRC
-** Configure Commands
-- Nagios server sends NRPE query to the client machine to monitor the return
-  status of some commands on the client machine. NRPE agent running on the
-  client machines execute and sends back the return status of the commands to
-  the Nagios server. The commands used for monitoring something on the client
-  machines are defined in the configuration file. 
-
-- Commands are specified by the two directives in the configuration
-  file. Following table represents an example of directive name and the
-  directive value.
+*** Rule for incoming NRPE query from Nagios server
+- Nagios monitors systems disk usage, ram usage by sending a NRPE query.
 #+BEGIN_EXAMPLE
-|------+----------------+-----------------------------------------------|
-| S.no | Directive Name | Directive Value                               |
-|------+----------------+-----------------------------------------------|
-|   1. | command_name   | check_nrpe                                    |
-|------+----------------+-----------------------------------------------|
-|   2. | command_line   | $USER1$/check_nrpe -H $HOSTADDRESS$ -c $ARG1$ |
-|------+----------------+-----------------------------------------------|
+#Allow to accept incoming nrpe queries from nagios server
+-A INPUT -m state --state NEW -p tcp -m tcp --dport 5666 -j ACCEPT
 #+END_EXAMPLE
 
-- In the configuration template a 'for loop' loops over the commands list to
-  define all the commands. Value of the directives are set to variables, and
-  value of these variables are fetched from =vars/main.yml=.
-
-#+BEGIN_SRC yml :tangle roles/nagios_server/templates/commands.cfg
-{% for command in nagios_commands %}
-define command {
-  command_name  {{command.name}}
-  command_line  {{command.command}}
-}
-{% endfor %}
-#+END_SRC
-** Configure Contacts Details
-- Contact details of administrator are set by two directives in the
-  configuration file. Following table represents an example of the directive
-  name and directive value.
+*** Rule for incoming SSH connections from Nagios server
+- Nagios monitors ssh service on the client machine.
 #+BEGIN_EXAMPLE
-|------+----------------+-------------------|
-| S.no | Directive Name | Directive Value   |
-|------+----------------+-------------------|
-|   1. | email          | alerts@vlab.ac.in |
-|------+----------------+-------------------|
-|   2. | alias          | Nagios Admin      |
-|------+----------------+-------------------|
+#Allow incoming SSH connections from nagios server IPs.  Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
+{% for item in nagios_server_ips  %}  
+-A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
 #+END_EXAMPLE
 
-- In the configuration template value of the directives are set to variables,
-  and value of these variables are fetched from =vars/main.yml=.
-
-#+BEGIN_SRC yml :tangle roles/nagios_server/templates/contacts.cfg.j2
-###############################################################################
-# CONTACTS.CFG - SAMPLE CONTACT/CONTACTGROUP DEFINITIONS
-#
-#
-# NOTES: This config file provides you with some example contact and contact
-#        group definitions that you can reference in host and service
-#        definitions.
-#       
-#        You don't need to keep these definitions in a separate file from your
-#        other object definitions.  This has been done just to make things
-#        easier to understand.
-#
-###############################################################################
-
-
-
-###############################################################################
-###############################################################################
-#
-# CONTACTS
-#
-###############################################################################
-###############################################################################
-
-# Just one contact defined by default - the Nagios admin (that's you)
-# This contact definition inherits a lot of default values from the 'generic-contact' 
-# template which is defined elsewhere.
-
-define contact{
-        contact_name                    nagiosadmin             ; Short name of user
-        use                             generic-contact         ; Inherit default values from generic-contact template (defined above)
-        alias                           {{nagios_admin_name}}            ; Full name of user
-
-        email                           {{nagios_admin_email}} ; <<***** CHANGE THIS TO YOUR EMAIL ADDRESS ******
-        }
-
-
-###############################################################################
-###############################################################################
-#
-# CONTACT GROUPS
-#
-###############################################################################
-###############################################################################
-
-# We only have one contact in this simple configuration file, so there is
-# no need to create more than one contact group.
-
-define contactgroup{
-        contactgroup_name       admins
-        alias                   Nagios Administrators
-        members                 nagiosadmin
-        }
-
-#+END_SRC
-** Configure Clients Address and Monitoring Services
-- Nagios requires details such as Hostaddress and Hostname of client machines to
-  be monitored. These details of client machine are specified in the
-  configuration file using three directives. Following table represents an
-  example of the directive name and directive value.
-#+BEGIN_EXAMPLE
-|------+----------------+--------------------|
-| S.no | Directive Name | Directive Value    |
-|------+----------------+--------------------|
-|   1. | alias          | router             |
-|------+----------------+--------------------|
-|   2. | host_name      | router             |
-|------+----------------+--------------------|
-|   3. | address        | router.vlabs.ac.in |
-|------+----------------+--------------------|
-#+END_EXAMPLE
-
-- Nagios is configured to monitor bunch of services inside each client. Services
-  monitored inside each client are defined using three directives in the
-  configuration file. Following table represents an example of the directive
-  name and directive value.
-#+BEGIN_EXAMPLE
-|------+---------------------+-----------------|
-| S.no | Directive Name      | Directive Value |
-|------+---------------------+-----------------|
-|   1. | host_name           | router          |
-|------+---------------------+-----------------|
-|   2. | service_description | ssh             |
-|------+---------------------+-----------------|
-|   3. | check_command       | check_ssh       |
-|------+---------------------+-----------------|
-#+END_EXAMPLE
-
-- In the configuration template directives are set to varaibles and the value of
-  these variables are fetched from =vars/main.yml=. A 'for loop' loops over the
-  hosts list to specify all the client machines and another 'for loop' loops
-  over the services define in the group to specify all the services.
-
-#+BEGIN_SRC yml :tangle roles/nagios_server/templates/servers.cfg
-{% for h in nagios_hosts %}
-define host {
-use             linux-server
-alias           {{ h }}
-host_name       {{ h }}
-address         {{ nagios_hosts[h].hostname }}          
-}
-
-
-{% for s in nagios_host_groups[nagios_hosts[h].group] %}
-
-define service {
-use                     generic-service
-host_name               {{ h }}
-service_description     {{ s.service }}
-check_command           {{ s.command }}
-}
-{% endfor %}
-{% endfor %}
-#+END_SRC
-    
 ** Update all packages
 - All packages inside the machine are updated before configuring the nagios
-  server machine.
-#+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml :eval no
+  client machine.
+#+BEGIN_SRC yml :tangle roles/nagios_client/tasks/main.yml :eval no
 - name: running yum update
   yum: name=* state=latest
   environment: proxy_env
@@ -427,8 +115,9 @@ check_command           {{ s.command }}
 2) =nagios-pulgins-all=
 3) =nagios-plugins-nrpe=
 4) =nrpe=
+5) =xinetd=
 
-#+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml :eval no
+#+BEGIN_SRC yml :tangle roles/nagios_client/tasks/main.yml :eval no
 - name: Installing nagios
   yum: name=nagios state=installed
   environment: proxy_env
@@ -445,185 +134,27 @@ check_command           {{ s.command }}
   yum: name=nrpe state=installed
   environment: proxy_env
 #+END_SRC 
-** Set firewall rules
-- Firewall rules are set by following steps:
-   1) Copy iptables configuration from ansible machine to the server.
-   2) Restart iptables service to enforce the configuration.
-#+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
- - name: Copy iptables configuration file
-   template: src=nagios_server_iptables dest=/etc/sysconfig/iptables owner=root group=root mode=600
-   notify:
-     - restart iptables
-#+END_SRC
-** Create Nagios admin user for web interface
-- A user is created on the nagios server for web interface. Value of
-  =nagios_user= and =nagios_password= are fetched from =vars/main.yml= file.
-#+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
-- name: creating nagiosadmin user for web interface
-  command: "htpasswd -b /etc/nagios/passwd {{nagios_user}} {{nagios_password}}"
-  notify: restart apache
-#+END_SRC
-
-** Copy contancts.cfg configuration file to the server
-- Configuration file is copied from ansible server to the nagios server and
-  nagios service is restarted.
-#+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.ymlw
-- name: Updating contacts.cfg
-  template: src=contacts.cfg.j2 dest=/etc/nagios/objects/contacts.cfg
-  notify: restart nagios
-#+END_SRC
-
-** Update nagios.cfg file
-- Location of =servers.cfg= file is set in the =nagios.cfg= configuration file
-  by =cfg_file= directive. Value of =nagios_cfg_path= variable is fetched from
-  =vars/main.yml= file.
-#+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.ymlw
-- name: updating nagios.cfg
-  lineinfile: dest="{{nagios_cfg_path}}" line="cfg_file=/etc/nagios/objects/servers.cfg" regexp="cfg_file\=/etc/nagios/objects/servers.cfg"
-  notify: restart nagios
-#+END_SRC
-
-** Include another tasks file
-#+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
-- tasks:
-  include: configure_servers.yaml
-#+END_SRc
-
-** Copy servers.cfg and commands.cfg configuration file
-- Configuration files are copied from ansible machine to the nagios server and
-  nagios service is restarted.
-#+BEGIN_SRC yml :tangle roles/nagios_server/tasks/configure_servers.yml
----
-#configuring hosts
-- name: "creating servers.cfg"
-  template: src=servers.cfg dest=/etc/nagios/objects/servers.cfg mode=664
-  notify: restart nagios
-
-# Additional Commands
-- name: "create additional_commands.cfg"
-  template: src=commands.cfg dest=/etc/nagios/objects/additional_commands.cfg mode=664
-  notify: restart nagios
-#+END_SRC
-** Load additional commands
-- Location of =servers.cfg= file is set in the =nagios.cfg= configuration file
-  by =cfg_file= directive. Value of =nagios_cfg_path= variable is fetched from
-  =vars/main.yml= file.
-#+BEGIN_SRC yml :tangle roles/nagios_server/tasks/configure_servers.yml
-- name: load additional_commands.cfg
-  lineinfile: dest=/etc/nagios/nagios.cfg line="cfg_file=/etc/nagios/objects/additional_commands.cfg" regexp="cfg_file\=/etc/nagios/objects/additional_commands\.cfg"
-  notify: restart nagios
-#+END_SRC
-** Start nagios service
-- Any changes in nagios configuration is enforced by restarting the nagios
+** Start xinetd service
+- Any changes in xinetd configuration is enforced by restarting the xinetd
   service.
-#+BEGIN_SRC yml :tangle roles/nagios_server/handlers/main.yml
-- name: restart nagios
+#+BEGIN_SRC yml :tangle roles/nagios_client/handlers/main.yml
+- name: restart xinetd
   sudo: true
-  service: name=nagios state=restarted
+  service: name=xinetd state=restarted
 #+END_SRC
 
-** Start apache service
-- Any changes in apache configuration is enforced by restarting the apache
-  service.
-#+BEGIN_SRC yml :tangle roles/nagios_server/handlers/main.yml
-- name: restart apache
+** Start nrpe service
+- Any changes in nrpe configuration is enforced by restarting the nrpe service.
+#+BEGIN_SRC yml :tangle roles/nagios_client/handlers/main.yml
+- name: restart nrpe
   sudo: true
-  service: name=httpd state=restarted
-#+END_SRC
-
-** Start firewall service
-- Any changes in iptables configuration file, to update the firewall is enforced
-  by restarting the iptables service.
-#+BEGIN_SRC yml :tangle roles/nagios_server/handlers/main.yml
-- name: restart iptables
-  sudo: true
-  service: name=iptables state=restarted
+  service: name=nrpe state=restarted
 #+END_SRC
 
 ** Define Variables and Services groups
-- Various variables used by the ansible playbook are defined here. Following
-  table represents the variables name and their description.
-
-|------+--------------------+--------------------------------------------------------|
-| S.no | Variable Name      | Description                                            |
-|------+--------------------+--------------------------------------------------------|
-|   1. | nagios_host        | Hostname of nagios server                              |
-|------+--------------------+--------------------------------------------------------|
-|   2. | nagios_user        | Admin username of nagios server                        |
-|------+--------------------+--------------------------------------------------------|
-|   3. | nagios_password    | Password of nagios admin user                          |
-|------+--------------------+--------------------------------------------------------|
-|   4. | nagios_admin_name  | Full name of admin user                                |
-|------+--------------------+--------------------------------------------------------|
-|   5. | nagios_admin_email | Email address where the alerts generated by nagios are |
-|      |                    | sent                                                   |
-|------+--------------------+--------------------------------------------------------|
-|   6. | nagios_cfg_path    | Path of the nagios.cfg configuration file              |
-|------+--------------------+--------------------------------------------------------|
-|   7. | nagios_hosts       | Hostnames of client machines and the service group     |
-|      |                    | to which client belongs                                |
-|------+--------------------+--------------------------------------------------------|
-|   8. | nagios_host_groups | Define the groups of services                          |
-|------+--------------------+--------------------------------------------------------|
-|   9. | nagios_commands    | Define the commands to be executed on nagios client    |
-|------+--------------------+--------------------------------------------------------|
-
-#+BEGIN_SRC yml :tangle roles/nagios_server/vars/main.yml
-nagios_host: nagios.virtual-labs.ac.in
-nagios_user: nagiosadmin
-nagios_password: xxxxxxx
-nagios_admin_name: 'Nagios Admin'
-nagios_admin_email: alerts@vlabs.ac.in
-nagios_cfg_path: /etc/nagios/nagios.cfg
-
-########################################
-## vars used by configure_servers.yml ##
-########################################
-nagios_hosts:
-     router: { hostname: "router.vlabs.ac.in", group: basic_services }
-     ansible: { hostname: "ansible.vlabs.ac.in", group: basic_services }  
-#     ossec_server: { hostname: "ossec-server.vlabs.ac.in", group: web }
-     rsyslog_server: { hostname: "rsyslog-server.vlabs.ac.in", group: basic_services }
-     private_dns: { hostname: "private-dns.vlabs.ac.in", group: basic_services }
-#     public_dns: { hostname: "public-dns.vlabs.ac.in", group: basic_services }
-     reverseproxy: { hostname: "reverseproxy.vlabs.ac.in", group: web }
-  
-nagios_host_groups:
-     basic_services:
-      - { service: "ssh", command: "check_ssh" }
-      - { service: "ping", command: "check_ping!100.0,20%!500.0,60%" }
-      - { service: "nrpe checking users", command: "check_nrpe!check_users"}
-      - { service: "nrpe checking load", command: "check_nrpe!check_load"}
-
-     web:
-      - { service: "ssh", command: "check_ssh" }
-      - { service: "http", command: "check_http" }
-      - { service: "https", command: "check_tcp!443" }
-      - { service: "ping", command: "check_ping!100.0,20%!500.0,60%" }
-      - { service: "nrpe checking users", command: "check_nrpe!check_users"}
-      - { service: "nrpe checking load", command: "check_nrpe!check_load"}
-
-nagios_commands:
-    - {name: 'check_nrpe', command: '$USER1$/check_nrpe -H $HOSTADDRESS$ -c $ARG1$'}
-
-#+END_SRC
-** Nagios Server Installation Script
-- Nagiosg server is configured by using following roles:
-  1) =common=
-  2) =ossec_client=
-  3) =rsyslog_client=
-  4) =nagios_server=
-#+BEGIN_SRC yml :tangle nagios_server.yml
----
-- name: This yml script configures nagios server
-  hosts: nagios_server
-  remote_user: root
-
-  roles:
-    - common
-#    - ossec_client
-#    - rsyslog_client
-    - nagios_server
+- Various used by the ansible playbook are defined here.
+#+BEGIN_SRC yml :tangle roles/nagios_client/vars/main.yml
+nagios_server: 10.100.1.8
 #+END_SRC
 * Test Cases
 ** Test Case-1
