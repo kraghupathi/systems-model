@@ -727,5 +727,4 @@ SSH OK - OpenSSH_5.3 (protocol 2.0) | time=0.007418s;;;0.000000;10.000000
 *** Conclusion
 - If the return status of the depicts the status of service in the client machine.
 
-* COMMENT TODO
 
