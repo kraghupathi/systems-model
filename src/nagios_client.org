@@ -15,20 +15,16 @@
 
 * Requirements
 ** Functional Requirements
-1) Monitor various services such as ssh, ping, http on all the system.
-2) Accept incoming and outgoing ping requests to anywhere and from anywhere.
-3) Accept incoming connections on TCP port 22 from ansible and management ips.
-4) Accept incoming connections on TCP port 80.
-5) Accept incoming connections on UDP port 161 and 162 for cacti.
-6) Accept outgoing connections on TCP port 25 for logwatch.
-7) Accept outgoing connections on TCP port 22.
-8) Accept outgoing connections on UDP port 514 for rsyslog.
-9) Accept outgoing connections on UDP port 1514 for ossec.
-10) Accept outgoing connections on TCP port 5666 for nrpe.
-11) Accept outgoing connections on TCP port 80 and 443 for yum.
-12) Ansible machine ssh public key is to be added to authorized keys.
-13) Run apache service.
-14) Run nagios service.
+1) Allow incoming ssh connections on TCP port 22 from configuration, Nagios and
+   management servers.
+2) Allow incoming connections on TCP port 5666 from Nagios.
+3) Allow incoming connections on UDP port 161 and 162.
+4) Allow incoming and outgoing ping requests to anywhere and from anywhere.
+5) Allow outgoing connections on UDP port 514.
+6) Allow outgoing connections on UDP port 1514.
+7) Allow outgoing connections on TCP port 80 and 443 for yum.
+8) Allow outgoing connections on TCP port 25 for sending mails via logwatch.
+9) Add Configuration server's ssh public key to authorized keys.
 
 ** Security Requirements
 1) Accept incoming SSH connections only from Ansible and management ips.
@@ -39,10 +35,10 @@
 - Given diagram describes the design of the monitoring server. Systems files are
   listed for a quick overview of whole systems.
 ** System Design Diagram
-[[./diagrams/nagios-server-design-diagram.png]]
+[[./diagrams/nagios-client-design-diagram.png]]
 
 ** Editable Link
-[[https://docs.google.com/a/vlabs.ac.in/drawings/d/10tc9FolWsVoPfEXI1FbvJmZKg77SjkGbcix2yJMg81Q/edit][Design Diagram Link]]
+[[https://docs.google.com/a/vlabs.ac.in/drawings/d/1TKAGbG8Fj5LcuY-kdZrVjE1ksHJQxFdXeRcWwE6TlWs/edit][Design Diagram Link]]
 
 ** System Files
 |------+----------+---------------------------------------------+-------------------------|
@@ -100,6 +96,65 @@
 {% endfor %}
 #+END_EXAMPLE
 
+** Configure xinetd.conf
+- Configure client to accept service requests only from nagios server. Following
+  parameter is set to nagios server ip.
+#+BEGIN_EXAMPLE
+only_from = nagios-server-ip
+#+END_EXAMPLE
+
+#+BEGIN_SRC yml :tangle roles/nagios_client/templates/xinetd.conf.j2 :eval no
+#
+# This is the master xinetd configuration file. Settings in the
+# default section will be inherited by all service configurations
+# unless explicitly overridden in the service configuration. See
+# xinetd.conf in the man pages for a more detailed explanation of
+# these attributes.
+
+defaults
+{
+# The next two items are intended to be a quick access place to
+# temporarily enable or disable services.
+#
+#       enabled         =
+        disabled        = no
+
+# Define general logging characteristics.
+        log_type        = SYSLOG daemon info
+        log_on_failure  = HOST
+        log_on_success  = PID HOST DURATION EXIT
+
+# Define access restriction defaults
+#
+#       no_access       =
+        only_from       = {{ nagios_server }}
+#       max_load        = 0
+        cps             = 50 10
+        instances       = 50
+        per_source      = 10
+
+# Address and networking defaults
+#
+#       bind            =
+#       mdns            = yes
+        v6only          = no
+
+# setup environmental attributes
+#
+#       passenv         =
+        groups          = yes
+        umask           = 002
+
+# Generally, banners are not used. This sets up their global defaults
+#
+#       banner          =
+#       banner_fail     =
+#       banner_success  =
+}
+
+includedir /etc/xinetd.d
+#+END_SRC
+
 ** Update all packages
 - All packages inside the machine are updated before configuring the nagios
   client machine.
@@ -134,6 +189,22 @@
   yum: name=nrpe state=installed
   environment: proxy_env
 #+END_SRC 
+** Copy configuration file
+- Changes in the configuration file are enforced by restarting the xinetd
+  service.
+#+BEGIN_SRC yml :tangle roles/nagios_client/tasks/main.yml :eval no
+- name: updating xinted.conf with nagios-server details
+  template: src=xinetd.conf.j2 dest=/etc/xinetd.conf
+  notify: restart xinetd
+#+END_SRC
+** Allowed hosts for polling
+- Configure IPs of nagios servers which will poll for information.
+#+BEGIN_SRC yml :tangle roles/nagios_client/tasks/main.yml :eval no
+- name: updating nrpe.cfg with nagios-server details
+  lineinfile: dest=/etc/nagios/nrpe.cfg line="allowed_hosts=127.0.0.1,{{ nagios_server }}" regexp="allowed_hosts\=127.0.0.1"
+  notify: restart nrpe
+#+END_SRC
+
 ** Start xinetd service
 - Any changes in xinetd configuration is enforced by restarting the xinetd
   service.
@@ -158,51 +229,6 @@ nagios_server: 10.100.1.8
 #+END_SRC
 * Test Cases
 ** Test Case-1
-*** Objective: 
-- Test the nagios web dashboard.
-*** Apparatus:
-1) Nagios server
-2) Nagios client
-
-*** Theory
-- Nagios server provides a web interface to monitor client machines. Web
-  dashboard runs as an http server on port 80. 
-
-*** Experiment
-- Verify whether the web url of dashboard is opening in a browser.
-
-*** Observation
-- Web interface displays the services being monitored in the system.
-
-*** Conclusion
-- If the web interface is opening then its assure that server is configure
-  properly.
-
-** Test Case-2
-*** Objective:
-- Test alert mails are send in case of critical situation.
-
-*** Apparatus:
-1) Nagios server
-2) Nagios client
-
-*** Theory
-- Nagios server sends alert messages whenever the client machine goes to
-  a critical state.
-
-*** Experiment
-- Stop a service for example "ssh" inside the client machine manually using
-  "service sshd stop" command. Now see in mail server if the email alerts are
-  received.
-
-*** Observation
-- Nagios generates a mail alert in a critical situation.
-
-*** Conclusion
-- If the email alerts are being received then the mail service is configured
-  properly.
-  
-** Test Case-3
 *** Objective:
 - Test command status by executing them on the client machine from the nagios
   server.
@@ -216,14 +242,13 @@ nagios_server: 10.100.1.8
   from the nagios server.
 
 *** Experiment
-- Execute following commands from the nagios server:
-**** Check load 
+- Execute following example commands from the nagios server:
+**** Check load
 #+BEGIN_EXAMPLE
 /usr/lib64/nagios/plugins/check_nrpe -H <ipaddress of client> -c check_load
 #+END_EXAMPLE
 
-
-**** Check users 
+**** Check users
 #+BEGIN_EXAMPLE
 /usr/lib64/nagios/plugins/check_nrpe -H <ipaddress of client> -c check_users
 #+END_EXAMPLE
