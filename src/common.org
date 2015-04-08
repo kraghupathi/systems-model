@@ -374,8 +374,8 @@ All the tasks are collated in a single main file.
 
 *** Rule for incoming ssh connection
 - Allow server to accept incoming ssh TCP port 22 connections *only* from the
-  ansible and nagios. For loop is used to enable rule for multiple management
-  server and ansible server.
+  ansible, nagios and management ips. For loop is used to enable rule for
+  multiple management server and ansible server.
 #+BEGIN_EXAMPLE
 #Allowing incoming ssh connections only from the management ips. 
 #Hopefully fail2ban will take care of bruteforce attacks from management IPs
@@ -386,6 +386,10 @@ All the tasks are collated in a single main file.
 #Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
 {% for item in ansible_server_ips  %}
 -A INPUT -m state --state NEW -s {{ item }} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
+#Allow incoming SSH connections from nagios server IPs.  Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
+{% for item in nagios_server_ips  %}  
+-A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
 #+END_EXAMPLE
 
