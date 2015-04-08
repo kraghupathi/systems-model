@@ -5,6 +5,8 @@
 #+PROPERTY: exports code
 //#+SETUPFILE: org-templates/level-0.org
 #+DESCRIPTION: Nagios Server Design Model Documentation
+#+OPTIONS: ^:nil
+#+ATTR_HTML: width="80px"
 
 * Introduction
 - This document describes the design and implementation of Monitoring System.
@@ -70,6 +72,30 @@
   monitored are =http=, =ssh=, =https=, =ping=, =nrpe check users= and =nrpe
   check load=, so the group which consists of all these services i.e. =web= is
   assigned to the reverseproxy server.
+
+- Nagios sends email whenever a problem is encountered on the client machines.
+  Problems could be like some service is in critical state due to
+  downtime. Example alert mail sent by nagios is shown below:
+#+BEGIN_EXAMPLE
+*****Nagios*****
+
+Notification Type: PROBLEM
+
+Service: DNS checkup
+Host: DNS
+Address: localhost
+State: CRITICAL
+
+Date/Time: Sun Jan 25 11:13:05 UTC 2015
+
+Additional Info:
+
+CRITICAL - Plugin timed out while executing system call
+#+END_EXAMPLE
+
+- Admin monitors client machines via web interface. Web interface runs as an
+  http service on nagios server localhost on port 80.
+[[./diagrams/nagios-dashboard-screenshot.png]]
 
 * Implementation
 ** Structure of Scripts
@@ -346,7 +372,7 @@ define contactgroup{
 |   3. | address        | router.vlabs.ac.in |
 |------+----------------+--------------------|
 #+END_EXAMPLE
-  
+
 - Nagios is configured to monitor bunch of services inside each client. Services
   monitored inside each client are defined using three directives in the
   configuration file. Following table represents an example of the directive
@@ -616,15 +642,9 @@ nagios_commands:
   dashboard runs as an http server on port 80. 
 
 *** Experiment
-- Open the web url of dashboard in a browser. A page similar to shown below will
-  open. [image][image]
+- Verify whether the web url of dashboard is opening in a browser.
 
-*** Result
-- Sample web interface is shown below:
-#+BEGIN_EXAMPLE
-#+END_EXAMPLE
-
-*** Obeservation
+*** Observation
 - Web interface displays the services being monitored in the system.
 
 *** Conclusion
@@ -648,18 +668,13 @@ nagios_commands:
   "service sshd stop" command. Now see in mail server if the email alerts are
   received.
 
-*** Result
-- Sample alert mail is shown below:
-#+BEGIN_EXAMPLE
-#+END_EXAMPLE
-
-*** Obeservation
+*** Observation
 - Nagios generates a mail alert in a critical situation.
 
 *** Conclusion
 - If the email alerts are being received then the mail service is configured
   properly.
-
+  
 ** Test Case-3
 *** Objective:
 - Test command status by executing them on the client machine from the nagios
@@ -713,7 +728,4 @@ SSH OK - OpenSSH_5.3 (protocol 2.0) | time=0.007418s;;;0.000000;10.000000
 - If the return status of the depicts the status of service in the client machine.
 
 * COMMENT TODO
-1) Test sendmail service is able to send the mail.
-2) Test all the services are being monitored.
-3) Image of nagios dashboard.
-4) Sample nagios alert mail.
+
