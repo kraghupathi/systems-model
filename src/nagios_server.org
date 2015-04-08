@@ -10,8 +10,8 @@
 
 * Introduction
 - This document describes the design and implementation of Monitoring System.
-  Nagios system is used to monitor services of our system such as ssh service,
-  cpu usage, ram usage and disk usage.
+  Nagios system is used to monitor services of a system such as ssh service, cpu
+  usage, ram usage and disk usage.
 
 * Requirements
 ** Functional Requirements
