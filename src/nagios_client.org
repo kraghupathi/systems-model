@@ -102,24 +102,20 @@ CRITICAL - Plugin timed out while executing system call
 - The implementation of this system is in terms of a collection of Ansible
   scripts which configure the machine. These scripts are organized as follows:
 #+BEGIN_EXAMPLE
-|-- nagios_server.yaml
+|-- nagios_client.yaml
 |-- roles
-|   |   |-- nagios_server
+|   |   |-- nagios_client
 |   |   |   |-- handlers
 |   |   |   |   `-- main.yaml
 |   |   |   |-- tasks
-|   |   |   |   |-- configure_servers.yaml
 |   |   |   |   `-- main.yaml
 |   |   |   |-- templates
-|   |   |   |   |-- commands.cfg
-|   |   |   |   |-- contacts.cfg.j2
-|   |   |   |   |-- nagios_server_iptables
-|   |   |   |   `-- servers.cfg
+|   |   |   |   `-- xinetd.conf.j2
 |   |   |   `-- vars
 |   |   |       `-- main.yaml
 #+END_EXAMPLE
 
-** Firewall rules for Nagios Server
+** Firewall rules for Nagios Client
 - Firewall rules applied on Nagios server are mentioned here. Description of
   firewall rules which are common across all the systems are defined in the
   common role. Rules [[Rule to allow incoming http connection][1]], [[Rule for FORWARD chain][2]], [[Rule to allow outgoing NRPE queries][3]] and [[Rule to allow outgoing SSH connections][4]] are specific to only nagios server and are
