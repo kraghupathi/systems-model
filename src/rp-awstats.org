@@ -43,7 +43,7 @@ requirements to configure reverseproxy server are as follows.
   1) Accept incoming and outgoing connections on tcp ports 80 and 443 *only* from internal
      network and from the [[.router][router]] 
   for more security requirements of reverseproxy you can find [[./common.org][here]]
-* Design of Reverse-Proxy 
+* Design
 #+CAPTION:  Reverse-Proxy Network Diagram
 #+LABEL:  fig-reverseproxy-diagram
 #+NAME: fig-reverseproxy-diagram
@@ -66,7 +66,7 @@ reverseproxy server and AWStats
 |------+----------+-------------------------------------------+--------------------------------------|
 |    2 | httpd    | /etc/httpd/conf.d/virtual-labs.ac.in.conf | virtual hosts entries  configuration |
 |------+----------+-------------------------------------------+--------------------------------------|
-|    3 | AWStats  | /etc/httpd/conf.d/awstats.conf            | httpd configuration file of AWStats  |
+|    3 | AWStats  | /etc/httpd/conf.d/awstats.conf            | httpd configuration file for AWStats |
 |------+----------+-------------------------------------------+--------------------------------------|
 |    4 | AWStats  | /etc/awstats/awstats.{{labURL}}.conf      | awstats configuration files for labs |
 |------+----------+-------------------------------------------+--------------------------------------|
@@ -74,6 +74,12 @@ reverseproxy server and AWStats
 |------+----------+-------------------------------------------+--------------------------------------|
 
 * Implementation 
+The implementation of the reverseproxy server and awstats are done
+with the following steps.
+- Note :: In this implementation, variables are used in different
+          places using "{}". Values of these variables are defined in
+          [[common_vars.org][common_vars role]]. For more information about variable
+          definition, go through the common_vars role.
 ** Directory structure of the scripts
 The implementation of this system is in terms of a collection of Ansible scripts that
 configures the machine. Scripts are organized as follows:
@@ -97,9 +103,9 @@ roles/reverseproxy_sever/
 
 ** Firewall rules
 - Rules which are specific to reverseproxy server are described [[Allow HTTP(80) packets][here]].
-- Description of each firewall rule of this reverseproxy and which are common
-  across all the systems are defined in [[.common.org][common role]].  
-*** Common firewall rules
+- Description of some firewall rules of this reverseproxy and which are common
+  across all the systems are described in [[.common.org][common role]].  
+*** INPUT firewall rules
  Description of each following firewall rule is defined in
  [[./common.org][common role]] 
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/templates/iptables
@@ -149,7 +155,7 @@ from the [[.router.org][router]].
 #+END_SRC
 The above rule satisfies the security requirements 1
 
-*** Common firewall rules
+*** INPUT firewall rules
  Description of each following firewall rule is defined in
  [[./common.org][common role]] 
 
@@ -174,7 +180,7 @@ The above rule satisfies the security requirements 1
 -A FORWARD -j REJECT --reject-with icmp-host-prohibited
 #+END_SRC
 
-*** Common firewall rules
+*** OUTPUT firewall rules
  Description of each following firewall rule is defined in
  [[./common.org][common role]] 
 
@@ -205,7 +211,7 @@ The above rule satisfies the security requirements 1
 -A OUTPUT -p tcp -m tcp --dport 443 -j ACCEPT
 #+END_SRC
 The above rule satisfies functional requirements 2 and 3
-*** Common firewall rules
+*** OUTPUT firewall rules
  Description of each following firewall rule is defined in
  [[./common.org][common role]] 
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/templates/iptables
@@ -2208,7 +2214,6 @@ Test to check the AWStats for virtual hosts
 
 
    
-
 ** Test Case ID : Reverseproxy test using internal(private) DNS and Public DNS
 
 *** Objective 
@@ -2242,8 +2247,8 @@ Test to check the reverseproxy function using private DNS and Public DN
     lab user with the requested web pages.
 
 *** Experiment 
-  - Assume we have added lab1's ip to private DNS by giving the
-    sub-domain as lab1.
+  - Added lab1's ip to private DNS by giving the sub-domain as lab1.
+  - Added router's public ip to public DNS by giving the sub-domain as lab1.
   - Using browser ::
    Browse the following lab URL 
    #+BEGIN_SRC example
@@ -2257,4 +2262,4 @@ Test to check the reverseproxy function using private DNS and Public DN
 Reverseproxy working
 *** Conclusion 
 Reverseproxy setup properly, we are able to access the lab using
-domain name of the lab and logs are being stored.
+domain name of the lab and logs are being stored for analytics.
