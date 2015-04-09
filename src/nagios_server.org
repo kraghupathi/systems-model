@@ -9,7 +9,7 @@
 #+ATTR_HTML: width="80px"
 
 * Introduction
-- This document describes the design and implementation of Monitoring System.
+ This document describes the design and implementation of Monitoring System.
   Nagios system is used to monitor services of a system such as ssh service, cpu
   usage, ram usage and disk usage.
 
@@ -36,7 +36,7 @@
    flooding.
 
 * Design
-- Given diagram describes the design of the monitoring server. Systems files are
+ Given diagram describes the design of the monitoring server. Systems files are
   listed for a quick overview of whole systems.
 ** System Design Diagram
 [[./diagrams/nagios-server-design-diagram.png]]
@@ -60,20 +60,20 @@
 |------+----------+---------------------------------------------+-------------------------|
   
 ** Configuration Design
-- In a system there may be many services of interest which are to be monitored,
+ In a system there may be many services of interest which are to be monitored,
   such as =ssh=, =ping= and =http=. Services and usage being monitored may be
   different for various machines. In order to properly define which services
   inside the machine are to be monitored, groups of services are defined. A
   group consists of various services. For example a =basic_services= group
   consists of =ssh=, =ping=, =nrpe check users= and =nrpe checking load=.
 
-- Groups are assigned to the client system depending on the services that are to
+ Groups are assigned to the client system depending on the services that are to
   monitored inside the system. For example in a reverseproxy server, services
   monitored are =http=, =ssh=, =https=, =ping=, =nrpe check users= and =nrpe
   check load=, so the group which consists of all these services i.e. =web= is
   assigned to the reverseproxy server.
 
-- Nagios sends email whenever a problem is encountered on the client machines.
+ Nagios sends email whenever a problem is encountered on the client machines.
   Problems could be like some service is in critical state due to
   downtime. Example alert mail sent by nagios is shown below:
 #+BEGIN_EXAMPLE
@@ -93,13 +93,14 @@ Additional Info:
 CRITICAL - Plugin timed out while executing system call
 #+END_EXAMPLE
 
-- Admin monitors client machines via web interface. Web interface runs as an
+ Admin monitors client machines via web interface. Web interface runs as an
   http service on nagios server localhost on port 80.
+
 [[./diagrams/nagios-dashboard-screenshot.png]]
 
 * Implementation
 ** Structure of Scripts
-- The implementation of this system is in terms of a collection of Ansible
+ The implementation of this system is in terms of a collection of Ansible
   scripts which configure the machine. These scripts are organized as follows:
 #+BEGIN_EXAMPLE
 |-- nagios_server.yaml
@@ -120,7 +121,7 @@ CRITICAL - Plugin timed out while executing system call
 #+END_EXAMPLE
 
 ** Firewall rules for Nagios Server
-- Firewall rules applied on Nagios server are mentioned here. Description of
+ Firewall rules applied on Nagios server are mentioned here. Description of
   firewall rules which are common across all the systems are defined in the
   common role. Rules [[Rule to allow incoming http connection][1]], [[Rule for FORWARD chain][2]], [[Rule to allow outgoing NRPE queries][3]] and [[Rule to allow outgoing SSH connections][4]] are specific to only nagios server and are
   described here.
@@ -156,7 +157,7 @@ CRITICAL - Plugin timed out while executing system call
 #+END_SRC
 
 *** Rule to allow incoming http connection
-- Nagios server hosts a web interface to display monitoring data. Admins access
+ Nagios server hosts a web interface to display monitoring data. Admins access
   this web interface for monitoring purposes.
 #+BEGIN_SRC yml :tangle roles/nagios_server/templates/nagios_server_iptables :eval no
 #Allow incoming requests on port 80
@@ -177,7 +178,7 @@ CRITICAL - Plugin timed out while executing system call
 #+END_SRC
 
 *** Rule for FORWARD chain
-- Nagios Server is not responsible for any packet forwarding, hence forwarding
+ Nagios Server is not responsible for any packet forwarding, hence forwarding
   rule is set to 'reject' policy.
 #+BEGIN_SRC yml :tangle roles/nagios_server/templates/nagios_server_iptables :eval no
 #Do not allow any packet to be forwarded
@@ -209,7 +210,7 @@ CRITICAL - Plugin timed out while executing system call
 #+END_SRC
 
 *** Rule to allow outgoing NRPE queries
-- Nagios server sends NRPE queries on TCP port 5666 to the client machines being
+ Nagios server sends NRPE queries on TCP port 5666 to the client machines being
   monitored.
 #+BEGIN_SRC yml :tangle roles/nagios_server/templates/nagios_server_iptables :eval no
 #Allow server to send nrpe queries
@@ -217,7 +218,7 @@ CRITICAL - Plugin timed out while executing system call
 #+END_SRC
 
 *** Rule to allow outgoing SSH connections
-- Nagios server sends SSH requests to systems where ssh service is being
+ Nagios server sends SSH requests to systems where ssh service is being
   monitored.
 #+BEGIN_SRC yml :tangle roles/nagios_server/templates/nagios_server_iptables :eval no
 #Allow server to send ssh requests
@@ -244,13 +245,13 @@ CRITICAL - Plugin timed out while executing system call
 COMMIT
 #+END_SRC
 ** Configure Commands
-- Nagios server sends NRPE query to the client machine to monitor the return
+ Nagios server sends NRPE query to the client machine to monitor the return
   status of some commands on the client machine. NRPE agent running on the
   client machines execute and sends back the return status of the commands to
   the Nagios server. The commands used for monitoring something on the client
   machines are defined in the configuration file. 
 
-- Commands are specified by the two directives in the configuration
+ Commands are specified by the two directives in the configuration
   file. Following table represents an example of directive name and the
   directive value.
 #+BEGIN_EXAMPLE
@@ -276,7 +277,7 @@ define command {
 {% endfor %}
 #+END_SRC
 ** Configure Contacts Details
-- Contact details of administrator are set by two directives in the
+ Contact details of administrator are set by two directives in the
   configuration file. Following table represents an example of the directive
   name and directive value.
 #+BEGIN_EXAMPLE
@@ -289,7 +290,7 @@ define command {
 |------+----------------+-------------------|
 #+END_EXAMPLE
 
-- In the configuration template value of the directives are set to variables,
+ In the configuration template value of the directives are set to variables,
   and value of these variables are fetched from =vars/main.yml=.
 
 #+BEGIN_SRC yml :tangle roles/nagios_server/templates/contacts.cfg.j2
@@ -349,7 +350,7 @@ define contactgroup{
 
 #+END_SRC
 ** Configure Clients Address and Monitoring Services
-- Nagios requires details such as Hostaddress and Hostname of client machines to
+ Nagios requires details such as Hostaddress and Hostname of client machines to
   be monitored. These details of client machine are specified in the
   configuration file using three directives. Following table represents an
   example of the directive name and directive value.
@@ -365,7 +366,7 @@ define contactgroup{
 |------+----------------+--------------------|
 #+END_EXAMPLE
 
-- Nagios is configured to monitor bunch of services inside each client. Services
+ Nagios is configured to monitor bunch of services inside each client. Services
   monitored inside each client are defined using three directives in the
   configuration file. Following table represents an example of the directive
   name and directive value.
@@ -381,7 +382,7 @@ define contactgroup{
 |------+---------------------+-----------------|
 #+END_EXAMPLE
 
-- In the configuration template directives are set to varaibles and the value of
+ In the configuration template directives are set to varaibles and the value of
   these variables are fetched from =vars/main.yml=. A 'for loop' loops over the
   hosts list to specify all the client machines and another 'for loop' loops
   over the services define in the group to specify all the services.
@@ -409,7 +410,7 @@ check_command           {{ s.command }}
 #+END_SRC
     
 ** Update all packages
-- All packages inside the machine are updated before configuring the nagios
+ All packages inside the machine are updated before configuring the nagios
   server machine.
 #+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml :eval no
 - name: running yum update
@@ -418,7 +419,7 @@ check_command           {{ s.command }}
 #+END_SRC
    
 ** Install Nagios packages
-- Following nagios packages are installed in the system:
+ Following nagios packages are installed in the system:
 1) =nagios=
 2) =nagios-pulgins-all=
 3) =nagios-plugins-nrpe=
@@ -442,7 +443,7 @@ check_command           {{ s.command }}
   environment: proxy_env
 #+END_SRC 
 ** Set firewall rules
-- Firewall rules are set by following steps:
+ Firewall rules are set by following steps:
    1) Copy iptables configuration from ansible machine to the server.
    2) Restart iptables service to enforce the configuration.
 #+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
@@ -452,7 +453,7 @@ check_command           {{ s.command }}
      - restart iptables
 #+END_SRC
 ** Create Nagios admin user for web interface
-- A user is created on the nagios server for web interface. Value of
+ A user is created on the nagios server for web interface. Value of
   =nagios_user= and =nagios_password= are fetched from =vars/main.yml= file.
 #+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
 - name: creating nagiosadmin user for web interface
@@ -461,7 +462,7 @@ check_command           {{ s.command }}
 #+END_SRC
 
 ** Copy contancts.cfg configuration file to the server
-- Configuration file is copied from ansible server to the nagios server and
+ Configuration file is copied from ansible server to the nagios server and
   nagios service is restarted.
 #+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.ymlw
 - name: Updating contacts.cfg
@@ -470,7 +471,7 @@ check_command           {{ s.command }}
 #+END_SRC
 
 ** Update nagios.cfg file
-- Location of =servers.cfg= file is set in the =nagios.cfg= configuration file
+ Location of =servers.cfg= file is set in the =nagios.cfg= configuration file
   by =cfg_file= directive. Value of =nagios_cfg_path= variable is fetched from
   =vars/main.yml= file.
 #+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.ymlw
@@ -486,7 +487,7 @@ check_command           {{ s.command }}
 #+END_SRc
 
 ** Copy servers.cfg and commands.cfg configuration file
-- Configuration files are copied from ansible machine to the nagios server and
+ Configuration files are copied from ansible machine to the nagios server and
   nagios service is restarted.
 #+BEGIN_SRC yml :tangle roles/nagios_server/tasks/configure_servers.yml
 ---
@@ -501,7 +502,7 @@ check_command           {{ s.command }}
   notify: restart nagios
 #+END_SRC
 ** Load additional commands
-- Location of =servers.cfg= file is set in the =nagios.cfg= configuration file
+ Location of =servers.cfg= file is set in the =nagios.cfg= configuration file
   by =cfg_file= directive. Value of =nagios_cfg_path= variable is fetched from
   =vars/main.yml= file.
 #+BEGIN_SRC yml :tangle roles/nagios_server/tasks/configure_servers.yml
@@ -510,7 +511,7 @@ check_command           {{ s.command }}
   notify: restart nagios
 #+END_SRC
 ** Start nagios service
-- Any changes in nagios configuration is enforced by restarting the nagios
+ Any changes in nagios configuration is enforced by restarting the nagios
   service.
 #+BEGIN_SRC yml :tangle roles/nagios_server/handlers/main.yml
 - name: restart nagios
@@ -519,7 +520,7 @@ check_command           {{ s.command }}
 #+END_SRC
 
 ** Start apache service
-- Any changes in apache configuration is enforced by restarting the apache
+ Any changes in apache configuration is enforced by restarting the apache
   service.
 #+BEGIN_SRC yml :tangle roles/nagios_server/handlers/main.yml
 - name: restart apache
@@ -528,7 +529,7 @@ check_command           {{ s.command }}
 #+END_SRC
 
 ** Start firewall service
-- Any changes in iptables configuration file, to update the firewall is enforced
+ Any changes in iptables configuration file, to update the firewall is enforced
   by restarting the iptables service.
 #+BEGIN_SRC yml :tangle roles/nagios_server/handlers/main.yml
 - name: restart iptables
@@ -537,7 +538,7 @@ check_command           {{ s.command }}
 #+END_SRC
 
 ** Define Variables and Services groups
-- Various variables used by the ansible playbook are defined here. Following
+ Various variables used by the ansible playbook are defined here. Following
   table represents the variables name and their description.
 
 |------+--------------------+--------------------------------------------------------|
@@ -604,7 +605,7 @@ nagios_commands:
 
 #+END_SRC
 ** Nagios Server Installation Script
-- Nagiosg server is configured by using following roles:
+ Nagiosg server is configured by using following roles:
   1) =common=
   2) =ossec_client=
   3) =rsyslog_client=
@@ -624,52 +625,52 @@ nagios_commands:
 * Test Cases
 ** Test Case-1
 *** Objective: 
-- Test the nagios web dashboard.
+ Test the nagios web dashboard.
 *** Apparatus:
 1) Nagios server
 2) Nagios client
 
 *** Theory
-- Nagios server provides a web interface to monitor client machines. Web
+ Nagios server provides a web interface to monitor client machines. Web
   dashboard runs as an http server on port 80. 
 
 *** Experiment
-- Verify whether the web url of dashboard is opening in a browser.
+ Verify whether the web url of dashboard is opening in a browser.
 
 *** Observation
-- Web interface displays the services being monitored in the system.
+ Web interface displays the services being monitored in the system.
 
 *** Conclusion
-- If the web interface is opening then its assure that server is configure
+ If the web interface is opening then its assure that server is configure
   properly.
 
 ** Test Case-2
 *** Objective:
-- Test alert mails are send in case of critical situation.
+ Test alert mails are send in case of critical situation.
 
 *** Apparatus:
 1) Nagios server
 2) Nagios client
 
 *** Theory
-- Nagios server sends alert messages whenever the client machine goes to
+ Nagios server sends alert messages whenever the client machine goes to
   a critical state.
 
 *** Experiment
-- Stop a service for example "ssh" inside the client machine manually using
+ Stop a service for example "ssh" inside the client machine manually using
   "service sshd stop" command. Now see in mail server if the email alerts are
   received.
 
 *** Observation
-- Nagios generates a mail alert in a critical situation.
+ Nagios generates a mail alert in a critical situation.
 
 *** Conclusion
-- If the email alerts are being received then the mail service is configured
+ If the email alerts are being received then the mail service is configured
   properly.
   
 ** Test Case-3
 *** Objective:
-- Test command status by executing them on the client machine from the nagios
+ Test command status by executing them on the client machine from the nagios
   server.
 
 *** Apparatus:
@@ -677,11 +678,11 @@ nagios_commands:
 2) Nagios client
 
 *** Theory
-- Services can also be monitored by running some commands on the client machine
+ Services can also be monitored by running some commands on the client machine
   from the nagios server.
 
 *** Experiment
-- Execute following commands from the nagios server:
+ Execute following commands from the nagios server:
 **** Check load 
 #+BEGIN_EXAMPLE
 /usr/lib64/nagios/plugins/check_nrpe -H <ipaddress of client> -c check_load
@@ -698,7 +699,7 @@ nagios_commands:
 /usr/lib64/nagios/plugins/check_ssh -p 22 <ipaddress of client>
 #+END_EXAMPLE
 *** Result
-- Output of commands when executed on client machine: 10.4.15.117 are as
+ Output of commands when executed on client machine: 10.4.15.117 are as
   follows:
 **** Sample output for command 1.
 #+BEGIN_EXAMPLE
@@ -714,9 +715,9 @@ USERS OK - 0 users currently logged in |users=0;5;10;0
 SSH OK - OpenSSH_5.3 (protocol 2.0) | time=0.007418s;;;0.000000;10.000000
 #+END_EXAMPLE
 *** Observation
-- Return status of the services is displayed in the command output.
+ Return status of the services is displayed in the command output.
 
 *** Conclusion
-- If the return status of the depicts the status of service in the client machine.
+ If the return status of the depicts the status of service in the client machine.
 
 
