@@ -146,13 +146,8 @@ CRITICAL - Plugin timed out while executing system call
 -A INPUT -p icmp --icmp-type echo-request -j DROP
 
 #Allow to continue already related and established connections
--A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
 
-#Allowing incoming ssh connections from the management ips.
-#Hopefully fail2ban will take care of bruteforce attacks from management IPs
-{% for item in management_ips  %}  
--A INPUT -m state --state NEW -s {{ item }} -p tcp -m tcp --dport 22 -j ACCEPT
-{% endfor %}
 #Allowing incoming ssh connections from ansible server. 
 #Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
 {% for item in ansible_server_ips  %}
@@ -239,9 +234,6 @@ CRITICAL - Plugin timed out while executing system call
 
 #Allow outgoing connections to OSSEC server
 -A OUTPUT -p udp -m udp --dport 1514 -j ACCEPT
-
-#Allow outgoing nrpe queries to internal network on port 5666
--A OUTPUT -d {{local_subnet}} -m state --state NEW -p tcp -m tcp --sport 5666 -j ACCEPT
 
 #Log all other "blocked_output_" attempts
 -A OUTPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_output_"
