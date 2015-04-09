@@ -1,0 +1,498 @@
+#+TITLE:     Router - Design Model and Implementation
+#+DATE:      2015-03-25 Wed
+#+PROPERTY: session *scratch*
+#+PROPERTY: results output
+#+PROPERTY: exports code
+#+SETUPFILE: org-templates/level-0.org
+#+DESCRIPTION: Router Design and  Documentation
+#+OPTIONS: ^:nil
+
+* Introduction
+A router is a networking device that forwards data packets between computer
+networks. It acts as a gateway to and for all other servers.This documentation describes
+the router server setup on amazon web services using automated scripts. These scripts are
+executed directly from the configuration server which is ansible in this case. Router is
+configured automatically by the ansible. 
+
+* Requirements
+The functional and security requirements of router are:
+
+** Functional Requirements
+  1) Acts as a gateway to and for all other servers to reach internet.
+  2) Routes traffic on TCP port 80/443 by forwarding packets to reverse proxy.
+  3) Routes traffic on UDP port 53 by forwarding packets to public DNS.
+  4) Accept incoming ssh connection from ansible on TCP port 22.
+  5) Accept the incoming requests from the lab users via TCP port 80/443
+     and UDP port 53.
+  6) Accept incoming ssh connection from nagios and management IPs on TCP port 22.
+
+** Security Requirements
+  1) TCP port 22 is open for ansible,nagios and management IPs.
+  2) TCP port 80,443; UDP port 53 and ICMP (Internet Control Message Protocol)
+     are open for all.
+  3) Rate limiting on all open ports.
+  4) General server hardening rules are enforced by [[./common.org][common]] role.
+ 
+* Design
+** Snapshot
+#+CAPTION:  Router Diagram
+#+LABEL:  fig-router-diagram
+#+NAME: fig-router-diagram
+** Overall Network diagram of router
+The following network diagram represents the structure of the
+router. In this diagram only router is the active node. It
+shows the connections from/to router to/from other servers such
+as DNS,reverse-proxy etc. All the non active nodes are represented using dotted
+rectangles. 
+[[./diagrams/router-config.png]]
+
+* Implementation
+** Directory Structure of Scripts
+- The implementation of this system is in terms of a collection of Ansible
+  scripts that configure the machine. These scripts are organized as follows:
+
+#+BEGIN_EXAMPLE
+
+    |-- router.yml
+    |-- roles
+    |   |-- router
+    |   |   |-- handlers
+    |   |   |   `--main.yml
+    |   |   |-- tasks
+    |   |   |   `--main.yml
+    |   |   |-- templates
+    |   |   |   `--router_iptables
+
+#+END_EXAMPLE
+
+** What are the Firewall rules
+
+*** NAT Rules
+- Default policy for prerouting, postrouting and output is set to be as ACCEPT. If packet
+  does not match any rule then the default action is applied to the packet.
+  Packet counters are set to [0:0].  First counter represents the number of
+  packets that matched the rule for the chain, and second counter represents the
+  total size of the packets that matched the rule.
+#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
+#Note that request can be forwarded only to one machine and not to multiple machines
+*nat
+:PREROUTING ACCEPT [0:0]
+:POSTROUTING ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+#+END_SRC
+
+**** Forwarding rules
+The following nat rule forward the incoming DNS requests
+to public dns.
+
+#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
+-A PREROUTING -d {{router_interface_ip}} -p udp -m udp --dport 53 -j DNAT --to-destination {{public_dns_ip}}:53
+#+END_SRC
+
+The following nat rules forwards the incoming HTTP, HTTPS requests to reverse proxy.
+
+#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
+-A PREROUTING -d {{router_interface_ip}} -p tcp -m tcp --dport 80 -j DNAT --to-destination {{reverseproxy_ip}}:80
+-A PREROUTING -d {{router_interface_ip}} -p tcp -m tcp --dport 443 -j DNAT --to-destination {{reverseproxy_ip}}:443
+#+END_SRC
+ 
+**** SNAT Rule
+The following SNAT rule will route all packets going outside to router public IP. 
+Source NAT (SNAT) changes the source address in IP header of a packet. It may also change 
+the source port in the TCP/UDP headers. The typical usage is to change the private 
+address/port into a public address/port for packets leaving your network.
+
+#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no 
+-A POSTROUTING -o {{router_external_interface}} ! -d {{local_subnet}} -j SNAT --to-source {{router_interface_ip}}
+COMMIT
+#+END_SRC
+
+*** Default rules for filter table
+- Default policy for input, forward and output is set to be as ACCEPT. If packet
+  does not match any rule then the default action is applied to the packet.
+  Packets counters are set to [0:0].  First counter represents the number of
+  packets that matched the rule for the chain, and second counter represents the
+  total size of the packets that matched the rule.
+#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
+#If packet does not match any rule then the default action is applied to the packet
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+#+END_SRC
+
+*** Rule for accepting loopback connections
+- Allow internal communication between services running within the router, over
+  loopback interface. Input interface is also specified to avoid any security
+  breach.
+#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
+#Allow internal process to process communication over loopback interface
+-A INPUT -i lo -d 127.0.0.0/8 -j ACCEPT
+#+END_SRC
+
+*** Rule for rate limiting on incoming connections
+ -Firewall rule to accept 20 new connections per 30 seconds.
+  If user tries to request more than 20 connections per 30 seconds, the
+  connection is dropped.
+#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
+#Rate limit new connections to 20 new connections per 30 seconds 
+-A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --set
+-A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --rcheck --seconds 30 --hitcount 20 -m limit --limit 2/min -j LOG --log-prefix "new_limit_"
+-A INPUT ! -p udp -m state --state NEW -m recent --name ssh_limit --rcheck --seconds 30 --hitcount 20 -j DROP
+#+END_SRC
+
+*** Rule for rate limiting on ICMP
+#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
+#Accept ICMP ping requests at limited rate 
+-A INPUT -p icmp --icmp-type echo-request -m limit --limit 60/minute --limit-burst 120 -j ACCEPT
+-A INPUT -p icmp --icmp-type echo-request -m limit --limit 1/minute --limit-burst 2 -j LOG
+-A INPUT -p icmp --icmp-type echo-request -j DROP
+#+END_SRC
+
+*** Rule for ongoing connection
+- Allow router to continue already related and established connections. Previous
+  connections must have passed through the firewall and if they got established,
+  connection is allowed to continue.
+#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
+#Allow ongoing connections
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+#+END_SRC
+
+*** Rule for incoming SSH connections from management IPs
+- Allowing router to accept incoming ssh TCP port 22 connections from the
+  management IPs. Hopefully fail2ban will take care of the brute force attacks from
+  management IPs.
+#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
+#Allow incoming SSH connections from management IPs.
+{% for item in management_ips  %}
+-A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
+#+END_SRC
+
+*** Rule for incoming SSH connections from ansible server
+- Allowing router to accept incoming ssh TCP port 22 connections *only* from the
+  ansible server IPs. Hopefully fail2ban will take care of the brute force attacks from
+  management IPs.
+#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
+#Allow incoming SSH connections from ansible server IPs.
+{% for item in ansible_server_ips  %}
+-A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
+#+END_SRC
+
+*** Rule for incoming SSH connections from Nagios server
+- Allowing router to accept incoming ssh TCP port 22 connections from the
+  nagios server IPs. Hopefully fail2ban will take care of the brute force attacks from
+  nagios IPs.
+#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
+#Allow incoming SSH connections from nagios server IPs. 
+{% for item in nagios_server_ips  %}
+-A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
+#+END_SRC
+
+*** Rule for allowing incoming NRPE queries from nagios server
+- The following rule allows incoming NRPE queries for nagios from nagios servers.
+#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
+-A INPUT -m state --state NEW -p tcp -m tcp --dport 5666 -j ACCEPT
+#+END_SRC
+
+*** Rule for allowing SNMP queries from Cacti server
+-  Allows incoming packets on udp ports 161 and 162 from cacti server
+#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
+#Allow SNMP queries from cacti servers
+#-A INPUT -p udp -m udp --dport 161 -j ACCEPT
+#-A INPUT -p udp -m udp --dport 162 -j ACCEPT
+#+END_SRC
+
+*** Rule for logging blocked inputs
+- This firewall rule logs all other input connections made on denied ports
+#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
+-A INPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_input_"
+#+END_SRC
+
+*** ICMP rule
+ICMP rule for replying proper error message
+#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
+#Reply with proper ICMP error message and reject the connection
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+#+END_SRC
+
+*** FORWARD Rules
+**** Accept forward rule
+This firewall rule enables packet forwarding 
+#+BEGIN_SRC yaml :tangle build/roles/reverseproxy_server/templates/router_iptables :eval no
+#Enable packet forwarding through
+-A FORWARD -j ACCEPT
+#
+#+END_SRC
+
+*** Rule for incoming ping request
+- Allow router to accept incoming ping requests from anywhere.
+#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no 
+#Allow router to accept incoming ping requests from anywhere
+-A INPUT -p icmp --icmp-type echo-request -j ACCEPT
+#+END_SRC
+
+*** Rule for all other incoming packets
+- Reject all the INPUT packets which does not match any of the defined rules.
+#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
+#Drop all the INPUT packets which does not match any of the rules
+-A INPUT -j REJECT
+#+END_SRC
+
+*** Output Rules
+**** Outgoing connections
+- This rule allows outgoing connections to localhost
+#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
+-A OUTPUT -s 127.0.0.0/8 -o lo -j ACCEPT
+#+END_SRC
+
+**** Onging connections
+- This rule allows ongoing connections
+#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
+-A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+#+END_SRC
+
+**** DNS queries
+- This rule allows router to make DNS queries
+#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
+-A OUTPUT -p udp -m udp --dport 53 -j ACCEPT
+#+END_SRC
+
+**** Logwatch emails
+- This rule allows server to send emails. Required for sending logwatch emails.
+#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
+-A OUTPUT -p tcp -m tcp --dport 25 -j ACCEPT
+#+END_SRC
+
+**** Rule for allowing router to contact web-servers
+- Allow server to contact web-servers. This is must for router to be able to forward requests to reverseproxy server.
+#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
+-A OUTPUT -p tcp -m tcp --dport 80 -j ACCEPT
+-A OUTPUT -p tcp -m tcp --dport 443 -j ACCEPT
+#+END_SRC
+
+**** Allow outgoing ping requests
+- Allow router to send ping requests to anywhere.
+#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no 
+#Allow router to send ping requests to anywhere.
+-A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT
+#+END_SRC
+
+**** Allow outgoing connections to rsyslog server
+- Allows router to send outgoing connection requests to ryslog server
+#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
+-A OUTPUT -p udp -m udp --dport 514 -j ACCEPT
+#+END_SRC
+
+**** Allow outgoing connections to OSSEC server
+- Allows router to send outgoing connection requests to ryslog server
+#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
+-A OUTPUT -p udp -m udp --dport 1514 -j ACCEPT
+#+END_SRC
+
+**** Rule to log all other "blocked_output_" attempts
+#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
+-A OUTPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_output_"
+#+END_SRC
+
+
+*** Rule for OUTPUT loopback packets
+- Allow internal communication between services running within the router, over
+  loopback interface. Output interface is also specified to avoid any security
+  breach.
+#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
+#Allow internal process to process communication over loopback interface
+-A OUTPUT -o lo -j ACCEPT
+#+END_SRC
+    
+*** Rule for all other outgoing packets
+- Reject all the OUTPUT packets which does not match any of the defined rules and 
+  reply with proper ICMP error message while rejecting the connection.
+#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
+#Reject all the OUTPUT packets which does not match any of the rules
+-A OUTPUT -j REJECT --reject-with icmp-host-prohibited
+COMMIT
+#+END_SRC
+
+*** Enforce filter rules
+#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
+COMMIT
+#+END_SRC
+
+** Enabling IP forwarding
+- IP forwarding has to be enabled when we have to cofigure our machines as router.If we are setting up a
+  Linux router/gateway or maybe a VPN server or just a plain dial-in server then we will need to enable forwarding.
+#+BEGIN_SRC yml :tangle roles/router/tasks/main.yml
+---
+- name: Enable IP forwarding
+  lineinfile: line="net.ipv4.ip_forward = 1" regexp="^net.ipv4.ip_forward" dest=/etc/sysctl.conf
+  notify:
+    - enable_ip_forwarding
+#+END_SRC
+
+** Setting Firewall rules
+- Firewall rules are set by following steps:
+   1) Copy iptables configuration file from the ansible machine to the router
+      machine.
+   2) Restart iptables service to enforce the configuration.
+#+BEGIN_SRC yml :tangle roles/router/tasks/main.yml
+---
+ - name: Copying iptables config files
+   template: src=iptables dest=/etc/sysconfig/iptables owner=root group=root mode=600
+   notify:
+     - restart iptables
+#+END_SRC
+   
+** Applying Firewall rules 
+- Any changes in iptables configuration file to update the firewall is enforced
+  by restarting the iptables service.
+#+BEGIN_SRC yml :tangle roles/router/handlers/main.yml
+---
+ - name: restart iptables
+   service: name=iptables state=restarted
+#+END_SRC
+
+** Variables Definition
+- Variables are used by the ansible scripts to configure router. Values of these
+  variables is fetched from the "common_vars" role.
+  1) Proxy environment
+  2) Ansible server ip
+#+BEGIN_SRC yaml :tangle roles/common/meta/main.yml
+---
+dependencies:
+- role: common_vars
+#+END_SRC
+
+** Router Installation Script
+- Router is configured by using common,ossec_client,rsyslog_client,nagios_client and router roles.
+#+BEGIN_SRC yml :tangle router.yml
+---
+- name: This file configures machine as router  
+  hosts: router
+  remote_user: root
+  roles:
+   - common
+   - ossec_client
+   - rsyslog_client
+   - nagios_client
+   - router
+#+END_SRC
+
+* Test Cases
+** Test case ID :: router-test-case-1
+*** Description
+Testing whether Router allows SSH access from Ansible.
+*** Steps to run the test case
+1) Put the ansible's ssh keys on the router.
+2) SSH to the router using following command:
+#+BEGIN_EXAMPLE
+root@ansible:~$ ssh -v root@<router_ip> 
+#+END_EXAMPLE
+*** Expected result
+#+BEGIN_EXAMPLE
+root@router:~$
+#+END_EXAMPLE
+*** Result
+#+BEGIN_EXAMPLE
+root@router:~$
+#+END_EXAMPLE    
+*** Test Passed 
+Yes
+
+** Test case ID :: router-test-case-2
+*** Description
+Testing SSH access is denied from other machine.
+*** Steps to run the test case
+1) SSH from other machine to the router using following command:
+#+BEGIN_EXAMPLE
+root@someserver:~$ ssh -v root@<router_ip> 
+#+END_EXAMPLE
+*** Expected result
+#+BEGIN_EXAMPLE
+permission denied.
+root@someserver:~$  
+#+END_EXAMPLE
+*** Result
+#+BEGIN_EXAMPLE
+permission denied.
+root@someserver:~$  
+#+END_EXAMPLE
+*** Test Passed
+Yes
+
+** Test case ID :: router-test-case-3
+*** Description
+Testing router is able to ping to other machine.
+*** Steps to run the test case
+1) Ping to some other machine using following command:
+#+BEGIN_EXAMPLE
+root@router:~$ ping 8.8.8.8
+#+END_EXAMPLE
+*** Expected result
+#+BEGIN_EXAMPLE
+PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
+64 bytes from 8.8.8.8: icmp_seq=1 ttl=54 time=17.2 ms
+64 bytes from 8.8.8.8: icmp_seq=2 ttl=54 time=17.1 ms
+#+END_EXAMPLE
+*** Result
+#+BEGIN_EXAMPLE
+PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
+64 bytes from 8.8.8.8: icmp_seq=1 ttl=54 time=17.2 ms
+64 bytes from 8.8.8.8: icmp_seq=2 ttl=54 time=17.1 ms
+#+END_EXAMPLE
+*** Test Passed
+Yes
+
+** Test case ID :: router-test-case-4
+*** Description
+Testing router is able to make dns queries.
+*** Steps to run the test case
+1) Set nameserver in =/etc/resolv.conf=.
+2) Ping to google.com server using following command:
+#+BEGIN_EXAMPLE
+root@router:~$ ping google.com
+#+END_EXAMPLE
+
+*** Expected result
+#+BEGIN_EXAMPLE
+PING google.com (74.125.236.162) 56(84) bytes of data.
+64 bytes from maa03s16-in-f2.1e100.net (74.125.236.162): icmp_seq=1 ttl=52 time=18.8 ms
+64 bytes from maa03s16-in-f2.1e100.net (74.125.236.162): icmp_seq=2 ttl=52 time=14.9 ms
+#+END_EXAMPLE
+*** Result
+#+BEGIN_EXAMPLE
+PING google.com (74.125.236.162) 56(84) bytes of data.
+64 bytes from maa03s16-in-f2.1e100.net (74.125.236.162): icmp_seq=1 ttl=52 time=18.8 ms
+64 bytes from maa03s16-in-f2.1e100.net (74.125.236.162): icmp_seq=2 ttl=52 time=14.9 ms
+#+END_EXAMPLE
+
+*** Test Passed
+Yes
+
+** Test case ID :: router-test-case-5
+*** Description
+Tesing router is pingable from other machine.
+*** Steps to run the test case
+1) Ping router from other machine using following command:
+#+BEGIN_EXAMPLE
+root@someserver:~$ ping router_ip
+#+END_EXAMPLE
+
+*** Expected result
+#+BEGIN_EXAMPLE
+PING <router_ip> (<router_ip>) 56(84) bytes of data.
+64 bytes from <router_ip>: icmp_seq=1 ttl=54 time=17.2 ms
+64 bytes from <router_ip>: icmp_seq=2 ttl=54 time=17.1 ms
+#+END_EXAMPLE
+*** Result
+#+BEGIN_EXAMPLE
+PING <router_ip> (<router_ip>) 56(84) bytes of data.
+64 bytes from <router_ip>: icmp_seq=1 ttl=54 time=17.2 ms
+64 bytes from <router_ip>: icmp_seq=2 ttl=54 time=17.1 ms
+#+END_EXAMPLE
+*** Test Passed
+Yes
+
+
