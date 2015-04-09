@@ -1,19 +1,24 @@
 #+Title: Common Roles Design Model and Implementation
-#+Date: 10 March 2015
+#+Date: April 9, 2015. Thursday
 #+PROPERTY: session *scratch*
 #+PROPERTY: results output
 #+PROPERTY: exports code
 #+SETUPFILE: org-templates/level-0.org
+#+OPTIONS: ^nil
 
 * Introduction
-This document describes the requirements, design and implementation of
-the common roles which is part of the cluster. A =role= is a specific
-set of configuration and =common roles= are the roles which will be
-applied on all the deployed servers.
+This document describes the requirements, design and implementation of the
+common roles. A =role= in Ansible terminology is a specific set of configuration
+and =common roles= is a role which is applied on all the deployed servers.
 
 * Requirements
 
-The functional requirements for common roles are:
+** Functional Requirements
+
+1) Mail Summary of log files periodically.
+2) Secure system by allowing only the ssh based access.
+3) Make provision to audit all the commands run on servers.
+4) Capture and Ban suspected malicious attackers.
 
 |------------------+--------------------+--------------------------------|
 | *Requirement ID* | *Requirement*      | *Descritpion*                  |
@@ -33,10 +38,6 @@ The functional requirements for common roles are:
 |                  | attacks            | are captured and banned        |
 |------------------+--------------------+--------------------------------|
 
-*Note:* the convention followed in naming the requirement is: 
-   + abbreviation for requirement: req
-   + type of requirement that they belong to commons: C
-   + identity number: starting from 1.1
 
 The security best practices is to be followed while defining the
 functionalities. Processes suggested for =hardening a server= is
@@ -512,3 +513,15 @@ COMMIT
 #+END_EXAMPLE
     
     
+* COMMENT Timeline
+|------+-------------------------+------------+----------+------------------------------------------------------|
+| S.no | Day                     | Start Time | End Time | Tasks                                                |
+|------+-------------------------+------------+----------+------------------------------------------------------|
+|   1. | April 9, 2015, Thursday | 09:20 a.m. |          | - Confirm tangle output is same as aws implmentation |
+|      |                         |            |          | - Start modeling common role                         |
+|      |                         |            |          | - Write Down functional and  security requirements.  |
+|      |                         |            |          | - Make a common design diagram                       |
+|      |                         |            |          | - Correct structure of scripts                       |
+|      |                         |            |          | -                                                    |
+|------+-------------------------+------------+----------+------------------------------------------------------|
+|   2. |                         |            |          |                                                      |
