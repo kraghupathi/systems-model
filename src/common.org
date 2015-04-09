@@ -3,137 +3,434 @@
 #+PROPERTY: session *scratch*
 #+PROPERTY: results output
 #+PROPERTY: exports code
-#+SETUPFILE: org-templates/level-0.org
+\#+SETUPFILE: org-templates/level-0.org
 #+OPTIONS: ^nil
 
 * Introduction
-This document describes the requirements, design and implementation of the
-common roles. A =role= in Ansible terminology is a specific set of configuration
-and =common roles= is a role which is applied on all the deployed servers.
+The document describes the requirements, design and implementation of the common
+role. A =role= in Ansible terminology is a specific set of configuration, and
+=common role= is a role, which is applied on all the deployed servers.
 
 * Requirements
-
 ** Functional Requirements
 
-1) Mail Summary of log files periodically.
+1) Mail summary of log files periodically.
 2) Secure system by allowing only the ssh based access.
 3) Make provision to audit all the commands run on servers.
 4) Capture and Ban suspected malicious attackers.
 
-|------------------+--------------------+--------------------------------|
-| *Requirement ID* | *Requirement*      | *Descritpion*                  |
-|------------------+--------------------+--------------------------------|
-| reqC-1.1         | Log file           | Summary of log files           |
-|                  | summary            | is mailed periodically         |
-|------------------+--------------------+--------------------------------|
-| reqC-1.2         | Securing the       | System is secured by           |
-|                  | systems            | allowing only the ssh          |
-|                  |                    | based access                   |
-|------------------+--------------------+--------------------------------|
-| reqC-1.3         | Auditing the       | Provision is made to           |
-|                  | servers            | audit all the commands run     |
-|                  |                    | on servers                     |
-|------------------+--------------------+--------------------------------|
-| reqC-1.4         | Blocking malicious | Suspected malicious attacker's |
-|                  | attacks            | are captured and banned        |
-|------------------+--------------------+--------------------------------|
-
-
-The security best practices is to be followed while defining the
-functionalities. Processes suggested for =hardening a server= is
-implemented. A good documentation on hardening a server can be found
-here: [[http://www.serverhardening.com/][Server Hardening]].
+A good documentation on hardening a server can be found here: [[http://www.serverhardening.com/][Server Hardening]].
 
 * Design
-Common roles will ensure that the functionalities will be applied on
-all the deployed servers.
+** System Design Diagram
+[[./diagrams/overall-model-aws-cluster.png]]
+
+** Editable Link
+[[https://docs.google.com/drawings/d/1-_1DAonwj9mfJYaXqHwZVHbzYEgDkzdTjOzDCBTpr-c/edit][Google Drawing Link]]
+
+** Configuration Design
+
+|-----------------+--------------------+-----------------------------------------|
+| Requirement No. | Requirement        | Implementation                          |
+|-----------------+--------------------+-----------------------------------------|
+|              1. | Log file           | *logwatch* is configured to obtain log  |
+|                 | summary            | file summary                            |
+|-----------------+--------------------+-----------------------------------------|
+|              2. | Securing the       | *sshd-config* is configured to allow    |
+|                 |                    | only the ssh based access and disable   |
+|                 |                    | password based access                   |
+|-----------------+--------------------+-----------------------------------------|
+|              3. | Auditing the       | History settings are configured         |
+|                 | servers            | to log the commands run on the servers  |
+|                 |                    | with time stamp                         |
+|-----------------+--------------------+-----------------------------------------|
+|              4. | Blocking malicious | *fail2ban* is configured to capture and |
+|                 | attacks            | block suspicious attacker's IP          |
+|-----------------+--------------------+-----------------------------------------|
 
 * Implementation
-The mentioned requirements are addressed and implemented in the following
-way:
 
-|------------------+--------------------+---------------------------------|
-| *Requirement ID* | *Requirement*      | *Implementation*                |
-|------------------+--------------------+---------------------------------|
-| reqC-1.1         | Log file           | Log file summary is obtained    |
-|                  | summary            | by installing and configuring   |
-|                  |                    | the tool - *logwatch*           |
-|------------------+--------------------+---------------------------------|
-| reqC-1.2         | Securing the       | The system is secured by        |
-|                  | systems            | allowing only the ssh based     |
-|                  |                    | access. *sshd-config* file is   |
-|                  |                    | disabled for password based     |
-|                  |                    | access.                         |
-|------------------+--------------------+---------------------------------|
-| reqC-1.3         | Auditing the       | The commands run on the servers |
-|                  | servers            | is logged along with the time   |
-|                  |                    | stamp. The history settings is  |
-|                  |                    | configured to log the commands. |
-|------------------+--------------------+---------------------------------|
-| reqC-1.4         | Blocking malicious | Suspicious attackers IP is      |
-|                  | attacks            | captured and blocked            |
-|                  |                    | using the tool - *fail2ban*.    |
-|------------------+--------------------+---------------------------------|
-  
 ** Structure of the scripts
-The implementation of this system is in terms of a collection of
-ansible scripts that configure the machine.  These scripts are
-organized in the following way:
+The implementation of this system is in terms of a collection of ansible scripts
+that configure the machine.  These scripts are organized in the following way:
 
 #+BEGIN_EXAMPLE
-|-- ansible.yml
-|-- roles
-|   |-- ansible
-|   |   |...
-|   |   |...
-|   |-- common
-|   |   |-- files
-|   |   |    |-- jail.local
-|   |   |    `-- history.sh
-|   |   |-- handlers
-|   |   |    `-- main.yml
-|   |   |-- meta
-|   |   |   `-- main.yml
-|   |   |-- tasks
-|   |   |   |-- history_config.yml
-|   |   |   |-- common_pkg.yml
-|   |   |   |-- logwatch.yml
-|   |   |   |-- sendmail_configure.yml
-|   |   |   |-- main.yml
-|   |   |   |-- fail2ban.yml
-|   |   |   `-- sshd_config.yml
+|-code
+|   |-- common.yml
+|   |-- roles
+|   |   |-- common
+|   |   |   |-- files
+|   |   |   |   `-- history.sh
+|   |   |   |-- handlers
+|   |   |   |   `-- main.yml
+|   |   |   |-- meta
+|   |   |   |   `-- main.yml
+|   |   |   |-- tasks
+|   |   |   |   `-- main.yml
+|   |   |   |-- templates
+|   |   |   |   `-- resolv.conf
+|   |   |   |-- vars
+|   |   |   |   `-- main.yml
 #+END_EXAMPLE
+
+** Common Firewall Rules
+Firewall rules are applied on all the systems. Some firewall rules are common
+for all the system and are applied in all the servers. These common firewall
+rules are described here. And rules which are specific to the server are
+described in the individual server documentation itself.
+
+*** Default rules for filter table
+ Default policy for input, forward and output is set to ACCEPT. If packet does
+  not match any rule then the default action is applied to the packet. Packets
+  counters are set to [0:0]. First counter represents the number of packets that
+  matched the rule for the chain, and the second counter represents the total
+  size of the packets that matched the rule.
+#+BEGIN_EXAMPLE
+#If packet does not match any rule then the default action is applied to the packet
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+#+END_EXAMPLE 
+
+*** Rule for INPUT loopback packets
+ Allow internal communication between services running within the server, over
+  loopback interface. Destination ip is also specified to avoid any security
+  breach.
+#+BEGIN_EXAMPLE
+#Allow internal process to process communication over loopback interface
+-A INPUT -i lo -d 127.0.0.0/8 -j ACCEPT
+#+END_EXAMPLE
+ 
+*** Rate limiting new connections
+ This rule limit all new connections except UDP connections. Limit is set to a
+  proper high value, to secure the system from flooded connections. Packets are
+  dropped if they are received after the limit is exceeded. Dropped packets are
+  logged with a limited rate. Once the rate of incoming packets is under
+  control, system again starts accepting the connections.
+#+BEGIN_EXAMPLE
+#Rate limit new connections to 20 new connections per 30 seconds
+-A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --set
+-A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --rcheck --seconds 30 --hitcount 20 -m limit --limit 2/min -j LOG --log-prefix "new_limit_"
+-A INPUT ! -p udp -m state --state NEW -m recent --name ssh_limit --rcheck --seconds 30 --hitcount 20 -j DROP
+#+END_EXAMPLE
+
+*** Rule for incoming ping request with rate limiting
+ Allow server to accept incoming ping requests from anywhere. Limit is set to a
+  proper high value, to secure the system from flooded connections. Packets are
+  dropped if they are received after the limit is exceeded. Dropped packets are
+  logged with a limited rate. Once the rate of incoming packets is under
+  control, system again starts accepting the connections.
+#+BEGIN_EXAMPLE
+#Allow to accept incoming ping requests from anywhere
+-A INPUT -p icmp --icmp-type echo-request -m limit --limit 60/minute --limit-burst 120 -j ACCEPT
+-A INPUT -p icmp --icmp-type echo-request -m limit --limit 1/minute --limit-burst 2 -j LOG 
+-A INPUT -p icmp --icmp-type echo-request -j DROP
+#+END_EXAMPLE
+
+*** Rule for ongoing connection from other machine
+ Allow server to continue already related and established connections. Initial
+  connection request would have passed through the firewall rules and if the
+  connection got established, it is allowed to continue.
+#+BEGIN_EXAMPLE
+#Allow to continue already related and established connections
+-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+#+END_EXAMPLE
+
+*** Rule for incoming ssh connection
+ Allow server to accept incoming ssh TCP port 22 connections *only* from the
+  ansible, nagios and management ips. A 'for loop' is used to enable rule for
+  multiple management server and ansible server.
+#+BEGIN_EXAMPLE
+#Allowing incoming ssh connections only from the management ips. 
+#Hopefully fail2ban will take care of bruteforce attacks from management IPs
+{% for item in management_ips  %}  
+-A INPUT -m state --state NEW -s {{ item }} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
+#Allowing incoming ssh connections only from ansible server. 
+#Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
+{% for item in ansible_server_ips  %}
+-A INPUT -m state --state NEW -s {{ item }} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
+#Allow incoming SSH connections from nagios server IPs.  Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
+{% for item in nagios_server_ips  %}  
+-A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
+#+END_EXAMPLE
+
+*** Rule for incoming NRPE query from Nagios server
+ Accept NRPE queries from Nagios.
+#+BEGIN_EXAMPLE
+#Allow to accept incoming nrpe queries from nagios server
+-A INPUT -m state --state NEW -p tcp -m tcp --dport 5666 -j ACCEPT
+#+END_EXAMPLE
+
+*** Rule for incoming SNMP queries from Cacti server
+ Accept input connections from cacti server.
+#+BEGIN_EXAMPLE
+#Allow to accept incoming snmp queries from cacti server
+-A INPUT -p udp -m udp --dport 161 -j ACCEPT
+-A INPUT -p udp -m udp --dport 162 -j ACCEPT
+#+END_EXAMPLE
+
+*** Rule for all other incoming connections
+ Reject all the INPUT packets which does not match any of the defined rules
+  with a reply message =icmp-host-prohibited= to the host machine. Rejected
+  packets are also logged with a limited rate.
+#+BEGIN_EXAMPLE
+#Log all other "blocked_input_" attempts with rate limiting
+-A INPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_input_"
+#Drop all the INPUT packets which does not match any of the rules
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+#+END_EXAMPLE
+
+*** Rule for FORWARD chain
+ Forwarding rule is disabled if server is not responsible for any packet
+  forwarding.
+#+BEGIN_EXAMPLE
+#Do not allow any packet to be forwarded
+-A FORWARD -j REJECT --reject-with icmp-host-prohibited
+#+END_EXAMPLE
+
+*** Rule for OUTPUT loopback packets
+ Allow internal communication between services running within the system, over
+  loopback interface. Source ip is also specified to avoid any security breach.
+#+BEGIN_EXAMPLE
+#Allow internal process to process communication over loopback interface
+-A OUTPUT -s 127.0.0.0/8 -o lo -j ACCEPT
+#+END_EXAMPLE
+
+*** Rule for ongoing connection to other machine
+ Allow server to continue already related and established connections. Initial
+  connection request would have passed through the firewall rules and if the
+  connection got established, it is allowed to continue.
+#+BEGIN_EXAMPLE
+#Allow to continue already related and established connections
+-A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+#+END_EXAMPLE
+
+*** Rule for outgoing dns request
+ Allow server to make dns queries.
+#+BEGIN_EXAMPLE
+#Allow to make dns queries
+-A OUTPUT -p udp -m udp --dport 53 -j ACCEPT
+#+END_EXAMPLE
+
+*** Rule for sending log messages to rsyslog server
+ Allow server to send log messages to rsyslog server.
+#+BEGIN_EXAMPLE
+#Allow to make dns queries
+-A OUTPUT -p udp -m udp --dport 514 -j ACCEPT
+#+END_EXAMPLE
+
+*** Rule for sending mails by logwatch service
+ Allow logwatch service running inside the server to send mail alerts.
+#+BEGIN_EXAMPLE
+#Allow to send mails by logwatch service
+-A OUTPUT -p tcp -m tcp --dport 25 -j ACCEPT
+#+END_EXAMPLE
+
+*** Rule for outgoing web request by yum
+ Allow yum service to update packages via http and https. 
+#+BEGIN_EXAMPLE
+#Allow yum to contact web servers for installing and updating packages
+-A OUTPUT -p tcp -m tcp --dport 80 -j ACCEPT
+-A OUTPUT -p tcp -m tcp --dport 443 -j ACCEPT
+#+END_EXAMPLE
+
+*** Rule for outgoing connection to OSSEC server
+ Allow server to send system's information to OSSEC server.
+#+BEGIN_EXAMPLE
+#Allow outgoing connections to OSSEC server
+-A OUTPUT -p udp -m udp --dport 1514 -j ACCEPT
+#+END_EXAMPLE
+    
+*** Rule for outgoing ping request
+ Allow server to send ping requests to anywhere.
+#+BEGIN_EXAMPLE
+#Allow to send ping requests to anywhere.
+-A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT
+#+END_EXAMPLE
+
+*** Rule for all other outgoing packets
+ Reject all the OUTPUT packets which does not match any of the defined rules
+  with a reply message =icmp-host-prohibited= to the host machine. Rejected
+  packets are also logged with a limited rate.
+#+BEGIN_EXAMPLE
+#Log all other "blocked_output_" attempts
+-A OUTPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_output_"
+#Reject all the OUTPUT packets which does not match any of the rules
+-A OUTPUT -j REJECT --reject-with icmp-host-prohibited
+#+END_EXAMPLE
+
+*** Enforce filter rules
+#+BEGIN_EXAMPLE
+COMMIT
+#+END_EXAMPLE
+
+** Setting Default Gateway
+Set default gateway as router for servers except for router itself and ansible
+server. To set default gateway following tasks are done:
+1) Remove default gateway if any using =route del default= command.
+2) Add default gateway as router using =route add default gw <gateway-ip>=.
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+---
+
+- name: setting the default gw, skips if router or ansible server
+  shell: route del default; route add default gw {{router_internal_ip}}
+  when: not ( i_ans is defined or i_router is defined )
+  ignore_errors: yes
+#+END_SRC
+
+** Block Malicious Attacks
+Fail2ban tool protects server from the brute-force attacks. It bans an offensive
+host by adding a rule in firewall chain and sends an email notification to the
+system administrator. To install and set fail2ban service following tasks are
+done:
+1) Download epel repo
+2) Install epel repo
+3) Install fail2ban
+4) Start fail2ban service
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+#Setup epel for downloading fail2ban
+- name: Download epel RPM
+  get_url: url="{{ epel_download_url }}" dest="{{epel_download_path}}" timeout=5
+  environment: proxy_env
+
+- name: Install epel RPM
+  yum: name="{{epel_download_path}}" state=present
+  environment: proxy_env
+
+#Install fail2ban and enable it on startup
+- name: Install fail2ban
+  yum: name=fail2ban state=present
+
+- name: Start and enable fail2ban service
+  service: name=fail2ban state=started enabled=yes
+#+END_SRC
+
+** Configure History
+Server saves history of commands executed on the shell. By default there is no
+settings for saving commands with their time of execution. To save history in
+proper format following settings are performed:
+1) Set history time in format of "%y %m %d %T "
+2) Set history size as 100000
+3) Set history file size as 100000
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+#Configure history
+- name: Configure history for all users with date/time and 100,000 lines of history
+  copy: src=history.sh dest=/etc/profile.d/history.sh mode=755 owner=root group=root
+#+END_SRC
+
+** Restart IPtables Service
+While setting up server iptables service is restarted. Although there may not be
+any firewall rules but service is restarted just to make sure its running.
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+#Restart iptables
+- name: Restart iptables service 
+#checking whether iptables is running is pointless
+#restart would fail if there is no /etc/sysconfig/iptables file
+  service: name=iptables state=restarted
+  ignore_errors: yes
+#+END_SRC
+
+** Configure host name
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+#Setup /etc/hosts
+- name: Configure hostname and fqdn to resolve to local IP on first line of /etc/hosts
+#Necessary for containers so that they can send emails without 30 second delay
+  lineinfile: dest=/etc/hosts regexp="{{ansible_default_ipv4.address}} {{ansible_fqdn}} {{ansible_hostname}}" insertbefore="BOF" line="{{ansible_default_ipv4.address}} {{ansible_fqdn}} {{ansible_hostname}}"
+#+END_SRC
 
 ** Log File Summary
 Servers and applications generally create "log files" to keep track of
 activities taking place at any given time. Understanding the log files
 is of vital importance to know the past events and analyzing them to
 provide quick solutions, if needed any. *logwatch* is one of such
-available tools to capture and analyze the log file summary. The
-logwatch project page can be found [[http://sourceforge.net/projects/logwatch/][HERE]].
+available tools to capture and analyze the log file summary.
 
-The list of tasks to be carried out are:
+The list of tasks carried out are:
    + Installing the logwatch
-   + Copying the configuration file
-   + Setting up the mail server to mail the summary
    + Setting the detail of log level to =medium=   
 
-#+BEGIN_SRC yaml :tangle roles/common/tasks/logwatch.yml
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 ---
-#install and copy logwatch configuration
+#Logwatch configuration
+- name: Install logwatch
+  yum: name=logwatch state=installed
+  environment: proxy_env
 
- - name: install logwatch
-   yum: name=logwatch state=present
-   environment: proxy_env
+- name: Configure detailed logging via logwatch
+  lineinfile: line="Detail = High" dest=/etc/logwatch/conf/logwatch.conf regexp="^Detail ="  
+#+END_SRC
 
- - name: copy logwatch.conf from default directory /etc/
-   command: /bin/cp -p /usr/share/logwatch/default.conf/logwatch.conf /etc/logwatch/conf/logwatch.conf
-  
- - name: changing the mail to in logwatch.conf, ensure proper owner,group, mode
-   lineinfile: dest=/etc/logwatch/conf/logwatch.conf state=present regexp='^MailTo =' line='MailTo = alerts@vlabs.ac.in' owner=root group=root mode=0644
+** SMTP Configuration
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+#SMTP configuration
+- name: Install sendmail SMTP server for outgoing email
+  yum: name=sendmail state=installed
+  environment: proxy_env
 
- - name: change the level of detail to medium
-   lineinfile: dest=/etc/logwatch/conf/logwatch.conf state=present regexp='^Detail =' line='Detail = Med'
+- name: Ensure that postfix is stopped and disabled
+  service: name=postfix enabled=no state=stopped
+#if postfix is not present ignore error
+  ignore_errors: yes
+
+- name: Configure SMART_HOST if necessary
+  lineinfile: line="define(`SMART_HOST', `{{smtp_smart_host}}')dnl" regexp="SMART_HOST" dest="/etc/mail/sendmail.mc"
+  when: smtp_smart_host != "none"
+  notify:
+    - restart sendmail
+
+- name: Ensure that sendmail is running and enabled
+  service: name=sendmail enabled=yes state=started
+#+END_SRC
+
+** Configure Private DNS
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+#Configure private DNS if values are set 
+- name: Configure machine to use private DNS (peerDNS)
+  template: src=resolv.conf dest=/etc/resolv.conf owner=root group=root mode=644
+  when: private_dns_ips != "none" 
+#+END_SRC
+
+** SSH Hardening
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Permit root login without-pasword(key based)
+  lineinfile: dest=/etc/ssh/sshd_config regexp='PermitRootLogin ' line='PermitRootLogin without-password' state=present
+
+- name: Disable Password authentication
+  lineinfile: dest=/etc/ssh/sshd_config regexp='PasswordAuthentication ' line='PasswordAuthentication no'
+
+- name: Enable Public key authentication
+  lineinfile: dest=/etc/ssh/sshd_config regexp='PubkeyAuthentication ' line='PubkeyAuthentication yes'
+
+- name: Do not permit empty password, also ensure proper owner, group and permissions
+  lineinfile: dest=/etc/ssh/sshd_config regexp='PermitEmptyPasswords ' line='PermitEmptyPasswords no' mode=0600 owner=root group=root
+
+#Call handler to restart sshd
+  notify:
+      - restart sshd
+#+END_SRC
+
+** Install bind-utils
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: install bind-utils
+  yum: name=bind-utils state=present
+  environment:
+   proxy_env
+#+END_SRC
+
+** Lock Root Account
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: lock root account
+  shell: passwd -l root
+#+END_SRC
+** Remove sudo
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: remove sudo
+  yum: name=sudo state=absent
 #+END_SRC
 
 ** Mail Exchange Records
@@ -313,215 +610,19 @@ All the tasks are collated in a single main file.
  - name: install common packages
    include: common_pkg.yml
 #+END_SRC
-
-** Common Firewall Rule
-- Firewall rules which are applied across all the servers are described here.
-  Rules which are specific to the individual server are described in the
-  individual server documentation itself.
-
-*** Default rules for filter table
-- Default policy for input, forward and output is set to be as ACCEPT. If packet
-  does not match any rule then the default action is applied to the packet.
-  Packets counters are set to [0:0].  First counter represents the number of
-  packets that matched the rule for the chain, and second counter represents the
-  total size of the packets that matched the rule.
-#+BEGIN_EXAMPLE
-#If packet does not match any rule then the default action is applied to the packet
-*filter
-:INPUT ACCEPT [0:0]
-:FORWARD ACCEPT [0:0]
-:OUTPUT ACCEPT [0:0]
-#+END_EXAMPLE 
-
-*** Rule for INPUT loopback packets
-- Allow internal communication between services running within the server, over
-  loopback interface. Destination ip is also specified to avoid any security
-  breach.
-#+BEGIN_EXAMPLE
-#Allow internal process to process communication over loopback interface
--A INPUT -i lo -d 127.0.0.0/8 -j ACCEPT
-#+END_EXAMPLE
- 
-*** Rate limiting new connections
-- This rule limit new connections apart from UDP connections. Limit is set to a
-  proper high value, to secure the system from flooded connections. Packets are
-  dropped if they are received after the limit is exceeded. Dropped packets are
-  logged with a limited rate. Once the rate of incoming packets is under
-  control, system again starts accepting the connections.
-#+BEGIN_EXAMPLE
-#Rate limit new connections to 20 new connections per 30 seconds
--A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --set
--A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --rcheck --seconds 30 --hitcount 20 -m limit --limit 2/min -j LOG --log-prefix "new_limit_"
--A INPUT ! -p udp -m state --state NEW -m recent --name ssh_limit --rcheck --seconds 30 --hitcount 20 -j DROP
-#+END_EXAMPLE
-
-*** Rule for incoming ping request with rate limiting
-- Allow server to accept incoming ping requests from anywhere.
-#+BEGIN_EXAMPLE
-#Allow to accept incoming ping requests from anywhere
--A INPUT -p icmp --icmp-type echo-request -m limit --limit 60/minute --limit-burst 120 -j ACCEPT
--A INPUT -p icmp --icmp-type echo-request -m limit --limit 1/minute --limit-burst 2 -j LOG 
--A INPUT -p icmp --icmp-type echo-request -j DROP
-#+END_EXAMPLE
-
-*** Rule for ongoing connection to other machine
-- Allow server to continue already related and established connections. Previous
-  connection would have passed through the firewall and if they got established,
-  connection is allowed to continue.
-#+BEGIN_EXAMPLE
-#Allow to continue already related and established connections
--A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
-#+END_EXAMPLE
-
-*** Rule for incoming ssh connection
-- Allow server to accept incoming ssh TCP port 22 connections *only* from the
-  ansible, nagios and management ips. For loop is used to enable rule for
-  multiple management server and ansible server.
-#+BEGIN_EXAMPLE
-#Allowing incoming ssh connections only from the management ips. 
-#Hopefully fail2ban will take care of bruteforce attacks from management IPs
-{% for item in management_ips  %}  
--A INPUT -m state --state NEW -s {{ item }} -p tcp -m tcp --dport 22 -j ACCEPT
-{% endfor %}
-#Allowing incoming ssh connections only from ansible server. 
-#Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
-{% for item in ansible_server_ips  %}
--A INPUT -m state --state NEW -s {{ item }} -p tcp -m tcp --dport 22 -j ACCEPT
-{% endfor %}
-#Allow incoming SSH connections from nagios server IPs.  Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
-{% for item in nagios_server_ips  %}  
--A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
-{% endfor %}
-#+END_EXAMPLE
-
-*** Rule for incoming NRPE query from Nagios server
-- Nagios monitors systems disk usage, ram usage by sending a NRPE query.
-#+BEGIN_EXAMPLE
-#Allow to accept incoming nrpe queries from nagios server
--A INPUT -m state --state NEW -p tcp -m tcp --dport 5666 -j ACCEPT
-#+END_EXAMPLE
-
-*** Rule for incoming SNMP queries from Cacti server
-- Allow input connections from cacti server.
-#+BEGIN_EXAMPLE
-#Allow to accept incoming snmp queries from cacti server
--A INPUT -p udp -m udp --dport 161 -j ACCEPT
--A INPUT -p udp -m udp --dport 162 -j ACCEPT
-#+END_EXAMPLE
-
-*** Rule for logging blocked incoming connection
-- Log the packets which are to be rejected with a limited rate.
-#+BEGIN_EXAMPLE
-#Log all other "blocked_input_" attempts with rate limiting
--A INPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_input_"
-#+END_EXAMPLE
-
-*** Rule for all other incoming packets
-- Reject all the INPUT packets which does not match any of the defined
-  rules. Also send a reply message to the host machine.
-#+BEGIN_EXAMPLE
-#Drop all the INPUT packets which does not match any of the rules
--A INPUT -j REJECT --reject-with icmp-host-prohibited
-#+END_EXAMPLE
-
-*** Rule for FORWARD chain
-- Rsyslog is not responsible for any packet forwarding and hence forwarding rule
-  should be set to reject packets.
-#+BEGIN_EXAMPLE
-#Do not allow any packet to be forwarded
--A FORWARD -j REJECT --reject-with icmp-host-prohibited
-#+END_EXAMPLE
-
-*** Rule for OUTPUT loopback packets
-- Allow internal communication between services running within the system, over
-  loopback interface. Source ip is also specified to avoid any security breach.
-#+BEGIN_EXAMPLE
-#Allow internal process to process communication over loopback interface
--A OUTPUT -s 127.0.0.0/8 -o lo -j ACCEPT
-#+END_EXAMPLE
-
-*** Rule for ongoing connection from other machine
-- Allow server to continue already related and established connections. Previous
-  connection must have passed through the firewall and if they got established,
-  connection is allowed to continue.
-#+BEGIN_EXAMPLE
-#Allow to continue already related and established connections
--A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
-#+END_EXAMPLE
-
-*** Rule for outgoing dns request
-- Allow server to make dns queries.
-#+BEGIN_EXAMPLE
-#Allow to make dns queries
--A OUTPUT -p udp -m udp --dport 53 -j ACCEPT
-#+END_EXAMPLE
-
-*** Rule for sending log messages to rsyslog server
-- Allow system to send log messages to rsyslog server.
-#+BEGIN_EXAMPLE
-#Allow to make dns queries
--A OUTPUT -p udp -m udp --dport 514 -j ACCEPT
-#+END_EXAMPLE
-
-*** Rule for sending mails by logwatch service
-- Allow logwatch service to send mail alerts.
-#+BEGIN_EXAMPLE
-#Allow to send mails by logwatch service
--A OUTPUT -p tcp -m tcp --dport 25 -j ACCEPT
-#+END_EXAMPLE
-
-*** Rule for outgoing web request by yum
-- Allow yum service to update packages.
-#+BEGIN_EXAMPLE
-#Allow yum to contact web servers for installing and updating packages
--A OUTPUT -p tcp -m tcp --dport 80 -j ACCEPT
--A OUTPUT -p tcp -m tcp --dport 443 -j ACCEPT
-#+END_EXAMPLE
-
-*** Rule for outgoing connection to OSSEC server
-- Allow system to send packets to OSSEC server.
-#+BEGIN_EXAMPLE
-#Allow outgoing connections to OSSEC server
--A OUTPUT -p udp -m udp --dport 1514 -j ACCEPT
-#+END_EXAMPLE
-    
-*** Rule for outgoing ping request
-- Allow server to send ping requests to anywhere.
-#+BEGIN_EXAMPLE
-#Allow to send ping requests to anywhere.
--A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT
-#+END_EXAMPLE
-
-*** Rule for logging blocked outgoing connection
-- Log the packets which are to be rejected with a limited rate.
-#+BEGIN_EXAMPLE
-#Log all other "blocked_output_" attempts
--A OUTPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_output_"
-#+END_EXAMPLE
-
-*** Rule for all other outgoing packets
-- Reject all the OUTPUT packets which does not match any of the defined rules.
-  Also send a reply message to the host machine.
-#+BEGIN_EXAMPLE
-#Reject all the OUTPUT packets which does not match any of the rules
--A OUTPUT -j REJECT --reject-with icmp-host-prohibited
-#+END_EXAMPLE
-
-*** Enforce filter rules
-#+BEGIN_EXAMPLE
-COMMIT
-#+END_EXAMPLE
     
     
 * COMMENT Timeline
-|------+-------------------------+------------+----------+------------------------------------------------------|
-| S.no | Day                     | Start Time | End Time | Tasks                                                |
-|------+-------------------------+------------+----------+------------------------------------------------------|
-|   1. | April 9, 2015, Thursday | 09:20 a.m. |          | - Confirm tangle output is same as aws implmentation |
-|      |                         |            |          | - Start modeling common role                         |
-|      |                         |            |          | - Write Down functional and  security requirements.  |
-|      |                         |            |          | - Make a common design diagram                       |
-|      |                         |            |          | - Correct structure of scripts                       |
-|      |                         |            |          | -                                                    |
-|------+-------------------------+------------+----------+------------------------------------------------------|
-|   2. |                         |            |          |                                                      |
+|------+-------------------------+------------+------------+------------------------------------------------------|
+| S.no | Day                     | Start Time | End Time   | Tasks                                                |
+|------+-------------------------+------------+------------+------------------------------------------------------|
+|   1. | April 9, 2015, Thursday | 09:20 a.m. | 12:30 p.m. | - Confirm tangle output is same as aws implmentation |
+|      |                         |            |            | - Write Down functional and  security requirements.  |
+|      |                         |            |            | - Make a common design diagram                       |
+|      |                         |            |            | - Correct structure of scripts                       |
+|      |                         |            |            | - Make changes in firewall description               |
+|------+-------------------------+------------+------------+------------------------------------------------------|
+|   2. |                         |            |            | - Complete firewall description                      |
+|      |                         |            |            | - Start documenting configuration files.             |
+* COMMENT TODO
+1) Ask zubair why /etc/hosts is configured to resolve local IP.
