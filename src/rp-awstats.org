@@ -58,20 +58,29 @@ reverseproxy to/from other servers such as [[./router.org][router]], web servers
 The Following tables gives the information about the services and
 their configuration files where modifications are required to setup
 reverseproxy server and AWStats
-|------+----------+-------------------------------------------+--------------------------------------|
-| S.no | Service  | File                                      | File Type                            |
-|------+----------+-------------------------------------------+--------------------------------------|
-|    1 | httpd    | /etc/httpd/conf/httpd.conf                | httpd main Configuration             |
-|------+----------+-------------------------------------------+--------------------------------------|
-|    2 | httpd    | /etc/httpd/conf.d/virtual-labs.ac.in.conf | virtual hosts entries  configuration |
-|------+----------+-------------------------------------------+--------------------------------------|
-|    3 | AWStats  | /etc/httpd/conf.d/awstats.conf            | httpd configuration file for AWStats |
-|------+----------+-------------------------------------------+--------------------------------------|
-|    4 | AWStats  | /etc/awstats/awstats.{{labURL}}.conf      | awstats configuration files for labs |
-|------+----------+-------------------------------------------+--------------------------------------|
-|    5 | iptables | /etc/sysconfig/iptables                   | firewall rules                       |
-|------+----------+-------------------------------------------+--------------------------------------|
-
+|------------+--------------------------------------+-------------------+--------------------------------------|
+| Service    | File                                 | Associated with   | File Type                            |
+|------------+--------------------------------------+-------------------+--------------------------------------|
+| httpd      | /etc/httpd/conf/httpd.conf           | reverseproxy role | httpd main Configuration             |
+|------------+--------------------------------------+-------------------+--------------------------------------|
+| httpd      | /etc/httpd/conf.d/virtulhosts.conf   | reverseproxy role | virtual hosts entries  configuration |
+|------------+--------------------------------------+-------------------+--------------------------------------|
+| AWStats    | /etc/httpd/conf.d/awstats.conf       | reverseproxy role | httpd configuration file for AWStats |
+|------------+--------------------------------------+-------------------+--------------------------------------|
+| AWStats    | /etc/awstats/awstats.{{labURL}}.conf | reverseproxy role | awstats configuration files for labs |
+|------------+--------------------------------------+-------------------+--------------------------------------|
+| iptables   | /etc/sysconfig/iptables              | Reverseproxy      | firewall rules                       |
+|------------+--------------------------------------+-------------------+--------------------------------------|
+| sshd       | /etc/sshd_config                     | Common  Role      | ssh configuration file               |
+|------------+--------------------------------------+-------------------+--------------------------------------|
+| nameserver | /etc/resolve.conf                    | Common role       | nameservers                          |
+|------------+--------------------------------------+-------------------+--------------------------------------|
+| IP         | /etc/sysconfig/network-scripts/      | amazon console    | network interfaces  file             |
+|------------+--------------------------------------+-------------------+--------------------------------------|
+| fail2ban   | /etc/fail2ban/jail.local             | Common Role       | fail2ban configuration file          |
+|------------+--------------------------------------+-------------------+--------------------------------------|
+| logwatch   | /etc/logwatch/logwatch.conf          | Common Role       | logwatch configuration file          |
+|------------+--------------------------------------+-------------------+--------------------------------------|
 * Implementation 
 The implementation of the reverseproxy server and awstats are done
 with the following steps.

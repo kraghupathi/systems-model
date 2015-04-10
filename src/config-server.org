@@ -52,21 +52,22 @@ requests.
 ** Configuration Summary
 The following table gives the information about services and their configuration files and
 by which role configurations are applied.
-|--------------------+-------------------------------+---------------------------|
-| *Service/Property* | *Relevant File or Command*    | *Associated with*         |
-|--------------------+-------------------------------+---------------------------|
-| firewall           | =/etc/sysconfig/iptables/=    | configuration server Role |
-|--------------------+-------------------------------+---------------------------|
-| sshd               | =/etc/sshd_config=            | Common  Role              |
-|--------------------+-------------------------------+---------------------------|
-| nameserver         | =/etc/resolve.conf=           | Common role               |
-|--------------------+-------------------------------+---------------------------|
-| IP                 | ifconfig                      | amazon console            |
-|--------------------+-------------------------------+---------------------------|
-| fail2ban           | =/etc/fail2ban/jail.local=    | Common Role               |
-|--------------------+-------------------------------+---------------------------|
-| logwatch           | =/etc/logwatch/logwatch.conf= | Common Role               |
-|--------------------+-------------------------------+---------------------------|
+|--------------------+-----------------------------------+---------------------------|
+| *Service/Property* | *Relevant File or Command*        | *Associated with*         |
+|--------------------+-----------------------------------+---------------------------|
+| firewall           | =/etc/sysconfig/iptables/=        | configuration server Role |
+|--------------------+-----------------------------------+---------------------------|
+| sshd               | =/etc/sshd_config=                | Common  Role              |
+|--------------------+-----------------------------------+---------------------------|
+| nameserver         | =/etc/resolve.conf=               | Common role               |
+|--------------------+-----------------------------------+---------------------------|
+| IP                 | =/etc/sysconfig/network-scripts/= | amazon console            |
+|--------------------+-----------------------------------+---------------------------|
+| fail2ban           | =/etc/fail2ban/jail.local=        | Common Role               |
+|--------------------+-----------------------------------+---------------------------|
+| logwatch           | =/etc/logwatch/logwatch.conf=     | Common Role               |
+|--------------------+-----------------------------------+---------------------------|
+#+TBLFM: $2=/etc/sysconfig/network-scripts
 
 * Implementation
 The implementation of the configuration server is done with the
