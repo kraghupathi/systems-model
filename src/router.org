@@ -73,7 +73,7 @@ and also using the different network protocols TCP and UDP for the communication
 #+END_SRC
 
 **** Forwarding rules
-The following nat rule forward the incoming DNS requests
+The following nat rule forwards the incoming DNS requests via UDP port 53
 to public dns.
 
 #+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
