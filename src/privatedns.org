@@ -8,16 +8,15 @@
 This document describes the requirements, design and implementation of
 the *Private Domain Name Server* which is part of the AWS cluster.
 This server is used to provide domain name resolution for all other
-servers in the cluster. The name "Private" is a term coined by us to
-distinguish the primary functionality of the DNS. This DNS is used for
-internal name resolution.  Also it is used for the internal machines
-to relove Using Ansible, a machine is configured using multiple roles.
-A role is a specific set of configurations.
+servers in the cluster. This DNS is used for internal name resolution.
+Also it is used for the internal machines to resolve the external
+domain names(gnu.org). Using Ansible, a machine is configured using
+multiple roles. A role is a specific set of configurations.
 
 * Requirements
 The functional and security requirements of the Private DNS are
 mentioned in the following sections. These are specific the Private
-DNS. The requirements which are common to all the roles are mentioned
+DNS. The requirements which are common to all the servers are mentioned
 in the [[common%20role][common role]].
 ** Functional
    - Resolve our authoritative domain names for all internal clients
@@ -35,22 +34,20 @@ in the [[common%20role][common role]].
 The following network diagram represents the interaction of the
 Private DNS with the other machines in the cluster. This diagram
 primarily focuses on the functionality of the Named server. It shows
-the various machines in the network to which it provides its service
-and also those which are required to help it achieve its
-functionality.\\
+the various machines in the network to which it provides its
+service.\\
 
-The Reverse Proxy, Configuration Server and the other machines in the
-cluster use the Private DNS for resolving the hostnames of the
-machines in the cluster. The Private DNS requires the Router to be
-able to contact the root DNS servers for providing the internal
-machines to update or install certain packages.
+The other machines in the cluster use the Private DNS for resolving
+the hostnames of machines in the cluster. The Private DNS requires
+the Router to be able to contact the root DNS servers for providing
+the internal machines to update or install certain packages.
 
 [[./diagrams/private-dns-network-diagram.png]]
 
 ** System files 
-The following table gives the information about the services and
-their configuration files where modifications are required to setup
-the Named Server.
+The following table gives the information about the services and their
+configuration files where modifications are required to setup the
+Named Server.
 |------+----------+-------------------------------+--------------------------------|
 | S.no | Service  | File                          | File Type                      |
 |------+----------+-------------------------------+--------------------------------|
@@ -61,7 +58,8 @@ the Named Server.
 |------+----------+-------------------------------+--------------------------------|
 |    3 | iptables | /etc/sysconfig/iptables       | firewall rules                 |
 |------+----------+-------------------------------+--------------------------------|
-
+|    4 | named    | /etc/sysconfig/named          | Disable IPv6 support           |
+|------+----------+-------------------------------+--------------------------------|
 
 * Implementation
 ** Structure of the scripts
@@ -100,13 +98,12 @@ the Named Server.
 #+END_SRC
 
 ** Configuring the Bind service
-   The named server has to be configured. This is done in the file 
+   The named server has to be configured. This is done in the file
    named =/etc/named.conf=. We specify the domain for which this
    server should be the authoritative name server. These are termed as
    zone in the configuration file. Each zone will have a corresponding
    zone file which enlists the sub-domains present in under that
-   domain. Here we create a single zone file for one domain
-   ie. "virtual-labs.ac.in"
+   domain.
 
 #+BEGIN_SRC YAML :tangle roles/named_server/tasks/main.yaml
 - name: Create custom named.conf with desired zone
@@ -173,7 +170,7 @@ include "/etc/named.root.key";
 #+END_SRC
 
 ** Creating the zone files
-   Each zone(domain) is associated with a zone file which contains a
+   Each zone (domain) is associated with a zone file which contains a
    list of all the sub-domains under that domain and also their
    corresponding IP address to which the request for that FQDN should
    be sent to.
