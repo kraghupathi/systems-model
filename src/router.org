@@ -8,42 +8,33 @@
 #+OPTIONS: ^:nil
 
 * Introduction
-A router is a networking device that forwards data packets between computer
-networks. It acts as a gateway to and for all other servers.This documentation describes
-the router server setup on amazon web services using automated scripts. These scripts are
-executed directly from the configuration server which is ansible in this case. Router is
-configured automatically by the ansible. 
+This document describes the requirements, design and implementation of
+the *Router Server* which is part of the AWS cluster and also
+the router server setup on amazon web services using automated scripts. A router is a networking device that forwards data packets between computer
+networks. It acts as a gateway to and for all other servers. These scripts are
+executed directly from the configuration server which is ansible in this case. 
 
 * Requirements
 The functional and security requirements of router are:
 
 ** Functional Requirements
   1) Acts as a gateway to and for all other servers to reach internet.
-  2) Routes traffic on TCP port 80/443 by forwarding packets to reverse proxy.
-  3) Routes traffic on UDP port 53 by forwarding packets to public DNS.
-  4) Accept incoming ssh connection from ansible on TCP port 22.
-  5) Accept the incoming requests from the lab users via TCP port 80/443
+  2) Allow forwarding of packets to reverse proxy on TCP port 80/443.
+  3) Allow forwarding of packets to public DNS on UDP port 53.
+  4) Accept the incoming requests from the lab users via TCP port 80/443
      and UDP port 53.
-  6) Accept incoming ssh connection from nagios and management IPs on TCP port 22.
 
 ** Security Requirements
-  1) TCP port 22 is open for ansible,nagios and management IPs.
-  2) TCP port 80,443; UDP port 53 and ICMP (Internet Control Message Protocol)
-     are open for all.
-  3) Rate limiting on all open ports.
-  4) General server hardening rules are enforced by [[./common.org][common]] role.
+  1) TCP port 80/443 and UDP port 53 are open for all lab users.
+  2) General server hardening rules are enforced by [[./common.org][common]] role.
  
 * Design
-** Snapshot
-#+CAPTION:  Router Diagram
-#+LABEL:  fig-router-diagram
-#+NAME: fig-router-diagram
 ** Overall Network diagram of router
-The following network diagram represents the structure of the
-router. In this diagram only router is the active node. It
-shows the connections from/to router to/from other servers such
-as DNS,reverse-proxy etc. All the non active nodes are represented using dotted
-rectangles. 
+The following network diagram represents the interaction of the
+Router server with the other machines in the cluster. It shows the connections from/to router to/from other servers such
+as DNS,reverse-proxy as well as the lab users who would access the network.The major functionality of router is of the 
+packet forwarding from outside network into the network to the various other devices via different ports i.e. 80,443 and 53
+and also using the different network protocols TCP and UDP for the communication. 
 [[./diagrams/router-config.png]]
 
 * Implementation
