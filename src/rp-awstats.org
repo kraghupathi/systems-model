@@ -5,7 +5,7 @@
 #+SETUPFILE: org-templates/level-0.org
 #+DESCRIPTION: Reverse Proxy Model - Design, Implementation and Documentation
 
-   
+
 * Introduction
 This Documentation describes the *Reverse Proxy* server setup and
 *AWStats* setup for analytics of labs deployed on amazon using automated
@@ -1985,14 +1985,14 @@ below which we run on reverseproxy server.
    only from configuration server.  
 **** ssh from config-serevr 
   ssh to reverseproxy from config_server using the bellow command
-  #+BEGIN_SRC example
+  #+BEGIN_EXAMPLE
   config-server$ ssh root@<reverseproxy-ip>
-  #+END_SRC
+  #+END_EXAMPLE
   Result is as follows after logged in 
-  #+BEGIN_SRC 
+  #+BEGIN_EXAMPLE 
   Last login: Thu Apr  2 ... other details.....
   reverserproxy$
-  #+END_SRC
+  #+END_EXAMPLE
 **** ssh from management ips
   Reverseproxy server accepts incoming connections on port 22 only
   from management ips ssh from a machine with management ip to
