@@ -267,8 +267,7 @@ described in the individual server documentation itself.
 #+BEGIN_EXAMPLE
 COMMIT
 #+END_EXAMPLE
-
-** Setting Default Gateway
+** Set Default Gateway
 Set default gateway as router for servers except for router itself and ansible
 server. To set default gateway following tasks are done:
 1) Remove default gateway if any using =route del default= command.
@@ -285,12 +284,15 @@ server. To set default gateway following tasks are done:
 ** Block Malicious Attacks
 Fail2ban tool protects server from the brute-force attacks. It bans an offensive
 host by adding a rule in firewall chain and sends an email notification to the
-system administrator. To install and set fail2ban service following tasks are
-done:
+system administrator. The objective is to install Fail2ban on all the servers
+and apply the local rules. 
+
+To install and set fail2ban service following tasks are done:
 1) Download epel repo
 2) Install epel repo
 3) Install fail2ban
 4) Start fail2ban service
+
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 #Setup epel for downloading fail2ban
 - name: Download epel RPM
@@ -309,18 +311,33 @@ done:
   service: name=fail2ban state=started enabled=yes
 #+END_SRC
 
-** Configure History
-Server saves history of commands executed on the shell. By default there is no
-settings for saving commands with their time of execution. To save history in
-proper format following settings are performed:
-1) Set history time in format of "%y %m %d %T "
-2) Set history size as 100000
-3) Set history file size as 100000
-#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+** Audit the Servers
+Servers are audited by maintaining a log of all the commands run on them along
+with the time stamp.
+
+Following history parameters are set for audit purpose:
+ - HISTTIMEFORMAT :: display the time stamp along with the command history
+ - HISTSIZE       :: is the number of lines or commands that are stored in
+                     memory in a history list while bash session is ongoing
+ - HISTFILESIZE   :: is the number of lines or commands that are allowed in the
+                     history file at startup time of a session, and are stored
+                     in the history file at the end of bash session for use in
+                     future sessions.
+
+#+BEGIN_SRC shell :tangle roles/common/files/history.sh
+#!/bin/bash
+HISTTIMEFORMAT="%y %m %d %T"
+HISTSIZE=100000
+HISTFILESIZE=100000
+export HISTTIMEFORMAT HISTSIZE HISTFILESIZE
+#+END_SRC 
+
+The above parameters are set and configured using a history configuration file.
+#+BEGIN_SRC yaml :tangle roles/common/tasks/main.yml
 #Configure history
 - name: Configure history for all users with date/time and 100,000 lines of history
   copy: src=history.sh dest=/etc/profile.d/history.sh mode=755 owner=root group=root
-#+END_SRC
+#+END_SRC 
 
 ** Restart IPtables Service
 While setting up server iptables service is restarted. Although there may not be
@@ -345,10 +362,8 @@ any firewall rules but service is restarted just to make sure its running.
 
 ** Log File Summary
 Servers and applications generally create "log files" to keep track of
-activities taking place at any given time. Understanding the log files
-is of vital importance to know the past events and analyzing them to
-provide quick solutions, if needed any. *logwatch* is one of such
-available tools to capture and analyze the log file summary.
+activities taking place at any given time. *logwatch* is a tool to capture and
+analyze the log file summary.
 
 The list of tasks carried out are:
    + Installing the logwatch
@@ -366,6 +381,13 @@ The list of tasks carried out are:
 #+END_SRC
 
 ** SMTP Configuration
+Sendmail service is configured inside the system. Various other services such as
+logwatch uses sendmail service to send mail alerts. To configure sendmail
+following steps are performed:
+1) Install sendmail using yum
+2) Ensure postfix is stopped and disabled
+3) Set smtp smart host
+4) Start sendmail service
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 #SMTP configuration
 - name: Install sendmail SMTP server for outgoing email
@@ -387,7 +409,19 @@ The list of tasks carried out are:
   service: name=sendmail enabled=yes state=started
 #+END_SRC
 
-** Configure Private DNS
+** Set Nameserver
+Nameserver for the servers are defined in =/etc/resolv.conf= file. Nameserver is
+set to private dns.
+
+#+BEGIN_SRC conf :tangle roles/common/templates/resolv.conf
+{% if private_dns_zone != "none" %}
+search {{private_dns_zone}}
+{% endif %}
+{% for private_dns in private_dns_ips %}
+nameserver {{private_dns}}
+{% endfor %}
+#+END_SRC
+
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 #Configure private DNS if values are set 
 - name: Configure machine to use private DNS (peerDNS)
@@ -396,6 +430,13 @@ The list of tasks carried out are:
 #+END_SRC
 
 ** SSH Hardening
+The systems are secured by hardening ssh service. Following measures are taken
+to make system secure: 
+
+1) Permit root login without-password
+2) Password based access is disabled
+3) Enable key based authentication
+4) Do not permit empty password.
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 - name: Permit root login without-pasword(key based)
   lineinfile: dest=/etc/ssh/sshd_config regexp='PermitRootLogin ' line='PermitRootLogin without-password' state=present
@@ -414,7 +455,11 @@ The list of tasks carried out are:
       - restart sshd
 #+END_SRC
 
-** Install bind-utils
+** Install Bind Utilities
+Bind utilities is a common package which includes the client side
+programs nslookup, dig and host. The utilities are used by admins to
+trouble shoot the network related issues.
+
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 - name: install bind-utils
   yum: name=bind-utils state=present
@@ -423,6 +468,7 @@ The list of tasks carried out are:
 #+END_SRC
 
 ** Lock Root Account
+Lock 'root' account on the system.
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 - name: lock root account
   shell: passwd -l root
@@ -433,184 +479,29 @@ The list of tasks carried out are:
   yum: name=sudo state=absent
 #+END_SRC
 
-** Mail Exchange Records
-The log summary is mailed to the admins periodically to the email-id
-=alerts@vlabs.ac.in= . The mail exchange records is configured to
-look-up and send emails via iiit-h network.
-
-#+BEGIN_SRC yaml :tangle roles/common/tasks/sendmail_configure.yml
----
-#This play configures smart hosts
-
- - name: Change the smart host entry in /etc/mail/sendmail.mc
-   lineinfile: dest=/etc/mail/sendmail.mc regexp="SMART_HOST" line="define(`SMART_HOST', `{{iiit_mail_server}}')dnl"  state=present mode=0644
-   
-   notify: 
-     - restart sendmail
-#+END_SRC
-
-** Securing The Systems
-The systems are secured by allowing only the ssh based
-access. Password based access is diabled. A good documentation on SSH
-can be found [[http://en.wikipedia.org/wiki/Secure_Shell][HERE]].
-
-#+BEGIN_SRC yaml :tangle roles/common/tasks/sshd_config.yml
----
-#Modify  sshd_config and call ssh restart handler
-   
- - name: Permit root login without-pasword(key based)
-   lineinfile: dest=/etc/ssh/sshd_config regexp='PermitRootLogin ' line='PermitRootLogin without-password' state=present
-
- - name: Disable Password authentication
-   lineinfile: dest=/etc/ssh/sshd_config regexp='PasswordAuthentication ' line='PasswordAuthentication no' 
-
- - name: Enable Public key authentication
-   lineinfile: dest=/etc/ssh/sshd_config regexp='PubkeyAuthentication ' line='PubkeyAuthentication yes'
-
- - name: Do not permit empty password, also ensure proper owner, group and permissions
-   lineinfile: dest=/etc/ssh/sshd_config regexp='PermitEmptyPasswords ' line='PermitEmptyPasswords no' mode=0600 owner=root group=root
-
-#Call handler to restart sshd
-   notify:
-     - restart sshd
-
-#+END_SRC
-       
-** Auditing the Servers
-Servers are audited by maintaining a log of all the commands run on
-them along with the time stamp.
-
-Following history parameters are set for audit purpose:
- - HISTTIMEFORMAT :: display the time stamp along with the command
-                     history
- - HISTSIZE       :: is the number of lines or commands that are stored in
-                     memory in a history list while bash session is
-                     ongoing
- - HISTFILESIZE   :: is the number of lines or commands that are allowed
-                     in the history file at startup time of a session,
-                     and are stored in the history file at the end of
-                     bash session for use in future sessions.
-
-#+BEGIN_SRC shell :tangle roles/common/files/history.sh
-#!/bin/bash
-HISTTIMEFORMAT="%y %m %d %T"
-HISTSIZE=100000
-HISTFILESIZE=100000
-export HISTTIMEFORMAT HISTSIZE HISTFILESIZE
-#+END_SRC 
-
-The above parameters are set and configured using a history
-configuration file.
-#+BEGIN_SRC yaml :tangle roles/common/tasks/history_config.yml
----
-#This play copies a stock history file
- - name: copying history
-   copy: src=history.sh dest=/etc/profile.d/history.sh owner=root group=root mode=0655
-#+END_SRC 
-
-** Blocking Malicious Attacks
-Fail2ban tool is used to block the malicious attackers. Fail2ban scans
-log files and bans IPs that show the malicious signs of agents seeking
-for exploits. It comes with filters for various services like ssh,
-apache, mysql etc. Fail2Ban can be used to update firewall rules to
-reject the IP addresses for a specified amount of time. Even other
-services like sending mails, alerts can be configured.
-
-*Python* is the pre-requisite package to be installed to run Fail2ban
-service. More details can be found in the [[http://www.fail2ban.org/wiki/index.php/Main_Page][WIKI]] page of Fail2ban. 
-
-The objective is to install Fail2ban on all the servers and apply the
-local rules.
-#+BEGIN_SRC yaml :tangle roles/common/tasks/fail2ban.yml
----
-#this play will install and configure fail2ban
-
-- name: install fail2ban
-  yum: name=fail2ban state=installed
-
-- name: copy jail.local
-  copy: src=jail.local dest=/etc/fail2ban owner=root group=root mode=0644
-  
-  notify:
-   - restart fail2ban
-#+END_SRC
-
-The configuration file =jail.local= applies the required rules on all
-the servers.
-#+BEGIN_SRC shell :tangle roles/common/files/jail.local
-[ssh-iptables]
-
-enabled  = true
-filter   = sshd
-action   = iptables[name=SSH, port=ssh, protocol=tcp]
-           sendmail-whois[name=SSH, dest=alerts@vlabs.ac.in, sender=fail2ban@example.com, sendername="Fail2Ban"]
-logpath  = /var/log/secure
-maxretry = 5
-#+END_SRC 
-
-** Bind Utilities
-Bind utilities is a common package which includes the client side
-programs nslookup, dig and host. The utilities are used by admins to
-trouble shoot the network related issues.
-#+BEGIN_SRC yaml :tangle roles/common/tasks/common_pkg.yml
----
-#this play installs the common packages needed by admins to troubleshoot issues
- - name: install bind-utils
-   yum: name=bind-utils state=present
-   environment:
-    proxy_env
-#+END_SRC 
-
 ** Common Variables
-Several common variables which are common to network are defined in
-=common_vars= file which needs to be included as a dependency. 
-#+BEGIN_SRC yaml :tangle roles/common/meta/main.yml
+Several common variables which are common across all ansible roles are defined
+in =common_vars= file which is included as a dependency.
+#+BEGIN_SRC yml :tangle roles/common/meta/main.yml
 ---
 dependencies:
   - role: common_vars
 #+END_SRC
 
-** Handlers
-The things listed in the ‘notify’ section of a task are called handlers.
-Handlers are lists of tasks that are referenced by name. Regardless of
-how many things notify a handler, it will run only once, after all of
-the tasks complete in a particular play. Handlers is used by
-ssh, mail and fail2ban.
-#+BEGIN_SRC yaml :tangle roles/common/handlers/main.yml
+** Restart Services
+The things listed in the 'notify' section of a task are called handlers.
+Handlers are lists of tasks that are referenced by name. Regardless of how many
+things notify a handler, it will run only once, after all of the tasks complete
+in a particular play. Handlers are used by ssh and sendmail.
+#+BEGIN_SRC yml :tangle roles/common/handlers/main.yml
 ---
-  - name: restart sshd
-    service: name=sshd state=restarted
- 
-  - name: restart iptables
-    service: name=iptables state=restarted
-  
-  - name: restart sendmail
-    service: name=sendmail state=restarted
+- name: restart sendmail
+  service: name=sendmail state=restarted
 
-  - name: restart fail2ban
-    service: name=fail2ban state=restarted
+- name: restart sshd
+  service: name=sshd state=restarted
 #+END_SRC
 
-** Collating the tasks
-All the tasks are collated in a single main file. 
-#+BEGIN_SRC yaml :tangle roles/common/tasks/main.yml
----
- - name: sshd_config
-   include: sshd_config.yml
-
- - name: history file
-   include: history_config.yml
-
- - name: logwatch install
-   include: logwatch.yml
-
- - name: sendmail configure
-   include: sendmail_configure.yml
-
- - name: install common packages
-   include: common_pkg.yml
-#+END_SRC
-    
     
 * COMMENT Timeline
 |------+-------------------------+------------+------------+------------------------------------------------------|
@@ -622,7 +513,10 @@ All the tasks are collated in a single main file.
 |      |                         |            |            | - Correct structure of scripts                       |
 |      |                         |            |            | - Make changes in firewall description               |
 |------+-------------------------+------------+------------+------------------------------------------------------|
-|   2. |                         |            |            | - Complete firewall description                      |
+|   2. | April 10, 2015. Friday  | 9:15 a.m.  |            | - Test cases for firewall rules                      |
 |      |                         |            |            | - Start documenting configuration files.             |
+|      |                         |            |            | - Only tasks and templates files are left.           |
+|      |                         |            |            |                                                      |
 * COMMENT TODO
 1) Ask zubair why /etc/hosts is configured to resolve local IP.
+2) Write test cases for Common firewall.
