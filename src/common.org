@@ -8,18 +8,27 @@
 
 * Introduction
 The document describes the requirements, design and implementation of the common
-role. A =role= in Ansible terminology is a specific set of configuration, and
-=common role= is a role, which is applied on all the deployed servers.
+role. Common role is applied on all the servers in the cluster. 
+
+All the servers in the cluster are made secure by applying common security
+measures.
 
 * Requirements
 ** Functional Requirements
-
-1) Mail summary of log files periodically.
-2) Secure system by allowing only the ssh based access.
-3) Make provision to audit all the commands run on servers.
-4) Capture and Ban suspected malicious attackers.
-
-A good documentation on hardening a server can be found here: [[http://www.serverhardening.com/][Server Hardening]].
+1) Set default gateway as router
+2) Secure servers from brute-force attacks by capturing and banning suspected
+   malicious attackers
+3) Save history of executed command with time stamp
+4) Increase size of history file
+5) Start iptables service
+6) Mail summary of log files periodically to system administrator
+7) Permit root login without password
+8) Disable ssh password based access
+9) Enable key based authentication
+10) Do not permit empty password
+11) Install bind utilities
+12) Lock root account
+13) Remove sudoers package
 
 * Design
 ** System Design Diagram
@@ -47,6 +56,16 @@ A good documentation on hardening a server can be found here: [[http://www.serve
 |              4. | Blocking malicious | *fail2ban* is configured to capture and |
 |                 | attacks            | block suspicious attacker's IP          |
 |-----------------+--------------------+-----------------------------------------|
+
+** System Files
+|------+----------+-------------------------+--------------------|
+| S.no | Service  | File                    | File Type          |
+|------+----------+-------------------------+--------------------|
+|   1. | Iptables | /etc/sysconfig/iptables | Configuration File |
+|------+----------+-------------------------+--------------------|
+|   2. | Logwatch |                         |                    |
+|------+----------+-------------------------+--------------------|
+|   3. |          |                         |                    |
 
 * Implementation
 
@@ -268,10 +287,28 @@ described in the individual server documentation itself.
 COMMIT
 #+END_EXAMPLE
 ** Set Default Gateway
-Set default gateway as router for servers except for router itself and ansible
-server. To set default gateway following tasks are done:
-1) Remove default gateway if any using =route del default= command.
-2) Add default gateway as router using =route add default gw <gateway-ip>=.
+In the cluster only two machines - Router and Ansible, are part of both public
+and private network. These machines have direct internet access. The gateway of
+these two machines are set by the dhcp server.
+
+All other machines in the cluster are only part of private network. These
+machines do not have direct internet access. Machines get internet via the
+Router. Machines forward packets to the Router, then the Router does the
+required packet management to get internet for these machines. Technically
+Router acts as a gateway for all the private servers.
+
+To configure default gateway for private servers following actions are
+performed:
+1) Remove any default gateway if set already using following command:
+#+BEGIN_EXAMPLE
+route del default
+#+END_EXAMPLE
+2) Set default gateway as Router using following command:
+#+BEGIN_EXAMPLE
+route add default gw <gateway-ip>
+#+END_EXAMPLE
+
+These actions are executed from the configuration server as follows:
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 ---
 
@@ -282,17 +319,18 @@ server. To set default gateway following tasks are done:
 #+END_SRC
 
 ** Block Malicious Attacks
-Fail2ban tool protects server from the brute-force attacks. It bans an offensive
-host by adding a rule in firewall chain and sends an email notification to the
-system administrator. The objective is to install Fail2ban on all the servers
-and apply the local rules. 
+Servers are protected from various brute-force attacks using a Fail2ban tool.
+It ban an offensive host by adding rule in firewall and sends an email
+notification to the system administrator. Fail2ban is installed on all the
+servers.
 
-To install and set fail2ban service following tasks are done:
+To install and configure Fail2ban service following actions are performed:
 1) Download epel repo
 2) Install epel repo
 3) Install fail2ban
 4) Start fail2ban service
 
+These actions are executed from the configuration server as follows:
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 #Setup epel for downloading fail2ban
 - name: Download epel RPM
@@ -311,19 +349,21 @@ To install and set fail2ban service following tasks are done:
   service: name=fail2ban state=started enabled=yes
 #+END_SRC
 
-** Audit the Servers
-Servers are audited by maintaining a log of all the commands run on them along
-with the time stamp.
+** Save History of Executed Commands
+Any command executed on the servers are logged with the time stamp. History
+module in the system allows to maintain history of the commands.
 
-Following history parameters are set for audit purpose:
- - HISTTIMEFORMAT :: display the time stamp along with the command history
- - HISTSIZE       :: is the number of lines or commands that are stored in
+Following history parameters are set:
+ - HISTTIMEFORMAT :: sets the time format of time stamp
+ - HISTSIZE       :: sets the number of lines or commands that are stored in
                      memory in a history list while bash session is ongoing
- - HISTFILESIZE   :: is the number of lines or commands that are allowed in the
-                     history file at startup time of a session, and are stored
-                     in the history file at the end of bash session for use in
-                     future sessions.
+ - HISTFILESIZE   :: sets the number of lines or commands that are allowed in
+                     the history file at startup time of a session, and are
+                     stored in the history file at the end of bash session for
+                     use in future sessions.
 
+These parameters are set by executing shell script on the server, which is
+defined as follows:
 #+BEGIN_SRC shell :tangle roles/common/files/history.sh
 #!/bin/bash
 HISTTIMEFORMAT="%y %m %d %T"
@@ -332,16 +372,19 @@ HISTFILESIZE=100000
 export HISTTIMEFORMAT HISTSIZE HISTFILESIZE
 #+END_SRC 
 
-The above parameters are set and configured using a history configuration file.
+The shell script to set History parameters is executed from the configuration
+server as follows:
 #+BEGIN_SRC yaml :tangle roles/common/tasks/main.yml
 #Configure history
 - name: Configure history for all users with date/time and 100,000 lines of history
   copy: src=history.sh dest=/etc/profile.d/history.sh mode=755 owner=root group=root
 #+END_SRC 
 
-** Restart IPtables Service
-While setting up server iptables service is restarted. Although there may not be
-any firewall rules but service is restarted just to make sure its running.
+** Start Iptables service
+Iptables service runs all the time inside the system. While setting up the
+server iptables service is restarted. Although there may not be any firewall
+rules set in the iptables, but it is made sure that the service is running
+inside every server.
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 #Restart iptables
 - name: Restart iptables service 
@@ -352,7 +395,7 @@ any firewall rules but service is restarted just to make sure its running.
 #+END_SRC
 
 ** Configure host name
-
+Ask Saurabh
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 #Setup /etc/hosts
 - name: Configure hostname and fqdn to resolve to local IP on first line of /etc/hosts
@@ -360,14 +403,15 @@ any firewall rules but service is restarted just to make sure its running.
   lineinfile: dest=/etc/hosts regexp="{{ansible_default_ipv4.address}} {{ansible_fqdn}} {{ansible_hostname}}" insertbefore="BOF" line="{{ansible_default_ipv4.address}} {{ansible_fqdn}} {{ansible_hostname}}"
 #+END_SRC
 
-** Log File Summary
+** Summary of Log files
 Servers and applications generally create "log files" to keep track of
-activities taking place at any given time. *logwatch* is a tool to capture and
-analyze the log file summary.
+activities taking place at any given time. These log files are used for analysis
+of the system. A unified report of all these log files is generated and send to
+system administrator using *logwatch* tool.
 
-The list of tasks carried out are:
-   + Installing the logwatch
-   + Setting the detail of log level to =medium=   
+To configure logwatch following actions are performed:
+1) Install "logwatch" tool
+2) Set detail of log level to "medium"
 
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 ---
@@ -380,14 +424,17 @@ The list of tasks carried out are:
   lineinfile: line="Detail = High" dest=/etc/logwatch/conf/logwatch.conf regexp="^Detail ="  
 #+END_SRC
 
-** SMTP Configuration
-Sendmail service is configured inside the system. Various other services such as
-logwatch uses sendmail service to send mail alerts. To configure sendmail
-following steps are performed:
-1) Install sendmail using yum
+** Configure mail service
+Various services such as "logwatch" run inside the system, which send email
+alerts to the system administrator. These services use "Sendmail" service to
+send email alerts.
+
+To configure sendmail following actions are performed:
+1) Install sendmail
 2) Ensure postfix is stopped and disabled
 3) Set smtp smart host
-4) Start sendmail service
+4) Start =sendmail= service
+
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 #SMTP configuration
 - name: Install sendmail SMTP server for outgoing email
@@ -410,8 +457,19 @@ following steps are performed:
 #+END_SRC
 
 ** Set Nameserver
-Nameserver for the servers are defined in =/etc/resolv.conf= file. Nameserver is
-set to private dns.
+Nameservers are set on the systems in =/etc/resolv.conf= file. An example
+configuration file is shown below:
+
+#+BEGIN_EXAMPLE
+search localdomain.com
+nameserver 10.4.12.230
+#+END_EXAMPLE
+
+- search :: This field allows users to type simple names instead of complete
+            'fqdn' to reach local resources. If something comes to resolver that
+            has no dots '.' in it, the resolver will try adding
+            =localdomain.com= in it.
+- nameserver :: This field specifies the ip address of the dns servers.
 
 #+BEGIN_SRC conf :tangle roles/common/templates/resolv.conf
 {% if private_dns_zone != "none" %}
@@ -422,6 +480,9 @@ nameserver {{private_dns}}
 {% endfor %}
 #+END_SRC
 
+Configuration file - =resolv.conf= is copied to the system from the
+configuration server as follows: 
+
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 #Configure private DNS if values are set 
 - name: Configure machine to use private DNS (peerDNS)
@@ -430,13 +491,20 @@ nameserver {{private_dns}}
 #+END_SRC
 
 ** SSH Hardening
-The systems are secured by hardening ssh service. Following measures are taken
-to make system secure: 
+Systems are secured by hardening =ssh= service. SSH service allows to set
+various parameters to make the systems more secure.
 
-1) Permit root login without-password
-2) Password based access is disabled
-3) Enable key based authentication
-4) Do not permit empty password.
+In all the servers in the cluster following measures are taken by configuring
+=/etc/ssh/sshd_config= file.
+
+*** Permit Root Login without password
+Only System administrators with ssh private key can login as Root.
+simpler for playbooks.
+no "sudo su -"
+*** Disable Password based access
+*** Enable Key based authentication
+*** Do not permit empty passwords
+
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 - name: Permit root login without-pasword(key based)
   lineinfile: dest=/etc/ssh/sshd_config regexp='PermitRootLogin ' line='PermitRootLogin without-password' state=present
@@ -456,9 +524,9 @@ to make system secure:
 #+END_SRC
 
 ** Install Bind Utilities
-Bind utilities is a common package which includes the client side
-programs nslookup, dig and host. The utilities are used by admins to
-trouble shoot the network related issues.
+Bind utilities are installed on all the servers in the cluster. This package
+includes the programs such as =nslookup= , =dig= and =host=. These utilities are
+used by system administrator to trouble shoot the network related issues.
 
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 - name: install bind-utils
@@ -468,12 +536,25 @@ trouble shoot the network related issues.
 #+END_SRC
 
 ** Lock Root Account
-Lock 'root' account on the system.
+Root account is disabled by default on some versions of Linux. It essentially
+means the password for the root account is set to a value which matches no
+possible encrypted value, therefore nobody can login as root with password.
+
+On all the servers in the cluster root account is locked - no root password is
+set. Only system administrators with ssh private keys can login to root account.
+Password for root account can be set using =sudo passwd root= command.
+
+The way to lock root account is to execute =passwd -l root= command on the
+system.
+
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 - name: lock root account
   shell: passwd -l root
 #+END_SRC
-** Remove sudo
+
+** Remove sudoers package
+Sudoers package is removed from all the servers in the cluster.
+
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 - name: remove sudo
   yum: name=sudo state=absent
@@ -481,18 +562,20 @@ Lock 'root' account on the system.
 
 ** Common Variables
 Several common variables which are common across all ansible roles are defined
-in =common_vars= file which is included as a dependency.
+in =common_vars= file. The file is included as a dependency.
+
 #+BEGIN_SRC yml :tangle roles/common/meta/main.yml
 ---
 dependencies:
   - role: common_vars
 #+END_SRC
 
-** Restart Services
-The things listed in the 'notify' section of a task are called handlers.
-Handlers are lists of tasks that are referenced by name. Regardless of how many
-things notify a handler, it will run only once, after all of the tasks complete
-in a particular play. Handlers are used by ssh and sendmail.
+** Way to restart services
+When any changes are made in the configuration file of any service, the service
+needs to be restarted. For example if modifications are made to
+=/etc/ssh/sshd_config=, then the ssh service needs to be restarted to enforce
+the modified properties of the system. 
+
 #+BEGIN_SRC yml :tangle roles/common/handlers/main.yml
 ---
 - name: restart sendmail
@@ -501,7 +584,6 @@ in a particular play. Handlers are used by ssh and sendmail.
 - name: restart sshd
   service: name=sshd state=restarted
 #+END_SRC
-
     
 * COMMENT Timeline
 |------+-------------------------+------------+------------+------------------------------------------------------|
@@ -513,10 +595,16 @@ in a particular play. Handlers are used by ssh and sendmail.
 |      |                         |            |            | - Correct structure of scripts                       |
 |      |                         |            |            | - Make changes in firewall description               |
 |------+-------------------------+------------+------------+------------------------------------------------------|
-|   2. | April 10, 2015. Friday  | 9:15 a.m.  |            | - Test cases for firewall rules                      |
+|   2. | April 10, 2015. Friday  | 9:15 a.m.  | 01:20 p.m. | - Test cases for firewall rules                      |
 |      |                         |            |            | - Start documenting configuration files.             |
 |      |                         |            |            | - Only tasks and templates files are left.           |
-|      |                         |            |            |                                                      |
+|------+-------------------------+------------+------------+------------------------------------------------------|
+|      |                         | 02:30 p.m. |            | - Complete description of configuration files.       |
 * COMMENT TODO
-1) Ask zubair why /etc/hosts is configured to resolve local IP.
-2) Write test cases for Common firewall.
+1) Configure hostname
+2) SSH hardening subsections
+3) Why sudoers package is removed ?
+4) Write test cases for Common firewall.
+5) Test root account is locked using "sudo passwd -S root"
+6) Does internal traffic on the aws also goes through router ?
+7) Systems files.
