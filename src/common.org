@@ -3,32 +3,31 @@
 #+PROPERTY: session *scratch*
 #+PROPERTY: results output
 #+PROPERTY: exports code
+#+OPTIONS: ^:nil
 \#+SETUPFILE: org-templates/level-0.org
-#+OPTIONS: ^nil
+
 
 * Introduction
 The document describes the requirements, design and implementation of the common
-role. Common role is applied on all the servers in the cluster. 
-
-All the servers in the cluster are made secure by applying common security
-measures.
+role. Common role consists of basic functional and security requirements which
+are applied on all the servers in the cluster.
 
 * Requirements
 ** Functional Requirements
 1) Set default gateway as router
-2) Secure servers from brute-force attacks by capturing and banning suspected
-   malicious attackers
-3) Save history of executed command with time stamp
-4) Increase size of history file
-5) Start iptables service
-6) Mail summary of log files periodically to system administrator
-7) Permit root login without password
-8) Disable ssh password based access
-9) Enable key based authentication
-10) Do not permit empty password
-11) Install bind utilities
-12) Lock root account
-13) Remove sudoers package
+2) Save history of executed command with time stamp
+3) Start iptables service
+4) Permit root login without password
+5) Install bind utilities
+6) Remove sudoers package
+
+** Security Requirements
+1) Secure server from various attacks such as brute-force
+2) Mail summary of log files periodically to the system administrator
+3) Disable ssh password based access
+4) Enable key based authentication
+5) Do not permit empty password
+6) Lock root account
 
 * Design
 ** System Design Diagram
@@ -37,35 +36,26 @@ measures.
 ** Editable Link
 [[https://docs.google.com/drawings/d/1-_1DAonwj9mfJYaXqHwZVHbzYEgDkzdTjOzDCBTpr-c/edit][Google Drawing Link]]
 
-** Configuration Design
-
-|-----------------+--------------------+-----------------------------------------|
-| Requirement No. | Requirement        | Implementation                          |
-|-----------------+--------------------+-----------------------------------------|
-|              1. | Log file           | *logwatch* is configured to obtain log  |
-|                 | summary            | file summary                            |
-|-----------------+--------------------+-----------------------------------------|
-|              2. | Securing the       | *sshd-config* is configured to allow    |
-|                 |                    | only the ssh based access and disable   |
-|                 |                    | password based access                   |
-|-----------------+--------------------+-----------------------------------------|
-|              3. | Auditing the       | History settings are configured         |
-|                 | servers            | to log the commands run on the servers  |
-|                 |                    | with time stamp                         |
-|-----------------+--------------------+-----------------------------------------|
-|              4. | Blocking malicious | *fail2ban* is configured to capture and |
-|                 | attacks            | block suspicious attacker's IP          |
-|-----------------+--------------------+-----------------------------------------|
-
 ** System Files
-|------+----------+-------------------------+--------------------|
-| S.no | Service  | File                    | File Type          |
-|------+----------+-------------------------+--------------------|
-|   1. | Iptables | /etc/sysconfig/iptables | Configuration File |
-|------+----------+-------------------------+--------------------|
-|   2. | Logwatch |                         |                    |
-|------+----------+-------------------------+--------------------|
-|   3. |          |                         |                    |
+|------+---------------+----------------------------------+--------------------|
+| S.no | Service       | File                             | File Type          |
+|------+---------------+----------------------------------+--------------------|
+|   1. | Iptables      | /etc/sysconfig/iptables          | Configuration File |
+|------+---------------+----------------------------------+--------------------|
+|   2. | Fail2ban      | /etc/fail2ban/jail.local         | Configuraion File  |
+|------+---------------+----------------------------------+--------------------|
+|   3. | History       | /etc/profile.d/history.sh        | Shell script       |
+|------+---------------+----------------------------------+--------------------|
+|   4. | Local DNS     | /etc/hosts                       | Configuration File |
+|------+---------------+----------------------------------+--------------------|
+|   5. | Logwatch      | /etc/logwatch/conf/logwatch.conf | Configuration File |
+|------+---------------+----------------------------------+--------------------|
+|   6. | Sendmail      | /etc/mail/sendmail.mc            | Configuration File |
+|------+---------------+----------------------------------+--------------------|
+|   7. | Name Resolver | /etc/resolv.conf                 | Configuration File |
+|------+---------------+----------------------------------+--------------------|
+|   8. | SSH           | /etc/ssh/sshd_config             | Configuration File |
+|------+---------------+----------------------------------+--------------------|
 
 * Implementation
 
@@ -93,10 +83,12 @@ that configure the machine.  These scripts are organized in the following way:
 #+END_EXAMPLE
 
 ** Common Firewall Rules
-Firewall rules are applied on all the systems. Some firewall rules are common
-for all the system and are applied in all the servers. These common firewall
-rules are described here. And rules which are specific to the server are
-described in the individual server documentation itself.
+Firewall rules are set on the server by the individual server role. Some
+firewall rules are common for all the servers in the cluster and are applied by
+the common role. Each server also has its own specific firewall rules which are
+not common across all the servers. The description of specific rules are within
+the individual server role's documentation. Common firewall rules are described
+here.
 
 *** Default rules for filter table
  Default policy for input, forward and output is set to ACCEPT. If packet does
@@ -159,7 +151,7 @@ described in the individual server documentation itself.
 *** Rule for incoming ssh connection
  Allow server to accept incoming ssh TCP port 22 connections *only* from the
   ansible, nagios and management ips. A 'for loop' is used to enable rule for
-  multiple management server and ansible server.
+  multiple servers.
 #+BEGIN_EXAMPLE
 #Allowing incoming ssh connections only from the management ips. 
 #Hopefully fail2ban will take care of bruteforce attacks from management IPs
@@ -204,8 +196,9 @@ described in the individual server documentation itself.
 #+END_EXAMPLE
 
 *** Rule for FORWARD chain
- Forwarding rule is disabled if server is not responsible for any packet
-  forwarding.
+If the server does not forwards any packet the Forwarding rule is set to reject
+packets. Forwarding rule is set to ACCEPT only in the Router server.
+
 #+BEGIN_EXAMPLE
 #Do not allow any packet to be forwarded
 -A FORWARD -j REJECT --reject-with icmp-host-prohibited
@@ -288,27 +281,20 @@ COMMIT
 #+END_EXAMPLE
 ** Set Default Gateway
 In the cluster only two machines - Router and Ansible, are part of both public
-and private network. These machines have direct internet access. The gateway of
-these two machines are set by the dhcp server.
+and private network. Gateway of these two machines are set by the dhcp server,
+and these machines have direct internet access.
 
-All other machines in the cluster are only part of private network. These
-machines do not have direct internet access. Machines get internet via the
-Router. Machines forward packets to the Router, then the Router does the
-required packet management to get internet for these machines. Technically
-Router acts as a gateway for all the private servers.
+All the other machines in the cluster are only part of the private
+network. These machines do not have direct internet access. These Machines get
+internet by forwarding packets to the Router machine, then the Router does the
+required packet management to get internet for these machines. Router machine
+acts as a gateway for all the private servers.
 
 To configure default gateway for private servers following actions are
 performed:
-1) Remove any default gateway if set already using following command:
-#+BEGIN_EXAMPLE
-route del default
-#+END_EXAMPLE
-2) Set default gateway as Router using following command:
-#+BEGIN_EXAMPLE
-route add default gw <gateway-ip>
-#+END_EXAMPLE
+1) Remove any default gateway if set already.
+2) Set default gateway as Router.
 
-These actions are executed from the configuration server as follows:
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 ---
 
@@ -319,18 +305,17 @@ These actions are executed from the configuration server as follows:
 #+END_SRC
 
 ** Block Malicious Attacks
-Servers are protected from various brute-force attacks using a Fail2ban tool.
-It ban an offensive host by adding rule in firewall and sends an email
-notification to the system administrator. Fail2ban is installed on all the
-servers.
+Brute-force attacks are blocked on all the servers in the cluster. For this
+*Fail2ban* service is configured on the server. It bans an offensive host by
+adding rule in firewall and also sends an email notification to the system
+administrator.
 
-To install and configure Fail2ban service following actions are performed:
+To install and configure Fail2ban following actions are performed:
 1) Download epel repo
 2) Install epel repo
 3) Install fail2ban
 4) Start fail2ban service
 
-These actions are executed from the configuration server as follows:
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 #Setup epel for downloading fail2ban
 - name: Download epel RPM
@@ -350,10 +335,16 @@ These actions are executed from the configuration server as follows:
 #+END_SRC
 
 ** Save History of Executed Commands
-Any command executed on the servers are logged with the time stamp. History
-module in the system allows to maintain history of the commands.
+Commands executed on the servers are logged with the time stamp. These logged
+commands can be referred by the system administrator to trouble shoot any issues
+on the server.
+
+To save history of commands a shell script is created and placed inside
+=/etc/profile.d= directory. Scripts present inside the =/etc/profile.d=
+directory gets executed at the start of every new session.
 
 Following history parameters are set:
+
  - HISTTIMEFORMAT :: sets the time format of time stamp
  - HISTSIZE       :: sets the number of lines or commands that are stored in
                      memory in a history list while bash session is ongoing
@@ -362,8 +353,6 @@ Following history parameters are set:
                      stored in the history file at the end of bash session for
                      use in future sessions.
 
-These parameters are set by executing shell script on the server, which is
-defined as follows:
 #+BEGIN_SRC shell :tangle roles/common/files/history.sh
 #!/bin/bash
 HISTTIMEFORMAT="%y %m %d %T"
@@ -372,19 +361,16 @@ HISTFILESIZE=100000
 export HISTTIMEFORMAT HISTSIZE HISTFILESIZE
 #+END_SRC 
 
-The shell script to set History parameters is executed from the configuration
-server as follows:
-#+BEGIN_SRC yaml :tangle roles/common/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 #Configure history
 - name: Configure history for all users with date/time and 100,000 lines of history
   copy: src=history.sh dest=/etc/profile.d/history.sh mode=755 owner=root group=root
 #+END_SRC 
 
 ** Start Iptables service
-Iptables service runs all the time inside the system. While setting up the
-server iptables service is restarted. Although there may not be any firewall
-rules set in the iptables, but it is made sure that the service is running
-inside every server.
+While setting up the cluster, iptables service is restarted on all the servers,
+to make sure the service is running inside each server.
+
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 #Restart iptables
 - name: Restart iptables service 
@@ -406,8 +392,10 @@ Ask Saurabh
 ** Summary of Log files
 Servers and applications generally create "log files" to keep track of
 activities taking place at any given time. These log files are used for analysis
-of the system. A unified report of all these log files is generated and send to
-system administrator using *logwatch* tool.
+of the system. 
+
+To generate a unified report of all log files and send to system administrator
+*Logwatch* service is configured on all the servers in the cluster.
 
 To configure logwatch following actions are performed:
 1) Install "logwatch" tool
@@ -425,15 +413,15 @@ To configure logwatch following actions are performed:
 #+END_SRC
 
 ** Configure mail service
-Various services such as "logwatch" run inside the system, which send email
-alerts to the system administrator. These services use "Sendmail" service to
-send email alerts.
+Sendmail service is configured on all servers in the cluster. Services such as
+"logwatch" uses "sendmail" service to send mail alerts to the system
+administrator.
 
 To configure sendmail following actions are performed:
 1) Install sendmail
 2) Ensure postfix is stopped and disabled
 3) Set smtp smart host
-4) Start =sendmail= service
+4) Start sendmail service
 
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 #SMTP configuration
@@ -456,9 +444,9 @@ To configure sendmail following actions are performed:
   service: name=sendmail enabled=yes state=started
 #+END_SRC
 
-** Set Nameserver
-Nameservers are set on the systems in =/etc/resolv.conf= file. An example
-configuration file is shown below:
+** Set Name Resolver
+Nameservers are set on all the servers in the cluster. An example of
+configuration file - =/etc/resolv.conf= is shown and described below:
 
 #+BEGIN_EXAMPLE
 search localdomain.com
@@ -471,6 +459,8 @@ nameserver 10.4.12.230
             =localdomain.com= in it.
 - nameserver :: This field specifies the ip address of the dns servers.
 
+Configuration file is copied to the server from the configuration server.
+
 #+BEGIN_SRC conf :tangle roles/common/templates/resolv.conf
 {% if private_dns_zone != "none" %}
 search {{private_dns_zone}}
@@ -480,9 +470,6 @@ nameserver {{private_dns}}
 {% endfor %}
 #+END_SRC
 
-Configuration file - =resolv.conf= is copied to the system from the
-configuration server as follows: 
-
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 #Configure private DNS if values are set 
 - name: Configure machine to use private DNS (peerDNS)
@@ -491,30 +478,37 @@ configuration server as follows:
 #+END_SRC
 
 ** SSH Hardening
-Systems are secured by hardening =ssh= service. SSH service allows to set
-various parameters to make the systems more secure.
-
-In all the servers in the cluster following measures are taken by configuring
-=/etc/ssh/sshd_config= file.
+All the servers in the cluster are made secure by hardening *ssh* service. SSH
+configuration file =/etc/ssh/sshd_config= is customized as per the requirement.
 
 *** Permit Root Login without password
-Only System administrators with ssh private key can login as Root.
-simpler for playbooks.
-no "sudo su -"
-*** Disable Password based access
-*** Enable Key based authentication
-*** Do not permit empty passwords
+Only system administrators with ssh private key can login as Root.
 
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 - name: Permit root login without-pasword(key based)
   lineinfile: dest=/etc/ssh/sshd_config regexp='PermitRootLogin ' line='PermitRootLogin without-password' state=present
+#+END_SRC
 
+*** Disable Password based access
+Password based access is disabled.
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 - name: Disable Password authentication
   lineinfile: dest=/etc/ssh/sshd_config regexp='PasswordAuthentication ' line='PasswordAuthentication no'
+#+END_SRC
 
+*** Enable Key based authentication
+Only key based access is enabled.
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 - name: Enable Public key authentication
   lineinfile: dest=/etc/ssh/sshd_config regexp='PubkeyAuthentication ' line='PubkeyAuthentication yes'
+#+END_SRC
 
+*** Do not permit empty passwords
+Users are not allowed to set empty-password.
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 - name: Do not permit empty password, also ensure proper owner, group and permissions
   lineinfile: dest=/etc/ssh/sshd_config regexp='PermitEmptyPasswords ' line='PermitEmptyPasswords no' mode=0600 owner=root group=root
 
@@ -525,8 +519,8 @@ no "sudo su -"
 
 ** Install Bind Utilities
 Bind utilities are installed on all the servers in the cluster. This package
-includes the programs such as =nslookup= , =dig= and =host=. These utilities are
-used by system administrator to trouble shoot the network related issues.
+includes the programs such as *nslookup*, *dig* and *host*. These utilities are
+used by system administrators to trouble shoot the network related issues.
 
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 - name: install bind-utils
@@ -536,16 +530,13 @@ used by system administrator to trouble shoot the network related issues.
 #+END_SRC
 
 ** Lock Root Account
-Root account is disabled by default on some versions of Linux. It essentially
-means the password for the root account is set to a value which matches no
-possible encrypted value, therefore nobody can login as root with password.
+Locking root account means the password for the root account is set to a value
+which matches no possible encrypted value, therefore nobody can login as root
+with password.
 
-On all the servers in the cluster root account is locked - no root password is
-set. Only system administrators with ssh private keys can login to root account.
-Password for root account can be set using =sudo passwd root= command.
-
-The way to lock root account is to execute =passwd -l root= command on the
-system.
+On all the servers in the cluster root account is locked. Only system
+administrators with ssh private keys can login to root account. If password for
+root account is to be setup it can be done using =sudo passwd root= command.
 
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 - name: lock root account
@@ -561,8 +552,8 @@ Sudoers package is removed from all the servers in the cluster.
 #+END_SRC
 
 ** Common Variables
-Several common variables which are common across all ansible roles are defined
-in =common_vars= file. The file is included as a dependency.
+Variables which are common across all the ansible roles are defined in
+=common_vars= file. The file is included as a dependency for this role.
 
 #+BEGIN_SRC yml :tangle roles/common/meta/main.yml
 ---
@@ -570,11 +561,11 @@ dependencies:
   - role: common_vars
 #+END_SRC
 
-** Way to restart services
+** Restart services
 When any changes are made in the configuration file of any service, the service
-needs to be restarted. For example if modifications are made to
-=/etc/ssh/sshd_config=, then the ssh service needs to be restarted to enforce
-the modified properties of the system. 
+needs to be restarted. For example, if modifications are made in
+=/etc/ssh/sshd_config= file to customize ssh service, then the ssh service needs
+to be restarted to enforce the modified properties of the system.
 
 #+BEGIN_SRC yml :tangle roles/common/handlers/main.yml
 ---
@@ -607,4 +598,3 @@ the modified properties of the system.
 4) Write test cases for Common firewall.
 5) Test root account is locked using "sudo passwd -S root"
 6) Does internal traffic on the aws also goes through router ?
-7) Systems files.
