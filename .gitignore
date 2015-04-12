@@ -6,3 +6,6 @@ build
 docs
 src/fetched
 sitemap.org
+*.html
+src/implemented-common/
+src/roles/

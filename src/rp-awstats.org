@@ -1985,8 +1985,6 @@ below which we run on reverseproxy server.
 #+END_SRC
 
 * Test Cases
-<<<<<<< HEAD
-=======
 ** Test Case ID: SSH access only from configuration server
 *** Objective 
   To test SSH access from only from ansible and management ips
@@ -2040,7 +2038,6 @@ below which we run on reverseproxy server.
  configured properly and able to accept the connections on port 22
  only from specific ips and configuration server.
 
->>>>>>> 927fd00832d4205e71d8b04c113380e303603cb6
 ** Test Case ID: Reverseproxy test Without internal(Private) DNS  
 - This test case is done without internal (private)DNS configuration.
 ***  Objective 

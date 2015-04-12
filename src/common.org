@@ -1,0 +1,600 @@
+#+Title: Common Roles Design Model and Implementation
+#+Date: April 9, 2015. Thursday
+#+PROPERTY: session *scratch*
+#+PROPERTY: results output
+#+PROPERTY: exports code
+#+OPTIONS: ^:nil
+\#+SETUPFILE: org-templates/level-0.org
+
+
+* Introduction
+The document describes the requirements, design and implementation of the common
+role. Common role consists of basic functional and security requirements which
+are applied on all the servers in the cluster.
+
+* Requirements
+** Functional Requirements
+1) Set default gateway as router
+2) Save history of executed command with time stamp
+3) Start iptables service
+4) Permit root login without password
+5) Install bind utilities
+6) Remove sudoers package
+
+** Security Requirements
+1) Secure server from various attacks such as brute-force
+2) Mail summary of log files periodically to the system administrator
+3) Disable ssh password based access
+4) Enable key based authentication
+5) Do not permit empty password
+6) Lock root account
+
+* Design
+** System Design Diagram
+[[./diagrams/overall-model-aws-cluster.png]]
+
+** Editable Link
+[[https://docs.google.com/drawings/d/1-_1DAonwj9mfJYaXqHwZVHbzYEgDkzdTjOzDCBTpr-c/edit][Google Drawing Link]]
+
+** System Files
+|------+---------------+----------------------------------+--------------------|
+| S.no | Service       | File                             | File Type          |
+|------+---------------+----------------------------------+--------------------|
+|   1. | Iptables      | /etc/sysconfig/iptables          | Configuration File |
+|------+---------------+----------------------------------+--------------------|
+|   2. | Fail2ban      | /etc/fail2ban/jail.local         | Configuraion File  |
+|------+---------------+----------------------------------+--------------------|
+|   3. | History       | /etc/profile.d/history.sh        | Shell script       |
+|------+---------------+----------------------------------+--------------------|
+|   4. | Local DNS     | /etc/hosts                       | Configuration File |
+|------+---------------+----------------------------------+--------------------|
+|   5. | Logwatch      | /etc/logwatch/conf/logwatch.conf | Configuration File |
+|------+---------------+----------------------------------+--------------------|
+|   6. | Sendmail      | /etc/mail/sendmail.mc            | Configuration File |
+|------+---------------+----------------------------------+--------------------|
+|   7. | Name Resolver | /etc/resolv.conf                 | Configuration File |
+|------+---------------+----------------------------------+--------------------|
+|   8. | SSH           | /etc/ssh/sshd_config             | Configuration File |
+|------+---------------+----------------------------------+--------------------|
+
+* Implementation
+
+** Structure of the scripts
+The implementation of this system is in terms of a collection of ansible scripts
+that configure the machine.  These scripts are organized in the following way:
+
+#+BEGIN_EXAMPLE
+|-code
+|   |-- common.yml
+|   |-- roles
+|   |   |-- common
+|   |   |   |-- files
+|   |   |   |   `-- history.sh
+|   |   |   |-- handlers
+|   |   |   |   `-- main.yml
+|   |   |   |-- meta
+|   |   |   |   `-- main.yml
+|   |   |   |-- tasks
+|   |   |   |   `-- main.yml
+|   |   |   |-- templates
+|   |   |   |   `-- resolv.conf
+|   |   |   |-- vars
+|   |   |   |   `-- main.yml
+#+END_EXAMPLE
+
+** Common Firewall Rules
+Firewall rules are set on the server by the individual server role. Some
+firewall rules are common for all the servers in the cluster and are applied by
+the common role. Each server also has its own specific firewall rules which are
+not common across all the servers. The description of specific rules are within
+the individual server role's documentation. Common firewall rules are described
+here.
+
+*** Default rules for filter table
+ Default policy for input, forward and output is set to ACCEPT. If packet does
+  not match any rule then the default action is applied to the packet. Packets
+  counters are set to [0:0]. First counter represents the number of packets that
+  matched the rule for the chain, and the second counter represents the total
+  size of the packets that matched the rule.
+#+BEGIN_EXAMPLE
+#If packet does not match any rule then the default action is applied to the packet
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+#+END_EXAMPLE 
+
+*** Rule for INPUT loopback packets
+ Allow internal communication between services running within the server, over
+  loopback interface. Destination ip is also specified to avoid any security
+  breach.
+#+BEGIN_EXAMPLE
+#Allow internal process to process communication over loopback interface
+-A INPUT -i lo -d 127.0.0.0/8 -j ACCEPT
+#+END_EXAMPLE
+ 
+*** Rate limiting new connections
+ This rule limit all new connections except UDP connections. Limit is set to a
+  proper high value, to secure the system from flooded connections. Packets are
+  dropped if they are received after the limit is exceeded. Dropped packets are
+  logged with a limited rate. Once the rate of incoming packets is under
+  control, system again starts accepting the connections.
+#+BEGIN_EXAMPLE
+#Rate limit new connections to 20 new connections per 30 seconds
+-A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --set
+-A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --rcheck --seconds 30 --hitcount 20 -m limit --limit 2/min -j LOG --log-prefix "new_limit_"
+-A INPUT ! -p udp -m state --state NEW -m recent --name ssh_limit --rcheck --seconds 30 --hitcount 20 -j DROP
+#+END_EXAMPLE
+
+*** Rule for incoming ping request with rate limiting
+ Allow server to accept incoming ping requests from anywhere. Limit is set to a
+  proper high value, to secure the system from flooded connections. Packets are
+  dropped if they are received after the limit is exceeded. Dropped packets are
+  logged with a limited rate. Once the rate of incoming packets is under
+  control, system again starts accepting the connections.
+#+BEGIN_EXAMPLE
+#Allow to accept incoming ping requests from anywhere
+-A INPUT -p icmp --icmp-type echo-request -m limit --limit 60/minute --limit-burst 120 -j ACCEPT
+-A INPUT -p icmp --icmp-type echo-request -m limit --limit 1/minute --limit-burst 2 -j LOG 
+-A INPUT -p icmp --icmp-type echo-request -j DROP
+#+END_EXAMPLE
+
+*** Rule for ongoing connection from other machine
+ Allow server to continue already related and established connections. Initial
+  connection request would have passed through the firewall rules and if the
+  connection got established, it is allowed to continue.
+#+BEGIN_EXAMPLE
+#Allow to continue already related and established connections
+-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+#+END_EXAMPLE
+
+*** Rule for incoming ssh connection
+ Allow server to accept incoming ssh TCP port 22 connections *only* from the
+  ansible, nagios and management ips. A 'for loop' is used to enable rule for
+  multiple servers.
+#+BEGIN_EXAMPLE
+#Allowing incoming ssh connections only from the management ips. 
+#Hopefully fail2ban will take care of bruteforce attacks from management IPs
+{% for item in management_ips  %}  
+-A INPUT -m state --state NEW -s {{ item }} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
+#Allowing incoming ssh connections only from ansible server. 
+#Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
+{% for item in ansible_server_ips  %}
+-A INPUT -m state --state NEW -s {{ item }} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
+#Allow incoming SSH connections from nagios server IPs.  Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
+{% for item in nagios_server_ips  %}  
+-A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
+#+END_EXAMPLE
+
+*** Rule for incoming NRPE query from Nagios server
+ Accept NRPE queries from Nagios.
+#+BEGIN_EXAMPLE
+#Allow to accept incoming nrpe queries from nagios server
+-A INPUT -m state --state NEW -p tcp -m tcp --dport 5666 -j ACCEPT
+#+END_EXAMPLE
+
+*** Rule for incoming SNMP queries from Cacti server
+ Accept input connections from cacti server.
+#+BEGIN_EXAMPLE
+#Allow to accept incoming snmp queries from cacti server
+-A INPUT -p udp -m udp --dport 161 -j ACCEPT
+-A INPUT -p udp -m udp --dport 162 -j ACCEPT
+#+END_EXAMPLE
+
+*** Rule for all other incoming connections
+ Reject all the INPUT packets which does not match any of the defined rules
+  with a reply message =icmp-host-prohibited= to the host machine. Rejected
+  packets are also logged with a limited rate.
+#+BEGIN_EXAMPLE
+#Log all other "blocked_input_" attempts with rate limiting
+-A INPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_input_"
+#Drop all the INPUT packets which does not match any of the rules
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+#+END_EXAMPLE
+
+*** Rule for FORWARD chain
+If the server does not forwards any packet the Forwarding rule is set to reject
+packets. Forwarding rule is set to ACCEPT only in the Router server.
+
+#+BEGIN_EXAMPLE
+#Do not allow any packet to be forwarded
+-A FORWARD -j REJECT --reject-with icmp-host-prohibited
+#+END_EXAMPLE
+
+*** Rule for OUTPUT loopback packets
+ Allow internal communication between services running within the system, over
+  loopback interface. Source ip is also specified to avoid any security breach.
+#+BEGIN_EXAMPLE
+#Allow internal process to process communication over loopback interface
+-A OUTPUT -s 127.0.0.0/8 -o lo -j ACCEPT
+#+END_EXAMPLE
+
+*** Rule for ongoing connection to other machine
+ Allow server to continue already related and established connections. Initial
+  connection request would have passed through the firewall rules and if the
+  connection got established, it is allowed to continue.
+#+BEGIN_EXAMPLE
+#Allow to continue already related and established connections
+-A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+#+END_EXAMPLE
+
+*** Rule for outgoing dns request
+ Allow server to make dns queries.
+#+BEGIN_EXAMPLE
+#Allow to make dns queries
+-A OUTPUT -p udp -m udp --dport 53 -j ACCEPT
+#+END_EXAMPLE
+
+*** Rule for sending log messages to rsyslog server
+ Allow server to send log messages to rsyslog server.
+#+BEGIN_EXAMPLE
+#Allow to make dns queries
+-A OUTPUT -p udp -m udp --dport 514 -j ACCEPT
+#+END_EXAMPLE
+
+*** Rule for sending mails by logwatch service
+ Allow logwatch service running inside the server to send mail alerts.
+#+BEGIN_EXAMPLE
+#Allow to send mails by logwatch service
+-A OUTPUT -p tcp -m tcp --dport 25 -j ACCEPT
+#+END_EXAMPLE
+
+*** Rule for outgoing web request by yum
+ Allow yum service to update packages via http and https. 
+#+BEGIN_EXAMPLE
+#Allow yum to contact web servers for installing and updating packages
+-A OUTPUT -p tcp -m tcp --dport 80 -j ACCEPT
+-A OUTPUT -p tcp -m tcp --dport 443 -j ACCEPT
+#+END_EXAMPLE
+
+*** Rule for outgoing connection to OSSEC server
+ Allow server to send system's information to OSSEC server.
+#+BEGIN_EXAMPLE
+#Allow outgoing connections to OSSEC server
+-A OUTPUT -p udp -m udp --dport 1514 -j ACCEPT
+#+END_EXAMPLE
+    
+*** Rule for outgoing ping request
+ Allow server to send ping requests to anywhere.
+#+BEGIN_EXAMPLE
+#Allow to send ping requests to anywhere.
+-A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT
+#+END_EXAMPLE
+
+*** Rule for all other outgoing packets
+ Reject all the OUTPUT packets which does not match any of the defined rules
+  with a reply message =icmp-host-prohibited= to the host machine. Rejected
+  packets are also logged with a limited rate.
+#+BEGIN_EXAMPLE
+#Log all other "blocked_output_" attempts
+-A OUTPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_output_"
+#Reject all the OUTPUT packets which does not match any of the rules
+-A OUTPUT -j REJECT --reject-with icmp-host-prohibited
+#+END_EXAMPLE
+
+*** Enforce filter rules
+#+BEGIN_EXAMPLE
+COMMIT
+#+END_EXAMPLE
+** Set Default Gateway
+In the cluster only two machines - Router and Ansible, are part of both public
+and private network. Gateway of these two machines are set by the dhcp server,
+and these machines have direct internet access.
+
+All the other machines in the cluster are only part of the private
+network. These machines do not have direct internet access. These Machines get
+internet by forwarding packets to the Router machine, then the Router does the
+required packet management to get internet for these machines. Router machine
+acts as a gateway for all the private servers.
+
+To configure default gateway for private servers following actions are
+performed:
+1) Remove any default gateway if set already.
+2) Set default gateway as Router.
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+---
+
+- name: setting the default gw, skips if router or ansible server
+  shell: route del default; route add default gw {{router_internal_ip}}
+  when: not ( i_ans is defined or i_router is defined )
+  ignore_errors: yes
+#+END_SRC
+
+** Block Malicious Attacks
+Brute-force attacks are blocked on all the servers in the cluster. For this
+*Fail2ban* service is configured on the server. It bans an offensive host by
+adding rule in firewall and also sends an email notification to the system
+administrator.
+
+To install and configure Fail2ban following actions are performed:
+1) Download epel repo
+2) Install epel repo
+3) Install fail2ban
+4) Start fail2ban service
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+#Setup epel for downloading fail2ban
+- name: Download epel RPM
+  get_url: url="{{ epel_download_url }}" dest="{{epel_download_path}}" timeout=5
+  environment: proxy_env
+
+- name: Install epel RPM
+  yum: name="{{epel_download_path}}" state=present
+  environment: proxy_env
+
+#Install fail2ban and enable it on startup
+- name: Install fail2ban
+  yum: name=fail2ban state=present
+
+- name: Start and enable fail2ban service
+  service: name=fail2ban state=started enabled=yes
+#+END_SRC
+
+** Save History of Executed Commands
+Commands executed on the servers are logged with the time stamp. These logged
+commands can be referred by the system administrator to trouble shoot any issues
+on the server.
+
+To save history of commands a shell script is created and placed inside
+=/etc/profile.d= directory. Scripts present inside the =/etc/profile.d=
+directory gets executed at the start of every new session.
+
+Following history parameters are set:
+
+ - HISTTIMEFORMAT :: sets the time format of time stamp
+ - HISTSIZE       :: sets the number of lines or commands that are stored in
+                     memory in a history list while bash session is ongoing
+ - HISTFILESIZE   :: sets the number of lines or commands that are allowed in
+                     the history file at startup time of a session, and are
+                     stored in the history file at the end of bash session for
+                     use in future sessions.
+
+#+BEGIN_SRC shell :tangle roles/common/files/history.sh
+#!/bin/bash
+HISTTIMEFORMAT="%y %m %d %T"
+HISTSIZE=100000
+HISTFILESIZE=100000
+export HISTTIMEFORMAT HISTSIZE HISTFILESIZE
+#+END_SRC 
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+#Configure history
+- name: Configure history for all users with date/time and 100,000 lines of history
+  copy: src=history.sh dest=/etc/profile.d/history.sh mode=755 owner=root group=root
+#+END_SRC 
+
+** Start Iptables service
+While setting up the cluster, iptables service is restarted on all the servers,
+to make sure the service is running inside each server.
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+#Restart iptables
+- name: Restart iptables service 
+#checking whether iptables is running is pointless
+#restart would fail if there is no /etc/sysconfig/iptables file
+  service: name=iptables state=restarted
+  ignore_errors: yes
+#+END_SRC
+
+** Configure host name
+Ask Saurabh
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+#Setup /etc/hosts
+- name: Configure hostname and fqdn to resolve to local IP on first line of /etc/hosts
+#Necessary for containers so that they can send emails without 30 second delay
+  lineinfile: dest=/etc/hosts regexp="{{ansible_default_ipv4.address}} {{ansible_fqdn}} {{ansible_hostname}}" insertbefore="BOF" line="{{ansible_default_ipv4.address}} {{ansible_fqdn}} {{ansible_hostname}}"
+#+END_SRC
+
+** Summary of Log files
+Servers and applications generally create "log files" to keep track of
+activities taking place at any given time. These log files are used for analysis
+of the system. 
+
+To generate a unified report of all log files and send to system administrator
+*Logwatch* service is configured on all the servers in the cluster.
+
+To configure logwatch following actions are performed:
+1) Install "logwatch" tool
+2) Set detail of log level to "medium"
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+---
+#Logwatch configuration
+- name: Install logwatch
+  yum: name=logwatch state=installed
+  environment: proxy_env
+
+- name: Configure detailed logging via logwatch
+  lineinfile: line="Detail = High" dest=/etc/logwatch/conf/logwatch.conf regexp="^Detail ="  
+#+END_SRC
+
+** Configure mail service
+Sendmail service is configured on all servers in the cluster. Services such as
+"logwatch" uses "sendmail" service to send mail alerts to the system
+administrator.
+
+To configure sendmail following actions are performed:
+1) Install sendmail
+2) Ensure postfix is stopped and disabled
+3) Set smtp smart host
+4) Start sendmail service
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+#SMTP configuration
+- name: Install sendmail SMTP server for outgoing email
+  yum: name=sendmail state=installed
+  environment: proxy_env
+
+- name: Ensure that postfix is stopped and disabled
+  service: name=postfix enabled=no state=stopped
+#if postfix is not present ignore error
+  ignore_errors: yes
+
+- name: Configure SMART_HOST if necessary
+  lineinfile: line="define(`SMART_HOST', `{{smtp_smart_host}}')dnl" regexp="SMART_HOST" dest="/etc/mail/sendmail.mc"
+  when: smtp_smart_host != "none"
+  notify:
+    - restart sendmail
+
+- name: Ensure that sendmail is running and enabled
+  service: name=sendmail enabled=yes state=started
+#+END_SRC
+
+** Set Name Resolver
+Nameservers are set on all the servers in the cluster. An example of
+configuration file - =/etc/resolv.conf= is shown and described below:
+
+#+BEGIN_EXAMPLE
+search localdomain.com
+nameserver 10.4.12.230
+#+END_EXAMPLE
+
+- search :: This field allows users to type simple names instead of complete
+            'fqdn' to reach local resources. If something comes to resolver that
+            has no dots '.' in it, the resolver will try adding
+            =localdomain.com= in it.
+- nameserver :: This field specifies the ip address of the dns servers.
+
+Configuration file is copied to the server from the configuration server.
+
+#+BEGIN_SRC conf :tangle roles/common/templates/resolv.conf
+{% if private_dns_zone != "none" %}
+search {{private_dns_zone}}
+{% endif %}
+{% for private_dns in private_dns_ips %}
+nameserver {{private_dns}}
+{% endfor %}
+#+END_SRC
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+#Configure private DNS if values are set 
+- name: Configure machine to use private DNS (peerDNS)
+  template: src=resolv.conf dest=/etc/resolv.conf owner=root group=root mode=644
+  when: private_dns_ips != "none" 
+#+END_SRC
+
+** SSH Hardening
+All the servers in the cluster are made secure by hardening *ssh* service. SSH
+configuration file =/etc/ssh/sshd_config= is customized as per the requirement.
+
+*** Permit Root Login without password
+Only system administrators with ssh private key can login as Root.
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Permit root login without-pasword(key based)
+  lineinfile: dest=/etc/ssh/sshd_config regexp='PermitRootLogin ' line='PermitRootLogin without-password' state=present
+#+END_SRC
+
+*** Disable Password based access
+Password based access is disabled.
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Disable Password authentication
+  lineinfile: dest=/etc/ssh/sshd_config regexp='PasswordAuthentication ' line='PasswordAuthentication no'
+#+END_SRC
+
+*** Enable Key based authentication
+Only key based access is enabled.
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Enable Public key authentication
+  lineinfile: dest=/etc/ssh/sshd_config regexp='PubkeyAuthentication ' line='PubkeyAuthentication yes'
+#+END_SRC
+
+*** Do not permit empty passwords
+Users are not allowed to set empty-password.
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Do not permit empty password, also ensure proper owner, group and permissions
+  lineinfile: dest=/etc/ssh/sshd_config regexp='PermitEmptyPasswords ' line='PermitEmptyPasswords no' mode=0600 owner=root group=root
+
+#Call handler to restart sshd
+  notify:
+      - restart sshd
+#+END_SRC
+
+** Install Bind Utilities
+Bind utilities are installed on all the servers in the cluster. This package
+includes the programs such as *nslookup*, *dig* and *host*. These utilities are
+used by system administrators to trouble shoot the network related issues.
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: install bind-utils
+  yum: name=bind-utils state=present
+  environment:
+   proxy_env
+#+END_SRC
+
+** Lock Root Account
+Locking root account means the password for the root account is set to a value
+which matches no possible encrypted value, therefore nobody can login as root
+with password.
+
+On all the servers in the cluster root account is locked. Only system
+administrators with ssh private keys can login to root account. If password for
+root account is to be setup it can be done using =sudo passwd root= command.
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: lock root account
+  shell: passwd -l root
+#+END_SRC
+
+** Remove sudoers package
+Sudoers package is removed from all the servers in the cluster.
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: remove sudo
+  yum: name=sudo state=absent
+#+END_SRC
+
+** Common Variables
+Variables which are common across all the ansible roles are defined in
+=common_vars= file. The file is included as a dependency for this role.
+
+#+BEGIN_SRC yml :tangle roles/common/meta/main.yml
+---
+dependencies:
+  - role: common_vars
+#+END_SRC
+
+** Restart services
+When any changes are made in the configuration file of any service, the service
+needs to be restarted. For example, if modifications are made in
+=/etc/ssh/sshd_config= file to customize ssh service, then the ssh service needs
+to be restarted to enforce the modified properties of the system.
+
+#+BEGIN_SRC yml :tangle roles/common/handlers/main.yml
+---
+- name: restart sendmail
+  service: name=sendmail state=restarted
+
+- name: restart sshd
+  service: name=sshd state=restarted
+#+END_SRC
+    
+* COMMENT Timeline
+|------+-------------------------+------------+------------+------------------------------------------------------|
+| S.no | Day                     | Start Time | End Time   | Tasks                                                |
+|------+-------------------------+------------+------------+------------------------------------------------------|
+|   1. | April 9, 2015, Thursday | 09:20 a.m. | 12:30 p.m. | - Confirm tangle output is same as aws implmentation |
+|      |                         |            |            | - Write Down functional and  security requirements.  |
+|      |                         |            |            | - Make a common design diagram                       |
+|      |                         |            |            | - Correct structure of scripts                       |
+|      |                         |            |            | - Make changes in firewall description               |
+|------+-------------------------+------------+------------+------------------------------------------------------|
+|   2. | April 10, 2015. Friday  | 9:15 a.m.  | 01:20 p.m. | - Test cases for firewall rules                      |
+|      |                         |            |            | - Start documenting configuration files.             |
+|      |                         |            |            | - Only tasks and templates files are left.           |
+|------+-------------------------+------------+------------+------------------------------------------------------|
+|      |                         | 02:30 p.m. |            | - Complete description of configuration files.       |
+* COMMENT TODO
+1) Configure hostname
+2) SSH hardening subsections
+3) Why sudoers package is removed ?
+4) Write test cases for Common firewall.
+5) Test root account is locked using "sudo passwd -S root"
+6) Does internal traffic on the aws also goes through router ?
