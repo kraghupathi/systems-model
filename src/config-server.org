@@ -210,6 +210,13 @@ itself and to run the ansible scripts.
   yum: name=ansible state=present
   environment: proxy_env #please look at Note2
 #+END_SRC
+** Hostname 
+  The following task changes the hostname of the container/VM
+  #+BEGIN_SRC yaml :tangle roles/config_server/tasks/main.yml
+  ---
+- name: changing the hostname 
+  hostname: config-server.vlabs.ac.in
+  #+END_SRC
 ** Apply firewall rules to Configuration server
    Firewall rules are applied by following steps:
     1) Copy the =iptables= template to the configuration server.
