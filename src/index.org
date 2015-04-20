@@ -1,4 +1,4 @@
-#+TITLE:     The AWS cluster
+#+TITLE:     The Cluster Model
 #+AUTHOR:    M.S.Soumya
 #+EMAIL:     ms@ms
 #+DATE:      2015-03-25 Wed
@@ -8,20 +8,74 @@
 #+SETUPFILE: org-templates/level-0.org
 
 * Introduction
-* Requirements
-** Functional
-** Security
-* Design
-* Iplementation
-** Provisioning of the cluster
-** Nodes
+  This document describes in detail the Model of Systems Cluster at
+  VLEAD. The tools, systems, configurations, setup files, related
+  discussions, and several other intricacies have been capmtured in
+  this model.
+
+* The Cluster Model
+  The cluster model is a set of systems which formulate the
+  infrastructure for the hosting of labs. There are other components
+  which will be later added to this model. This cluster model is of
+  two types:
+  + [[Base1 Cluster]]
+  + [[Amazon Web Services (AWS) Cluster]]
+** Base1 Cluster 
+   This cluster is the staging cluster. This cluster was developed to
+   test the functionality of the systems in the cluster before setting
+   up a cluster on Amazon.  
+   
+** Amazon Web Services (AWS) Cluster
+   This cluster is the Production cluster. This cluster was built
+   after testing the functioning of all the systems in entirety on the
+   Base1 cluster. 
+
+** Difference in the Base1 and AWS cluster
+   The set of systems belonging to the Base1 cluster is the same as
+   that of the AWS cluster. The Base1 cluster and the AWS cluster
+   differ only in their provisioning. The provisioning of these
+   cluster is described in the next section.
+
+*** Provisioning of Base1 cluster
+*** Provisioning of AWS cluster
+
+* Design of the Cluster model
+  The diagram below depicts the architecture of the systems in the
+  cluster model. This architecture does not change for the types of
+  clusters mentioned earlier.  
+  
+** Overall Network Diagram
+   The diagram below shows the architecture of the cluster. The
+   network setup of the cluster is depicted in this figure.
+
+   #+CAPTION:  Cluster Network Diagram
+   #+LABEL:  fig-cluster-network-diagram
+   #+NAME: fig-cluster-network-diagram
+   [[./diagrams/overall-cluster-network-diagram.png]]
+
+** Overall connectivity Diagram
+   The diagram below shows how the different machines in the are
+   connected to each other. It just shows the connection of each
+   machine with the other, not specifying the protocol or the port with
+   which they connect.
+   #+CAPTION:  Cluster connectivity Diagram
+   #+LABEL:  fig-cluster-connectivity-diagram
+   #+NAME: fig-cluster-connectivity-diagram
+   [[./diagrams/overall-model-aws-cluster.png]]
+
+* Bringing up the Cluster
+  The cluster is a collection of several machines. Each of these
+  machines have a specific service that they serve. Each of these
+  machines are called as nodes in the cluster. To setup the entire
+  cluster for the first time we need to setup each of the machines
+  individually. This process is called the bootstrapping process.
+  
+** Nodes in the cluster
+- [[./rsyslog_server.org][Rsyslog]]
+- [[./privatedns.org][Private DNS]]
+- [[./publicdns.org][Public DNS]]
+- [[./rp-awstats.org][Reverse Proxy]]
+- [[./nagios_server.org][Nagios]]
+- [[./router.org][Router]]
 - Ossec
-- Rsyslog
-- Private DNS
-- Public DNS
-- ReverseProxy
-- Nagios
-- Router
-** Configuring the whole cluster
-- Common role
-- Common_vars role
+
