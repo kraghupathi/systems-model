@@ -8,7 +8,7 @@
 
 * Introduction
 This Documentation describes the *Reverse Proxy* server setup and
-*AWStats* setup for analytics of labs deployed on amazon using automated
+*AWStats* setup for analytics of labs deployed on amazon/base1 using automated
 scripts.  These scripts are executed only from configuration server.
 This server is managed by [[./ansible.org][configuration server]].
 
@@ -16,12 +16,11 @@ This server is managed by [[./ansible.org][configuration server]].
                    reverseproxy and the reverse proxy then decides
                    where to send those requests, and returns the
                    content as if it was itself the destination.
-- AWStats :: AWStats is a one of the log analyzer which creates
-             advanced web related trafic. This log analyzer gives us
-             lab user's web trafic information such as number of
-             visitors and visits, number of pages for a visit,
-             etc. Data is graphically presented in easy to read web
-             pages
+- AWStats :: AWStats is a one of the log analyzer which creates web
+             related trafic. This log analyzer gives us lab user's web
+             trafic information such as number of visitors and visits,
+             number of pages for a visit, etc. Data is graphically
+             presented in easy to read web pages
 * Requirements
 Requirements which are specific to reverseproxy defined below and all
 other requirements are defined in common role's requirements
@@ -247,7 +246,7 @@ The above rule satisfies functional requirements 2 and 3
   + httpd
   + awstats
   In the following script,use proxy_env variable if network uses any proxy, else comment that or
-  remove the line(while working on amazon)
+  remove the line(while working on AWS)
 - Note :: Install "mod_ssl" for HTTPS access. Currently HTTPS access
           is not enabled. Enable it if it has a valid certificate and
           test the implementation using
@@ -260,6 +259,13 @@ The above rule satisfies functional requirements 2 and 3
     - httpd
     - awstats
    environment: proxy_env
+#+END_SRC
+** Hostname 
+ This task changes the hostname of VM.
+#+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml
+---
+- name: Changing the hostname
+  hostname: name=reverseproxy.virtual-vlabs.ac.in
 #+END_SRC
 ** Configuring firewall rules 
 Copy =iptables= template which was created at [[Firewall rules]] to reverseproxy.
@@ -1985,61 +1991,9 @@ below which we run on reverseproxy server.
 #+END_SRC
 
 * Test Cases
-** Test Case ID: SSH access only from configuration server
-*** Objective 
-  To test SSH access from only from ansible and management ips
-*** Apparatus 
-  1) Configuration server 
-  2) Reverseproxy server
-  3) A machine with management IP
-*** Experiments 
-  Reverseproxy server accepts incoming connections on tcp port 22
-   only from configuration server.  
-**** ssh from config-serevr 
-  ssh to reverseproxy from config_server using the bellow command
-  #+BEGIN_EXAMPLE
-  config-server$ ssh root@<reverseproxy-ip>
-  #+END_EXAMPLE
-  Result is as follows after logged in 
-  #+BEGIN_EXAMPLE 
-  Last login: Thu Apr  2 ... other details.....
-  reverserproxy$
-  #+END_EXAMPLE
-**** ssh from management ips
-  Reverseproxy server accepts incoming connections on port 22 only
-  from management ips ssh from a machine with management ip to
-  reverseproxy using the bellow command
-  #+BEGIN_SRC example
-  management-ips$ ssh root@reverserproxy-ip
-  #+END_SRC
-  Result
-  #+BEGIN_SRC example
-   Last login: Thu Apr  2 ---Details of last login---
-  reverserproxy$
-  #+END_SRC
-**** ssh from any other machine
-  ssh from any other machine to reverseproxy.
-  #+BEGIN_SRC example
-  Any-other$ ssh root@reverserproxy-ip
-  #+END_SRC
-  Result
-  #+BEGIN_SRC example
-  Permission Denied ......
-  #+END_SRC
-  That means reverseproxy server is not accepting ssh connection from
-  other machine.
-*** Observation 
- Reverseproxy is able to accept the incoming connections on port 22
- only from configuration server and management ips.
-*** Result 
- Reverseproxy is working properly with SSH configuration.
-*** Conclusion 
- SSH and iptables are configured properly. So reverseproxy is
- configured properly and able to accept the connections on port 22
- only from specific ips and configuration server.
-
 ** Test Case ID: Reverseproxy test Without internal(Private) DNS  
-- This test case is done without internal (private)DNS configuration.
+This test case is done without internal (private)DNS configuration.
+For internal name resolving used =/etc/hosts/= file of the container
 ***  Objective 
 Test to check whether the client requests are going via reverseproxy
 and returns the content of particular lab.
@@ -2071,21 +2025,20 @@ and returns the content of particular lab.
      + Dependencies ::
          a) httpd
          b) php(if needed)
-  3) Add virtual host entries in reverseproxy in
-     =/etc/httpd/conf.d/virtualhosts.conf= of two labs
+  3) Add virtual host entries in reverseproxy.
      + Adding virtual host entries is taken care by ansible scripts
        of reverseproxy_server.
      + This virtualhost entry is needed for reverseproxy in order to
-       send the incoming HTTP and HTTPS packets to internal web server
-       and is reverseproxy server is responsible for where to send
-       these packets based on ServerName field in virtualhost entry
-  4) create dummy index.html file in each container  
-     + These files are dummy html files just for testing. 
+       send the incoming HTTP and HTTPS packets to internal web
+       servers and reverseproxy is responsible for where to send these
+       packets based on ServerName field in virtualhost entry
+  4) create index.html file in each lab container  
+     + These index.html files are may be dummy html files just for testing. 
      + these files are required to test whether the reverseproxy is forwarding
-       the HTTP packets to internal web server based on virtualhost
-       entry or not.
+       the HTTP packets to internal web server or not, based on virtualhost
+       entry.
   5) Add hostname of each lab in =/etc/hosts= by giving ip of lab in
-     reverseproxy and for internal name resolution
+     reverseproxy and for internal name resolution.
   6) Use command line commands such as wget, curl, ping etc to test
      reverseproxy and do the following experiments
 *** Experiments 
@@ -2180,7 +2133,7 @@ Test to check the AWStats for virtual hosts
        #+END_SRC
        or
      - Run the following command to update analytics of individual
-       lab separately.
+       lab.
        #+BEGIN_SRC example
        $perl /usr/share/awstats/wwwroot/cgi-bin/awstats.pl -config=lab1.virtual-labs.ac.in -update
        #+END_SRC
@@ -2196,7 +2149,7 @@ Test to check the AWStats for virtual hosts
          #+BEGIN_SRC example
          tail -f /var/log/http/lab1.virtual-labs.ac.in-access-log* and    
 	 #+END_SRC
-         and you may get the following result
+         and you may get the following output
          #+BEGIN_SRC example
          172.172.172.1 - - [26/Mar/2015:06:27:34 -0400] "GET / HTTP/1.1" 200 43 "-" "Wget/1.15 (linux-gnu)"
          172.172.172.1 - - [26/Mar/2015:06:27:49 -0400] "GET / HTTP/1.1" 200 43 "-" "Wget/1.15 (linux-gnu)"
@@ -2227,7 +2180,6 @@ Test to check the AWStats for virtual hosts
 *** Conclusion 
   Awstats ( analytics of each lab ) are storing and able to access the
   analytics from browser
-
 
 ** Test Case ID : Reverseproxy test using internal(private) DNS, Public DNS and Router 
 

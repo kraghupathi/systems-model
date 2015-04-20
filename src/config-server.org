@@ -38,10 +38,10 @@ etc. and configures servers.
 
 Only admin user from workstation/PC with management ip can be able ssh
 to configuration server using key(which is given by amazon) based
-authentication. From configuration server admin user runs the scripts
+authentication. From configuration server, admin user runs the scripts
 to setup server individually or all at once.
 
-[[./diagrams/confg-server-network-diagram.png]]
+[[./diagrams/config-server-network-diagram.png]]
 
 The design of the firewall rules ensures that this server is
 accessible only via port 22. All other ports are disabled. Moreover,
@@ -210,6 +210,13 @@ itself and to run the ansible scripts.
   yum: name=ansible state=present
   environment: proxy_env #please look at Note2
 #+END_SRC
+** Hostname 
+  The following task changes the hostname of the container/VM
+  #+BEGIN_SRC yaml :tangle roles/config_server/tasks/main.yml
+  ---
+- name: changing the hostname 
+  hostname: config-server.vlabs.ac.in
+  #+END_SRC
 ** Apply firewall rules to Configuration server
    Firewall rules are applied by following steps:
     1) Copy the =iptables= template to the configuration server.
@@ -251,29 +258,30 @@ itself and to run the ansible scripts.
 #+END_SRC
 
 * Test Cases
-** Test case ID :: SSH access using amazon's keypair
+** Test case ID :: SSH access using AWS KeyPair
 *** Objective
     Test to check if SSH is allowed only from IIIT network for the user
-    root and denied from other ips using amazon's keypair
+    root and denied from other ips using AWS KeyPair
 *** Apparatus
-    1. A workstation with IIIT ips 
-    2. A workstation with unknown ip 
-    3. Configuration server 
+    1. Security KeyPair
+    2. A workstation with IIIT ips 
+    3. A workstation with unknown ip 
+    4. Configuration server 
 *** Procedure
     1. Assume you are inside the IIIT network.
-    2. Create a VM and generate new security keypair using amazon console
-    3. Place/copy the keypair into ssh-tunnel container.
+    2. Create a VM and generate new security KeyPair using AWS console
+    3. Place/copy the KeyPair into ssh-tunnel container.
     4. Give 400 permission to that KeyPair and
     5. ssh to config_server from workstation 
 *** Experiments
-**** SSH to the config_server from management ips
+**** SSH to the config_server from management ips/ IIIT ips
     Since configuration server is created using AWS console, KeyPair
-    of this server is generated during creation of the instance. So
+    of this server is generated during creation of the VM. So
     the private KeyPair is placed in "ssh-tunnel" container on
     base2. From "ssh-tunnel", only VLEAD members (who have ssh access to
     ssh-tunnel and sudo permissions to root account) can be able to
     ssh to configuration server only from IIIT network. 
-    ssh to configuration server using the bellow command
+    ssh to configuration server using the bellow command:
     #+BEGIN_SRC example
     ssh -i test.pem root@54.56.34.231
     #+END_SRC
@@ -284,12 +292,12 @@ itself and to run the ansible scripts.
    #+END_EXAMPLE
 ***** Result
     #+BEGIN_EXAMPLE
-    Last login: Mon Mar 16 02:28:31 2015 from <host name of the machine>
-    [root@localhost ~]$
+    Last login: Mon Mar 16 02:28:31 2015 from ssh-tunnel.vlabs.ac.in
+    [root@config-server~]$
     #+END_EXAMPLE
-**** SSH to config_server from unknown ip
-    Suppose a workstation with unknown ip and it has private KeyPair, then
-    ssh to configuration server from that machine with unknown
+**** SSH to config_server from workstation with unknown ip
+    Suppose a workstation with unknown ip and it has KeyPair, then
+    ssh to configuration server from that workstation with unknown
     ip(other than IIIT network ip) using bellow command
 
     #+BEGIN_SRC example 
@@ -301,12 +309,13 @@ itself and to run the ansible scripts.
     #+END_SRC
 *** Observation 
     Configuration server is able accept ssh connection only from
-    management ips and not from any other machines with unknown ips.
+    IIIT/management ips and not from any other machines with unknown
+    ips.
 *** Result 
     Test is passed. Configuration is working fine
 *** Conclusion
   Iptables are configured and applied appropriately. Configuration
-  server is able accept ssh connections only from management IPs and
+  server is able accept ssh connections only from IIIT/management IPs and
   not from unknown ips.
 
 ** Test case ID :: SSH access using RSA key
@@ -314,25 +323,26 @@ itself and to run the ansible scripts.
     Test to check if SSH is allowed only from IIIT network for the user
     root and denied from other ips using workstation's RSA key
 *** Apparatus
-    1. A workstation1 with IIIT ips 
-    2. A workstation2 with unknown ip 
-    3. Configuration server 
+    1. RSA key
+    2. A workstation1 with IIIT ips 
+    3. A workstation2 with unknown ip 
+    4. Configuration server 
 *** Procedure
     1. Assume you are inside the IIIT network.
     2. Create a container and generate ssh key using the following command
        #+BEGIN_SRC example
        ssh-keygen -t rsa 
        #+END_SRC
-      provide the passphrase if you need. Else press RETURN for no passphrase.
+       Provide the passphrase if you need. Else press RETURN for no passphrase.
     3. Place/copy the id_rsa.pub of workstation into configuration
        server's authorized_keys.
-    5. ssh to configuration server from workstation.
+    4. SSH to configuration server from workstation.
 *** Experiments
-**** SSH to the config_server from management ips
+**** SSH to the config_server from IIIT ips/management ips
     From "workstation1", only VLEAD members (who have ssh access to
     workstation and sudo permissions to root account) can be able to
     ssh to configuration server only from IIIT network. 
-    ssh to configuration server using the bellow command
+    ssh to configuration server using the bellow command:
     #+BEGIN_SRC example
     workstation1$ssh root@54.56.34.231
     #+END_SRC
@@ -343,11 +353,11 @@ itself and to run the ansible scripts.
    #+END_EXAMPLE
 ***** Result
     #+BEGIN_EXAMPLE
-    Last login: Mon Mar 16 02:28:31 2015 from <host name of the machine>
-    [root@localhost ~]$
+    Last login: Mon Mar 16 02:28:31 2015 from workstation1
+    [root@config-server~]$
     #+END_EXAMPLE
 **** SSH to config_server from workstation2 with unknown ip
-    ssh to configuration server from a workstation2 which has unknown
+    ssh to configuration server from workstation2 which has unknown
     ip(other than IIIT network ip) using bellow command
     #+BEGIN_SRC example 
     workstation2$ ssh root@54.56.34.231
@@ -357,11 +367,12 @@ itself and to run the ansible scripts.
     Permission denied....
     #+END_SRC
 *** Observation 
-    Configuration server is able accept ssh connection only from
-    management ips and not from any other machines with unknown ips.
+    Configuration server is able to accept ssh connection only from
+    IIIT/management ips and not from any other machines with
+    unknown ips.
 *** Result 
     Test is passed. configuration is working fine
 *** Conclusion
   Iptables are configured and applied appropriately. Configuration
-  server is able accept ssh connections only from management IPs and
+  server is able accept ssh connections only from IIIT/management IPs and
   not from unknown ips.
