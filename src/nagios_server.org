@@ -3,41 +3,31 @@
 #+PROPERTY: session *scratch*
 #+PROPERTY: results output
 #+PROPERTY: exports code
-#+SETUPFILE: org-templates/level-0.org
+//#+SETUPFILE: org-templates/level-0.org
 #+DESCRIPTION: Nagios Server Design Model Documentation
 #+OPTIONS: ^:nil
 #+ATTR_HTML: width="80px"
 
 * Introduction
- This document describes the design and implementation of Monitoring System.
-  Nagios system is used to monitor services of a system such as ssh service, cpu
-  usage, ram usage and disk usage.
+This document describes the design and implementation of Monitoring System.
+Nagios is a monitoring tool used to monitor services of a system such as ssh
+service, cpu usage, ram usage and disk usage.
 
 * Requirements
 ** Functional Requirements
 1) Monitor various services such as ssh, ping, http on all the system.
-2) Accept incoming and outgoing ping requests to anywhere and from anywhere.
-3) Accept incoming connections on TCP port 22 from ansible and management ips.
-4) Accept incoming connections on TCP port 80.
-5) Accept incoming connections on UDP port 161 and 162 for cacti.
-6) Accept outgoing connections on TCP port 25 for logwatch.
-7) Accept outgoing connections on TCP port 22.
-8) Accept outgoing connections on UDP port 514 for rsyslog.
-9) Accept outgoing connections on UDP port 1514 for ossec.
-10) Accept outgoing connections on TCP port 5666 for nrpe.
-11) Accept outgoing connections on TCP port 80 and 443 for yum.
-12) Ansible machine ssh public key is to be added to authorized keys.
-13) Run apache service.
-14) Run nagios service.
+2) Accept incoming connections on TCP port 80.
+3) Accept outgoing connections on TCP port 22.
+4) Accept outgoing connections on TCP port 5666 for nrpe.
+5) Run apache service.
+6) Run nagios service.
 
 ** Security Requirements
-1) Accept incoming SSH connections only from Ansible and management ips.
-2) Set rate limit to a proper value on all connections to avoid connections
-   flooding.
+1) Security requirements are define in common role.
 
 * Design
- Given diagram describes the design of the monitoring server. Systems files are
-  listed for a quick overview of whole systems.
+Given diagram describes the design of the monitoring server. Systems files are
+listed for a quick overview of whole systems.
 ** System Design Diagram
 [[./diagrams/nagios-server-design-diagram.png]]
 
@@ -197,16 +187,6 @@ CRITICAL - Plugin timed out while executing system call
 
 #Allow to continue already related and established connections
 -A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
-
-#Allow DNS queries
--A OUTPUT -p udp -m udp --dport 53 -j ACCEPT
-
-#Allow server to send emails.  Required for sending logwatch emails
--A OUTPUT -p tcp -m tcp --dport 25 -j ACCEPT
-
-#Allow https to contact yum
--A OUTPUT -p tcp -m tcp --dport 80 -j ACCEPT
--A OUTPUT -p tcp -m tcp --dport 443 -j ACCEPT
 #+END_SRC
 
 *** Rule to allow outgoing NRPE queries
@@ -227,6 +207,16 @@ CRITICAL - Plugin timed out while executing system call
 
 *** Common Firewall Rules - Section 4
 #+BEGIN_SRC yml :tangle roles/nagios_server/templates/nagios_server_iptables :eval no
+#Allow DNS queries
+-A OUTPUT -p udp -m udp --dport 53 -j ACCEPT
+
+#Allow server to send emails.  Required for sending logwatch emails
+-A OUTPUT -p tcp -m tcp --dport 25 -j ACCEPT
+
+#Allow https to contact yum
+-A OUTPUT -p tcp -m tcp --dport 80 -j ACCEPT
+-A OUTPUT -p tcp -m tcp --dport 443 -j ACCEPT
+
 #Allow outgoing ping requests
 -A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT
 
@@ -244,12 +234,13 @@ CRITICAL - Plugin timed out while executing system call
 
 COMMIT
 #+END_SRC
+
 ** Configure Commands
  Nagios server sends NRPE query to the client machine to monitor the return
-  status of some commands on the client machine. NRPE agent running on the
-  client machines execute and sends back the return status of the commands to
+  status of some commands on the client machine. The NRPE agent running on the
+  client machines executes and sends back the return status of the commands to
   the Nagios server. The commands used for monitoring something on the client
-  machines are defined in the configuration file. 
+  machines are defined in the configuration file.
 
  Commands are specified by the two directives in the configuration
   file. Following table represents an example of directive name and the
@@ -328,7 +319,7 @@ define contact{
         alias                           {{nagios_admin_name}}            ; Full name of user
 
         email                           {{nagios_admin_email}} ; <<***** CHANGE THIS TO YOUR EMAIL ADDRESS ******
-        }
+	}
 
 
 ###############################################################################
@@ -347,7 +338,6 @@ define contactgroup{
         alias                   Nagios Administrators
         members                 nagiosadmin
         }
-
 #+END_SRC
 ** Configure Clients Address and Monitoring Services
  Nagios requires details such as Hostaddress and Hostname of client machines to
@@ -385,7 +375,7 @@ define contactgroup{
  In the configuration template directives are set to varaibles and the value of
   these variables are fetched from =vars/main.yml=. A 'for loop' loops over the
   hosts list to specify all the client machines and another 'for loop' loops
-  over the services define in the group to specify all the services.
+  over the services defined in the group to specify all the services.
 
 #+BEGIN_SRC yml :tangle roles/nagios_server/templates/servers.cfg
 {% for h in nagios_hosts %}
@@ -409,6 +399,12 @@ check_command           {{ s.command }}
 {% endfor %}
 #+END_SRC
     
+** Update hostname
+Update hostname of the server in =/etc/sysconfig/network= file.
+#+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml :eval no
+- name: Updating Hostname
+  lineinfile: dest=/etc/sysconfig/network regexp=^HOSTNAME= 'line=HOSTNAME="nagios.virtual-labs.ac.in"'
+#+END_SRC
 ** Update all packages
  All packages inside the machine are updated before configuring the nagios
   server machine.
@@ -464,7 +460,7 @@ check_command           {{ s.command }}
 ** Copy contancts.cfg configuration file to the server
  Configuration file is copied from ansible server to the nagios server and
   nagios service is restarted.
-#+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.ymlw
+#+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
 - name: Updating contacts.cfg
   template: src=contacts.cfg.j2 dest=/etc/nagios/objects/contacts.cfg
   notify: restart nagios
@@ -474,7 +470,7 @@ check_command           {{ s.command }}
  Location of =servers.cfg= file is set in the =nagios.cfg= configuration file
   by =cfg_file= directive. Value of =nagios_cfg_path= variable is fetched from
   =vars/main.yml= file.
-#+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.ymlw
+#+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
 - name: updating nagios.cfg
   lineinfile: dest="{{nagios_cfg_path}}" line="cfg_file=/etc/nagios/objects/servers.cfg" regexp="cfg_file\=/etc/nagios/objects/servers.cfg"
   notify: restart nagios

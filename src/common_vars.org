@@ -1,0 +1,287 @@
+#+Title: Common Vars Role Design Model and Implementation
+#+Date: April 14, 2015. Tuesday
+#+PROPERTY: session *scratch*
+#+PROPERTY: results output
+#+PROPERTY: exports code
+#+OPTIONS: ^:nil
+\#+SETUPFILE: org-templates/level-0.org
+
+* Introduction
+The document describes the requirements, design and implementation of the
+common_vars role. Common_vars role consists of common variables which are used
+across various ansible roles. Examples and verification are given wherever
+possible.
+
+* Requirements
+** Functional Requirements
+1) Define variables used by various other ansible roles
+
+* Implementation
+** Structure of the scripts
+The implementation of this system is in terms of a collection of ansible scripts
+that configure the machine.  These scripts are organized in the following way:
+
+#+BEGIN_EXAMPLE
+|-code
+|   |-- common_vars.yml
+|   |-- roles
+|   |   |-- common_vars
+|   |   |   `-- vars
+|   |   |   |   `-- main.yml
+#+END_EXAMPLE
+
+** Common Variables
+
+*** Variable Description
+
+|------+---------------------------+---------------------------+-----------------------------------------------------------------|
+| S.no | Variable                  | Variable Name             | Description                                                     |
+|------+---------------------------+---------------------------+-----------------------------------------------------------------|
+|   1. | Proxy Environment         | proxy_env                 | Defines the proxy configuration in case direct access           |
+|      |                           |                           | to internet is not available.                                   |
+|------+---------------------------+---------------------------+-----------------------------------------------------------------|
+|   2. | HTTP Proxy                | http_proxy                | Defines url of proxy server used by machine to connect to       |
+|      |                           |                           | http service for internet access                                |
+|------+---------------------------+---------------------------+-----------------------------------------------------------------|
+|   3. | HTTPS Proxy               | https_proxy               | Defines url of proxy server used by machine to connect to https |
+|      |                           |                           | service for internet access                                     |
+|------+---------------------------+---------------------------+-----------------------------------------------------------------|
+|   4. | Ansible Server IPs        | ansible_server_ips        | Defines the list of ip-addresses of ansible server.             |
+|------+---------------------------+---------------------------+-----------------------------------------------------------------|
+|   5. | Management IPs            | managements_ips           | Defines the list of ip-addresses of various management servers. |
+|------+---------------------------+---------------------------+-----------------------------------------------------------------|
+|   6. | Ossec Server IP           | ossec_server_ip           | Defines the ip-address of ossec server.                         |
+|------+---------------------------+---------------------------+-----------------------------------------------------------------|
+|   7. | Ossec Client IP           | ossec_client_ips          | Defines the ip address of various ossec clients.                |
+|------+---------------------------+---------------------------+-----------------------------------------------------------------|
+|   8. | Admin Email Address       | admin_email_addres        | Defines the email address of the system administrator.          |
+|------+---------------------------+---------------------------+-----------------------------------------------------------------|
+|   9. | SMTP Server Address       | smtp_server_address       | Defines the smptp server's address trough which administrator   |
+|      |                           |                           | can be reached. Used by Ossec server to send mails              |
+|------+---------------------------+---------------------------+-----------------------------------------------------------------|
+|  10. | SMTP Smart host           | smtp_smart_host           | Defines the smtp smart host via which various servers can send  |
+|      |                           |                           | email.                                                          |
+|------+---------------------------+---------------------------+-----------------------------------------------------------------|
+|  11. | Private DNS IPs           | private_dns_ips           | Defines the ip address of private DNS server, to configure it   |
+|      |                           |                           | on all the client machines.                                     |
+|------+---------------------------+---------------------------+-----------------------------------------------------------------|
+|  12. | Private DNS zone          | private_dns_zone          | Defines the various dns zones.                                  |
+|------+---------------------------+---------------------------+-----------------------------------------------------------------|
+|  13. | Rsyslog Server IP         | rsyslog_server_ips        | Defines the ip address of rsyslog server.                       |
+|------+---------------------------+---------------------------+-----------------------------------------------------------------|
+|  14. | Virtual Hosts FQDN        | proxy_domains             | Defines list of FQDNs for which virtual hosts are to defined    |
+|      |                           |                           | in reverse proxy server.                                        |
+|------+---------------------------+---------------------------+-----------------------------------------------------------------|
+|  15. | Awstat Domain             | awstats_domains           | Defines list of domain for which analytics is to be collected.  |
+|------+---------------------------+---------------------------+-----------------------------------------------------------------|
+|  16. | ADS IP                    | ads_ip                    | Defines the ip address of Auto deployment server.               |
+|------+---------------------------+---------------------------+-----------------------------------------------------------------|
+|  17. | Reverse Proxy IP          | reverseproxy_ip           | Defines the ip address of reverse proxy server.                 |
+|------+---------------------------+---------------------------+-----------------------------------------------------------------|
+|  18. | Public DNS IP             | public_dns_ip             | Defines the ip address of public dns server                     |
+|------+---------------------------+---------------------------+-----------------------------------------------------------------|
+|  19. | Local Subnet              | local_subnet              | Defines the local subnet                                        |
+|------+---------------------------+---------------------------+-----------------------------------------------------------------|
+|  20. | Router Interface IP       | router_interface_ip       | Defines the interface of router machine.                        |
+|------+---------------------------+---------------------------+-----------------------------------------------------------------|
+|  21. | Router External Interface | router_external_interface | Defines the external interface of router machine.               |
+|------+---------------------------+---------------------------+-----------------------------------------------------------------|
+|  22. | Nagios Server IP          | nagios_server_ips         | Defines the ip address of nagios server.                        |
+|------+---------------------------+---------------------------+-----------------------------------------------------------------|
+
+
+*** Variable Value
+
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+| S.no | Variable Name             | Single/Multiple Value | Variable Type | Value                                      | Value Description             |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|   1. | proxy_env                 | Multiple              | {Key:Value}   | http_proxy                                 |                               |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|      |                           |                       |               | https_proxy                                |                               |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|   2. | http_proxy                | Single                | FQDN and port | http://proxy.iiit.ac.in:8080/              |                               |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|   3. | https_proxy               | Single                | FQDN and port | http://proxy.iiit.ac.in:8080/              |                               |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|   4. | ansible_server_ips        | Multiple              | IPAddress     | 10.100.1.2                                 |                               |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|   5. | managements_ips           | Multiple              | IPAddress     | 14.139.82.6/32                             | NKN ISP                       |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|      |                           |                       | IPAddress     | 196.12.53.133/32                           | STPI ISP                      |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|   6. | ossec_server_ip           | Single                | IPAddress     | 10.100.1.3                                 |                               |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|   7. | ossec_client_ips          | Multiple              | IPAddress     | 10.100.1.1                                 | Router                        |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|      |                           |                       | IPAddress     | 10.100.1.2                                 | Ansible                       |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|      |                           |                       | IPAddress     | 10.100.1.4                                 | Rsyslog Server                |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|      |                           |                       | IPAddress     | 10.100.1.5                                 | Private DNS                   |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|      |                           |                       | IPAddress     | 10.100.1.6                                 | Public DNS                    |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|      |                           |                       | IPAddress     | 10.100.1.7                                 | Reverse Proxy                 |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|      |                           |                       | IPAddress     | 10.100.1.8                                 | Nagios                        |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|   8. | admin_email_addres        | Single                | Email Address | alerts@vlabs.ac.in                         |                               |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|   9. | smtp_server_address       | Single                | FQDN          | smtp.admin.iiit.ac.in                      |                               |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|  10. | smtp_smart_host           | Single                | FQDN          | none                                       |                               |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|  11. | private_dns_ips           | Multiple              | IPAddress     | 10.100.1.5                                 |                               |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|  12. | private_dns_zone          | Multiple              | Domain Name   | virtual-labs.ac.in                         |                               |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|      |                           |                       | Domain Name   | vlabs.ac.in                                |                               |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|  13. | rsyslog_server_ips        | Multiple              | IPAddress     | 10.100.1.4                                 |                               |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|  14. | proxy_domains             | Multiple              | List of       | {                                          | Virtual Host domain and alias |
+|      |                           |                       | {Key: Value}  | domain: "reverseproxy.virtual-labs.ac.in", | for Reverse Proxy server.     |
+|      |                           |                       |               | alias: "reverseproxy.vlabs.ac.in",         |                               |
+|      |                           |                       |               | alias2: "rp.virtual-labs.ac.in"            |                               |
+|      |                           |                       |               | }                                          |                               |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|      |                           |                       |               | {                                          | Virtual Host domain and alias |
+|      |                           |                       |               | domain: "lab1.virtual-labs.ac.in",         | for lab1.                     |
+|      |                           |                       |               | alias: "lab1.vlabs.ac.in"                  |                               |
+|      |                           |                       |               | }                                          |                               |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|      |                           |                       |               | {                                          | Virtual Host domain and alias |
+|      |                           |                       |               | domain: "lab2.virtual-labs.ac.in",         | for lab2.                     |
+|      |                           |                       |               | alias: "lab2.vlabs.ac.in"                  |                               |
+|      |                           |                       |               | }                                          |                               |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|      |                           |                       |               | {                                          | Virtual Host domain and alias |
+|      |                           |                       |               | domain: "nagios.virtual-labs.ac.in",       | for nagios server.            |
+|      |                           |                       |               | alias: "nagios.vlabs.ac.in"                |                               |
+|      |                           |                       |               | }                                          |                               |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|      |                           |                       |               | {                                          | Virtual Host domain and alias |
+|      |                           |                       |               | domain: "ossec-server.virtual-labs.ac.in", | for ossec server.             |
+|      |                           |                       |               | alias: "ossec-server.vlabs.ac.in"          |                               |
+|      |                           |                       |               | }                                          |                               |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|  15. | awstats_domains           | Multiple              | FQDN          | reverseproxy.virtual-labs.ac.in            |                               |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|      |                           |                       | FQDN          | lab1.virtual-labs.ac.in                    |                               |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|      |                           |                       | FQDN          | lab2.virtual-labs.ac.in                    |                               |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|  16. | ads_ip                    | Single                | IPAddress     | 127.0.0.1                                  |                               |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|  17. | reverseproxy_ip           | Single                | IPAddress     | 10.100.1.7                                 |                               |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|  18. | public_dns_ip             | Single                | IPAddress     | 10.100.1.6                                 |                               |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|  19. | local_subnet              | Single                | IPAddress     | 10.100.0.0/22                              |                               |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|  20. | router_interface_ip       | Single                | IPAddress     | 10.100.1.1                                 |                               |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|  21. | router_external_interface | Single                | Interface     | eth0                                       |                               |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+|  22. | nagios_server_ips         | Single                | IPAddress     | 10.100.1.8                                 |                               |
+|------+---------------------------+-----------------------+---------------+--------------------------------------------+-------------------------------|
+
+** Generate yml files of common_vars role
+Generate common_vars role yml file with all the variables defined.
+#+BEGIN_SRC yml :tangle roles/common_vars/vars/main.yml
+---
+#Proxy configuration in case direct access to Internet is not available
+proxy_env:
+  none: none
+# http_proxy: http://proxy.iiit.ac.in:8080/
+# https_proxy: http://proxy.iiit.ac.in:8080/
+
+#List of ansible servers.  Mutliple ansible servers are fine
+ansible_server_ips: 
+  - 10.100.1.2
+
+#List of management stations.  Multiple is ok
+management_ips:
+  - 14.139.82.6/32
+  - 196.12.53.133/32
+
+#OSSEC server IP.  Only one
+ossec_server_ip: 10.100.1.3
+
+#OSSEC client IPs.  Multiple is ok.
+ossec_client_ips: 
+#For some reasons {{ansible_default_ipv4.address}} on ansible and router is resolving
+#to 10.4.12.0/22 IPs and not to 10.100.0.0/22 IPs.  So those must be used for configuring
+#client
+  - 10.100.1.1
+  - 10.100.1.2
+  - 10.100.1.4
+  - 10.100.1.5
+  - 10.100.1.6
+  - 10.100.1.7
+  - 10.100.1.8
+
+#Administrator email address and SMTP server through which
+#administrator can be reached.  Used by OSSEC server to send emails.
+admin_email_address: alerts@vlabs.ac.in
+#Leaving as it is for now.  The server would relay message. 
+smtp_server_address: smtp.admin.iiit.ac.in
+
+#SMTP smart host via which various servers can send email
+#Set this to none if smtp_smart_host configuration is not required
+smtp_smart_host: none
+
+#DNS client configuration to configure DNS client on all machines
+#after DNS server have been setup.  If DNS is not setup then setup these 
+#values to none
+#private_dns_ips: none
+#private_dns_zone: none 
+private_dns_ips: 
+  - 10.100.1.5
+private_dns_zone: virtual-labs.ac.in vlabs.ac.in
+
+
+#Rsyslog server IPs.  Set to none if there is no rsyslog server
+rsyslog_server_ips:
+  - 10.100.1.4
+
+
+#List of domains to pass through reverseproxy
+proxy_domains:
+  - {domain: "reverseproxy.virtual-labs.ac.in", alias: "reverseproxy.vlabs.ac.in", alias2: "rp.virtual-labs.ac.in"}
+  - {domain: "lab1.virtual-labs.ac.in", alias: "lab1.vlabs.ac.in"}
+  - {domain: "lab2.virtual-labs.ac.in", alias: "lab2.vlabs.ac.in"}
+  - {domain: "cse01-iiith.virtual-labs.ac.in", alias: "cse01-iiith.vlabs.ac.in"}
+  - {domain: "cse02-iiith.virtual-labs.ac.in", alias: "cse02-iiith.vlabs.ac.in"}
+  - {domain: "cse15-iiith.virtual-labs.ac.in", alias: "cse15-iiith.vlabs.ac.in"}
+  - {domain: "cse19-iiith.virtual-labs.ac.in", alias: "cse19-iiith.vlabs.ac.in"}
+  - {domain: "cse18-iiith.virtual-labs.ac.in", alias: "cse18-iiith.vlabs.ac.in"}
+  - {domain: "cse20-iiith.virtual-labs.ac.in", alias: "cse20-iiith.vlabs.ac.in"}
+  - {domain: "nagios.virtual-labs.ac.in", alias: "nagios.vlabs.ac.in"}
+  - {domain: "ossec-server.virtual-labs.ac.in", alias: "ossec-server.vlabs.ac.in"}
+awstats_domains:
+  - reverseproxy.virtual-labs.ac.in
+  - lab1.virtual-labs.ac.in
+  - lab2.virtual-labs.ac.in
+  - cse01-iiith.virtual-labs.ac.in
+  - cse02-iiith.virtual-labs.ac.in
+  - cse15-iiith.virtual-labs.ac.in
+  - cse18-iiith.virtual-labs.ac.in
+  - cse20-iiith.virtual-labs.ac.in
+  - cse19-iiith.virtual-labs.ac.in
+#IPs where router will forward web or DNS requests.
+#Multiple IPs or list of IPs wont work as request can be forwarded to only one machine
+ads_ip: 10.100.1.9
+reverseproxy_ip: 10.100.1.7
+public_dns_ip: 10.100.1.6
+local_subnet: 10.100.0.0/22
+router_interface_ip: 10.100.1.1
+router_external_interface: eth0
+
+#Configure IP address of nagios server.  This is used by iptables firewall templates
+nagios_server_ips:
+  - 10.100.1.8
+#+END_SRC
+
+
+

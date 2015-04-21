@@ -10,7 +10,8 @@
 * Introduction
 The document describes the requirements, design and implementation of the common
 role. Common role consists of basic functional and security requirements which
-are applied on all the servers in the cluster.
+are applied on all the servers in the cluster. Examples and verification are
+given wherever possible. Test Cases are also described to test the setup.
 
 * Requirements
 ** Functional Requirements
@@ -36,6 +37,23 @@ are applied on all the servers in the cluster.
 ** Editable Link
 [[https://docs.google.com/drawings/d/1-_1DAonwj9mfJYaXqHwZVHbzYEgDkzdTjOzDCBTpr-c/edit][Google Drawing Link]]
 
+** Packages Installed
+|------+--------------|
+| S.no | Package Name |
+|------+--------------|
+|   1. | epel-repo    |
+|------+--------------|
+|   2. | fail2ban     |
+|------+--------------|
+|   3. | logwatch     |
+|------+--------------|
+|   4. | sendmail     |
+|------+--------------|
+|   5. | ssh          |
+|------+--------------|
+|   6. | bind-utils   |
+|------+--------------|
+
 ** System Files
 |------+---------------+----------------------------------+--------------------|
 | S.no | Service       | File                             | File Type          |
@@ -58,7 +76,6 @@ are applied on all the servers in the cluster.
 |------+---------------+----------------------------------+--------------------|
 
 * Implementation
-
 ** Structure of the scripts
 The implementation of this system is in terms of a collection of ansible scripts
 that configure the machine.  These scripts are organized in the following way:
@@ -231,7 +248,7 @@ packets. Forwarding rule is set to ACCEPT only in the Router server.
 *** Rule for sending log messages to rsyslog server
  Allow server to send log messages to rsyslog server.
 #+BEGIN_EXAMPLE
-#Allow to make dns queries
+#Allow server to send log messages to rsyslog server
 -A OUTPUT -p udp -m udp --dport 514 -j ACCEPT
 #+END_EXAMPLE
 
@@ -296,8 +313,6 @@ performed:
 2) Set default gateway as Router.
 
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
----
-
 - name: setting the default gw, skips if router or ansible server
   shell: route del default; route add default gw {{router_internal_ip}}
   when: not ( i_ans is defined or i_router is defined )
@@ -318,7 +333,7 @@ To install and configure Fail2ban following actions are performed:
 
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 #Setup epel for downloading fail2ban
-- name: Download epel RPM
+- name: Download epel RPM 
   get_url: url="{{ epel_download_url }}" dest="{{epel_download_path}}" timeout=5
   environment: proxy_env
 
@@ -355,6 +370,7 @@ Following history parameters are set:
 
 #+BEGIN_SRC shell :tangle roles/common/files/history.sh
 #!/bin/bash
+
 HISTTIMEFORMAT="%y %m %d %T"
 HISTSIZE=100000
 HISTFILESIZE=100000
@@ -369,7 +385,9 @@ export HISTTIMEFORMAT HISTSIZE HISTFILESIZE
 
 ** Start Iptables service
 While setting up the cluster, iptables service is restarted on all the servers,
-to make sure the service is running inside each server.
+to make sure the service is running inside each server. If anyone has inserted a
+temporary rule/ad hoc rule which was not saved in the file restarting iptables
+will take care of removing this inserted rule.
 
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 #Restart iptables
@@ -381,7 +399,25 @@ to make sure the service is running inside each server.
 #+END_SRC
 
 ** Configure host name
-Ask Saurabh
+Sendmail tries to lookup hostname and IP mapping through =/etc/hosts=. Sendmail
+assumes the first line in =/etc/hosts= is the machines own FQDN to IP mapping
+without this sendmail takes about 30 seconds to timeout for host resolution. To
+take care of this assumption of sendmail =/etc/hosts= file is configured.
+
+Following variables are set by the ansible tool as it runs on the client
+machine. For each server in the cluster value of these variables will be
+different and set according to the server role.
+
+|-------+------------------------------+-------------------------------+--------------------------|
+| S.no. | Variable Name                | Description                   | Example                  |
+|-------+------------------------------+-------------------------------+--------------------------|
+|    1. | ansible_default_ipv4.address | defines the system ip address | 10.1.100.8               |
+|-------+------------------------------+-------------------------------+--------------------------|
+|    2. | ansible_fqdn                 | define the system fqdn        | ossec.virtual-labs.ac.in |
+|-------+------------------------------+-------------------------------+--------------------------|
+|    3. | ansible_hostname             | defines the system hostnames  | ossec                    |
+|-------+------------------------------+-------------------------------+--------------------------|
+
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 #Setup /etc/hosts
 - name: Configure hostname and fqdn to resolve to local IP on first line of /etc/hosts
@@ -529,22 +565,52 @@ used by system administrators to trouble shoot the network related issues.
    proxy_env
 #+END_SRC
 
-** Lock Root Account
-Locking root account means the password for the root account is set to a value
-which matches no possible encrypted value, therefore nobody can login as root
-with password.
+** Disable Root Login
+Root login is disabled on all the servers in the cluster. Password for the root
+account is set to a value which matches no possible encrypted value, therefore
+nobody can login as root with password. Only system administrators with ssh
+private keys can login to root account. 
 
-On all the servers in the cluster root account is locked. Only system
-administrators with ssh private keys can login to root account. If password for
-root account is to be setup it can be done using =sudo passwd root= command.
+*** Lock root login
+#+BEGIN_EXAMPLE
+passwd -l root
+#+END_EXAMPLE
+
+Alternatively, edit =/etc/shadow= and replace the root's encrypted password with
+'!'.
+
+#+BEGIN_EXAMPLE
+root:!:12345::::::
+#+END_EXAMPLE
 
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 - name: lock root account
   shell: passwd -l root
 #+END_SRC
 
+*** Enable root login
+#+BEGIN_EXAMPLE
+sudo passwd root
+#+END_EXAMPLE
+
+*** Unlock root account 
+#+BEGIN_EXAMPLE
+sudo passwd -u root
+#+END_EXAMPLE
+
 ** Remove sudoers package
-Sudoers package is removed from all the servers in the cluster.
+We can do two things regarding sudoers. The current scripts perhaps does remove
+it, but we can always rewrite them.
+
+*** Remove it
+Sudoers package is removed from all the servers in the cluster. There are no
+user account created on the server. Only the system administrator login as root
+user. There is no need of maintaining sudoers file. Removing this package causes
+no harm to the system.
+
+*** Ensure that validity of sudoers file
+Ensure that =/etc/sudoers= file is same as it is during installation and no one
+has added new users or groups to sudoers, as backdoors to gain root access.
 
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 - name: remove sudo
@@ -576,25 +642,538 @@ to be restarted to enforce the modified properties of the system.
   service: name=sshd state=restarted
 #+END_SRC
     
-* COMMENT Timeline
-|------+-------------------------+------------+------------+------------------------------------------------------|
-| S.no | Day                     | Start Time | End Time   | Tasks                                                |
-|------+-------------------------+------------+------------+------------------------------------------------------|
-|   1. | April 9, 2015, Thursday | 09:20 a.m. | 12:30 p.m. | - Confirm tangle output is same as aws implmentation |
-|      |                         |            |            | - Write Down functional and  security requirements.  |
-|      |                         |            |            | - Make a common design diagram                       |
-|      |                         |            |            | - Correct structure of scripts                       |
-|      |                         |            |            | - Make changes in firewall description               |
-|------+-------------------------+------------+------------+------------------------------------------------------|
-|   2. | April 10, 2015. Friday  | 9:15 a.m.  | 01:20 p.m. | - Test cases for firewall rules                      |
-|      |                         |            |            | - Start documenting configuration files.             |
-|      |                         |            |            | - Only tasks and templates files are left.           |
-|------+-------------------------+------------+------------+------------------------------------------------------|
-|      |                         | 02:30 p.m. |            | - Complete description of configuration files.       |
-* COMMENT TODO
-1) Configure hostname
-2) SSH hardening subsections
-3) Why sudoers package is removed ?
-4) Write test cases for Common firewall.
-5) Test root account is locked using "sudo passwd -S root"
-6) Does internal traffic on the aws also goes through router ?
+* Test Cases
+** Test Case-1: Check Bind utilities are installed
+*** Objective
+To check bind-utilities are installed on the server.
+*** Apparatus
+1) An instance of common role - a common server
+
+*** Experiment
+**** Execute nslookup command
+#+BEGIN_EXAMPLE
+nslookup localhost
+#+END_EXAMPLE
+
+**** Execute host command.
+#+BEGIN_EXAMPLE
+host localhost
+#+END_EXAMPLE
+
+**** Execute dig command.
+#+BEGIN_EXAMPLE
+dig localhost
+#+END_EXAMPLE
+
+*** Result
+**** Sample output of step-1 of experiment.
+#+BEGIN_EXAMPLE
+Server:		10.100.1.5
+Address:	10.100.1.5#53
+
+Name:	localhost
+Address: 127.0.0.1
+#+END_EXAMPLE
+
+**** Sample output of step-2 of experiment.
+#+BEGIN_EXAMPLE
+localhost has address 127.0.0.1
+localhost has IPv6 address ::1
+#+END_EXAMPLE
+
+**** Sample output of step-3 of experiment.
+#+BEGIN_EXAMPLE
+
+; <<>> DiG 9.8.2rc1-RedHat-9.8.2-0.30.rc1.el6_6.2 <<>> localhost
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 13553
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 1, ADDITIONAL: 1
+
+;; QUESTION SECTION:
+;localhost.			IN	A
+
+;; ANSWER SECTION:
+localhost.		86400	IN	A	127.0.0.1
+
+;; AUTHORITY SECTION:
+localhost.		86400	IN	NS	localhost.
+
+;; ADDITIONAL SECTION:
+localhost.		86400	IN	AAAA	::1
+
+;; Query time: 0 msec
+;; SERVER: 10.100.1.5#53(10.100.1.5)
+;; WHEN: Mon Apr 13 05:45:12 2015
+;; MSG SIZE  rcvd: 85
+
+#+END_EXAMPLE
+
+*** Observation
+*dig*, *nslookup* and *host* commands are executed on the server, and proper
+output is displayed.
+
+*** Conclusion
+Bind-utilities are installed on all the servers in the cluster.
+
+** Test Case-2: SSH access
+*** Objective
+Test ssh access is allowed only from ansible, nagios and management ips.
+
+*** Apparatus
+1) Configuration server
+2) A management server
+3) A nagios server
+4) An instance of common role - a common server
+5) Any other machine
+
+*** Experiment
+Servers in which common firewall rules are applied accept ssh connection on TCP
+port 22 only from ansible, nagios and management ips.
+
+**** SSH from configuration server to a common server
+#+BEGIN_EXAMPLE
+ssh root@<common-server-ip>
+#+END_EXAMPLE
+
+**** SSH from management server to a common server
+#+BEGIN_EXAMPLE
+ssh root@<common-server-ip>
+#+END_EXAMPLE
+
+**** SSH from nagios server to a common server
+#+BEGIN_EXAMPLE
+ssh root@<common-server-ip>
+#+END_EXAMPLE
+
+**** SSH from any other machine to a common server
+#+BEGIN_EXAMPLE
+ssh root@<common-server-ip>
+#+END_EXAMPLE
+*** Result
+**** Output of step-1 of experiment
+#+BEGIN_EXAMPLE
+Last login: Thu Apr  2 ... other details.....
+root@common-server:~#
+#+END_EXAMPLE
+**** Output of step-2 of experiment
+#+BEGIN_EXAMPLE
+Last login: Thu Apr  2 ... other details.....
+root@common-server:~#
+#+END_EXAMPLE
+
+**** Output of step-3 of experiment
+#+BEGIN_EXAMPLE
+Last login: Thu Apr  2 ... other details.....
+root@common-server:~#
+#+END_EXAMPLE
+
+**** Output of step-4 of experiment
+#+BEGIN_EXAMPLE
+Permission Denied ....
+#+END_EXAMPLE
+
+*** Observation
+A common server accepts incoming ssh connections from configuration, nagios and
+management server.
+
+*** Conclusion
+Firewall rules are set properly to allow ssh connection only from ansible,
+nagios and management server.
+
+** Test Case-3: Root account is locked
+*** Objective
+Test root account is locked in a common server.
+*** Apparatus
+1) Configuration server
+2) An instance of common role - a common server
+
+*** Experiment
+Execute following command on the server.
+#+BEGIN_EXAMPLE
+sudo passwd -S root
+#+END_EXAMPLE
+
+*** Result
+Output of step-1 signifies the root account is locked.
+#+BEGIN_EXAMPLE
+root LK 2012-10-07 0 99999 7 -1 (Password locked.)
+#+END_EXAMPLE
+
+*** Observation
+Root account is disabled.
+
+*** Conclusion
+Users can not login to the server as 'root' username with password.
+
+** Test Case-4: Check default gateway is set
+*** Objective
+To check the default gateway of all the private servers are set as router.
+*** Apparatus
+1) An instance of common role - a common server
+
+*** Experiment
+Check routing table.
+#+BEGIN_EXAMPLE
+route -n
+#+END_EXAMPLE
+
+*** Result
+Sample output of step-1 of experiment is shown below. Last entry in the routing
+table, shows that the gateway for all the traffic is set to =10.100.1.1= which
+is router's internal ip.
+
+#+BEGIN_EXAMPLE
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+10.100.0.0      0.0.0.0         255.255.252.0   U     0      0        0 eth0
+169.254.0.0     0.0.0.0         255.255.0.0     U     1003   0        0 eth0
+0.0.0.0         10.100.1.1      0.0.0.0         UG    0      0        0 eth0
+#+END_EXAMPLE
+
+*** Observation
+Gateway for all the private servers in the cluster is set to the router.
+
+*** Conclusion
+Gateway for all the private servers in the cluster is set to the router.
+
+** Test Case-5: Check blocking of malicious attacks
+*** Objective
+To check fail2ban service bans offensive users when malicious attacks are done.
+*** Apparatus
+1) An instance of common role - a common server
+2) Any other server in the same network
+
+*** Experiment
+
+**** Check fail2ban service is running
+#+BEGIN_EXAMPLE
+service fail2ban status
+#+END_EXAMPLE
+
+**** SSH to the server 
+SSH to the server from any other machine by intentionally giving wrong
+passwords. Do this atleast three times. Then on the server execute the following
+command to check if fail2ban filter for ssh detects failed login attempts.
+#+BEGIN_EXAMPLE
+fail2ban-regex /var/log/secure /etc/fail2ban/filter.d/sshd.conf <username|ipaddress>
+#+END_EXAMPLE 
+
+**** Check firewall rule
+Check if there is any firewall rule for fail2ban-ssh is added to block the
+machine ip from where multiple failed login attempts are made.
+#+BEGIN_EXAMPLE
+iptables --list
+#+END_EXAMPLE
+
+*** Result
+**** Output of step-1 of experiment.
+#+BEGIN_EXAMPLE
+fail2ban-server (pid  1010) is running...
+Status
+|- Number of jail:	1
+`- Jail list:		ssh-iptables
+#+END_EXAMPLE
+
+**** Output of step-2 of experiment
+It shows that there are failed login attempts were made to the ossec-server from
+"10.100.1.2" ipaddress.
+#+BEGIN_EXAMPLE
+Running tests
+=============
+
+Use ignoreregex line : 10.100.1.2
+Use   failregex file : /etc/fail2ban/filter.d/sshd.conf
+Use         log file : /var/log/secure
+
+
+Results
+=======
+
+Failregex: 0 total
+
+Ignoreregex: 7 total
+|-  #) [# of hits] regular expression
+|   1) [7] 10.100.1.2
+`-
+
+Date template hits:
+|- [# of hits] date format
+|  [166] MONTH Day Hour:Minute:Second
+`-
+
+Lines: 166 lines, 7 ignored, 0 matched, 159 missed
+|- Ignored line(s):
+|  Apr 13 05:53:10 ossec-server sshd[10473]: Invalid user test from 10.100.1.2
+|  Apr 13 05:53:12 ossec-server sshd[10473]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=10.100.1.2
+|  Apr 13 05:53:14 ossec-server sshd[10473]: Failed password for invalid user test from 10.100.1.2 port 38428 ssh2
+|  Apr 13 05:53:14 ossec-server sshd[10473]: Failed password for invalid user test from 10.100.1.2 port 38428 ssh2
+|  Apr 13 05:53:15 ossec-server sshd[10473]: Failed password for invalid user test from 10.100.1.2 port 38428 ssh2
+|  Apr 13 05:53:15 ossec-server sshd[10474]: Connection closed by 10.100.1.2
+|  Apr 13 05:53:16 ossec-server sshd[10475]: Invalid user test from 10.100.1.2
+`-
+Missed line(s): too many to print.  Use --print-all-missed to print all 159 lines
+#+END_EXAMPLE
+
+**** Output of step-3 of experiment
+Output shows that fail2ban-ssh chain is now defined on the server, to reject all the
+incoming ssh connections from the malicious ipaddress.
+#+BEGIN_EXAMPLE
+Chain fail2ban-SSH (1 references)
+target     prot opt source               destination         
+REJECT     all  --  10.100.1.2           anywhere            reject-with icmp-port-unreachable 
+RETURN     all  --  anywhere             anywhere            
+#+END_EXAMPLE
+
+*** Observation
+*Fail2ban* service detects malicious attacks.
+
+*** Conclusion
+*Fail2ban* service detects malicious attacks.
+
+** Test Case-6: Check Command History is getting saved
+*** Objective
+To check whether the commands executed on the server are getting logged with
+proper time stamp.
+*** Apparatus
+1) An instance of common role - a common server
+
+*** Experiment
+**** Execute following example sequence of commands on the server
+#+BEGIN_EXAMPLE
+[root@common-server ~]$ ls
+/root
+[root@common-server ~]$ pwd
+[root@common-server ~]$ echo $PATH
+/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin
+[root@common-server ~]$ ssh root@router.vlabs.ac.in
+ssh: connect to host router.vlabs.ac.in port 22: Connection refused
+#+END_EXAMPLE
+Now execute history commands to see whether the commands are getting saved with
+proper time stamp.
+#+BEGIN_EXAMPLE
+[root@common-server ~]$ history
+#+END_EXAMPLE
+
+*** Result
+Output of step-1 of experiment.
+#+BEGIN_EXAMPLE
+   21  15 04 13 10:27:45ls
+   22  15 04 13 10:27:46pwd
+   23  15 04 13 10:27:54echo $PATH
+   24  15 04 13 10:28:17ssh root@router.vlabs.ac.in
+   25  15 04 13 10:28:22history
+#+END_EXAMPLE
+*** Observation
+History of commands are getting saved with proper time stamp.
+
+*** Conclusion
+History of commands are getting saved with proper time stamp.
+
+** Test Case-7: Check IPtables service is running
+*** Objective
+To test whether the iptables service is running on the server. 
+
+*** Apparatus
+1) An instance of common role - a common server
+
+*** Experiment
+Execute following command to list out present firewall rules on the server.
+#+BEGIN_EXAMPLE
+iptables --list
+#+END_EXAMPLE
+Sample output
+#+BEGIN_EXAMPLE
+
+#+END_EXAMPLE
+*** Result
+*** Observation
+*** Conclusion
+Iptables service is running
+
+** Test Case-8: Check Sendmail is sending mail
+*** Objective
+Test sendmail service is able to send mails to the system administrator. The
+sendmail service is used by various other services such as logwatch and fail2ban.
+*** Apparatus
+1) An instance of common role - a common server
+
+*** Experiment
+**** Send mail to an email-id using following command
+#+BEGIN_EXAMPLE
+mail <email-address>
+Subject: test
+Test
+EOT
+#+END_EXAMPLE
+
+**** Check the mail client if any mail is received from the server.
+*** Result
+Sample mail of step-2 of experiment may look like as follows:
+#+BEGIN_EXAMPLE
+from:	root <root@common-server.virtual-labs.ac.in>
+to:	sysadmin@vlabs.ac.in
+date:	Mon, Apr 13, 2015 at 3:03 PM
+subject:	test
+
+test
+#+END_EXAMPLE
+
+*** Observation
+An email is received from the server via sendmail service.
+
+*** Conclusion
+Sendmail is configured properly and is able to send mail.
+
+** Test Case-9: Check nameservers are set
+*** Objective
+To check nameserver is set on the server for name resolution.
+
+*** Apparatus
+1) An instance of common role - a common server
+
+*** Experiment
+**** Check content of =/etc/resolv.conf= file.
+#+BEGIN_EXAMPLE
+cat /etc/resolv.conf
+#+END_EXAMPLE
+
+**** Do a dig query for google.com, using nameserver mentioned in =/etc/resolv.conf= file.
+#+BEGIN_EXAMPLE
+dig google.com @<nameserver-ip>
+#+END_EXAMPLE
+
+*** Result
+**** Sample output of step-1 of experiment.
+#+BEGIN_EXAMPLE
+search base1.virtual-labs.ac.in base1.vlabs.ac.in
+nameserver 10.100.1.5
+#+END_EXAMPLE
+
+**** Sample output of step-2 of experiment.
+#+BEGIN_EXAMPLE
+; <<>> DiG 9.8.2rc1-RedHat-9.8.2-0.30.rc1.el6_6.2 <<>> google.com @10.100.1.5
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 1314
+;; flags: qr rd ra; QUERY: 1, ANSWER: 11, AUTHORITY: 4, ADDITIONAL: 4
+
+;; QUESTION SECTION:
+;google.com.			IN	A
+
+;; ANSWER SECTION:
+google.com.		300	IN	A	173.194.36.105
+google.com.		300	IN	A	173.194.36.100
+google.com.		300	IN	A	173.194.36.102
+google.com.		300	IN	A	173.194.36.103
+google.com.		300	IN	A	173.194.36.99
+google.com.		300	IN	A	173.194.36.110
+google.com.		300	IN	A	173.194.36.96
+google.com.		300	IN	A	173.194.36.101
+google.com.		300	IN	A	173.194.36.104
+google.com.		300	IN	A	173.194.36.97
+google.com.		300	IN	A	173.194.36.98
+
+;; AUTHORITY SECTION:
+google.com.		172800	IN	NS	ns2.google.com.
+google.com.		172800	IN	NS	ns3.google.com.
+google.com.		172800	IN	NS	ns1.google.com.
+google.com.		172800	IN	NS	ns4.google.com.
+
+;; ADDITIONAL SECTION:
+ns2.google.com.		172800	IN	A	216.239.34.10
+ns1.google.com.		172800	IN	A	216.239.32.10
+ns3.google.com.		172800	IN	A	216.239.36.10
+ns4.google.com.		172800	IN	A	216.239.38.10
+
+;; Query time: 287 msec
+;; SERVER: 10.100.1.5#53(10.100.1.5)
+;; WHEN: Mon Apr 13 06:08:15 2015
+;; MSG SIZE  rcvd: 340
+#+END_EXAMPLE
+
+*** Observation
+Server is able to resolve the names using the given nameservers.
+
+*** Conclusion
+Nameservers are properly set on all the servers in the cluster.
+** Test Case-10: Check empty passwords are not permitted
+*** Objective
+Test that the users can not login to the server with empty password.
+
+*** Apparatus
+1) An instance of common role - a common server
+
+*** Experiment
+Login to the server with following command
+#+BEGIN_EXAMPLE
+ssh root@<common-server-ip>
+#+END_EXAMPLE
+*** Result
+Output of step-1 of experiment is shown below.
+#+BEGIN_EXAMPLE
+Permission denied (publickey,gssapi-keyex,gssapi-with-mic,password).
+#+END_EXAMPLE
+
+*** Observation
+When a user tries to login to the server with empty password and without ssh
+keys, the server denies the access.
+
+*** Conclusion
+Users are not allowed access to the server with empty. Only administrators with
+private ssh keys can login to the server.
+
+** Test Case-11: Password based access is disabled
+*** Objective
+To test that the password access is disabled on all the servers in the cluster.
+
+*** Apparatus
+1) An instance of common role - a common server
+2) Any other machine
+
+*** Experiment
+Login to the common server from any other machine using following command:
+#+BEGIN_EXAMPLE
+ssh <username>@<common-server-ip>
+#+END_EXAMPLE
+
+*** Result
+Sample output of step-1 of experiment is shown below.
+#+BEGIN_EXAMPLE
+Permission denied (publickey,gssapi-keyex,gssapi-with-mic).
+#+END_EXAMPLE
+
+*** Observation
+When a user tries to login to the server with password and without ssh keys, the
+server denies the access.
+
+*** Conclusion
+Users are not allowed password based access. Only administrators with private
+ssh keys can login to the server.
+
+** Test Case-12: Test sudoers package is removed
+*** Objective
+To test the sudoers package is removed from the server.
+*** Apparatus
+1) An instance of common role - a common server
+
+*** Experiment
+Execute a command with sudo, for example
+#+BEGIN_EXAMPLE
+sudo su -
+sudo ls
+#+END_EXAMPLE
+
+*** Result
+Sample output of step-1 of experiment.
+#+BEGIN_EXAMPLE
+-bash: sudo: command not found
+#+END_EXAMPLE
+*** Observation
+If sudoers package is removed from the server, users can not execute command
+with sudo privileges.
+*** Conclusion
+Sudoers package is removed from all the servers in the cluster.
+
+
+

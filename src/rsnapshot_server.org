@@ -1,0 +1,663 @@
+#+TITLE:     Rsnapshot Server - Design Model and Implementation
+#+DATE:      2015-04-15 Wednesday
+#+PROPERTY: session *scratch*
+#+PROPERTY: results output
+#+PROPERTY: exports code
+//#+SETUPFILE: org-templates/level-0.org
+#+DESCRIPTION: Rsnapshot Server Design Model Documentation
+#+OPTIONS: ^:nil
+
+* Introduction
+This document describes the design and implementation of Rsnapshot Server.
+
+* Requirements
+** Functional Requirements
+1) Take periodic backup of various files on all the servers in the cluster.
+2) Take periodic backup of various files on local machine - rsnapshot server.
+3) Apply all common firewall rules.
+
+** Security Requirements
+1) Security requirements are define in common role.
+
+* Design
+Given diagram describes the design of the rsnapshot server. Systems files are
+listed for a quick overview of whole systems.
+
+** System Design Diagram
+[[./diagrams/rsnapshot-server-design-diagram.png]]
+
+** Editable Link
+[[https://docs.google.com/drawings/d/1HQtQ_UsjmNYmeTcqh6e9l4_Fd6TfRhBh70NI43DuyDY/edit][Link to google drawing board]]
+
+** System Files
+|------+-----------+-------------------------+--------------------|
+| S.no | Service   | File                    | Description        |
+|------+-----------+-------------------------+--------------------|
+|   1. | Iptables  | /etc/sysconfig/iptables | Configuration File |
+|------+-----------+-------------------------+--------------------|
+|   2. | Rsnapshot | /etc/rsnapshot.conf     | Configuration File |
+|------+-----------+-------------------------+--------------------|
+|   3. | SSH       | /root/.ssh/id_rsa.pub   | SSH public keys    |
+|------+-----------+-------------------------+--------------------|
+
+** Configuration Design
+Rsnapshot uses =/etc/rsnapshot.conf= file for configuration. Two very important
+points about configuration file are:
+- All paths must end with / and all backup destination shoule be relative
+- Various fields in file are separated using Tab. Space does not separates fields
+
+* Implementation
+** Structure of Scripts
+The implementation of this system is in terms of a collection of Ansible scripts
+which configure the machine. These scripts are organized as follows:
+
+#+BEGIN_EXAMPLE
+|-- rsnapshot_server.yml
+|-- roles
+|   |   |-- rsnapshot_server
+|   |   |   |-- tasks
+|   |   |   |   `-- main.yml
+|   |   |   |-- templates
+|   |   |   |   `-- rsnapshot.conf.j2
+|   |   |   `-- vars
+|   |   |       `-- main.yml
+#+END_EXAMPLE
+
+** Firewall Rules
+Firewall rules applied to rsnapshot server are mentioned here. Description of
+firewall rules which are common across all the systems are defined in the common
+role. There are no specific firewall rule, all the common rules are applied.
+
+*** Firewall Rules
+#+BEGIN_SRC yml :tangle roles/rsnapshot_server/templates/rsnapshot_server_iptables :eval no
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+#Accept loopback connections
+-A INPUT -i lo -d 127.0.0.0/8 -j ACCEPT
+#Rate limit new connections to 20 new connections per 30 seconds
+-A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --set
+-A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --rcheck --seconds 30 --hitcount 20 -m limit --limit 2/min -j LOG --log-prefix "new_limit_"
+-A INPUT ! -p udp -m state --state NEW -m recent --name ssh_limit --rcheck --seconds 30 --hitcount 20 -j DROP
+#Accept ICMP ping requests at limited rate
+-A INPUT -p icmp --icmp-type echo-request -m limit --limit 60/minute --limit-burst 120 -j ACCEPT
+-A INPUT -p icmp --icmp-type echo-request -m limit --limit 1/minute --limit-burst 2 -j LOG
+-A INPUT -p icmp --icmp-type echo-request -j DROP
+#Allow ongoing connections
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+#Allow incoming SSH connections from ansible server IPs.  Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
+{% for item in ansible_server_ips  %}
+-A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
+#Allow incoming NRPE queries for nagios from nagios servers
+-A INPUT -m state --state NEW -p tcp -m tcp --dport 5666 -j ACCEPT
+#Allow SNMP queries from cacti servers
+-A INPUT -p udp -m udp --dport 161 -j ACCEPT
+-A INPUT -p udp -m udp --dport 162 -j ACCEPT
+#Log all other "blocked_input_" attempts with rate limiting
+-A INPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_input_"
+#Reply with proper ICMP error message and reject the connection
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+#Disable packet forwarding 
+-A FORWARD -j REJECT
+#
+#
+##Output rules
+#Allow outgoing connections to localhost
+-A OUTPUT -s 127.0.0.0/8 -o lo -j ACCEPT
+#Allow outgoing connections to ansible server on port22
+{% for item in ansible_server_ips  %}
+-A OUTPUT -d {{item}} -p tcp -m tcp --sport 22 -j ACCEPT
+{% endfor %}
+#Allow ongoing connections
+-A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+#Allow SSH
+-A OUTPUT -p tcp -m tcp --dport 22 -j ACCEPT
+#Allow server to send emails.  Required for sending logwatch emails
+-A OUTPUT -p tcp -m tcp --dport 25 -j ACCEPT
+#Allow https to contact yum
+-A OUTPUT -p tcp -m tcp --dport 443 -j ACCEPT
+#Allow outgoing ping requests
+-A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT
+#Allow outgoing connections to rsyslog server
+-A OUTPUT -p udp -m udp --dport 514 -j ACCEPT
+#Allow outgoing connections to OSSEC server
+-A OUTPUT -p udp -m udp --dport 1514 -j ACCEPT
+#Log all other "blocked_output_" attempts
+-A OUTPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_output_"
+#Reply with proper ICMP error message and reject the connection
+-A OUTPUT -j REJECT --reject-with icmp-host-prohibited
+COMMIT
+#
+#+END_SRC
+
+** Configuring rsnapshot
+Following steps are performed to configure rsnapshot service
+
+*** Configure absolute path of backup location
+Absolute path on current system where backup data will be stored is configured
+via 'snapshot_root' directive. In case of remote backups, rsnapshot always run
+on backup server and not on client to be backed up.
+#+BEGIN_EXAMPLE
+snapshot_root	/.snapshots/
+#+END_EXAMPLE
+
+*** Enable ssh
+Remote ssh backup over *rsync* is enabled by uncommenting =cmd_ssh= directive.
+
+*** Backup Intervals
+Proper backup intervals are set. In the configuration file the order of interval
+lines is important. More frequent backup lines should come first. Example:
+#+BEGIN_EXAMPLE
+interval        hourly  6
+interval        daily   7
+interval        weekly  4
+interval        monthly 3
+#+END_EXAMPLE
+
+*** Set log level
+Various level of logs can be set as follows:
+#+BEGIN_EXAMPLE
+Verbose level, 1 through 5.
+1     Quiet           Print fatal errors only
+2     Default         Print errors and warnings only
+3     Verbose         Show equivalent shell commands being executed
+4     Extra Verbose   Show extra verbose information
+5     Debug mode      Everything
+#+END_EXAMPLE
+
+In the rsnaphost server =loglevel= directive is set to 2.
+#+BEGIN_EXAMPLE
+loglevel 2
+#+END_EXAMPLE
+
+*** SSH keys path
+Path of SSH key is specified via =ssh_args= directive. Sometimes system
+administrator may place the public keys at some other location, the same path is
+specified here. The value of variable - 'rsnapshot_ssh_key' is fetched from
+=vars/main.yml=.
+#+BEGIN_EXAMPLE
+ssh_args	-i $HOME/.ssh/{{ rsnapshot_ssh_key }}
+#+END_EXAMPLE
+
+*** Support special files
+To support special files (FIFOs, etc) cross-platform, =link_dest= directive is
+enabled by setting its value to 1.
+
+#+BEGIN_EXAMPLE
+link_dest 1
+#+END_EXAMPLE
+
+*** Local and Remote backup
+Local backup of rsnapshot server itself and Remote backup of all other servers
+in the cluster are setup. A 'for loop' is defined which loops over all the
+machine for which backup is to be taken e.g. localhost, nagios. Nested 'for
+loop' loops over all the folders which are to be backed up.
+#+BEGIN_EXAMPLE
+{% for backup in rsnapshot_config_backup %}
+{% for args in backup.points %}
+{{ '\t'.join(args) }}
+{% endfor %}
+{% endfor %}
+#+END_EXAMPLE
+
+**** Example of Local Backup of Localhost
+#+BEGIN_EXAMPLE
+backup_script        /bin/date           "+ backup of localhost started at %c" > start.txt        localhost/localhost_start
+backup               /home/              localhost/
+backup               /etc/               localhost/
+backup               /usr/local/         localhost/
+backup_script        /bin/date           "+ backup of localhost completed at %c" > end.txt        localhost/localhost_end
+#+END_EXAMPLE
+
+**** Example of Remote Backup of Nagios machine
+#+BEGIN_EXAMPLE
+backup_script        /bin/date "+ backup of nagios started at %c" > start.txt        nagios/nagios_start
+backup               "root@nagios.vlabs.ac.in:/home/"                                nagios/
+backup               "root@nagios.vlabs.ac.in:/etc/"                                 nagios/
+backup               "root@nagios.vlabs.ac.in:/usr/local/"                           nagios/
+backup_script        /bin/date "+ backup of nagios completed at %c" > end.txt        nagios/nagios_end
+#+END_EXAMPLE
+
+*** Complete configuration file
+
+#+BEGIN_SRC yml :tangle roles/rsnapshot_server/templates/rsnapshot.conf.j2 :eval no
+#################################################
+# rsnapshot.conf - rsnapshot configuration file #
+#################################################
+#                                               #
+# PLEASE BE AWARE OF THE FOLLOWING RULES:       #
+#                                               #
+# This file requires tabs between elements      #
+#                                               #
+# Directories require a trailing slash:         #
+#   right: /home/                               #
+#   wrong: /home                                #
+#                                               #
+#################################################
+
+#######################
+# CONFIG FILE VERSION #
+#######################
+
+config_version	1.2
+
+###########################
+# SNAPSHOT ROOT DIRECTORY #
+###########################
+
+# All snapshots will be stored under this root directory.
+#
+snapshot_root	/.snapshots/
+
+# If no_create_root is enabled, rsnapshot will not automatically create the
+# snapshot_root directory. This is particularly useful if you are backing
+# up to removable media, such as a FireWire or USB drive.
+#
+#no_create_root	1
+
+#################################
+# EXTERNAL PROGRAM DEPENDENCIES #
+#################################
+
+# LINUX USERS:   Be sure to uncomment "cmd_cp". This gives you extra features.
+# EVERYONE ELSE: Leave "cmd_cp" commented out for compatibility.
+#
+# See the README file or the man page for more details.
+#
+cmd_cp		/bin/cp
+
+# uncomment this to use the rm program instead of the built-in perl routine.
+#
+cmd_rm		/bin/rm
+
+# rsync must be enabled for anything to work. This is the only command that
+# must be enabled.
+#
+cmd_rsync	/usr/bin/rsync
+
+# Uncomment this to enable remote ssh backups over rsync.
+#
+cmd_ssh	/usr/bin/ssh
+
+# Comment this out to disable syslog support.
+#
+cmd_logger	/usr/bin/logger
+
+# Uncomment this to specify the path to "du" for disk usage checks.
+# If you have an older version of "du", you may also want to check the
+# "du_args" parameter below.
+#
+cmd_du		/usr/bin/du
+
+# Uncomment this to specify the path to rsnapshot-diff.
+#
+#cmd_rsnapshot_diff	/usr/local/bin/rsnapshot-diff
+
+# Specify the path to a script (and any optional arguments) to run right
+# before rsnapshot syncs files
+#
+#cmd_preexec	/path/to/preexec/script
+
+# Specify the path to a script (and any optional arguments) to run right
+# after rsnapshot syncs files
+#
+#cmd_postexec	/path/to/postexec/script
+
+#########################################
+#           BACKUP INTERVALS            #
+# Must be unique and in ascending order #
+# i.e. hourly, daily, weekly, etc.      #
+#########################################
+
+interval	hourly	6
+interval	daily	7
+interval	weekly	4
+interval	monthly	3
+
+############################################
+#              GLOBAL OPTIONS              #
+# All are optional, with sensible defaults #
+############################################
+
+# Verbose level, 1 through 5.
+# 1     Quiet           Print fatal errors only
+# 2     Default         Print errors and warnings only
+# 3     Verbose         Show equivalent shell commands being executed
+# 4     Extra Verbose   Show extra verbose information
+# 5     Debug mode      Everything
+#
+verbose		2
+
+# Same as "verbose" above, but controls the amount of data sent to the
+# logfile, if one is being used. The default is 3.
+#
+loglevel	2
+
+# If you enable this, data will be written to the file you specify. The
+# amount of data written is controlled by the "loglevel" parameter.
+#
+logfile	/var/log/rsnapshot
+
+# If enabled, rsnapshot will write a lockfile to prevent two instances
+# from running simultaneously (and messing up the snapshot_root).
+# If you enable this, make sure the lockfile directory is not world
+# writable. Otherwise anyone can prevent the program from running.
+#
+lockfile	/var/run/rsnapshot.pid
+
+# Default rsync args. All rsync commands have at least these options set.
+#
+#rsync_short_args	-a
+#rsync_long_args	--delete --numeric-ids --relative --delete-excluded
+
+# ssh has no args passed by default, but you can specify some here.
+#
+#ssh_args	-p 22
+ssh_args	-i $HOME/.ssh/{{ rsnapshot_ssh_key }}
+
+# Default arguments for the "du" program (for disk space reporting).
+# The GNU version of "du" is preferred. See the man page for more details.
+# If your version of "du" doesn't support the -h flag, try -k flag instead.
+#
+#du_args	-csh
+
+# If this is enabled, rsync won't span filesystem partitions within a
+# backup point. This essentially passes the -x option to rsync.
+# The default is 0 (off).
+#
+#one_fs		0
+
+# The include and exclude parameters, if enabled, simply get passed directly
+# to rsync. If you have multiple include/exclude patterns, put each one on a
+# separate line. Please look up the --include and --exclude options in the
+# rsync man page for more details on how to specify file name patterns. 
+# 
+#include	???
+#include	???
+#exclude	???
+#exclude	???
+
+# The include_file and exclude_file parameters, if enabled, simply get
+# passed directly to rsync. Please look up the --include-from and
+# --exclude-from options in the rsync man page for more details.
+#
+#include_file	/path/to/include/file
+#exclude_file	/path/to/exclude/file
+
+# If your version of rsync supports --link-dest, consider enable this.
+# This is the best way to support special files (FIFOs, etc) cross-platform.
+# The default is 0 (off).
+#
+link_dest	1
+
+# When sync_first is enabled, it changes the default behaviour of rsnapshot.
+# Normally, when rsnapshot is called with its lowest interval
+# (i.e.: "rsnapshot hourly"), it will sync files AND rotate the lowest
+# intervals. With sync_first enabled, "rsnapshot sync" handles the file sync,
+# and all interval calls simply rotate files. See the man page for more
+# details. The default is 0 (off).
+#
+#sync_first	0
+
+# If enabled, rsnapshot will move the oldest directory for each interval
+# to [interval_name].delete, then it will remove the lockfile and delete
+# that directory just before it exits. The default is 0 (off).
+#
+#use_lazy_deletes	0
+
+# Number of rsync re-tries. If you experience any network problems or
+# network card issues that tend to cause ssh to crap-out with
+# "Corrupted MAC on input" errors, for example, set this to a non-zero
+# value to have the rsync operation re-tried
+#
+#rsync_numtries 0
+
+###############################
+### BACKUP POINTS / SCRIPTS ###
+###############################
+
+{% for backup in rsnapshot_config_backup %}
+# {{ backup.name }}
+{% for args in backup.points %}
+{{ '\t'.join(args) }}
+{% endfor %}
+{% endfor %}
+
+
+# LOCALHOST
+#backup	/home/		localhost/
+#backup	/etc/		localhost/
+#backup	/usr/local/	localhost/
+#backup	/var/log/rsnapshot		localhost/
+#backup	/etc/passwd	localhost/
+#backup	/home/foo/My Documents/		localhost/
+#backup	/foo/bar/	localhost/	one_fs=1, rsync_short_args=-urltvpog
+#backup_script	/usr/local/bin/backup_pgsql.sh	localhost/postgres/
+
+# EXAMPLE.COM
+#backup_script	/bin/date "+ backup of example.com started at %c"	unused1
+#backup	root@example.com:/home/	example.com/	+rsync_long_args=--bwlimit=16,exclude=core
+#backup	root@example.com:/etc/	example.com/	exclude=mtab,exclude=core
+#backup_script	ssh root@example.com "mysqldump -A > /var/db/dump/mysql.sql"	unused2
+#backup	root@example.com:/var/db/dump/	example.com/
+#backup_script	/bin/date	"+ backup of example.com ended at %c"	unused9
+
+# CVS.SOURCEFORGE.NET
+#backup_script	/usr/local/bin/backup_rsnapshot_cvsroot.sh	rsnapshot.cvs.sourceforge.net/
+
+# RSYNC.SAMBA.ORG
+#backup	rsync://rsync.samba.org/rsyncftp/	rsync.samba.org/rsyncftp/
+
+#+END_SRC
+
+** Update hostname
+Update the hostname of the machine by setting it in =/etc/syscong/network= file.
+
+#+BEGIN_SRC yml :tangle roles/rsnapshot_server/tasks/main.yml :eval no
+---
+- name: Updating Hostname
+  lineinfile: dest=/etc/sysconfig/network regexp=^HOSTNAME= 'line=HOSTNAME="rsnapshot.virtual-labs.ac.in"'
+#+END_SRC
+
+** Installing Rsnapshot package
+Install the =rsnaphost= package.
+
+#+BEGIN_SRC yml :tangle roles/rsnapshot_server/tasks/main.yml :eval no
+- name: Installing rsnapshot
+  yum: name=rsnapshot state=installed
+  environment: proxy_env
+#+END_SRC
+
+** Applying firewall rules
+Firewall rules are applied and iptables service is restarted.
+#+BEGIN_SRC yml :tangle roles/rsnapshot_server/tasks/main.yml :eval no
+- name: Applying iptables for rsnapshot
+  template: src=rsnapshot_server_iptables dest=/etc/sysconfig/iptables owner=root group=root
+  notify: restart_iptables
+#+END_SRC
+
+** Generating SSH keys on the rsnapshot server and getting it to ansible server
+Rsnashot server connects to rsnapshot clients over ssh to take backup. For this
+SSH key is generated on the Rsnapshot server. The ssh public key is to be placed
+inside the rsnaphost client machine authorized_keys, for this keys are copied to
+ansible server and from there it will be placed inside rsnapshot client.
+
+#+BEGIN_SRC yml :tangle roles/rsnapshot_server/tasks/main.yml :eval no
+- name: Create a SSH key for 'root'
+  user: name=root generate_ssh_key=yes ssh_key_file=.ssh/{{ rsnapshot_ssh_key }}
+  when: rsnapshot_ssh_key != False
+
+- name: Get public key from RSNAPSHOT server to ansible server
+  fetch: src=/root/.ssh/id_rsa.pub dest=rsnapshot_server_pubic_key
+#+END_SRC
+
+** Copying configuration file to rsnapshot server
+Copy *rsnapshot.conf* file from ansible server to rsnapshot server at
+=/etc/rsnapshot.conf=.
+
+#+BEGIN_SRC yml :tangle roles/rsnapshot_server/tasks/main.yml :eval no
+#updating rsnapshot.conf also includes configuring backup of remote machines
+- name: updating rsnapshot.conf
+  template: src=rsnapshot.conf.j2 dest=/etc/rsnapshot.conf owner=root group=root mode=644 backup=yes
+#+END_SRC
+
+** Configure cron for backup
+Cronjobs are configured on the rsnapshot server to take backup of the files on
+the various server automatically at specified interval - hourly, daily, weekly
+and monthly.
+
+#+BEGIN_SRC yml :tangle roles/rsnapshot_server/tasks/main.yml :eval no
+- name: Configure cron
+  cron: name="{{ item.name }}" 
+        user=root
+        cron_file=ansible_rsnapshot
+        month={{ item.get('month', '*') }}
+        weekday={{ item.get('weekday', '*') }}
+        day={{ item.get('day', '*') }}
+        hour={{ item.get('hour', '*') }}
+        minute={{ item.get('minute', '*') }}
+        job="{{ item.get('job', '*') }}" 
+  with_items: rsnapshot_crontab
+#+END_SRC
+
+** Variables Definition
+Following variables are defined which are used by ansible playbooks.
+
+- rsnapshot_ssh_key :: SSH key file is specified
+
+- name :: Rsnaphot clients are specified.
+
+- points :: For each client what files are to be backed up are specified
+
+- rsnapshot_crontab :: Cronjobs are set to run - hourly, daily, weekly and monthly.
+  
+Complete vars file is shown below
+
+#+BEGIN_SRC yml :tangle roles/rsnapshot_server/vars/main.yml :eval no
+---
+rsnapshot_ssh_key: id_rsa
+
+rsnapshot_config_backup:
+    - name: LOCALHOST
+      points:
+          - [backup_script, /bin/date "+ backup of localhost started at %c" > start.txt, localhost/localhost_start]
+          - [backup, /home/, localhost/]
+          - [backup, /etc/, localhost/]
+          - [backup, /usr/local/, localhost/]
+          - [backup_script, /bin/date "+ backup of localhost completed at %c" > end.txt, localhost/localhost_end]
+
+    - name: nagios.vlabs.ac.in
+      points:
+          - [backup_script, /bin/date "+ backup of nagios started at %c" > start.txt, nagios/nagios_start]
+          - [backup, "root@nagios.vlabs.ac.in:/home/", nagios/]
+          - [backup, "root@nagios.vlabs.ac.in:/etc/", nagios/]
+          - [backup, "root@nagios.vlabs.ac.in:/usr/local/", nagios/]
+          - [backup_script, /bin/date "+ backup of nagios completed at %c" > end.txt, nagios/nagios_end]
+
+    - name: reverseproxy.vlabs.ac.in
+      points:
+          - [backup_script, /bin/date "+ backup of reverseproxy started at %c" > start.txt, reverseproxy/reverseproxy_start]
+          - [backup, "root@reverseproxy.vlabs.ac.in:/home/", reverseproxy/]
+          - [backup, "root@10.4.15.116:/etc/", reverseproxy/]
+          - [backup, "root@10.4.15.116:/usr/local/", reverseproxy/]
+          - [backup_script, /bin/date "+ backup of reverseproxy completed at %c" > end.txt, reverseproxy/reverseproxy_end]
+
+    - name: ads.vlabs.ac.in
+      points:
+          - [backup_script, /bin/date "+ backup of ads started at %c" > start.txt, ads/ads_start]
+          - [backup, "root@ads.vlabs.ac.in:/home/", ads/]
+          - [backup, "root@ads.vlabs.ac.in:/etc/", ads/]
+          - [backup, "root@ads.vlabs.ac.in:/usr/local/", ads/]
+          - [backup_script, /bin/date "+ backup of ads completed at %c" > end.txt, ads/ads_end]
+
+
+rsnapshot_crontab:
+     - name: hourly
+       month: '*'
+       weekday: '*'
+       day: '*'
+       hour: '*/4'
+       minute: 0
+       job: "/usr/bin/rsnapshot hourly"
+     - name: daily
+       month: '*'
+       weekday: '*'
+       day: '*'
+       hour: 3
+       minute: 30
+       job: "/usr/bin/rsnapshot daily"
+     - name: weekly
+       month: '*'
+       weekday: 1
+       day: '*'
+       hour: 3
+       minute: 0
+       job: "/usr/bin/rsnapshot weekly"
+     - name: monthly
+       month: '*'
+       weekday: '*'
+       day: 1
+       hour: 2
+       minute: 30
+       job: "/usr/bin/rsnapshot monthly"
+#+END_SRC
+
+* Test Cases
+** Test Case-1
+*** Objective: 
+Test =rsnapshot= package is installed.
+*** Apparatus:
+1. Rsnapshot server machine
+
+*** Theory
+Rsnapshot server takes backup of data from the client machine using rsnapshot
+tool.
+*** Experiment
+**** Verify rsnapshot package is installed using following command
+#+BEGIN_EXAMPLE
+rpm -qa | grep rsnapshot
+#+END_EXAMPLE
+
+*** Result
+Output of step-1 of experiment shows rsnapshot package is installed.
+#+BEGIN_EXAMPLE
+rsnapshot
+#+END_EXAMPLE
+
+*** Observation
+Rsnapshot package is installed on the machine.
+
+*** Conclusion
+Rsnapshot package is installed on the machine.
+
+
+
+
+** Test Case-2
+*** Objective:
+Test server is able to rsync from rsnapshot clients.
+*** Apparatus:
+1. Rsnapshot server machine
+2. Rsnapshot client machine
+
+*** Theory
+Rsnapshot server takes backup of data from the client machine using rsync tool.
+*** Experiment
+**** Verify rsych is working
+#+BEGIN_EXAMPLE
+[root@rsnapshot-server ~]# rsync root@<client-ip>:<file-path> .
+#+END_EXAMPLE
+
+*** Result
+Shell command of step-1 of experiment got executed without any error.
+#+BEGIN_EXAMPLE
+[root@rsnapshot-server ~]#
+#+END_EXAMPLE
+
+*** Observation
+Rsnapshot server is able to rsync from rsnapshot client.
+
+*** Conclusion
+Rsnapshot server is able to rsync from rsnapshot client.
