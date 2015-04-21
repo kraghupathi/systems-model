@@ -77,5 +77,6 @@
 - [[./rp-awstats.org][Reverse Proxy]]
 - [[./nagios_server.org][Nagios]]
 - [[./router.org][Router]]
+- [[./rsnapshot_server.org][Backup server]]
 - Ossec
 
