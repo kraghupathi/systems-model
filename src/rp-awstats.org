@@ -292,7 +292,7 @@ role, "proxy_domains" variable defines the lab's hostname/FQDN.
 In the following template added default virtual host entry to
 reverseproxy server itself to access awstats from browser.
 
-- Note :: If you are working on BASE1, Please change if condition of
+- Note :: If you are working on BASE1, Please change *if condition* of
           the following template according to your domain name of
           reverseproxy which is defined in [[./common_vars.org][common_vars role]]
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/templates/virtualhosts.conf
