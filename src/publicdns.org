@@ -8,18 +8,16 @@
 This document describes the requirements, design and implementation of
 the *Public Domain Name Server* which is part of the AWS cluster.
 This server is used to provide domain name resolution for all other
-servers in the cluster. The name "Public" is a term coined by us to
-distinguish the primary functionality of the DNS. This DNS will be the
-authoritative name server for our domain name "virtual-labs.ac.in".
-The Public IP of this machine needs to be officially registered with
-ERNET to make this machine an authoritative name server for our
-domain.
+servers in the cluster. This DNS will be the authoritative name server
+for our domain name "virtual-labs.ac.in". The Public IP of this
+machine needs to be officially registered with ERNET to make this
+machine an authoritative name server for our domain.
 
 * Requirements
 The functional and security requirements of the Public DNS are
-mentioned in the following sections. These are specific the Public
+mentioned in the following sections. These are specific to the Public
 DNS. The requirements which are common to all the roles are mentioned
-in the [[common%20role][common role]].
+in the [[./common.org][common role]]
 ** Functional
    - Resolve our authoritative domain names for all external clients
    - Zone entries should be configurable (from a particular file on
@@ -357,5 +355,182 @@ dependencies:
   - role: common_vars
 #+END_SRC
 
-
 * Test Cases
+** Test case ID: TC01
+*** Objective
+    The objective is to test the working of the name server to resolve
+    the hostnames of other machines which have been configured in the
+    Private DNS zone file.
+*** Apparatus
+    - The Public DNS container/machine
+    - Access to ssh-tunnel
+*** Theory
+    The named server contains a list of hostnames with their
+    corresponding IP addresses. Once the service is running it is
+    capable of resolving these hostnames to their respective IP
+    addresses. There are command-line tools available which help in
+    querying the DNS server. For our test case we use =nslookup= and
+    =dig=. Both of them are command-line tools which query the
+    DNS. Since this test is being done by the systems engineer, he
+    would know the configured IP addresses of the hostnames. This
+    helps in knowing if the result of the query is right or wrong.  In
+    the case of the Public DNS the any hostname should resolve to the
+    Public IP of the network (which is generally the router).
+
+*** Procedure
+    - Login into ssh-tunnel. (This has direct internet access).
+    - The ssh tunnel already contains the command-line tools. They
+      need not be installed.
+    - Now on this machine we need to run the command-line tool to
+      query the DNS server.
+    - Now we run the tools as follows:
+      #+BEGIN_EXAMPLE
+      dig <FQDN>
+      #+END_EXAMPLE
+    - We can also use the nslookup tool.
+      #+BEGIN_EXAMPLE
+      nslookup <FQDN>
+      #+END_EXAMPLE
+    - By running these commands we can determine if the DNS is
+      resolving the names properly or not.
+
+*** Experiments
+    We need to perform testing by using the command line tools. After
+    logging into ssh tunnel do the following:
+    #+BEGIN_EXAMPLE
+    nslookup ossec-server.virtual-labs.ac.in 54.85.937
+    #+END_EXAMPLE
+    and 
+    #+BEGIN_EXAMPLE
+    dig ossec-server.virtual-labs.ac.in @54.85.93.7
+    #+END_EXAMPLE
+*** Result
+    - The result obtained from the first command is as below : 
+    
+    #+BEGIN_EXAMPLE
+    Server:		54.85.93.7
+    Address:	54.85.93.7#53
+
+    Name:	ossec-server.vlabs.ac.in
+    Address: 54.85.93.7
+    #+END_EXAMPLE
+    
+    - The result obtained from the second command is as below:
+    #+BEGIN_EXAMPLE
+    ; <<>> DiG 9.8.2rc1-RedHat-9.8.2-0.30.rc1.el6_6.2 <<>> ossec-server.vlabs.ac.in @54.85.93.7
+    ;; global options: +cmd
+    ;; Got answer:
+    ;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 22375
+    ;; flags: qr aa rd; QUERY: 1, ANSWER: 1, AUTHORITY: 1, ADDITIONAL: 1
+    ;; WARNING: recursion requested but not available
+
+    ;; QUESTION SECTION:
+    ;ossec-server.vlabs.ac.in.	IN	A
+
+    ;; ANSWER SECTION:
+    ossec-server.vlabs.ac.in. 3600	IN	A	54.85.93.7
+
+    ;; AUTHORITY SECTION:
+    vlabs.ac.in.		3600	IN	NS	public-dns.vlabs.ac.in.
+
+    ;; ADDITIONAL SECTION:
+    public-dns.vlabs.ac.in.	3600	IN	A	54.85.93.7
+
+    ;; Query time: 287 msec
+    ;; SERVER: 54.85.93.7#53(54.85.93.7)
+    ;; WHEN: Wed Apr 22 00:36:51 2015
+    ;; MSG SIZE  rcvd: 99
+
+    #+END_EXAMPLE
+
+*** Observation
+    From the results obtained above it can be observed that both the
+    queries give the output of the query made to the DNS server. The
+    output of dig queries are generally more descriptive and detailed
+    than nslookup. The crux of both of these command line tools is to
+    determine if the query for a particular FQDN gave the
+    corresponding IP of that machine to which the domain name belongs,
+    which both do.  The given FQDN was
+    =ossec-server.base1.virtual-labs.ac.in=. The obtained result
+    showed that this FQDN comes from an address =54.85.93.7=.
+    This shows that the Public DNS was able to resolve the hostname.
+
+*** Conclusion
+    The Public DNS is resolving the hostnames correctly.
+
+
+** Test case ID: TC02
+*** Objective
+    The objective is to see that the Public DNS does not work as a Peer DNS.
+*** Apparatus
+    - The Public DNS container/machine
+    - Access to the ssh-tunnel.
+*** Theory
+    The Public DNS should not be able to resolve external domain names
+    for the machine to be able to contact external sources. This is so
+    because we do not want our DNS servers to resolve other hostnames,
+    and behave as a general resolver. This helps us to check if we
+    have configured our Public DNS not to have recursive lookups.
+
+*** Procedure
+    - We use the command line tools to see if the Public DNS is able
+      to resolve the names of other hostnames for which our DNS is not
+      registered. The Public Ip refers to the IP of the DNS which is
+      registered.
+      #+BEGIN_EXAMPLE
+      nslookup gnu.org <Public IP>
+      #+END_EXAMPLE
+      and
+      #+BEGIN_EXAMPLE
+      dig gnu.org @<Public IP>
+      #+END_EXAMPLE
+
+*** Experiments
+    - To test if we can resolve gnu.org using nslookup
+    #+BEGIN_EXAMPLE
+    nslookup gnu.org 54.85.93.7
+    #+END_EXAMPLE
+    - To test if we can resolve gnu.org using dig
+
+    #+BEGIN_EXAMPLE
+    dig gnu.org @54.85.93.7
+    #+END_EXAMPLE
+*** Result
+    - The result for the first case with nslookup is as below:
+
+    #+BEGIN_EXAMPLE
+    Server:		54.85.93.7
+    Address:	54.85.93.7#53
+
+    ** server can't find gnu.org: REFUSED
+ 
+    #+END_EXAMPLE
+    
+    - The result of the first case with dig is as below:
+    #+BEGIN_EXAMPLE
+    ; <<>> DiG 9.8.2rc1-RedHat-9.8.2-0.30.rc1.el6_6.2 <<>> gnu.org @54.85.93.7
+    ;; global options: +cmd
+    ;; Got answer:
+    ;; ->>HEADER<<- opcode: QUERY, status: REFUSED, id: 29464
+    ;; flags: qr rd; QUERY: 1, ANSWER: 0, AUTHORITY: 0, ADDITIONAL: 0
+    ;; WARNING: recursion requested but not available
+
+    ;; QUESTION SECTION:
+    ;gnu.org.			IN	A
+
+    ;; Query time: 292 msec
+    ;; SERVER: 54.85.93.7#53(54.85.93.7)
+    ;; WHEN: Wed Apr 22 00:49:28 2015
+    ;; MSG SIZE  rcvd: 25
+
+    #+END_EXAMPLE
+
+*** Observation
+    The results show that the Private DNS is being used to query the
+    IP address of =gnu.org=. Nslookup does not show us the IP of
+    gnu.org. Dig also shows that the same result. The Public DNS does
+    not resolve any hostname other than the one that it is registered
+    for.
+  
+*** Conclusion
+    The recursive lookup is not functional in the Public DNS.
