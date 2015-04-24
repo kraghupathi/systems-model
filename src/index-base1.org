@@ -1,0 +1,46 @@
+#+TITLE:     Base1 Cluster Model
+#+AUTHOR:    M.S.Soumya
+#+EMAIL:     ms@ms
+#+DATE:      2015-04-22 Wed
+
+
+* Introduction 
+This document describes in detail the *Base1 Cluster Model*. It gives
+an elaborate description of all the components in the cluster.
+
+* The Base1 cluster model
+  This cluster is the staging cluster. This cluster was developed to
+  test the functionality of the systems in the cluster before setting
+  up a cluster on Amazon. This cluster comprises of several components
+  which areas follows:
+  - [[./rsyslog_server.org][Rsyslog]]
+  - [[./privatedns.org][Private DNS]]
+  - [[./publicdns.org][Public DNS]]
+  - [[./rp-awstats.org][Reverse Proxy]]
+  - [[./nagios_server.org][Nagios]]
+  - [[./router.org][Router]]
+  - [[./rsnapshot_server.org][Backup server]]
+  
+* Design of the Base1 cluster
+  The diagrams below depict the architecture of the systems in the
+  cluster model.
+  
+** Overall Network Diagram
+   The diagram below shows the architecture of the cluster. The
+   network setup of the cluster is depicted in this figure.
+
+   #+CAPTION:  Cluster Network Diagram
+   #+LABEL:  fig-cluster-network-diagram
+   #+NAME: fig-cluster-network-diagram
+   [[./diagrams/overall-cluster-network-diagram.png]]
+
+** Overall connectivity Diagram
+   The diagram below shows how the different machines in the are
+   connected to each other. It just shows the connection of each
+   machine with the other, not specifying the protocol or the port with
+   which they connect.
+   #+CAPTION:  Cluster connectivity Diagram
+   #+LABEL:  fig-cluster-connectivity-diagram
+   #+NAME: fig-cluster-connectivity-diagram
+   [[./diagrams/overall-model-aws-cluster.png]]
+
