@@ -277,54 +277,202 @@ user with the name resolved.
 - 
 *** Theory
 
-** Test case ID :: router-test-case-3
-*** Description
-Testing router is able to ping to other machine.
-*** Steps to run the test case
-1) Ping to some other machine using following command:
-#+BEGIN_EXAMPLE
-root@router:~$ ping 8.8.8.8
-#+END_EXAMPLE
-*** Expected result
-#+BEGIN_EXAMPLE
-PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
-64 bytes from 8.8.8.8: icmp_seq=1 ttl=54 time=17.2 ms
-64 bytes from 8.8.8.8: icmp_seq=2 ttl=54 time=17.1 ms
-#+END_EXAMPLE
+
+** Test case ID :: TC02
+*** Objective 
+    The objective of this test case is to test whether the router is
+    working and is able to forward the requests to the Public
+    DNS. This test also shows that the Public DNS, reverse proxy, the
+    private DNS, basically the entire network functions properly.
+*** Apparatus
+    - The router machine
+    - Any machine in the IIIT network.
+    - Access to the testing cluster. 
+*** Theory
+    The router is the point of contact between the outside world and
+    our network of machines. So when a request for any URL belonging
+    to our domain is made, the request first goes to the router. The
+    router then forwards the request to the Public DNS via port 53.
+    Once the query is processed by the Public DNS, it repliesback to
+    the router again via port 53. The router then sends back the reply
+    to the client that made the request via port 53.
+*** Procedure
+    - Open a terminal on your machine.
+    - The ssh tunnel already contains the command-line tools. They
+      need not be installed.
+    - Now on this machine we need to run the command-line tool to
+      query the DNS server.
+    - Now we run the tools as follows:
+      #+BEGIN_EXAMPLE
+      dig <FQDN> @<Router Public IP>
+      #+END_EXAMPLE
+    - We can also use the nslookup tool.
+      #+BEGIN_EXAMPLE
+      nslookup <FQDN> <Router Public IP>
+      #+END_EXAMPLE
+    - By running these commands we can determine if the DNS is being
+      contacted by the router for resolving the names.
+*** Experiment
+    We need to perform testing by using the command line tools. After
+    logging into ssh tunnel do the following:
+    #+BEGIN_EXAMPLE
+    nslookup ossec-server.virtual-labs.ac.in 10.4.14.200
+    #+END_EXAMPLE
+    and 
+    #+BEGIN_EXAMPLE
+    dig ossec-server.virtual-labs.ac.in @10.4.14.200
+    #+END_EXAMPLE
+
 *** Result
-#+BEGIN_EXAMPLE
-PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
-64 bytes from 8.8.8.8: icmp_seq=1 ttl=54 time=17.2 ms
-64 bytes from 8.8.8.8: icmp_seq=2 ttl=54 time=17.1 ms
-#+END_EXAMPLE
-*** Test Passed
-Yes
+    - The result obtained from the first command is as below : 
+    
+    #+BEGIN_EXAMPLE
+    Server:		10.4.14.200
+    Address:	10.4.14.200#53
 
-** Test case ID :: router-test-case-4
-*** Description
-Testing router is able to make dns queries.
-*** Steps to run the test case
-1) Set nameserver in =/etc/resolv.conf=.
-2) Ping to google.com server using following command:
-#+BEGIN_EXAMPLE
-root@router:~$ ping google.com
-#+END_EXAMPLE
+    Name:	ossec-server.test.virtual-labs.ac.in
+    Address: 10.4.14.200
+    #+END_EXAMPLE
+    
+    - The result obtained from the second command is as below:
 
-*** Expected result
-#+BEGIN_EXAMPLE
-PING google.com (74.125.236.162) 56(84) bytes of data.
-64 bytes from maa03s16-in-f2.1e100.net (74.125.236.162): icmp_seq=1 ttl=52 time=18.8 ms
-64 bytes from maa03s16-in-f2.1e100.net (74.125.236.162): icmp_seq=2 ttl=52 time=14.9 ms
-#+END_EXAMPLE
+    #+BEGIN_EXAMPLE
+    ; <<>> DiG 9.9.5-3ubuntu0.2-Ubuntu <<>> ossec-server.test.virtual-labs.ac.in 10.4.14.200
+    ;; global options: +cmd
+    ;; Got answer:
+    ;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 63505
+    ;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 1, ADDITIONAL: 2
+
+    ;; OPT PSEUDOSECTION:
+    ; EDNS: version: 0, flags:; udp: 4096
+    ;; QUESTION SECTION:
+    ;ossec-server.test.virtual-labs.ac.in. IN A
+
+    ;; ANSWER SECTION:
+    ossec-server.test.virtual-labs.ac.in. 3600 IN A	10.4.14.200
+
+    ;; AUTHORITY SECTION:
+    test.virtual-labs.ac.in. 600	IN	NS	public-dns.test.virtual-labs.ac.in.
+
+    ;; ADDITIONAL SECTION:
+    public-dns.test.virtual-labs.ac.in. 781	IN A	10.4.14.200
+
+    ;; Query time: 8 msec
+    ;; SERVER: 127.0.1.1#53(127.0.1.1)
+    ;; WHEN: Wed Apr 22 12:45:43 IST 2015
+    ;; MSG SIZE  rcvd: 122
+
+    ;; Got answer:
+    ;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 31098
+    ;; flags: qr aa rd ra ad; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+
+    ;; QUESTION SECTION:
+    ;10.4.14.200.			IN	A
+
+    ;; ANSWER SECTION:
+    10.4.14.200.		0	IN	A	10.4.14.200
+
+    ;; Query time: 14 msec
+    ;; SERVER: 127.0.1.1#53(127.0.1.1)
+    ;; WHEN: Wed Apr 22 12:45:43 IST 2015
+    ;; MSG SIZE  rcvd: 45
+    #+END_EXAMPLE
+
+*** Observation
+    The response recieved form the command-line tools shows that the
+    requests were forwarded to the Public DNS from the router to
+    process the requests.
+
+*** Conclusion
+    The router is forwarding any DNS queries to the Public DNS.
+
+
+** Test case ID :: TC03
+*** Objective 
+    The objective of this test case is to test the functionality of
+    the router contacting the Reverse Proxy. This test is intended for
+    the testing of the reverse proxy and router without the Public
+    DNS.
+*** Apparatus
+    - The router machine
+    - One test squid proxy
+    - A machine/laptop with browser. 
+*** Theory
+    The router on recieving the request on port 80 sends it to the
+    reverseproxy. The reverse proxy then forwards the request to the
+    required lab requested. To provide a testing environment specific
+    for testing the reverse proxy we create a test squid proxy. We
+    require a machine which has internet access which can contact the
+    router and get the lab. To see if the lab is accessed we need a
+    browser. In order that all these be satified we setup a test
+    proxy. This allows you to have a container/machine which has
+    internet access to make a request to the router for particular
+    labs. The etc/hosts of the proxy we set the names along
+
+*** Procedure
+
+*** Experiment
+    
 *** Result
-#+BEGIN_EXAMPLE
-PING google.com (74.125.236.162) 56(84) bytes of data.
-64 bytes from maa03s16-in-f2.1e100.net (74.125.236.162): icmp_seq=1 ttl=52 time=18.8 ms
-64 bytes from maa03s16-in-f2.1e100.net (74.125.236.162): icmp_seq=2 ttl=52 time=14.9 ms
-#+END_EXAMPLE
+    
+*** Observation
+    
+*** Conclusion
+    
 
-*** Test Passed
-Yes
+** Test case ID :: TC03
+*** Objective
+    The objective of this test case is to test if the router acts as a
+    gateway to the other machines while trying to acces the internet.
+*** Apparatus
+    - Any machine in the cluster other than router and ansible.
+*** Theory
+    The router is the gateway for the other machines in the
+    cluster. Any packet entering the system as well as leaving the
+    system need to go via the router. When the other machines in the
+    cluster require to access internet, the packets sent by them go
+    through the router. This is a critical point, because if this is
+    not happening then the containers have direct internet access,
+    which is violating our network design.
 
+*** Procedure
+    - Login to any of the amachine in the cluster other than route or
+      ansible.
+    - Run the ="traceroute -I"= command on this machine.
+    - Check the output of this command to see if you find the router
+      IP.
+    - If found test pass.
 
+*** Experiment
+    - Run the traceroute command 
+    #+BEGIN_EXAMPLE
+    traceroute -I google.com
+    #+END_EXAMPLE
+    - Check the output for the <Router IP>
 
+*** Result
+    The output for the traceroute command is as follows:
+    #+BEGIN_EXAMPLE
+    traceroute to google.com (173.194.36.97), 30 hops max, 60 byte packets
+    1  10.100.1.1 (10.100.1.1)  0.072 ms  0.017 ms  0.015 ms
+    2  196.12.34.80 (196.12.34.80)  2.319 ms  2.342 ms  2.573 ms
+    3  125.16.7.97 (125.16.7.97)  4.961 ms  5.041 ms  6.778 ms
+    4  203.101.100.93 (203.101.100.93)  9.952 ms  10.265 ms  10.650 ms
+    5  203.101.95.229 (203.101.95.229)  19.531 ms  19.015 ms  19.855 ms
+    6  203.101.100.110 (203.101.100.110)  35.580 ms  33.384 ms  33.708 ms
+    7  182.79.235.249 (182.79.235.249)  22.175 ms  20.182 ms  20.288 ms
+    8  72.14.220.197 (72.14.220.197)  33.761 ms  32.787 ms  32.820 ms
+    9  209.85.241.52 (209.85.241.52)  32.709 ms  29.291 ms  29.510 ms
+    10  209.85.142.128 (209.85.142.128)  58.456 ms  58.176 ms  58.294 ms
+    11  209.85.240.17 (209.85.240.17)  50.154 ms  50.190 ms  50.346 ms
+    12  del01s07-in-f1.1e100.net (173.194.36.97)  51.092 ms  50.165 ms  51.288 ms
+    #+END_EXAMPLE
+
+*** Observation
+    The output of the traceroute command shows that the router IP
+    (10.100.1.1) is present. This shows that the given machine
+    accesses the internet via the router(ie.gateway).
+
+*** Conclusion
+    The router and the machine configuration are set properly
+    according to the network design.
