@@ -3,7 +3,7 @@
 #+PROPERTY: session *scratch*
 #+PROPERTY: results output
 #+PROPERTY: exports code
-#+SETUPFILE: org-templates/level-0.org
+//#+SETUPFILE: org-templates/level-0.org
 #+DESCRIPTION: Rsnapshot Client Design Model Documentation
 #+OPTIONS: ^:nil
 
@@ -39,7 +39,7 @@ listed for a quick overview of whole systems.
 |------+----------+----------------------------+--------------------|
 
 ** Configuration Design
-Rsnapshot server rsynchs the files to be backed up from all the server in the
+Rsnapshot server rsync's the files to be backed up from all the server in the
 cluster over ssh.
 
 * Implementation

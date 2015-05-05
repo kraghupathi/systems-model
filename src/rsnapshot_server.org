@@ -3,7 +3,7 @@
 #+PROPERTY: session *scratch*
 #+PROPERTY: results output
 #+PROPERTY: exports code
-#+SETUPFILE: org-templates/level-0.org
+//#+SETUPFILE: org-templates/level-0.org
 #+DESCRIPTION: Rsnapshot Server Design Model Documentation
 #+OPTIONS: ^:nil
 
@@ -43,7 +43,7 @@ listed for a quick overview of whole systems.
 ** Configuration Design
 Rsnapshot uses =/etc/rsnapshot.conf= file for configuration. Two very important
 points about configuration file are:
-- All paths must end with / and all backup destination shoule be relative
+- All paths must end with / and all backup destination should be relative
 - Various fields in file are separated using Tab. Space does not separates fields
 
 * Implementation
@@ -118,6 +118,8 @@ role. There are no specific firewall rule, all the common rules are applied.
 -A OUTPUT -p tcp -m tcp --dport 25 -j ACCEPT
 #Allow https to contact yum
 -A OUTPUT -p tcp -m tcp --dport 443 -j ACCEPT
+#Allow to make DNS queries
+-A OUTPUT -p udp -m udp --dport 53 -j ACCEPT
 #Allow outgoing ping requests
 -A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT
 #Allow outgoing connections to rsyslog server
@@ -133,7 +135,8 @@ COMMIT
 #+END_SRC
 
 ** Configuring rsnapshot
-Following steps are performed to configure rsnapshot service
+Following actions are performed in =/etc/rsnapshot.conf= file to configure
+rsnapshot service.
 
 *** Configure absolute path of backup location
 Absolute path on current system where backup data will be stored is configured
@@ -157,7 +160,8 @@ interval        monthly 3
 #+END_EXAMPLE
 
 *** Set log level
-Various level of logs can be set as follows:
+The amount of information to print out when the program is run. Allowed values
+are 1 through 5. The default is 2.
 #+BEGIN_EXAMPLE
 Verbose level, 1 through 5.
 1     Quiet           Print fatal errors only
@@ -479,7 +483,7 @@ Firewall rules are applied and iptables service is restarted.
 #+END_SRC
 
 ** Generating SSH keys on the rsnapshot server and getting it to ansible server
-Rsnashot server connects to rsnapshot clients over ssh to take backup. For this
+Rsnapshot server connects to rsnapshot clients over ssh to take backup. For this
 SSH key is generated on the Rsnapshot server. The ssh public key is to be placed
 inside the rsnaphost client machine authorized_keys, for this keys are copied to
 ansible server and from there it will be placed inside rsnapshot client.
@@ -634,7 +638,6 @@ Rsnapshot package is installed on the machine.
 
 
 
-
 ** Test Case-2
 *** Objective:
 Test server is able to rsync from rsnapshot clients.
@@ -645,7 +648,7 @@ Test server is able to rsync from rsnapshot clients.
 *** Theory
 Rsnapshot server takes backup of data from the client machine using rsync tool.
 *** Experiment
-**** Verify rsych is working
+**** Verify rsync is working
 #+BEGIN_EXAMPLE
 [root@rsnapshot-server ~]# rsync root@<client-ip>:<file-path> .
 #+END_EXAMPLE
