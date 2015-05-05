@@ -1,4 +1,5 @@
 BUILD_DEST=build
+
 CODE_DEST="${BUILD_DEST}/code"
 VER_BRANCH=build-release
 VER_FILE=VERSION
@@ -9,13 +10,20 @@ CONFIG_SERVER_USER=vlead-jockey
 CONFIG_SERVER_HOME_DIR=/home/${CONFIG_SERVER_USER}
 
 
-all:  build write-version
+all:  clean build 
 
 init:
-	mkdir -p ${BUILD_DEST}
+	mkdir -p ${BUILD_DEST} ${CODE_DEST}
 
-build: init
+build: init write-version
 	emacs  --script elisp/publish.el
+	cp -r ${CODE_DEST} ${BUILD_DEST}/aws-code
+	cp -r ${CODE_DEST} ${BUILD_DEST}/base1-code
+	cp -r ${CODE_DEST} ${BUILD_DEST}/base4-code
+	mv -f ${BUILD_DEST}/aws-code/roles/common_vars/vars/main-aws.yml ${BUILD_DEST}/aws-code/roles/common_vars/vars/main.yml 
+	mv -f ${BUILD_DEST}/base1-code/roles/common_vars/vars/main-base1.yml ${BUILD_DEST}/base1-code/roles/common_vars/vars/main.yml 
+	mv -f ${BUILD_DEST}/base4-code/roles/common_vars/vars/main-base4.yml ${BUILD_DEST}/base4-code/roles/common_vars/vars/main.yml 
+	rm -rf ${CODE_DEST}
 	rm -f ${BUILD_DEST}/docs/*.html~
 
 # get the latest commit hash and its subject line

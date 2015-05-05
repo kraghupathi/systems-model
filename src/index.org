@@ -8,35 +8,53 @@
 #+SETUPFILE: org-templates/level-0.org
 
 * Introduction
-  This document describes in detail the Model of Systems Cluster at
-  VLEAD. The tools, systems, configurations, setup files, related
-  discussions, and several other intricacies have been capmtured in
-  this model.
+  This document describes in detail the model of systems cluster at
+  VLEAD.  The tools, systems, configurations, setup files and related
+  discussions have been captured in this model.
 
 * The Cluster Model
   The cluster model is a set of systems which formulate the
-  infrastructure for the hosting of labs. There are other components
-  which will be later added to this model. This cluster model is of
-  two types:
-  + [[Base1 Cluster]]
-  + [[Amazon Web Services (AWS) Cluster]]
+  infrastructure for the hosting of labs.  There are other components
+  which will be later added to this model.  This infrastructure is
+  deployed at following different locations:
+  + [[Base4 Cluster][Base4]]
+  + [[Base1 Cluster][Base1]]
+  + [[Amazon Web Services (AWS) Cluster][AWS]]
+    
+* Bootstrapping Cluster
+  The cluster is a collection of several machines.  Each of these
+  machines have a specific purpose that they serve.  +Each of these+
+  +machines are called as nodes in the cluster.+  To setup the entire
+  cluster for the first time we need to setup each of the machines
+  individually.  This process is called the bootstrapping process.
+  This process is tightly related to provisioning on corresponding cluster.
+  
+* Purpose of various deployments
+** Base4 Cluster
+   This cluster is the development cluster. This cluster is used to
+   test new changes made to the develop branch before they are
+   considered as stable.
+
 ** Base1 Cluster 
-   This cluster is the staging cluster. This cluster was developed to
-   test the functionality of the systems in the cluster before setting
-   up a cluster on Amazon.  
+   Once set of new features are found to be stable on base4 cluster, a
+   release is made.  The new release is then tested on base1 cluster
+   to verify its soundness on staging environment. 
    
 ** Amazon Web Services (AWS) Cluster
-   This cluster is the Production cluster. This cluster was built
-   after testing the functioning of all the systems in entirety on the
-   Base1 cluster. 
+   This cluster is the production cluster.  This cluster is modified
+   at last after changes have been verified on both development and
+   staging.  /It should be noted that ADS adapter used on base1 and/
+   /base4 is different than adapter used on AWS.  Hence some problems/
+   /may arise due to use of different adapter in production in/
+   /comparison to staging and development./  This is the main cluster
+   used by external virtual-labs users across the nation.
 
 ** Difference in the Base1 and AWS cluster
-   The set of systems belonging to the Base1 cluster is the same as
-   that of the AWS cluster. The Base1 cluster and the AWS cluster
-   differ only in their provisioning. The provisioning of these
-   cluster is described in the next section.
+   Most of the components of base1 and base4 clusters are same as AWS
+   cluster.  The main difference is in the provisioning.  The details of
+   provisioning of these clusters is described in the next sections.
 
-*** Provisioning of Base1 cluster
+*** Provisioning of Base1 and Base4 cluster
 *** Provisioning of AWS cluster
 
 * Design of the Cluster model
@@ -52,6 +70,14 @@
    #+LABEL:  fig-cluster-network-diagram
    #+NAME: fig-cluster-network-diagram
    [[./diagrams/overall-cluster-network-diagram.png]]
+   
+   In this diagram IP1 and IP2 refer to the only two public IPs being
+   used by the system.  IP1 is the public IP assigned to router and
+   IP2 is the public IP assigned to ansible.  Normal virtual-lab users
+   only see and contact router.  VLEAD team uses ansible to manage the
+   cluster.  In near future ADS interface will also be accessible via
+   router, for all virtual-labs developers, perhaps through a
+   different port.
 
 ** Overall connectivity Diagram
    The diagram below shows how the different machines in the are
@@ -63,14 +89,7 @@
    #+NAME: fig-cluster-connectivity-diagram
    [[./diagrams/overall-model-aws-cluster.png]]
 
-* Bringing up the Cluster
-  The cluster is a collection of several machines. Each of these
-  machines have a specific service that they serve. Each of these
-  machines are called as nodes in the cluster. To setup the entire
-  cluster for the first time we need to setup each of the machines
-  individually. This process is called the bootstrapping process.
-  
-** Nodes in the cluster
+* Nodes in the cluster
 - [[./rsyslog_server.org][Rsyslog]]
 - [[./privatedns.org][Private DNS]]
 - [[./publicdns.org][Public DNS]]
