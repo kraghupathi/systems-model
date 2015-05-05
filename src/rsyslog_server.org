@@ -14,33 +14,22 @@ for safe storage. Rsyslog service also saves the system log messages locally in
 each system.
 
 * Description
-
-1) Rsyslog uses the standard BSD syslog protocol on UDP port 514.
-
-2) Rsyslog is able to:
-   - accepts input from a wide variety of sources.
-   - transform them
-   - and output the results to diverse destinations.
-
-3) Messages are passed to ruleset, where rules are conditionally applied. When a
-   rule matches, the message is transferred to an actions such as write it to a
-   file, database or forward it to a remote host.
-
-4) Rulesets and Rules:: A rule is a way how rsyslog shall process a specific
-   message.
-
-5) All configuration directives need to be specified on a line by their own and
-   must start with a dollar-sign.
+1) Logs are kept on the server for three months.
+2) Logs stored on the rsyslog server are useful when actual server is
+   compromised.
+3) Various servers are configured to send logs
+4) UDP is chosen over TCP for performance at the cost of reliability.
 
 * Requirements
 ** Functional Requirements
-1) Allow incoming connections on udp port 514.
-2) Run Rsyslog service on udp port 514.
-3) Save log messages forwarded by various client systems in a separate file for
+1) Run Rsyslog service on udp port 514.
+2) Save log messages forwarded by various client systems in a separate file for
    each client.
 
 ** Security Requirements
-1) Security requirements are define in common role.
+1) All common security requirements as described in [[file:common.org::*Security Requirements][common role]] are applicable
+   to rsyslog server with an exception for allowing incoming connections to UDP
+   port 514"
 
 * Design
 ** System Design Diagram
