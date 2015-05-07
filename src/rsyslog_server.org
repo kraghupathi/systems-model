@@ -43,12 +43,12 @@ each system.
 |------+----------+------------------------------+------------------------|
 |   2. | rsyslog  | /var/log/<client-hostname>/* | Log Data               |
 |------+----------+------------------------------+------------------------|
-|   3. | IpTables | /etc/sysconfig/iptables      | Firewall Configuration |
+|   3. | iptables | /etc/sysconfig/iptables      | Firewall Configuration |
 |------+----------+------------------------------+------------------------|
 
 ** Installed packages
-Latest stable version of rsyslog package is 8.8.0. The package installted on
-this system is =rsyslog-5.8.10-10.el6_6.x86_64=.
+Latest stable packages available for chosen distribution are installed from the
+standard repositories - =rsyslog-5.8.10-10.el6_6.x86_64=.
 
 * Implementation
 ** Structure of Scripts
@@ -67,17 +67,15 @@ which configures the machine. These scripts are organized as follows:
 |   |   |   |   `-- iptables
 |   |   |   |-- files
 |   |   |   |   `-- rsyslog_server.conf
-|   |   |   |-- meta
-|   |   |   |   `-- main.yml
 #+END_EXAMPLE
 
 ** Firewall rules for rsyslog server
-Firwall rules applied to rsyslog server are mentioned here. Description of
+Firewall rules applied to rsyslog server are mentioned here. Description of
 firewall rules which are common across all the systems are defined in the common
-role. Rules [[Rule for incoming connection for rsyslog messages][1]] and [[Rule for FORWARD chain][2]] and are specific to only rsyslog server and are described
-here.
-*** Common Firewall Rules - Section 1
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
+role. Rule for incoming rsyslog messages - line number 30 and rule for forward
+chain - line number 38 are specific to rsyslog server.
+*** Firewall Rules
+#+BEGIN_SRC yml -n :tangle roles/rsyslog_server/templates/iptables :eval no
 *filter
 :INPUT ACCEPT [0:0]
 :FORWARD ACCEPT [0:0]
@@ -106,39 +104,16 @@ here.
 {% for item in nagios_server_ips  %}  
 -A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
-#+END_SRC
- 
-*** Rule for incoming connection for rsyslog messages
-Allow rsyslog server to accept incoming log messages on UDP port 514 from
-various systems.
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
 #Allow to accept incoming rsyslog messages from anywhere
 -A INPUT -m state --state NEW -p udp -m udp --dport 514 -j ACCEPT
-#+END_SRC
-
-*** Common Firewall Rules - Section 2
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
 #Allow incoming NRPE queries for nagios from nagios servers
 -A INPUT -m state --state NEW -p tcp -m tcp --dport 5666 -j ACCEPT
-#Allow SNMP queries from cacti servers
--A INPUT -p udp -m udp --dport 161 -j ACCEPT
--A INPUT -p udp -m udp --dport 162 -j ACCEPT
 #Log all other "blocked_input_" attempts with rate limiting
 -A INPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_input_"
-#Reply with proper ICMP error message and reject the connection
--A INPUT -j REJECT --reject-with icmp-host-prohibited
-#+END_SRC
-
-*** Rule for FORWARD chain
-Rsyslog is not responsible for any packet forwarding, hence forwarding rule
-should be set to reject policy.
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
+#Drop all other packets without sending ICMP error message back
+-A INPUT -j DROP
 #Do not allow any packet to be forwarded
--A FORWARD -j REJECT --reject-with icmp-host-prohibited
-#+END_SRC
-
-*** Common Firewall Rules - Section 3
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/templates/iptables :eval no
+-A FORWARD -j DROP
 #Allow outgoing connections to localhost
 -A OUTPUT -s 127.0.0.0/8 -o lo -j ACCEPT
 #Allow outgoing replies to ansible from SSH server
@@ -164,13 +139,15 @@ should be set to reject policy.
 #Reply with proper ICMP error message and reject the connection
 -A OUTPUT -j REJECT --reject-with icmp-host-prohibited
 COMMIT
-#
 #+END_SRC
     
 ** Build Configuration file
 *** Steps to configure
 Rsyslog service is configured using =/etc/rsyslog.conf= configuration file.
-Default configuration setup is edited as per our requirements.
+Default configuration setup is edited as per our requirements. We are choosing
+UDP over TCP for performance at cost of reliability. If TCP is desired then both
+server and client configurations need to change. Also corresponding firewall
+rules will have to be changed.
 **** Append following lines at the bottom of the file
      #+BEGIN_EXAMPLE
      $template TmplAuth, "/var/log/%HOSTNAME%/%PROGRAMNAME%.log"
@@ -273,12 +250,6 @@ authpriv.*      ?TmplAuth
 
 #+END_SRC
 
-** Update hostname
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/tasks/main.yml :eval no
----
-- name: Updating Hostname
-  lineinfile: dest=/etc/sysconfig/network regexp=^HOSTNAME= 'line=HOSTNAME="rsyslog.virtual-labs.ac.in"'
-#+END_SRC
 ** Install rsyslog package
 Rsyslog package is installed in the system.
 #+BEGIN_SRC yml :tangle roles/rsyslog_server/tasks/main.yml :eval no
@@ -300,16 +271,16 @@ Rsyslog service is set by following steps:
 #+END_SRC
 
 ** Set rsyslog service to auto start
-Set rsyslog service to auto start when the system boots up.
+Start rsyslog service and also configure it to automatically start on next
+reboot.
 #+BEGIN_SRC yml :tangle roles/rsyslog_server/tasks/main.yml
 - name: Set rsyslog service for auto startup
   service: name=rsyslog state=started enabled=yes
 #+END_SRC
 
-** Set firewall service
+** Set firewall rules
 Firewall rules are set by following steps:
-   1) Copy iptables configuration file from the ansible machine to the rsyslog
-      server machine.
+   1) Copy iptables jinja2 template from the ansible node to the rsyslog node.
    2) Restart iptables service to enforce the configuration.
 #+BEGIN_SRC yml :tangle roles/rsyslog_server/tasks/main.yml
 - name: Copy iptables configuration file
@@ -318,9 +289,9 @@ Firewall rules are set by following steps:
     - restart iptables
 #+END_SRC
 
-** Start firewall service
-Any changes in iptables configuration file to update the firewall is enforced by
-restarting the iptables service.
+** Start Iptables
+Any changes in iptables configuration file is enforced by restarting the
+iptables. To restart iptables handlers (ansible terms) are defined here.
 #+BEGIN_SRC yml :tangle roles/rsyslog_server/handlers/main.yml
 ---
  - name: Restart iptables
@@ -336,17 +307,12 @@ restarting the rsyslog service.
 #+END_SRC
 
 ** Variables Definition
-Variables are used in the ansible scripts to configure rsyslog server. 
+Following variables are used in the ansible scripts to configure rsyslog server.
    1) Proxy environment
    2) Anisble server ip
- Values of these variables is fetched from the =common_vars= role.
-#+BEGIN_SRC yaml :tangle roles/rsyslog_server/meta/main.yml
----
-dependencies:
-- role: common_vars
-#+END_SRC
+Values of these variables is fetched from the =common_vars= role.
 
-** Rsyslog Server Installation Script
+** Rsyslog Server Configuration Script
 Rsyslog server is configured using common and =rsyslog_server= role.
 #+BEGIN_SRC yml :tangle rsyslog_server.yml
 ---
@@ -360,8 +326,8 @@ Rsyslog server is configured using common and =rsyslog_server= role.
 
 * Test Cases
 ** Test Case-1
-*** Objective: 
-Test the system to accept incoming connections on port UDP 514
+*** Objective:
+Test the system to accept incoming log messages from clients on port UDP 514.
 *** Apparatus:
 1) Rsyslog server
 2) Rsyslog client
