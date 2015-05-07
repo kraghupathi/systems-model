@@ -1930,7 +1930,6 @@ configuration file
 ---
 - name: restart httpd
   service: name=httpd state=restarted
-
 - name: restart iptables
   service: name=iptables state=restarted
 
