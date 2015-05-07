@@ -110,12 +110,9 @@ roles/reverseproxy_sever/
 #+END_EXAMPLE
 
 ** Firewall rules
-- Rules which are specific to reverseproxy server are described [[Allow HTTP(80) packets][here]].
+- Rules which are specific to reverseproxy server are described [[Allow HTTP(80) and HTTPS(443) packets][here]].
 - Description of some firewall rules of this reverseproxy and which are common
   across all the systems are described in [[./common.org][common role]].  
-*** INPUT firewall rules
- Description of each following firewall rule is defined in
- [[./common.org][common role]] 
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/templates/iptables
 *filter
 :INPUT ACCEPT [0:0]
@@ -147,53 +144,22 @@ roles/reverseproxy_sever/
 {% endfor %}
 
 -A INPUT -p tcp -m tcp -s {{nagios_server_ip}} --dport 22 -j ACCEPT
-#+END_SRC
-*** Allow HTTP(80) and HTTPS(443) packets
-- The firewall rule accepts HTTP(80) and HTTPS(443) packets from internal network and
-from the [[.router.org][router]]. 
-- In this model only HTTP packets are accepted. As a future
-  requirement, accept rule for incoming connections on tcp port 443 is commented.
-
-#+BEGIN_SRC yaml :tangle roles/reverseproxy_server/templates/iptables
+####### Begin Specific to reverseproxy #######
 # Allow incoming http packets from internal network
 -A INPUT -s {{local_subnet}} -p tcp -m tcp --dport 80 -j ACCEPT
 
 #Allow incoming https packets from internal network and router
 #-A INPUT -s {{local_subnet}} -p tcp -m tcp --dport 443 -j ACCEPT
-#+END_SRC
-The above rule satisfies the security requirements 1
-
-*** INPUT firewall rules
- Description of each following firewall rule is defined in
- [[./common.org][common role]] 
-
-#+BEGIN_SRC yaml :tangle roles/reverseproxy_server/templates/iptables
+###### END specific reverseproxy #######
 #Allow incoming NRPE queries for nagios from nagios servers
 -A INPUT -m state --state NEW -p tcp -m tcp --dport 5666 -j ACCEPT
-
-#Allow SNMP queries from cacti servers
--A INPUT -p udp -m udp --dport 161 -j ACCEPT
--A INPUT -p udp -m udp --dport 162 -j ACCEPT
 #Log all other "blocked_input_" attempts with rate limiting
 -A INPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_input_"
 
 #Reply with proper ICMP error message and reject the connection
 -A INPUT -j REJECT --reject-with icmp-host-prohibited
-#+END_SRC
-*** FORWARD rules
-- Reveseproxy is not responsible for any packet forwarding and hence forwarding rule
-  should be set to reject packets.
-#+BEGIN_SRC yaml :tangle roles/reverseproxy_server/templates/iptables
 #Do not allow any packet to be forwarded
 -A FORWARD -j REJECT --reject-with icmp-host-prohibited
-#+END_SRC
-
-*** OUTPUT firewall rules
- Description of each following firewall rule is defined in
- [[./common.org][common role]] 
-
- #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/templates/iptables
-#
 ##Output rules
 #Allow outgoing connections to localhost
 -A OUTPUT -s 127.0.0.0/8 -o lo -j ACCEPT
@@ -206,23 +172,10 @@ The above rule satisfies the security requirements 1
 
 #Allow server to send emails.  Required for sending logwatch emails
 -A OUTPUT -p tcp -m tcp --dport 25 -j ACCEPT
-#+END_SRC
-*** Accept HTTP and HTTPS packets
-    +  Forwards client requests to corresponding internal web server
-       where the lab has been deployed and sending reply to the
-       client.
-    + OUTPUT rule for tcp port 443 is required for yum
-#+BEGIN_SRC yaml :tangle roles/reverseproxy_server/templates/iptables
 #Allow server to contact web-servers.  This is must for reverseproxy to be able to forward requests to internal web servers
 # 443 OUTPUT is needed for yum
 -A OUTPUT -p tcp -m tcp --dport 80 -j ACCEPT
 -A OUTPUT -p tcp -m tcp --dport 443 -j ACCEPT
-#+END_SRC
-The above rule satisfies functional requirements 2 and 3
-*** OUTPUT firewall rules
- Description of each following firewall rule is defined in
- [[./common.org][common role]] 
-#+BEGIN_SRC yaml :tangle roles/reverseproxy_server/templates/iptables
 #Allow outgoing ping requests
 -A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT
 #Allow incoming SSH connections from configuration server IPs.
@@ -240,6 +193,18 @@ The above rule satisfies functional requirements 2 and 3
 
 #Reply with proper ICMP error message and reject the connection
 -A OUTPUT -j REJECT --reject-with icmp-host-prohibited
+#+END_SRC
+*** Allow HTTP(80) and HTTPS(443) packets
+- The firewall rule accepts HTTP(80) and HTTPS(443) packets from internal network and
+from the [[.router.org][router]]. 
+- In this model, only HTTP packets are accepted. As a future
+  requirement, accept rule for incoming connections on tcp port 443 is
+  commented.
+#+BEGIN_SRC example
+# Allow incoming http packets from internal network
+-A INPUT -s {{local_subnet}} -p tcp -m tcp --dport 80 -j ACCEPT
+#Allow incoming https packets from internal network and router
+#-A INPUT -s {{local_subnet}} -p tcp -m tcp --dport 443 -j ACCEPT
 #+END_SRC
 ** Install required packages
   Install required packages for setting up reverse proxy and awstats.

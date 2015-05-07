@@ -97,13 +97,10 @@ configures the machine. Scripts are organized as follows:
 |   |   ...
 #+END_EXAMPLE
 
-** Building the firewall rules
-Rules which are specific to configuration server are described below.
+** Firewall rules
+Rules which are specific to configuration server are described [[Firewall rules specific to config_server][below]].
 Description of each firewall rule of this configuration server and
 which are common across all the systems are described in [[.common.org][common role]].
-*** INPUT firewall rules
- Description of each following INPUT firewall rule is defined in
- [[./common.org][common role]] 
 #+BEGIN_SRC yaml :tangle roles/config_server/templates/iptables
 *filter
 :INPUT ACCEPT [0:0]
@@ -123,48 +120,26 @@ which are common across all the systems are described in [[.common.org][common r
 
 #Allow ongoing connections
 -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-
 -A INPUT -p tcp -m tcp -s {{nagios_server_ip}} --dport 22 -j ACCEPT
-#+END_SRC
-**** SSH access from management ips
-The following firewall rule accepts incoming connections on tcp port
-22 only from management ips
-#+BEGIN_SRC yaml :tangle roles/config_server/templates/iptables
 #Allow incoming SSH connections from management IPs.  Hopefully fail2ban will take care of bruteforce attacks from management IPs
 {% for item in management_ips  %}
 -A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
-#+END_SRC
+#Allow incoming SSH connections from ansible_server IPs.  Hopefully fail2ban will take care of bruteforce attacks from management IPs
+{% for item in ansible_server_ips_ips  %}
+-A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
 
-#+BEGIN_SRC yaml :tangle roles/config_server/templates/iptables
 #Allow incoming NRPE queries for nagios from nagios servers
 -A INPUT -m state --state NEW -p tcp -m tcp --dport 5666 -j ACCEPT
-
-#Allow SNMP queries from cacti servers
--A INPUT -p udp -m udp --dport 161 -j ACCEPT
--A INPUT -p udp -m udp --dport 162 -j ACCEPT
-
-
 #Log all other "blocked_input_" attempts with rate limiting
 -A INPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_input_"
 
 #Reply with proper ICMP error message and reject the connection
 -A INPUT -j REJECT --reject-with icmp-host-prohibited
-#+END_SRC
-*** FORWARD rules
-- Configuration server is not responsible for any packet forwarding and hence forwarding rule
-  should be set to reject packets.
-#+BEGIN_SRC yml :tangle roles/reverseproxy_server/templates/iptables
 #Do not allow any packet to be forwarded
 -A FORWARD -j REJECT --reject-with icmp-host-prohibited
-#+END_SRC
 
-*** OUTPUT firewall rules
- Description of each following OUTPUT firewall rule is defined in
- [[./common.org][common role]] 
-
- #+BEGIN_SRC yaml :tangle roles/config_server/templates/iptables
-#
 ##Output rules
 #Allow outgoing connections to localhost
 -A OUTPUT -s 127.0.0.0/8 -o lo -j ACCEPT
@@ -185,8 +160,13 @@ The following firewall rule accepts incoming connections on tcp port
 #Allow outgoing ping requests
 -A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT
 
-#Allow incoming SSH connections from management IPs.  Hopefully fail2ban will take care of bruteforce attacks from management IPs
+#Allow outgoing SSH connections from management IPs.  Hopefully fail2ban will take care of bruteforce attacks from management IPs
 {% for item in management_ips  %}
+-A OUTPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
+#Allow outgoing SSH connections from ansible_server IPs.  Hopefully
+#fail2ban will take care of bruteforce attacks from ansible server IPs
+{% for item in ansible_server_ips_ips  %}
 -A OUTPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
 
@@ -201,6 +181,24 @@ The following firewall rule accepts incoming connections on tcp port
 #Reply with proper ICMP error message and reject the connection
 -A OUTPUT -j REJECT --reject-with icmp-host-prohibited
 #+END_SRC
+*** Firewall rules specific to config_server
+**** SSH access from management ips
+The following firewall rule accepts incoming connections on tcp port
+22 only from management ips
+#+BEGIN_SRC example
+{% for item in management_ips  %}
+-A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
+#+END_SRC
+**** SSH access from ansible server ips
+The following firewall rule accepts incoming connections on tcp port
+22 only from ansible server ips
+#+BEGIN_SRC example
+{% for item in ansible_server_ips_ips  %}
+-A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
+#+END_SRC
+
 ** Installing ansible 
 Install latest ansible package to setup the configuration server
 itself and to run the ansible scripts.
@@ -210,7 +208,7 @@ itself and to run the ansible scripts.
   yum: name=ansible state=present
   environment: proxy_env #please look at Note2
 #+END_SRC
-** Hostname 
+** Change hostname 
   The following task changes the hostname of the container/VM
   #+BEGIN_SRC yaml :tangle roles/config_server/tasks/main.yml
   ---
