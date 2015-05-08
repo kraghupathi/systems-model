@@ -3,7 +3,7 @@
 #+PROPERTY: session *scratch*
 #+PROPERTY: results output
 #+PROPERTY: exports code
-#+SETUPFILE: org-templates/level-0.org
+\#+SETUPFILE: org-templates/level-0.org
 #+DESCRIPTION: Rsyslog Design - Design and Documentation
 
 
@@ -18,7 +18,8 @@ log messages locally in each system.
 2) Run Rsyslog service on udp port 514.
     
 ** Security Requirements
-1) Security requirements are define in common role.
+1) All common security requirements as described in [[file:common.org::*Security Requirements][common role]] are applicable
+   to rsyslog client.
 
 * Design
 ** System Design Diagram
@@ -30,13 +31,13 @@ log messages locally in each system.
 |------+----------+------------------------------+------------------------|
 |   1. | rsyslog  | /etc/rsyslog.conf            | System Configuration   |
 |------+----------+------------------------------+------------------------|
-|   2. | IpTables | /etc/sysconfig/iptables      | Firewall Configuration |
+|   2. | iptables | /etc/sysconfig/iptables      | Firewall Configuration |
 |------+----------+------------------------------+------------------------|
 
 * Implementation
 ** Structure of Scripts
 The implementation of this system is in terms of a collection of Ansible
-scripts which configures the machine. These scripts are organized as follows:
+scripts which configures the node. These scripts are organized as follows:
 #+BEGIN_EXAMPLE
 |-code
   |-- roles
@@ -45,18 +46,18 @@ scripts which configures the machine. These scripts are organized as follows:
   |   |   |   `-- rsyslog_client.conf
   |   |   |-- handlers
   |   |   |   `-- main.yml
-  |   |   |-- meta
-  |   |   |   `-- main.yml
   |   |   `-- tasks
   |   |       `-- main.yml
 #+END_EXAMPLE
 
 ** What are the firewall rules
 Firewall rules applied to rsyslog client system are mentioned here. Description
-of firewall rules which are common across all the systems are defined in the
-common role. Rule [[Allow outgoing connections on UDP port 514][1]] is specific to only rsyslog client and is described here.
+of firewall rules which are common across all the nodes are defined in the [[file:common.org::*Common Firewall
+ Rules][common role]].  
+Rule for allowing connections on UDP port 514 is specific to only rsyslog client
+and is described here.
 *** Allow outgoing connections on UDP port 514
-Rsyslog client machine sends log messages to rsyslog server on UDP port 514.
+Rsyslog client node sends log messages to rsyslog server on UDP port 514.
 #+BEGIN_EXAMPLE
 #Allow to send rsyslog log messages to rsyslog server
 -A OUTPUT -p udp -m udp --dport 514 -j ACCEPT
@@ -179,7 +180,7 @@ Rsyslog package is installed in the system.
 
 ** Set Rsyslog service
 Rsyslog service is set by following steps:
-   1) Copy configuration file from the ansible machine.
+   1) Copy configuration file from the ansible node.
    2) Restart rsyslog service to enforce the configuration.
 #+BEGIN_SRC yml :tangle roles/rsyslog_client/tasks/main.yml
 - name: Copy rsyslog configuration to rsyslog client
@@ -189,7 +190,8 @@ Rsyslog service is set by following steps:
 #+END_SRC
 
 ** Set rsyslog service to auto start
-Set rsyslog service to auto start when the system boots up.
+Start rsyslog service and also configure it to automatically start on next
+reboot.
 #+BEGIN_SRC yml :tangle roles/rsyslog_client/tasks/main.yml :eval no
 - name: Set rsyslog service for auto startup
   service: name=rsyslog state=started enabled=yes
@@ -197,7 +199,8 @@ Set rsyslog service to auto start when the system boots up.
 
 ** Start rsyslog service
 Any changes in rsyslog configuration file is enforced to the system by
-restarting the rsyslog service.
+restarting the rsyslog service. To restart rsyslog, handlers (ansible terms) are
+defined here.
 #+BEGIN_SRC yml :tangle roles/rsyslog_client/handlers/main.yml
 ---
 - name: restart rsyslog
@@ -205,13 +208,13 @@ restarting the rsyslog service.
 #+END_SRC
 
 ** Variables Definition
-Variables are used in the ansible scripts to configure rsyslog server. 
-   1) Proxy environment
-   2) Anisble server ip
-   3) Nagios server ip
+Following variables are used in the ansible scripts to configure rsyslog server.
+   1) Proxy environment - =proxy_env=
+   2) Anisble server ip - =ansible_server_ip=
+   3) Nagios server ip - =nagios_server_ip=
 Values of these variables is fetched from the =common_vars= role.
 
-** Rsyslog Installation Script
+** Rsyslog configuration script
 Rsyslog server is configured using common and =rsyslog_client= role.
 #+BEGIN_SRC yml :tangle rsyslog_client.yml
 ---
@@ -233,14 +236,14 @@ Test the system is forwarding log messages to rsyslog server on port UDP 514
 
 *** Theory
 Rsyslog server accepts log messages from rsyslog clients on UDP port 514. For
-machine to be configured as rsyslog client firewall rule of the machine has to
+node to be configured as rsyslog client firewall rule of the node has to
 allow outgoing connections on port 514.
 
 *** Experiment
 Login to rsyslog server from one terminal and navigate to
 =/var/log/<clienthostname>= directory. Do "tail -f su.log" in the present
 working directory. Now from another terminal login to rsyslog client
-machine. Execute "sudo su -" command. Once login to the client machine a session
+node. Execute "sudo su -" command. Once login to the client node a session
 gets created for the user and a system log is generated. The log message are
 forwareded to rsyslog server and saved there in a file. As a result messages
 should appear in the first terminal screen.
@@ -271,13 +274,13 @@ Test ssh logs are getting logged in rsyslog server
 
 *** Theory
 System generates log message everytime an event occurs in the system. When a
-login is made inside the system using ssh, machine generates "ssh log"
+login is made inside the system using ssh, node generates "ssh log"
 message. This message is then forwarded to rsyslog server.
 
 *** Experiment
 Login to rsyslog server from one terminal and naviagate to
 =/var/log/<client-hostname>= directory. Monitor =sshd.log= file using =tail -f
-sshd.log= command. Now from another terminal login to rsyslog client machine via
+sshd.log= command. Now from another terminal login to rsyslog client node via
 ssh. The ssh log message is generated which is then forwarded to rsyslog server
 and saved in a file. As a result messages should appear in the first terminal
 screen.
@@ -317,7 +320,7 @@ of "CustomLog" directive as follows:
 
 *** Experiment
 Make an http reqeust to rsyslog client using "lynx" program. HTTP service
-running at the client machine will send a reply.
+running at the client node will send a reply.
 #+BEGIN_EXAMPLE
 lynx <rsyslog-client-ip>
 #+END_EXAMPLE
