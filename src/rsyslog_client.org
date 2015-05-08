@@ -53,7 +53,7 @@ scripts which configures the node. These scripts are organized as follows:
 ** What are the firewall rules
 Firewall rules applied to rsyslog client system are mentioned here. Description
 of firewall rules which are common across all the nodes are defined in the [[file:common.org::*Common Firewall
- Rules][common role]].  
+ Rules][common role]].
 Rule for allowing connections on UDP port 514 is specific to only rsyslog client
 and is described here.
 *** Allow outgoing connections on UDP port 514
