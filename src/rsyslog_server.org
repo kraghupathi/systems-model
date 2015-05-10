@@ -318,7 +318,7 @@ Firewall rules are set by following steps:
     - restart iptables
 #+END_SRC
 
-** Start Iptables
+** Start iptables
 Any changes in iptables configuration file is enforced by restarting the
 iptables. To restart iptables, handlers (ansible terms) are defined here.
 #+BEGIN_SRC yml :tangle roles/rsyslog_server/handlers/main.yml
