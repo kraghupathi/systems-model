@@ -387,6 +387,11 @@ authpriv.*      ?TmplAuth
     Any changes in iptables configuration file as part of task [[Set iptables firewall rules using template][Set
     iptables firewall rules using template]] is enforced by restarting
     the iptables.  Handler for restarting iptables is created as follows:
+=======
+** Start iptables
+Any changes in iptables configuration file is enforced by restarting the
+iptables. To restart iptables, handlers (ansible terms) are defined here.
+>>>>>>> 4e007a349f81c89f6bc1b0a5a002e5966e26c293
 #+BEGIN_SRC yml :tangle roles/rsyslog_server/handlers/main.yml
 ---
  - name: Restart iptables
