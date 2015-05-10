@@ -79,7 +79,9 @@
   provisioning of these clusters is described in this section.
 
 ** Provisioning of the base1 and base4 clusters
+   *TODO*
 ** Provisioning of the AWS cluster
+   *TODO*
 
 * Design of the cluster model
   The diagram below depicts the architecture of the nodes in the
@@ -111,5 +113,5 @@
 - [[./nagios_server.org][Nagios server]]
 - [[./router.org][Router]]
 - [[./rsnapshot_server.org][Backup server]]
-- [[ossec_server.org][OSSEC server]]
+- [[./ossec_server.org][OSSEC server]] *TODO*
 

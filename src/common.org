@@ -204,30 +204,47 @@ rules. Rejected packets are also logged with a limited rate.
 #+END_EXAMPLE
 
 *** Rule for FORWARD chain
-If the server does not forwards any packet the Forwarding rule is set to reject
-packets. Forwarding rule is set to ACCEPT only in the Router server.
-
-#+BEGIN_EXAMPLE
-#Do not allow any packet to be forwarded
--A FORWARD -j REJECT --reject-with icmp-host-prohibited
-#+END_EXAMPLE
+    If the server does not forwards any packet the Forwarding rule is set
+    to drop packets. Forwarding rule is set to ACCEPT only in the Router
+    server.
+    
+    #+BEGIN_EXAMPLE
+    #Do not allow any packet to be forwarded.  Drop them silently without sending ICMP error messages back.
+    -A FORWARD -j DROP
+    #+END_EXAMPLE
 
 *** Rule for OUTPUT loopback packets
-Allow internal communication between services running within the system, over
-loopback interface. Source ip is also specified to avoid any security breach.
-#+BEGIN_EXAMPLE
-#Allow internal process to process communication over loopback interface
--A OUTPUT -s 127.0.0.0/8 -o lo -j ACCEPT
-#+END_EXAMPLE
-
+    Allow internal communication between services running within the system, over
+    loopback interface. Source ip is also specified to avoid any security breach.
+    #+BEGIN_EXAMPLE
+    #Allow internal process to process communication over loopback interface
+    -A OUTPUT -s 127.0.0.0/8 -o lo -j ACCEPT
+    #+END_EXAMPLE
+    
 *** Rule for ongoing connection to other machine
-Allow server to continue already related and established connections. Initial
-connection request would have passed through the firewall rules and if the
-connection got established, it is allowed to continue.
-#+BEGIN_EXAMPLE
-#Allow to continue already related and established connections
--A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
-#+END_EXAMPLE
+    Allow server to continue already related and established connections. Initial
+    connection request would have passed through the firewall rules and if the
+    connection got established, it is allowed to continue.
+    #+BEGIN_EXAMPLE
+    #Allow to continue already related and established connections
+    -A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+    #+END_EXAMPLE
+
+
+*** Rule for allowing outgoing replies to ansible server from local SSH server
+    For some reason state module does not works as intended on AWS VMs
+    and hence during "=service iptables restart=" older ongoing
+    connections are forgotten.  Thus when ansible does "service
+    iptables restart" as part of common role the ansible server SSH
+    connection itself is forgotten and is blocked by iptables after it
+    restarts.  Therefore to allow ansible to restart iptables
+    seamlessly following rules are required in all machines:
+    #+BEGIN_EXAMPLE
+    #Allow outgoing replies to ansible from SSH server
+    {% for item in ansible_server_ips  %}
+    -A OUTPUT -d {{item}} -p tcp -m tcp --sport 22 -j ACCEPT
+    {% endfor %}
+    #+END_EXAMPLE
 
 *** Rule for outgoing dns request
 Allow server to make dns queries.
