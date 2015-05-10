@@ -8,10 +8,22 @@
 
 
 * Introduction
-Rsyslog server is a central storage system of message logs. Rsyslog service is
-configured inside the systems to forward the log messages to the rsyslog server
-for safe storage. Rsyslog service also saves the system log messages locally in
-each system.
+The rsyslog server provides the support for building a central logging
+system, where a copy of the logs from other nodes is forwarded to
+the rsyslog server for security purposes.  If in an unfortunate event, a
+node is compromised then the attacker can modify all the logs on
+compromised node limiting the usability of its logs.  However attacker
+cannot modify the copy of logs sent by nodes to rsyslog server.
+Attacker can at most send spurious log messages to log server, but
+he/she cannot affect the initial logs created during the machine
+compromise.  This initial logs are critical in doing Root Cause
+Analysis (RCA) of the break-in to prevent the same break-in to happen
+in future.
+
+The setup of rsyslog server as a central storage system requires the
+configuration of all the other nodes to send a copy of their log
+messages to the rsyslog server.  Thus the rsyslog server requires
+other nodes of the cluster to be configured as the rsyslog client.
 
 * Description
 1) Logs are kept on the server for three months.
