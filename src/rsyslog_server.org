@@ -83,8 +83,9 @@ which configures the node. These scripts are organized as follows:
 
 ** Firewall rules for rsyslog server
 Firewall rules applied to rsyslog server are mentioned here. Description of
-firewall rules which are common across all the systems are defined in the common
-role. Rules for following specific purposes of rsyslog server node are described
+firewall rules which are common across all the systems are defined in the [[file:common.org::*Common Firewall
+ Rules][common role]].
+Rules for following specific purposes of rsyslog server node are described
 here:
 
 1. Server accepts incoming log messages on port 514 from anywhere. Defined in
