@@ -10,24 +10,38 @@ the *Private Domain Name Server* which is part of the AWS cluster.
 This server is used to provide domain name resolution for all other
 servers in the cluster. This DNS is used for internal name resolution.
 Also it is used for the internal machines to resolve the external
-domain names(gnu.org). Using Ansible, a machine is configured using
-multiple roles. A role is a specific set of configurations.
+domain names(gnu.org). 
+
+Generally the DNS is configured with the master/slave style of
+configuration. This is done to have a fallback machine as the slave in
+case master DNS server is compromised. The slave machine is used to
+serve as the DNS in the absence of the master. This usually helps to
+avoid any break in the service of the DNS.  In our architecture we
+have removed this dependency.  We use the configuration management
+server to configure the DNS server. In case this gets compromised we
+can setup another DNS with the same configuration and data as the
+previous one hence removing the dependency on the master/salve setup.
 
 * Requirements
 The functional and security requirements of the Private DNS are
 mentioned in the following sections. These are specific the Private
 DNS. The requirements which are common to all the servers are mentioned
 in the [[common%20role][common role]].
-** Functional
-   - Resolve our authoritative domain names for all internal clients
-   - Zone entries should be configurable (from a particular file on
-     ansible server)
-   - Resolve all domain names for internal clients (Peer DNS).
+** Functional Requirements
+   The Private DNS should resolve our authoritative domain names for
+   all internal clients on UDP port 53. It should also resolve all
+   domain names for internal clients (Peer DNS). The scripts used to
+   configure it should be such that the zone entries should be
+   configurable (from a particular file on configuration management
+   server).
+
 ** Security
-   - Allow port 53 (UDP) *only* from any machine in the cluster.
+   All common security requirements as described in common role are
+   applicable to the private DNS. Along with them port 53 (UDP) should
+   be allowed *only* from any machine in the cluster.
 
 * Design
-** Overall network diagram of Private DNS
+** Private DNS communication diagram
 #+CAPTION:  Private DNS Network Diagram
 #+LABEL:  fig-private-dns-diagram
 #+NAME: fig-private-dns-diagram
@@ -44,7 +58,7 @@ the internal machines to update or install certain packages.
 
 [[./diagrams/private-dns-network-diagram.png]]
 
-** System files 
+** Important configuration and data files and folders 
 The following table gives the information about the services and their
 configuration files where modifications are required to setup the
 Named Server.
@@ -63,9 +77,9 @@ Named Server.
 
 * Implementation
 ** Structure of the scripts
-   - The implementation of this system is in terms of a collection of
-     Ansible scripts that configure the machine. These scripts are
-     organized as follows:
+   The implementation of this system is in terms of a collection of
+   Ansible scripts that configure the machine. These scripts are
+   organized as follows:
 
 #+BEGIN_EXAMPLE
 |-code
@@ -83,6 +97,19 @@ Named Server.
 |   |   |   |-- meta
 |   |   |       `--main.yaml
 #+END_EXAMPLE
+  
+  Here =private_dns.yml= file configures the private DNS with the
+  private_dns and common roles as described in the [[Creating%20the%20Private%20DNS][Creating the
+  Private DNS]] section.  The =roles/named_server/handlers/main.yaml=
+  file defines various handlers which are only executed in case a task
+  notifies them.  Handlers are described in detail in the [[Handlers]]
+  section.  The handlers are called only when the tasks described in
+  the following 5 sections (4.2,4.3,4.4,4.5,4.6) are called as a part
+  of the named_server role.  The code from these 5 sections
+  concatenate into one place =roles/named_server/tasks/main.yaml=.
+  The =roles/named-server/templates/= contains the various
+  configurations file templates with the variables used to configure
+  the service in the required manner.
 
 ** Installing the bind service
    The BIND service has to be setup for configuring the machine as a
@@ -318,7 +345,7 @@ COMMIT
    above mentioned steps need to be implemented. This is done by the
    main configuration file, which calls all the steps above in the
    required sequence.
-#+BEGIN_SRC YAML :tangle privatedns.yaml 
+#+BEGIN_SRC YAML :tangle private_dns.yaml 
 ---
 - name: This file configures private dns server
   hosts: private_dns
@@ -353,32 +380,6 @@ COMMIT
     - nagios_client
     - named_server
 #+END_SRC
-
-** COMMENT Dependencies
-#+BEGIN_SRC 
----
-dependencies:
-  - role: common_vars
-#+END_SRC
-
-
-* COMMENT Provisioning
-  The Private DNS server is setup by the Configuration management
-  server. The machine configurations are as described below :
-
-** Creation
-   The bare machine to setup a Private DNS is created using the AWS
-   console by providing the private IP address.
-
-** Machine Configuration
-   + OS :: Centos 6.6
-   + Architechture :: x86_64
-   + Memory :: 1024MB
-   + Disk space :: 25GB
-   + Interface :: eth0
-** Access 
-   This machine can be accessed only by the configuration management server.
-
 
 * Test Cases
 ** Test case ID: TC01
