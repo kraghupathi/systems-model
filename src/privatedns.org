@@ -10,23 +10,23 @@ the *Private Domain Name Server* which is part of the AWS cluster.
 This server is used to provide domain name resolution for all other
 servers in the cluster. This DNS is used for internal name resolution.
 Also it is used for the internal machines to resolve the external
-domain names(gnu.org). 
+domain names (ex:gnu.org). 
 
 Generally the DNS is configured with the master/slave style of
 configuration. This is done to have a fallback machine as the slave in
 case master DNS server is compromised. The slave machine is used to
 serve as the DNS in the absence of the master. This usually helps to
-avoid any break in the service of the DNS.  In our architecture we
-have removed this dependency.  We use the configuration management
-server to configure the DNS server. In case this gets compromised we
-can setup another DNS with the same configuration and data as the
-previous one hence removing the dependency on the master/salve setup.
+avoid a break in the service of the DNS.  In our architecture we have
+removed this dependency.  We use the configuration management server
+to configure the DNS server.  In case this gets compromised we can
+setup another DNS with the same configuration and data as the previous
+one hence removing the dependency on the master/salve setup.
 
 * Requirements
 The functional and security requirements of the Private DNS are
-mentioned in the following sections. These are specific the Private
-DNS. The requirements which are common to all the servers are mentioned
-in the [[common%20role][common role]].
+mentioned in the following sections. These are specific to the Private
+DNS. The requirements which are common to all the servers are
+mentioned in the [[common%20role][common role]].
 ** Functional Requirements
    The Private DNS should resolve our authoritative domain names for
    all internal clients on UDP port 53. It should also resolve all
@@ -78,12 +78,12 @@ Named Server.
 * Implementation
 ** Structure of the scripts
    The implementation of this system is in terms of a collection of
-   Ansible scripts that configure the machine. These scripts are
+   ansible scripts that configure the machine. These scripts are
    organized as follows:
 
 #+BEGIN_EXAMPLE
 |-code
-|   |-- privatedns.yml
+|   |-- private_dns.yml
 |   |-- roles
 |   |   |-- named_server
 |   |   |   |-- handlers
@@ -223,6 +223,12 @@ $TTL 3600
                 IN      NS      {{name_server}}
                 IN      A       {{zone_address}}
 
+                MX      10 ASPMX.L.GOOGLE.COM.
+                MX      20 ALT1.ASPMX.L.GOOGLE.COM.
+                MX      20 ALT2.ASPMX.L.GOOGLE.COM.
+                MX      30 ASPMX2.GOOGLEMAIL.COM.
+                MX      30 ASPMX3.GOOGLEMAIL.COM.
+
 {% for server1 in servers %}
 
 {{server1.hostname}}    IN      A       {{server1.ip}}
@@ -248,7 +254,10 @@ $TTL 3600
 
 ** Building the  firewall rules
    The firewall rules have to be configured. The rules required are as
-   listed below:
+   listed below. This template contains the common firewall rules
+   also. These are described more in detail in the [[common.org][common role]].  The
+   rules which are specific to the private DNS are also mentioned here
+   in this template.
 #+BEGIN_SRC YAML :tangle roles/named_server/templates/named_iptables
 *filter
 :INPUT ACCEPT [-1:0]
@@ -274,7 +283,11 @@ $TTL 3600
 {% for item in ansible_server_ips  %}
 -A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
-#Allow incoming SSH connections from nagios server IPs.  Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
+#Allow incoming SSH connections from rsnapshot server IPs.
+{% for item in rsnapshot_server_ips  %}
+-A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
+#Allow incoming SSH connections from nagios server IPs.  
 {% for item in nagios_server_ips  %}
 -A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
@@ -323,7 +336,10 @@ $TTL 3600
 COMMIT
 #
 #+END_SRC
-
+ Generally the other servers are allowed only to send DNS
+ queries. These queries are answered by the private DNS. The private
+ DNS should be able to allow the incoming DNS queries on port 53. The
+ =INPUT= table has a rule which specifies this access.
 ** Apply the firewall rules
    The firewall rules which were mentioned in the previous section
    need to be applied. This is done from the following script.
@@ -336,7 +352,7 @@ COMMIT
 
 ** Handlers
    The services should be restarted if there are any changes made to
-   the configuration file. this is taken care of by the following
+   the configuration file. This is taken care of by the following
    code.
 #+BEGIN_SRC YAML :tangle roles/named_server/handlers/main.yaml
 ---
@@ -350,7 +366,7 @@ COMMIT
    The Private DNS can be setup from the role described above. All the
    above mentioned steps need to be implemented. This is done by the
    main configuration file, which calls all the steps above in the
-   required sequence.
+   required sequence. 
 #+BEGIN_SRC YAML :tangle private_dns.yaml 
 ---
 - name: This file configures private dns server
@@ -358,6 +374,7 @@ COMMIT
   remote_user: root
 
   vars:
+    host_name: private-dns
     zone_file_prefix: private.
     zone_names:
       - virtual-labs.ac.in.
@@ -375,9 +392,30 @@ COMMIT
       - { hostname: public-dns, ip: 10.100.1.6 }
       - { hostname: reverseproxy, ip: 10.100.1.7 }
       - { hostname: nagios, ip: 10.100.1.8 }
-      - { hostname: lab1, ip: 10.100.1.50 }
-      - { hostname: lab2, ip: 10.100.1.51 }
+      - { hostname: ads, ip: 10.100.1.9 }
+      - { hostname: rsnapshot-server, ip: 10.100.1.10 }
+      - { hostname: cse01-iiith, ip: 10.100.1.248 }
+      - { hostname: cse02-iiith, ip: 10.100.2.13 }
+      - { hostname: cse15-iiith, ip: 10.100.0.83 }
+      - { hostname: cse18-iiith, ip: 10.100.0.202 }
+      - { hostname: cse19-iiith, ip: 10.100.3.233 }
+      - { hostname: cse20-iiith, ip: 10.100.0.61 }
 #      - { hostname: git-server, ip: 10.4.12.185 }
+      - { hostname: bmi-iitr, ip: 10.100.3.244 }
+      - { hostname: bmsip-iitr, ip: 10.100.1.236 }
+      - { hostname: em-iitr, ip: 10.100.2.133 }
+      - { hostname: sl-iitr, ip: 10.100.1.36 }
+      - { hostname: mrmsmtbs-iitk, ip: 10.100.3.14 }
+      - { hostname: va-iitk, ip: 10.100.0.111 }
+      - { hostname: ufls-iitk, ip: 10.100.0.205 }
+      - { hostname: vlae-iitk, ip: 10.100.1.171 }
+      - { hostname: vcal-iitk, ip: 10.100.2.55 }
+      - { hostname: pev-au, ip: 10.100.0.218 }
+      - { hostname: pevii-au, ip: 10.100.3.177 }
+      - { hostname: anthropology-iitg, ip: 10.100.1.66 }
+      - { hostname: ergonomics-iitg, ip: 10.100.1.54 }
+      - { hostname: vem-iitg, ip: 10.100.0.174 }
+      - { hostname: ve-iitg, ip: 10.100.1.112 }
 
   roles:
     - common
