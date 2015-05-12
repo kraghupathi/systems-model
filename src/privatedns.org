@@ -5,80 +5,90 @@
 #+SETUPFILE: org-templates/level-0.org
 
 * Introduction
-This document describes the requirements, design and implementation of
-the *Private Domain Name Server* which is part of the AWS cluster.
-This server is used to provide domain name resolution for all other
-servers in the cluster. This DNS is used for internal name resolution.
-Also it is used for the internal machines to resolve the external
-domain names(gnu.org). 
+  This document describes the requirements, design and implementation
+  of the private *Domain Name System (DNS)*.  This server provides the
+  domain name resolution for all other servers in the cluster.  This
+  server resolves both the private zones (vlabs.ac.in and
+  virtual-labs.ac.in) and the external zones (eg gnu.org, google.com)
+  for all other servers.
+  
+  Generally a DNS is configured in a master-slave replication
+  topology.  In such a configuration, if any changes are performed on
+  the master, then such changes are automatically replicated to the
+  slave.  Thus the master-slave replication allows for having
+  redundant servers without requiring the administrators to manually
+  keep multiple DNS servers synchronized.  This redundancy is useful
+  when the master machine fails (eg power failure, network failure)
+  as, then the slave can handle all the queries without affecting the
+  service up-time.
 
-Generally the DNS is configured with the master/slave style of
-configuration. This is done to have a fallback machine as the slave in
-case master DNS server is compromised. The slave machine is used to
-serve as the DNS in the absence of the master. This usually helps to
-avoid any break in the service of the DNS.  In our architecture we
-have removed this dependency.  We use the configuration management
-server to configure the DNS server. In case this gets compromised we
-can setup another DNS with the same configuration and data as the
-previous one hence removing the dependency on the master/salve setup.
+  In our architecture we have avoided the master-slave replication.
+  This is possible because all the changes are performed using the
+  ansible scripts.  These scripts modify all the DNS servers in the
+  same way.  These scripts prevent human errors and do not require an
+  additional effort in keeping multiple nodes synchronized.
+
+  Further redundancy using multiple DNS servers has been avoided
+  altogether.  This is because if the only available DNS server fails,
+  then a new DNS server can be configured quickly using existing
+  ansible scripts.  
 
 * Requirements
-The functional and security requirements of the Private DNS are
-mentioned in the following sections. These are specific the Private
-DNS. The requirements which are common to all the servers are mentioned
-in the [[common%20role][common role]].
-** Functional Requirements
-   The Private DNS should resolve our authoritative domain names for
-   all internal clients on UDP port 53. It should also resolve all
-   domain names for internal clients (Peer DNS). The scripts used to
-   configure it should be such that the zone entries should be
-   configurable (from a particular file on configuration management
-   server).
+  The functional and security requirements of the Private DNS are
+  mentioned in the following sections.  Only the DNS specific
+  requirements which differ from the generic requirements specified in
+  the [[common%20role][common role]] are mentioned here.
 
-** Security
-   All common security requirements as described in common role are
-   applicable to the private DNS. Along with them port 53 (UDP) should
-   be allowed *only* from any machine in the cluster.
+** Functional Requirements
+   The Private DNS should resolve authoritative zones
+   (vlabs.ac.in. and virtual-labs.ac.in.) for all the internal
+   clients.  Private DNS should accept DNS queries on default UDP port
+   53 from all internal clients.  It should also resolve all domain
+   names for internal clients (Peer DNS) recursively.
+
+** Security Requirements
+   All the common security requirements as described in the common
+   role are applicable to the private DNS.  Along with them UDP port
+   53 should be allowed only from machines in the cluster.
+   
+** Communication Requirements
+   The private DNS requires router for access to the Internet.  This
+   Internet access is used for recursive DNS lookups.  This is also
+   useful while updating packages using public package repositories.
 
 * Design
 ** Private DNS communication diagram
+   The following network diagram represents the interaction between
+   the private DNS and all other machines in the cluster.  This
+   diagram primarily focuses on the functionality of the DNS server.
+
 #+CAPTION:  Private DNS Network Diagram
 #+LABEL:  fig-private-dns-diagram
-#+NAME: fig-private-dns-diagram
-The following network diagram represents the interaction of the
-Private DNS with the other machines in the cluster. This diagram
-primarily focuses on the functionality of the Named server. It shows
-the various machines in the network to which it provides its
-service.\\
-
-The other machines in the cluster use the Private DNS for resolving
-the hostnames of machines in the cluster. The Private DNS requires
-the Router to be able to contact the root DNS servers for providing
-the internal machines to update or install certain packages.
-
 [[./diagrams/private-dns-network-diagram.png]]
 
 ** Important configuration and data files and folders 
-The following table gives the information about the services and their
-configuration files where modifications are required to setup the
-Named Server.
-|------+----------+-------------------------------+--------------------------------|
-| S.no | Service  | File                          | File Type                      |
-|------+----------+-------------------------------+--------------------------------|
-|    1 | named    | /etc/name.conf                | named main Configuration       |
-|------+----------+-------------------------------+--------------------------------|
-|    2 | named    | /var/named/<domain_name>.zone | Zone files for the authorized  |
-|      |          |                               | name resolution of that domain |
-|------+----------+-------------------------------+--------------------------------|
-|    3 | iptables | /etc/sysconfig/iptables       | firewall rules                 |
-|------+----------+-------------------------------+--------------------------------|
-|    4 | named    | /etc/sysconfig/named          | Disable IPv6 support           |
-|------+----------+-------------------------------+--------------------------------|
+   The following table gives the information about the configuration
+   files which may need to be modified to setup a DNS server using
+   =bind= package.
+   |------+----------+-------------------------------+----------------------------------|
+   | S.no | Service  | File                          | Description                      |
+   |------+----------+-------------------------------+----------------------------------|
+   |    1 | named    | /etc/named.conf               | Main configuration file for      |
+   |      |          |                               | bind DNS server                  |
+   |------+----------+-------------------------------+----------------------------------|
+   |    2 | named    | /var/named/<domain_name>.zone | Zone files for specifying        |
+   |      |          |                               | authorized zone resource records |
+   |------+----------+-------------------------------+----------------------------------|
+   |    3 | iptables | /etc/sysconfig/iptables       | iptables firewall start-up rules |
+   |------+----------+-------------------------------+----------------------------------|
+   |    4 | named    | /etc/sysconfig/named          | This file is modified to disable |
+   |      |          |                               | IPv6 support                     |
+   |------+----------+-------------------------------+----------------------------------|
 
 * Implementation
 ** Structure of the scripts
    The implementation of this system is in terms of a collection of
-   Ansible scripts that configure the machine. These scripts are
+   Ansible scripts that configure the node.  These scripts are
    organized as follows:
 
 #+BEGIN_EXAMPLE
@@ -101,151 +111,15 @@ Named Server.
   "named_server" and "common" roles as described in the [[Creating%20the%20Private%20DNS][Creating the
   Private DNS]] section.  The =roles/named_server/handlers/main.yaml=
   file defines various handlers which are only executed in case a task
-  notifies them.  Handlers are described in detail in the [[Handlers]]
-  section.  The handlers are called only when the tasks described in
-  the following 5 sections (4.2,4.3,4.4,4.5,4.6) are called as a part
-  of the named_server role.  The code from these 5 sections
-  concatenate into one place =roles/named_server/tasks/main.yaml=.
-  The =roles/named-server/templates/= folder contains the various
-  configuration file templates with the variables used to configure
-  the service in the required manner. Three templates are used
-  =named_iptables=, =zone.forward=, =named.conf=. These are described
-  in the following sections.
+  notifies them.  These handlers are described in detail in the
+  [[Handlers]] section.  The handlers are called when the tasks described
+  in the [[Tasks][Tasks]] section notify them.  Various tasks of [[Tasks][Tasks]] section
+  are concatenated into =roles/named_server/tasks/main.yaml= file.
+  The =roles/named-server/templates/= folder contains three jinja2
+  configuration templates - =named_iptables=, =zone.forward=,
+  =named.conf=.  These templates use variables defined at various
+  places to configure the DNS server with appropriate values.
   
-** Installing the bind service
-   The BIND service has to be setup for configuring the machine as a
-   DNS. This is done by the following code:
-
-#+BEGIN_SRC YAML :tangle roles/named_server/tasks/main.yaml
----
-- name: Install bind and bind-utils package
-  yum: name="{{item}}" state=present
-  with_items:
-    - bind
-    - bind-utils
-#+END_SRC
-
-** Configuring the Bind service
-   The named server has to be configured. This is done in the file
-   named =/etc/named.conf=. We specify the domain for which this
-   server should be the authoritative name server. These are termed as
-   zone in the configuration file. Each zone will have a corresponding
-   zone file which enlists the sub-domains present in under that
-   domain. The task uses the template
-   =/roles/named_server/templates/named.conf= to configure the bind
-   service. Once this is configured the task notifies the
-   handler. This is one by the =notify= module of ansible.
-
-#+BEGIN_SRC YAML :tangle roles/named_server/tasks/main.yaml
-- name: Create custom named.conf with desired zone
-  template: src=named.conf dest=/etc/named.conf owner=root group=named mode=640
-  notify:
-    - restart bind
-#+END_SRC
-
-The named.conf file looks like this:
-
-#+BEGIN_SRC YAML :tangle roles/named_server/templates/named.conf
-//
-// named.conf
-//
-// Provided by Red Hat bind package to configure the ISC BIND named(8) DNS
-// server as a caching only nameserver (as a localhost DNS resolver only).
-//
-// See /usr/share/doc/bind*/sample/ for example named configuration files.
-//
-
-options {
-        listen-on port 53 { 127.0.0.1; any; };
-        listen-on-v6 port 53 { ::1; };
-        directory       "/var/named";
-        dump-file       "/var/named/data/cache_dump.db";
-        statistics-file "/var/named/data/named_stats.txt";
-        memstatistics-file "/var/named/data/named_mem_stats.txt";
-        allow-query     { localhost; {{allow_query_from}} };
-        recursion {{recursion}};
-
-        dnssec-enable no;
-        dnssec-validation no;
-        dnssec-lookaside auto;
-
-        /* Path to ISC DLV key */
-        bindkeys-file "/etc/named.iscdlv.key";
-
-        managed-keys-directory "/var/named/dynamic";
-};
-
-logging {
-        channel default_debug {
-                file "data/named.run";
-                severity dynamic;
-        };
-};
-% for item in zone_names  %}
-
-zone "{{item}}" IN {
-   type master;
-   file "{{item}}forward";
-};
-
-{% endfor %}
-
-
-zone "." IN {
-        type hint;
-        file "named.ca";
-};
-
-include "/etc/named.rfc1912.zones";
-include "/etc/named.root.key";
-#+END_SRC
-
-** Creating the zone files
-   Each zone (domain) is associated with a zone file which contains a
-   list of all the sub-domains under that domain and also their
-   corresponding IP address to which the request for that FQDN should
-   be sent to.
-#+BEGIN_SRC YAML :tangle roles/named_server/tasks/main.yaml
-- name: Copy zone forward files for all zones to /var/named
-  template: src="zone.forward" dest="/var/named/{{item}}forward" owner=root group=named mode=640
-  with_items: zone_names
-  notify:
-    - restart bind
-#+END_SRC
-Once the zone file is configured the task notifies the handlers using
-the =notify= module of ansible.  The zone file is configured using the
-template =/roles/named_server/templates/zone.forward=.  The zone file
-template looks like the following:
-
-#+BEGIN_SRC YAML :tangle roles/named_server/templates/zone.forward
-$TTL 3600
-@ SOA ns.{{item}} root.{{item}} (1 15m 5m 30d 1h)
-                IN      NS      {{name_server}}
-                IN      A       {{zone_address}}
-
-{% for server1 in servers %}
-
-{{server1.hostname}}    IN      A       {{server1.ip}}
-
-{% endfor %}
-#+END_SRC
-
-** Some more configuration
-   We disable the IPv6 support. 
-#+BEGIN_SRC  YAML :tangle roles/named_server/tasks/main.yaml
-- name: Disable IPv6 support
-  lineinfile: dest=/etc/sysconfig/named line='OPTIONS="-4"' regexp="^OPTIONS"
-  notify:
-    - restart bind
-#+END_SRC
-
-** Bringing up the Bind service
-   After configuring the named server we now need to start the service.
-#+BEGIN_SRC YAML :tangle roles/named_server/tasks/main.yaml
-- name: Start and enable bind service
-  service: name=named state=started enabled=yes
-#+END_SRC
-
 ** Building the  firewall rules
    The firewall rules have to be configured. The rules required are as
    listed below:
@@ -323,8 +197,143 @@ $TTL 3600
 COMMIT
 #
 #+END_SRC
+  
+** Tasks
+*** Installing the bind service
+   The BIND service has to be setup for configuring the machine as a
+   DNS. This is done by the following code:
 
-** Apply the firewall rules
+#+BEGIN_SRC YAML :tangle roles/named_server/tasks/main.yaml
+---
+- name: Install bind and bind-utils package
+  yum: name="{{item}}" state=present
+  with_items:
+    - bind
+    - bind-utils
+#+END_SRC
+
+*** Configuring the Bind service
+   The named server has to be configured. This is done in the file
+   named =/etc/named.conf=. We specify the domain for which this
+   server should be the authoritative name server. These are termed as
+   zone in the configuration file. Each zone will have a corresponding
+   zone file which enlists the sub-domains present in under that
+   domain. The task uses the template
+   =/roles/named_server/templates/named.conf= to configure the bind
+   service. Once this is configured the task notifies the
+   handler. This is one by the =notify= module of ansible.
+
+#+BEGIN_SRC YAML :tangle roles/named_server/tasks/main.yaml
+- name: Create custom named.conf with desired zone
+  template: src=named.conf dest=/etc/named.conf owner=root group=named mode=640
+  notify:
+    - restart bind
+#+END_SRC
+
+The named.conf file looks like this:
+
+#+BEGIN_SRC YAML :tangle roles/named_server/templates/named.conf
+//
+// named.conf
+//
+// Provided by Red Hat bind package to configure the ISC BIND named(8) DNS
+// server as a caching only nameserver (as a localhost DNS resolver only).
+//
+// See /usr/share/doc/bind*/sample/ for example named configuration files.
+//
+
+options {
+        listen-on port 53 { 127.0.0.1; any; };
+        listen-on-v6 port 53 { ::1; };
+        directory       "/var/named";
+        dump-file       "/var/named/data/cache_dump.db";
+        statistics-file "/var/named/data/named_stats.txt";
+        memstatistics-file "/var/named/data/named_mem_stats.txt";
+        allow-query     { localhost; {{allow_query_from}} };
+        recursion {{recursion}};
+
+        dnssec-enable no;
+        dnssec-validation no;
+        dnssec-lookaside auto;
+
+        /* Path to ISC DLV key */
+        bindkeys-file "/etc/named.iscdlv.key";
+
+        managed-keys-directory "/var/named/dynamic";
+};
+
+logging {
+        channel default_debug {
+                file "data/named.run";
+                severity dynamic;
+        };
+};
+% for item in zone_names  %}
+
+zone "{{item}}" IN {
+   type master;
+   file "{{item}}forward";
+};
+
+{% endfor %}
+
+
+zone "." IN {
+        type hint;
+        file "named.ca";
+};
+
+include "/etc/named.rfc1912.zones";
+include "/etc/named.root.key";
+#+END_SRC
+
+*** Creating the zone files
+   Each zone (domain) is associated with a zone file which contains a
+   list of all the sub-domains under that domain and also their
+   corresponding IP address to which the request for that FQDN should
+   be sent to.
+#+BEGIN_SRC YAML :tangle roles/named_server/tasks/main.yaml
+- name: Copy zone forward files for all zones to /var/named
+  template: src="zone.forward" dest="/var/named/{{item}}forward" owner=root group=named mode=640
+  with_items: zone_names
+  notify:
+    - restart bind
+#+END_SRC
+Once the zone file is configured the task notifies the handlers using
+the =notify= module of ansible.  The zone file is configured using the
+template =/roles/named_server/templates/zone.forward=.  The zone file
+template looks like the following:
+
+#+BEGIN_SRC YAML :tangle roles/named_server/templates/zone.forward
+$TTL 3600
+@ SOA ns.{{item}} root.{{item}} (1 15m 5m 30d 1h)
+                IN      NS      {{name_server}}
+                IN      A       {{zone_address}}
+
+{% for server1 in servers %}
+
+{{server1.hostname}}    IN      A       {{server1.ip}}
+
+{% endfor %}
+#+END_SRC
+
+*** Some more configuration
+   We disable the IPv6 support. 
+#+BEGIN_SRC  YAML :tangle roles/named_server/tasks/main.yaml
+- name: Disable IPv6 support
+  lineinfile: dest=/etc/sysconfig/named line='OPTIONS="-4"' regexp="^OPTIONS"
+  notify:
+    - restart bind
+#+END_SRC
+
+*** Bringing up the Bind service
+   After configuring the named server we now need to start the service.
+#+BEGIN_SRC YAML :tangle roles/named_server/tasks/main.yaml
+- name: Start and enable bind service
+  service: name=named state=started enabled=yes
+#+END_SRC
+
+*** Apply the firewall rules
    The firewall rules which were mentioned in the previous section
    need to be applied. This is done from the following script.
 #+BEGIN_SRC YAML :tangle roles/named_server/tasks/main.yaml
