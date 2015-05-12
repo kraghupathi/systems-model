@@ -87,19 +87,18 @@ Named Server.
 |   |-- roles
 |   |   |-- named_server
 |   |   |   |-- handlers
-|   |   |   |   `--main.yaml
+|   |   |   |   `-- main.yaml
 |   |   |   |-- tasks
-|   |   |   |   `--main.yaml
-|   |   |   |-- templates
-|   |   |   |   `--main.yaml
-|   |   |   |-- vars
-|   |   |   |   `--main.yaml
-|   |   |   |-- meta
-|   |   |       `--main.yaml
+|   |   |   |   `-- main.yaml
+|   |   |   `-- templates
+|   |   |   |   |-- named.conf
+|   |   |   |   |-- named_iptables
+|   |   |   |   `-- zone.forward
+
 #+END_EXAMPLE
   
-  Here =private_dns.yml= file configures the private DNS with the
-  private_dns and common roles as described in the [[Creating%20the%20Private%20DNS][Creating the
+  Here =private_dns.yaml= file configures the private DNS with the
+  "named_server" and "common" roles as described in the [[Creating%20the%20Private%20DNS][Creating the
   Private DNS]] section.  The =roles/named_server/handlers/main.yaml=
   file defines various handlers which are only executed in case a task
   notifies them.  Handlers are described in detail in the [[Handlers]]
@@ -107,10 +106,12 @@ Named Server.
   the following 5 sections (4.2,4.3,4.4,4.5,4.6) are called as a part
   of the named_server role.  The code from these 5 sections
   concatenate into one place =roles/named_server/tasks/main.yaml=.
-  The =roles/named-server/templates/= contains the various
-  configurations file templates with the variables used to configure
-  the service in the required manner.
-
+  The =roles/named-server/templates/= folder contains the various
+  configuration file templates with the variables used to configure
+  the service in the required manner. Three templates are used
+  =named_iptables=, =zone.forward=, =named.conf=. These are described
+  in the following sections.
+  
 ** Installing the bind service
    The BIND service has to be setup for configuring the machine as a
    DNS. This is done by the following code:
@@ -130,7 +131,10 @@ Named Server.
    server should be the authoritative name server. These are termed as
    zone in the configuration file. Each zone will have a corresponding
    zone file which enlists the sub-domains present in under that
-   domain.
+   domain. The task uses the template
+   =/roles/named_server/templates/named.conf= to configure the bind
+   service. Once this is configured the task notifies the
+   handler. This is one by the =notify= module of ansible.
 
 #+BEGIN_SRC YAML :tangle roles/named_server/tasks/main.yaml
 - name: Create custom named.conf with desired zone
@@ -208,8 +212,10 @@ include "/etc/named.root.key";
   notify:
     - restart bind
 #+END_SRC
-
-The zone file template looks like the following:
+Once the zone file is configured the task notifies the handlers using
+the =notify= module of ansible.  The zone file is configured using the
+template =/roles/named_server/templates/zone.forward=.  The zone file
+template looks like the following:
 
 #+BEGIN_SRC YAML :tangle roles/named_server/templates/zone.forward
 $TTL 3600
@@ -494,7 +500,6 @@ COMMIT
 
 *** Conclusion
     The Private DNS is resolving the hostnames correctly.
-
 
 ** Test case ID: TC02
 *** Objective
