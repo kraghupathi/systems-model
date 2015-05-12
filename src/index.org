@@ -8,39 +8,72 @@
 #+SETUPFILE: org-templates/level-0.org
 
 * Introduction
-  This document describes in detail the model of systems cluster at
-  VLEAD.  The tools, systems, configurations, setup files and related
-  discussions have been captured in this model.
-
+  This document describes in detail the model of the systems cluster
+  at VLEAD.  The tools, systems, configurations, setup files and
+  related discussions are all part of the model.
+  
 * The Cluster Model
-  The cluster model is a set of systems which formulate the
-  infrastructure for the hosting of labs.  There are other components
-  which will be later added to this model.  This infrastructure is
-  deployed at following different locations:
+  The cluster model describes the set of systems which together
+  provide the infrastructure for the hosting of the virtual-labs.
+  These virtual-labs are deployed at the following different
+  locations:
   + [[Base4 Cluster][Base4]]
   + [[Base1 Cluster][Base1]]
   + [[Amazon Web Services (AWS) Cluster][AWS]]
+  using the same model with the minor differences in the provisioning.
+  The minor differences in provisioning are highlighted later in this
+  model.
   
-* Purpose of various deployments
+* Bootstrapping Cluster
+  A independent operating system such as a container or a VM or even a
+  physical machine is referred as a node.  The collection of such
+  related and connected nodes forms a cluster.  Each node in the
+  cluster has a specific purpose that it serves.  To setup an entire
+  cluster initially, each of the component nodes are setup
+  individually in an planned and specific manner.  This process of
+  setup of individual nodes in a specific manner to setup a new
+  cluster is called the bootstrapping process.  This process is
+  tightly related to the provisioning method used on the corresponding
+  cluster.
+
+  Following provisioning methods have been used on the individual
+  clusters:
+  - AWS cluster :: AWS cluster is created using VMs as nodes.  These
+                   VMs are provisioned using AWS web console, AWS CLI
+                   tools or AWS python API
+  - Base1 cluster :: Base1 cluster is created using OpenVZ containers
+                     which use bridged networking with ethernet
+                     interfaces (=--netif_add=).  These containers do
+                     not use venet interfaces (=--ipadd=) as venet
+                     interfaces do not allow routing to be changed.
+                     In base1 cluster we need nodes to have
+                     configurable routing so that we can set a custom
+                     gateway.  
+  - Base4 cluster :: Same as base1
+  
+* Purpose of multiple deployments
 ** Base4 Cluster
-   This cluster is the development cluster. This cluster is used to
+   This cluster is a development cluster.  This cluster is used to
    test new changes made to the develop branch before they are
-   considered as stable.
+   considered as stable and merged with master.
 
 ** Base1 Cluster 
-   Once set of new features are found to be stable on base4 cluster, a
-   release is made.  The new release is then tested on base1 cluster
-   to verify its soundness on staging environment. 
+   Master branches which are found to be stable on the base4 cluster
+   are released with a tag and version number.  The new release is
+   then tested on base1 cluster to re-verify its soundness on staging
+   environment, before it is pushed to production environment on AWS.
    
 ** Amazon Web Services (AWS) Cluster
    This cluster is the production cluster.  This cluster is modified
-   at last after changes have been verified on both development and
-   staging.  /It should be noted that ADS adapter used on base1 and/
-   /base4 is different than adapter used on AWS.  Hence some problems/
-   /may arise due to use of different adapter in production in/
-   /comparison to staging and development./  This is the main cluster
-   used by external virtual-labs users across the nation.
+   after changes have been verified on both development (base4) and
+   staging (base1).
 
+   /It should be noted that ADS adapter used on base1 and base4 is different than adapter used on AWS.  Hence some problems may arise due to use of different adapter in production in comparison to staging and development./ 
+
+   This is the main cluster used by the external virtual-labs users
+   across the nation.  
+
+<<<<<<< HEAD
 * Bootstrapping of a cluster deployment
   The cluster is a collection of several nodes.  Each of these nodes
   have a specific purpose that they serve.  To setup the entire
@@ -67,10 +100,24 @@
   The diagram below depicts the architecture of the systems in the
   cluster model. This architecture does not change for the types of
   clusters mentioned earlier.  
+* Difference in the base1 and AWS cluster
+  Most of the components of base1 and base4 clusters are same as AWS
+  cluster.  The main difference is in the provisioning.  The details of
+  provisioning of these clusters is described in this section.
+
+** Provisioning of the base1 and base4 clusters
+   *TODO*
+** Provisioning of the AWS cluster
+   *TODO*
+
+* Design of the cluster model
+  The diagram below depicts the architecture of the nodes in the
+  cluster model.  This architecture is same for all the three
+  deployments (base1, base4 and AWS).
   
 ** Overall Network Diagram
-   The diagram below shows the architecture of the cluster. The
-   network setup of the cluster is depicted in this figure.
+   The below diagram shows the network setup of the cluster and
+   connectivity between few key nodes.
 
    #+CAPTION:  Cluster Network Diagram
    #+LABEL:  fig-cluster-network-diagram
@@ -330,10 +377,21 @@
   There are several nodes in the cluster which are common to
   the various deployments. The list of nodes is as below:
 - [[./rsyslog_server.org][Rsyslog]]
+=======
+   used by the system.  IP1 is the public IP assigned to the router
+   and IP2 is the public IP assigned to the ansible.  Normal
+   virtual-lab users only see and contact router.  VLEAD team uses the
+   ansible node to manage the cluster.  
+
+   /In near future an ADS interface will also be accessible via router, for all the virtual-labs developers, perhaps through a different port./
+
+** Nodes in the cluster
+- [[./rsyslog_server.org][Rsyslog server]]
 - [[./privatedns.org][Private DNS]]
 - [[./publicdns.org][Public DNS]]
 - [[./rp-awstats.org][Reverse Proxy]]
-- [[./nagios_server.org][Nagios]]
+- [[./nagios_server.org][Nagios server]]
 - [[./router.org][Router]]
 - [[./rsnapshot_server.org][Backup server]]
-- Ossec
+- [[./ossec_server.org][OSSEC server]] *TODO*
+

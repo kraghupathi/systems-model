@@ -58,7 +58,7 @@ given wherever possible. Test Cases are also described to test the setup.
 |------+---------------+----------------------------------+--------------------|
 | S.no | Service       | File                             | File Type          |
 |------+---------------+----------------------------------+--------------------|
-|   1. | Iptables      | /etc/sysconfig/iptables          | Configuration File |
+|   1. | iptables      | /etc/sysconfig/iptables          | Configuration File |
 |------+---------------+----------------------------------+--------------------|
 |   2. | Fail2ban      | /etc/fail2ban/jail.local         | Configuraion File  |
 |------+---------------+----------------------------------+--------------------|
@@ -78,7 +78,7 @@ given wherever possible. Test Cases are also described to test the setup.
 * Implementation
 ** Structure of the scripts
 The implementation of this system is in terms of a collection of ansible scripts
-that configure the machine.  These scripts are organized in the following way:
+that configure the node.  These scripts are organized in the following way:
 
 #+BEGIN_EXAMPLE
 |-code
@@ -108,11 +108,11 @@ the individual server role's documentation. Common firewall rules are described
 here.
 
 *** Default rules for filter table
- Default policy for input, forward and output is set to ACCEPT. If packet does
-  not match any rule then the default action is applied to the packet. Packets
-  counters are set to [0:0]. First counter represents the number of packets that
-  matched the rule for the chain, and the second counter represents the total
-  size of the packets that matched the rule.
+Default policy for input, forward and output is set to ACCEPT. If packet does
+not match any rule then the default action is applied to the packet. Packets
+counters are set to [0:0]. First counter represents the number of packets that
+matched the rule for the chain, and the second counter represents the total size
+of the packets that matched the rule.
 #+BEGIN_EXAMPLE
 #If packet does not match any rule then the default action is applied to the packet
 *filter
@@ -122,20 +122,20 @@ here.
 #+END_EXAMPLE 
 
 *** Rule for INPUT loopback packets
- Allow internal communication between services running within the server, over
-  loopback interface. Destination ip is also specified to avoid any security
-  breach.
+Allow internal communication between services running within the server, over
+loopback interface. Destination ip is also specified to avoid any security
+breach.
 #+BEGIN_EXAMPLE
 #Allow internal process to process communication over loopback interface
 -A INPUT -i lo -d 127.0.0.0/8 -j ACCEPT
 #+END_EXAMPLE
  
 *** Rate limiting new connections
- This rule limit all new connections except UDP connections. Limit is set to a
-  proper high value, to secure the system from flooded connections. Packets are
-  dropped if they are received after the limit is exceeded. Dropped packets are
-  logged with a limited rate. Once the rate of incoming packets is under
-  control, system again starts accepting the connections.
+This rule limit all new connections except UDP connections. Limit is set to a
+proper high value, to secure the system from flooded connections. Packets are
+dropped if they are received after the limit is exceeded. Dropped packets are
+logged with a limited rate. Once the rate of incoming packets is under control,
+system again starts accepting the connections.
 #+BEGIN_EXAMPLE
 #Rate limit new connections to 20 new connections per 30 seconds
 -A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --set
@@ -144,11 +144,11 @@ here.
 #+END_EXAMPLE
 
 *** Rule for incoming ping request with rate limiting
- Allow server to accept incoming ping requests from anywhere. Limit is set to a
-  proper high value, to secure the system from flooded connections. Packets are
-  dropped if they are received after the limit is exceeded. Dropped packets are
-  logged with a limited rate. Once the rate of incoming packets is under
-  control, system again starts accepting the connections.
+Allow server to accept incoming ping requests from anywhere. Limit is set to a
+proper high value, to secure the system from flooded connections. Packets are
+dropped if they are received after the limit is exceeded. Dropped packets are
+logged with a limited rate. Once the rate of incoming packets is under control,
+system again starts accepting the connections.
 #+BEGIN_EXAMPLE
 #Allow to accept incoming ping requests from anywhere
 -A INPUT -p icmp --icmp-type echo-request -m limit --limit 60/minute --limit-burst 120 -j ACCEPT
@@ -157,18 +157,18 @@ here.
 #+END_EXAMPLE
 
 *** Rule for ongoing connection from other machine
- Allow server to continue already related and established connections. Initial
-  connection request would have passed through the firewall rules and if the
-  connection got established, it is allowed to continue.
+Allow server to continue already related and established connections. Initial
+connection request would have passed through the firewall rules and if the
+connection got established, it is allowed to continue.
 #+BEGIN_EXAMPLE
 #Allow to continue already related and established connections
 -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
 #+END_EXAMPLE
 
 *** Rule for incoming ssh connection
- Allow server to accept incoming ssh TCP port 22 connections *only* from the
-  ansible, nagios and management ips. A 'for loop' is used to enable rule for
-  multiple servers.
+Allow server to accept incoming ssh TCP port 22 connections *only* from the
+ansible, nagios and management ips. A 'for loop' is used to enable rule for
+multiple servers.
 #+BEGIN_EXAMPLE
 #Allowing incoming ssh connections only from the management ips. 
 #Hopefully fail2ban will take care of bruteforce attacks from management IPs
@@ -187,80 +187,88 @@ here.
 #+END_EXAMPLE
 
 *** Rule for incoming NRPE query from Nagios server
- Accept NRPE queries from Nagios.
+Accept NRPE queries from Nagios.
 #+BEGIN_EXAMPLE
 #Allow to accept incoming nrpe queries from nagios server
 -A INPUT -m state --state NEW -p tcp -m tcp --dport 5666 -j ACCEPT
 #+END_EXAMPLE
 
-*** Rule for incoming SNMP queries from Cacti server
- Accept input connections from cacti server.
-#+BEGIN_EXAMPLE
-#Allow to accept incoming snmp queries from cacti server
--A INPUT -p udp -m udp --dport 161 -j ACCEPT
--A INPUT -p udp -m udp --dport 162 -j ACCEPT
-#+END_EXAMPLE
-
 *** Rule for all other incoming connections
- Reject all the INPUT packets which does not match any of the defined rules
-  with a reply message =icmp-host-prohibited= to the host machine. Rejected
-  packets are also logged with a limited rate.
+Drop all the INPUT packets which does not match any of the defined
+rules. Rejected packets are also logged with a limited rate.
 #+BEGIN_EXAMPLE
 #Log all other "blocked_input_" attempts with rate limiting
 -A INPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_input_"
 #Drop all the INPUT packets which does not match any of the rules
--A INPUT -j REJECT --reject-with icmp-host-prohibited
+-A INPUT -j DROP
 #+END_EXAMPLE
 
 *** Rule for FORWARD chain
-If the server does not forwards any packet the Forwarding rule is set to reject
-packets. Forwarding rule is set to ACCEPT only in the Router server.
-
-#+BEGIN_EXAMPLE
-#Do not allow any packet to be forwarded
--A FORWARD -j REJECT --reject-with icmp-host-prohibited
-#+END_EXAMPLE
+    If the server does not forwards any packet the Forwarding rule is set
+    to drop packets. Forwarding rule is set to ACCEPT only in the Router
+    server.
+    
+    #+BEGIN_EXAMPLE
+    #Do not allow any packet to be forwarded.  Drop them silently without sending ICMP error messages back.
+    -A FORWARD -j DROP
+    #+END_EXAMPLE
 
 *** Rule for OUTPUT loopback packets
- Allow internal communication between services running within the system, over
-  loopback interface. Source ip is also specified to avoid any security breach.
-#+BEGIN_EXAMPLE
-#Allow internal process to process communication over loopback interface
--A OUTPUT -s 127.0.0.0/8 -o lo -j ACCEPT
-#+END_EXAMPLE
-
+    Allow internal communication between services running within the system, over
+    loopback interface. Source ip is also specified to avoid any security breach.
+    #+BEGIN_EXAMPLE
+    #Allow internal process to process communication over loopback interface
+    -A OUTPUT -s 127.0.0.0/8 -o lo -j ACCEPT
+    #+END_EXAMPLE
+    
 *** Rule for ongoing connection to other machine
- Allow server to continue already related and established connections. Initial
-  connection request would have passed through the firewall rules and if the
-  connection got established, it is allowed to continue.
-#+BEGIN_EXAMPLE
-#Allow to continue already related and established connections
--A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
-#+END_EXAMPLE
+    Allow server to continue already related and established connections. Initial
+    connection request would have passed through the firewall rules and if the
+    connection got established, it is allowed to continue.
+    #+BEGIN_EXAMPLE
+    #Allow to continue already related and established connections
+    -A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+    #+END_EXAMPLE
+
+
+*** Rule for allowing outgoing replies to ansible server from local SSH server
+    For some reason state module does not works as intended on AWS VMs
+    and hence during "=service iptables restart=" older ongoing
+    connections are forgotten.  Thus when ansible does "service
+    iptables restart" as part of common role the ansible server SSH
+    connection itself is forgotten and is blocked by iptables after it
+    restarts.  Therefore to allow ansible to restart iptables
+    seamlessly following rules are required in all machines:
+    #+BEGIN_EXAMPLE
+    #Allow outgoing replies to ansible from SSH server
+    {% for item in ansible_server_ips  %}
+    -A OUTPUT -d {{item}} -p tcp -m tcp --sport 22 -j ACCEPT
+    {% endfor %}
+    #+END_EXAMPLE
 
 *** Rule for outgoing dns request
- Allow server to make dns queries.
+Allow server to make dns queries.
 #+BEGIN_EXAMPLE
 #Allow to make dns queries
 -A OUTPUT -p udp -m udp --dport 53 -j ACCEPT
 #+END_EXAMPLE
 
 *** Rule for sending log messages to rsyslog server
- Allow server to send log messages to rsyslog server.
+Allow server to send log messages to rsyslog server.
 #+BEGIN_EXAMPLE
 #Allow server to send log messages to rsyslog server
 -A OUTPUT -p udp -m udp --dport 514 -j ACCEPT
 #+END_EXAMPLE
 
 *** Rule for sending mails by logwatch service
- Allow logwatch service running inside the server to send mail alerts.
+Allow logwatch service running inside the server to send mail alerts.
 #+BEGIN_EXAMPLE
 #Allow to send mails by logwatch service
 -A OUTPUT -p tcp -m tcp --dport 25 -j ACCEPT
 #+END_EXAMPLE
 
 *** Rule for outgoing web request by yum
- Allow yum service to update packages via http and https. 
+Allow yum service to update packages via http and https. 
 #+BEGIN_EXAMPLE
 #Allow yum to contact web servers for installing and updating packages
 -A OUTPUT -p tcp -m tcp --dport 80 -j ACCEPT
@@ -268,23 +276,23 @@ packets. Forwarding rule is set to ACCEPT only in the Router server.
 #+END_EXAMPLE
 
 *** Rule for outgoing connection to OSSEC server
- Allow server to send system's information to OSSEC server.
+Allow server to send system's information to OSSEC server.
 #+BEGIN_EXAMPLE
 #Allow outgoing connections to OSSEC server
 -A OUTPUT -p udp -m udp --dport 1514 -j ACCEPT
 #+END_EXAMPLE
     
 *** Rule for outgoing ping request
- Allow server to send ping requests to anywhere.
+Allow server to send ping requests to anywhere.
 #+BEGIN_EXAMPLE
 #Allow to send ping requests to anywhere.
 -A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT
 #+END_EXAMPLE
 
 *** Rule for all other outgoing packets
- Reject all the OUTPUT packets which does not match any of the defined rules
-  with a reply message =icmp-host-prohibited= to the host machine. Rejected
-  packets are also logged with a limited rate.
+Reject all the OUTPUT packets which does not match any of the defined rules with
+a reply message =icmp-host-prohibited= to the host machine. Rejected packets are
+also logged with a limited rate.
 #+BEGIN_EXAMPLE
 #Log all other "blocked_output_" attempts
 -A OUTPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_output_"
@@ -296,15 +304,30 @@ packets. Forwarding rule is set to ACCEPT only in the Router server.
 #+BEGIN_EXAMPLE
 COMMIT
 #+END_EXAMPLE
-** Set Default Gateway
-In the cluster only two machines - Router and Ansible, are part of both public
-and private network. Gateway of these two machines are set by the dhcp server,
-and these machines have direct internet access.
+** Configure Hostname
+Hostname of the node is defined.
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+---
 
-All the other machines in the cluster are only part of the private
-network. These machines do not have direct internet access. These Machines get
-internet by forwarding packets to the Router machine, then the Router does the
-required packet management to get internet for these machines. Router machine
+#This will use the variables defined in the role sepcific yaml file, works only on CentOS
+- name: Set the hostname of the target if host_name is defined
+  lineinfile: dest=/etc/sysconfig/network regexp="HOSTNAME=" line="HOSTNAME={{host_name}}" state=present
+  when: host_name is defined
+
+- name: Set the hostname using hostname command
+  hostname: name={{host_name}}
+  when: host_name is defined
+#+END_SRC
+
+** Set Default Gateway
+In the cluster only two nodes - Router and Ansible, are part of both public
+and private network. Gateway of these two nodes are set by the dhcp server,
+and these nodes have direct internet access.
+
+All the other nodes in the cluster are only part of the private
+network. These nodes do not have direct internet access. These Machines get
+internet by forwarding packets to the Router node, then the Router does the
+required packet management to get internet for these nodes. Router node
 acts as a gateway for all the private servers.
 
 To configure default gateway for private servers following actions are
@@ -378,12 +401,14 @@ export HISTTIMEFORMAT HISTSIZE HISTFILESIZE
 #+END_SRC 
 
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: For below task to run it requires libselinux-python to be installed
+  yum: name=libselinux-python state=present
 #Configure history
 - name: Configure history for all users with date/time and 100,000 lines of history
   copy: src=history.sh dest=/etc/profile.d/history.sh mode=755 owner=root group=root
 #+END_SRC 
 
-** Start Iptables service
+** Start iptables service
 While setting up the cluster, iptables service is restarted on all the servers,
 to make sure the service is running inside each server. If anyone has inserted a
 temporary rule/ad hoc rule which was not saved in the file restarting iptables
@@ -398,14 +423,14 @@ will take care of removing this inserted rule.
   ignore_errors: yes
 #+END_SRC
 
-** Configure host name
+** Setup /etc/hosts file
 Sendmail tries to lookup hostname and IP mapping through =/etc/hosts=. Sendmail
-assumes the first line in =/etc/hosts= is the machines own FQDN to IP mapping
+assumes the first line in =/etc/hosts= is the nodes own FQDN to IP mapping
 without this sendmail takes about 30 seconds to timeout for host resolution. To
 take care of this assumption of sendmail =/etc/hosts= file is configured.
 
 Following variables are set by the ansible tool as it runs on the client
-machine. For each server in the cluster value of these variables will be
+node. For each server in the cluster value of these variables will be
 different and set according to the server role.
 
 |-------+------------------------------+-------------------------------+--------------------------|
@@ -438,7 +463,6 @@ To configure logwatch following actions are performed:
 2) Set detail of log level to "medium"
 
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
----
 #Logwatch configuration
 - name: Install logwatch
   yum: name=logwatch state=installed
@@ -508,7 +532,7 @@ nameserver {{private_dns}}
 
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 #Configure private DNS if values are set 
-- name: Configure machine to use private DNS (peerDNS)
+- name: Configure node to use private DNS (peerDNS)
   template: src=resolv.conf dest=/etc/resolv.conf owner=root group=root mode=644
   when: private_dns_ips != "none" 
 #+END_SRC
@@ -569,7 +593,7 @@ used by system administrators to trouble shoot the network related issues.
 Root login is disabled on all the servers in the cluster. Password for the root
 account is set to a value which matches no possible encrypted value, therefore
 nobody can login as root with password. Only system administrators with ssh
-private keys can login to root account. 
+private keys can login to root account.
 
 *** Lock root login
 #+BEGIN_EXAMPLE
@@ -602,7 +626,7 @@ sudo passwd -u root
 We can do two things regarding sudoers. The current scripts perhaps does remove
 it, but we can always rewrite them.
 
-*** Remove it
+*** Why Remove ?
 Sudoers package is removed from all the servers in the cluster. There are no
 user account created on the server. Only the system administrator login as root
 user. There is no need of maintaining sudoers file. Removing this package causes
@@ -617,6 +641,13 @@ has added new users or groups to sudoers, as backdoors to gain root access.
   yum: name=sudo state=absent
 #+END_SRC
 
+** Set the implementation/model release
+Release number is set in all the nodes in the cluster. Release number describes
+the version of the configuration applied on the node.
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: setting the implementation/model release
+  lineinfile: dest=/etc/motd regexp="^Release" line="Release number {{ release_no }}" state=present create=yes
+#+END_SRC
 ** Common Variables
 Variables which are common across all the ansible roles are defined in
 =common_vars= file. The file is included as a dependency for this role.
@@ -645,7 +676,7 @@ to be restarted to enforce the modified properties of the system.
 * Test Cases
 ** Test Case-1: Check Bind utilities are installed
 *** Objective
-To check bind-utilities are installed on the server.
+To check bind-utilities are installed on the system.
 *** Apparatus
 1) An instance of common role - a common server
 
@@ -725,7 +756,7 @@ Test ssh access is allowed only from ansible, nagios and management ips.
 2) A management server
 3) A nagios server
 4) An instance of common role - a common server
-5) Any other machine
+5) Any other node
 
 *** Experiment
 Servers in which common firewall rules are applied accept ssh connection on TCP
@@ -852,7 +883,7 @@ service fail2ban status
 #+END_EXAMPLE
 
 **** SSH to the server 
-SSH to the server from any other machine by intentionally giving wrong
+SSH to the server from any other node by intentionally giving wrong
 passwords. Do this atleast three times. Then on the server execute the following
 command to check if fail2ban filter for ssh detects failed login attempts.
 #+BEGIN_EXAMPLE
@@ -861,7 +892,7 @@ fail2ban-regex /var/log/secure /etc/fail2ban/filter.d/sshd.conf <username|ipaddr
 
 **** Check firewall rule
 Check if there is any firewall rule for fail2ban-ssh is added to block the
-machine ip from where multiple failed login attempts are made.
+machine's ip from where multiple failed login attempts are made.
 #+BEGIN_EXAMPLE
 iptables --list
 #+END_EXAMPLE

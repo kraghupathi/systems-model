@@ -1,0 +1,27 @@
+#+TITLE:     Yum module - Usage in various models
+#+DATE:      2015-05-10 Sunday
+#+PROPERTY: session *scratch*
+#+PROPERTY: results output
+#+PROPERTY: exports code
+#+SETUPFILE: org-templates/level-0.org
+#+DESCRIPTION: Yum module - Usage in various models
+#+OPTIONS: ^:nil
+
+* Introduction
+  Yum module allows installation of desired packages on CentOS / RHEL
+  / Fedora machines using ansible.  Please note the following two
+  points related to use of yum module in all models:
+  - Instead of =latest=, =present= is used to just ensure that rsyslog
+    package is installed.  The updation of packages would be taken
+    care of by operations team as part of system upgradation and
+    patching process.  We do not want package updation to be automated
+    as it may break the system.
+  - Proxy is set using:
+    #+BEGIN_EXAMPLE
+      environment: proxy_env
+    #+END_EXAMPLE
+    This allow proxy to be configured at single place in [[./common_vars.org][Common vars
+    role]] to be used on base1 and base4 clusters.  In case of AWS which
+    works without proxy we can set proxy_env to null.  This makes the
+    ansible scripts portable across deployments irrespective of
+    whether a particular deployment requires use of proxy or not. 

@@ -57,62 +57,50 @@ and also using the different network protocols TCP and UDP for the communication
 #+END_EXAMPLE
 
 ** Building the Firewall rules
+The description of NAT rules are as follows:\\
+Default policy for prerouting, postrouting and output is set to be as ACCEPT. If packet
+does not match any rule then the default action is applied to the packet.
+Packet counters are set to [0:0].  First counter represents the number of
+packets that matched the rule for the chain, and second counter represents the
+total size of the packets that matched the rule.\\
+In NAT rules, the forwarding rules and SNAT rules are described as:\\
+The nat rule forwards the incoming DNS requests via UDP port 53
+to public dns.This is done in the PREROUTING chain, just as the packet comes in;
+this means that anything else on the routing will see the packet going to its `real' destination.
+Here the `-i' (incoming interface) option can be used. Destination NAT is specified using `-j DNAT', 
+and the `--to-destination' option specifies an IP address, a range of IP addresses, and an optional 
+port or range of ports (for UDP and TCP protocols only).\\
+The SNAT rule will route all packets going outside to router public IP. 
+Source NAT (SNAT) changes the source address in IP header of a packet. It may also change 
+the source port in the TCP/UDP headers. The typical usage is to change the private 
+address/port into a public address/port for packets leaving your network.This is done in the 
+POSTROUTING chain, just before it is finally sent out. It also means that the `-o' (outgoing interface)
+option can be used.\\
 
-*** NAT Rules
-- Default policy for prerouting, postrouting and output is set to be as ACCEPT. If packet
-  does not match any rule then the default action is applied to the packet.
-  Packet counters are set to [0:0].  First counter represents the number of
-  packets that matched the rule for the chain, and second counter represents the
-  total size of the packets that matched the rule.
+The common firewall rules are the ones which are described in common.
 #+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
+# Default policy for prerouting, postrouting and output is set to be as ACCEPT. If packet
+does not match any rule then the default action is applied to the packet.
 #Note that request can be forwarded only to one machine and not to multiple machines
 *nat
 :PREROUTING ACCEPT [0:0]
 :POSTROUTING ACCEPT [0:0]
 :OUTPUT ACCEPT [0:0]
-#+END_SRC
 
-**** Forwarding rules
-The following nat rule forwards the incoming DNS requests via UDP port 53
-to public dns.This is done in the PREROUTING chain, just as the packet comes in;
-this means that anything else on the routing will see the packet going to its `real' destination.
-Here the `-i' (incoming interface) option can be used. Destination NAT is specified using `-j DNAT', 
-and the `--to-destination' option specifies an IP address, a range of IP addresses, and an optional 
-port or range of ports (for UDP and TCP protocols only).
-
-#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
+#The following nat rule forwards the incoming DNS requests via UDP port 53
+to public dns
 -A PREROUTING -d {{router_interface_ip}} -p udp -m udp --dport 53 -j DNAT --to-destination {{public_dns_ip}}:53
-#+END_SRC
 
-The following nat rules forwards the incoming HTTP, HTTPS requests to reverse proxy.
-
-#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
+#The following nat rules forwards the incoming HTTP, HTTPS requests to reverse proxy.
 -A PREROUTING -d {{router_interface_ip}} -p tcp -m tcp --dport 80 -j DNAT --to-destination {{reverseproxy_ip}}:80
 -A PREROUTING -d {{router_interface_ip}} -p tcp -m tcp --dport 443 -j DNAT --to-destination {{reverseproxy_ip}}:443
-#+END_SRC
 
-The following nat rule forwards the incoming HTTP request on TCP port 8080 to the ADS server
-
-#+BEGIN_SRC 
+#The following nat rule forwards the incoming HTTP request on TCP port 8080 to the ADS server
 -A PREROUTING -d {{router_interface_ip}} -p tcp -m tcp --dport 8080 -j DNAT --to-destination {{ads_ip}}:8080
-#+END_SRC
- 
-**** SNAT Rule
-The following SNAT rule will route all packets going outside to router public IP. 
-Source NAT (SNAT) changes the source address in IP header of a packet. It may also change 
-the source port in the TCP/UDP headers. The typical usage is to change the private 
-address/port into a public address/port for packets leaving your network.This is done in the 
-POSTROUTING chain, just before it is finally sent out. It also means that the `-o' (outgoing interface)
-option can be used.
 
-#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no 
+#The following SNAT rule will route all packets going outside to router public IP. 
 -A POSTROUTING -o {{router_external_interface}} ! -d {{local_subnet}} -j SNAT --to-source {{router_interface_ip}}
-COMMIT
-#+END_SRC
 
-*** Common firewall rules
-The common firewall rules are the ones which are described in common.
-#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
 *filter
 :INPUT ACCEPT [0:0]
 :FORWARD ACCEPT [0:0]
@@ -151,10 +139,6 @@ The common firewall rules are the ones which are described in common.
 
 #Allow incoming NRPE queries for nagios from nagios servers
 -A INPUT -m state --state NEW -p tcp -m tcp --dport 5666 -j ACCEPT
-
-#Allow SNMP queries from cacti servers
-#-A INPUT -p udp -m udp --dport 161 -j ACCEPT
-#-A INPUT -p udp -m udp --dport 162 -j ACCEPT
 
 #Log all other "blocked_input_" attempts with rate limiting
 -A INPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_input_"
