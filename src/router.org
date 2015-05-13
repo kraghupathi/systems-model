@@ -8,54 +8,77 @@
 #+OPTIONS: ^:nil
 
 * Introduction
-This document describes the requirements, design and implementation of
-the *Router Server* which is part of the AWS cluster and also
-the router server setup on amazon web services using automated scripts. A router is a networking device that forwards data packets between computer
-networks. It acts as a gateway to and for all other servers. These scripts are
-executed directly from the configuration server which is ansible in this case. 
+This document describes the requirements, design and implementation
+of the *Router Server*. This server is the only access interface between 
+the different nodes like DNS (private & public) and reverse-proxy in the network infrastructure designed by us
+with the external networks. A router is a networking device that forwards data packets between computer
+networks. It acts as a gateway to and for all other servers. The external requests from the different
+lab users would have to pass through this router server to reach the internal network nodes.The router could be
+seen as device which functions to lock the Internet away from your internal network infrastrucutre.
+This means that if your internal nodes need to ask for something from the Internet, they ask the router and vice versa.
+
+In the current architecture, we are using Ansible scripts to configure
+the router server.These scripts are executed directly from the configuration server(Ansible Server). 
 
 * Requirements
 The functional and security requirements of router are:
 
 ** Functional Requirements
-  1) Acts as a gateway to and for all other servers to reach internet.
-  2) Allow forwarding of packets to reverse proxy on TCP port 80/443.
-  3) Allow forwarding of packets to public DNS on UDP port 53.
-  4) Accept the incoming requests from the lab users via TCP port 80/443
-     and UDP port 53.
+  The router acts as a gateway for all other servers to reach the internet. Hence the functional
+  requirements of the router are to allow forwarding of packets to reverse proxy on TCP port 80/443
+  and also to public DNS on UDP port 53. Every request from any external lab user would be accepted
+  on TCP port 80/443 and UDP port 53.
 
 ** Security Requirements
-  1) TCP port 80/443 and UDP port 53 are open for all lab users.
-  2) General server hardening rules are enforced by [[./common.org][common]] role.
+  All common security requirements and general server hardening as described in [[file:common.org::*Security Requirements][common role]] are applicable
+  to router with an exception that TCP port 80/443 and UDP port 53 are open for all lab users.
  
 * Design
-** Overall Network diagram of router
-The following network diagram represents the interaction of the
-Router server with the other machines in the cluster. It shows the connections from/to router to/from other servers such
-as DNS,reverse-proxy as well as the lab users who would access the network.The major functionality of router is of the 
-packet forwarding from outside network into the network to the various other devices via different ports i.e. 80,443 and 53
-and also using the different network protocols TCP and UDP for the communication. 
-[[..diagrams/router-config.png]]
+** Overall Network diagram of the router
+The following network diagram represents the interaction of the router server with the other machines in the cluster.
+It shows the connections from router to other servers and also vice versa, such as DNS,reverse-proxy and the lab users who
+would access the network.The major functionality of the router is of the packet forwarding from the outside network into the 
+network to the various other devices via different ports i.e. 80,443 and 53 and also using the different network protocols like
+TCP and UDP for the communication.
+#+CAPTION: Router Configuration diagram
+#+LABEL: router-configuration-diagram
+[[./diagrams/router-config.png]]
+
+** Important configuration and data files and folders
+|------+----------+------------------------------+------------------------|
+| Sno. | Service  | File                         | File Type              |
+|------+----------+------------------------------+------------------------|
+|  1.  | iptables | /etc/sysconfig/iptables      | Firewall Configuration |                                                                      
+|------+----------+------------------------------+------------------------|
 
 * Implementation
-** Directory Structure of Scripts
-- The implementation of this system is in terms of a collection of Ansible
-  scripts that configure the machine. These scripts are organized as follows:
+**  Structure of Scripts
+- The implementation of this system is in terms of a collection of ansible
+  scripts which configures the node. These scripts are organized as follows:
 
 #+BEGIN_EXAMPLE
-
-    |-- router.yml
-    |-- roles
-    |   |-- router
-    |   |   |-- handlers
-    |   |   |   `--main.yml
-    |   |   |-- tasks
-    |   |   |   `--main.yml
-    |   |   |-- templates
-    |   |   |   `--router_iptables
-
+  |-code
+  |   |-- router.yml
+  |   |-- roles
+  |   |   |-- router
+  |   |   |   |-- handlers
+  |   |   |   |   `--main.yml
+  |   |   |   |-- tasks
+  |   |   |   |   `--main.yml
+  |   |   |   |-- templates
+  |   |   |   |   `--router_iptables
 #+END_EXAMPLE
 
+   Here =router.yml= file configures the machine as router with
+   router and common roles as explained in detail at [[Router Installation Script][Router Installation Script]].
+   =roles/router/handlers/main.yml= file defines various
+   handlers which are only executed in case a task notifies them.
+   Handlers are described in detail at [[Applying Firewall rules][Applying Firewall rules]].
+   
+   The handlers are only called when tasks described at [[Enabling IP forwarding][Enabling IP forwarding]] and [[Setting Firewall rules][Setting Firewall rule]] are called as part of
+   the router role.  Various templates and files are used
+   during task execution for creating necessary configuration files.
+  
 ** Building the Firewall rules
 The description of NAT rules are as follows:\\
 Default policy for prerouting, postrouting and output is set to be as ACCEPT. If packet
@@ -108,6 +131,9 @@ to public dns
 
 #Accept loopback connections
 -A INPUT -i lo -d 127.0.0.0/8 -j ACCEPT
+
+#Accept http/tcp request from internal network for displaying bandwidthd
+-A INPUT -s {{local_subnet}} -p tcp -m tcp --dport 8000 -j ACCEPT
 
 #Rate limit new connections to 20 new connections per 30 seconds
 -A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --set
