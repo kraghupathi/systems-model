@@ -4,7 +4,7 @@
 #+PROPERTY: results output
 #+PROPERTY: exports code
 #+OPTIONS: ^:nil
-\#+SETUPFILE: org-templates/level-0.org
+#+SETUPFILE: org-templates/level-0.org
 
 * Introduction
 The document describes the requirements, design and implementation of the
@@ -327,9 +327,9 @@ nagios_server_ips:
 ---
 #Proxy configuration in case direct access to Internet is not available
 proxy_env:
-  none: none
-# http_proxy: http://proxy.iiit.ac.in:8080/
-# https_proxy: http://proxy.iiit.ac.in:8080/
+#  none: none
+   http_proxy: http://proxy.iiit.ac.in:8080/
+   https_proxy: http://proxy.iiit.ac.in:8080/
 
 #Release number used in common task to add it to the target
 release_no:
@@ -338,14 +338,14 @@ release_no:
 #List of ansible servers.  Mutliple ansible servers are fine
 ansible_server_ips:
   - 10.100.1.2
-#List of rsnapshot servers.
-rsnapshot_server_ips:
-  - 10.100.1.10
 
 #List of management stations.  Multiple is ok
 management_ips:
-  - 14.139.82.6/32
-  - 196.12.53.133/32
+  - 10.2.56.3
+  - 196.12.53.130
+  - 10.2.56.0/22
+#rsnapshot to take backups
+  - 10.100.1.10
 
 #OSSEC server IP.  Only one
 ossec_server_ip: 10.100.1.3
@@ -355,25 +355,23 @@ ossec_client_ips:
 #For some reasons {{ansible_default_ipv4.address}} on ansible and router is resolving
 #to 10.4.12.0/22 IPs and not to 10.100.0.0/22 IPs.  So those must be used for configuring
 #client
-  - 10.100.1.1
-  - 10.100.1.2
+  - 10.4.14.150
+  - 10.4.14.151
   - 10.100.1.4
   - 10.100.1.5
   - 10.100.1.6
   - 10.100.1.7
   - 10.100.1.8
-  - 10.100.1.9
   - 10.100.1.10
-
 #Administrator email address and SMTP server through which
 #administrator can be reached.  Used by OSSEC server to send emails.
 admin_email_address: alerts@vlabs.ac.in
 #Leaving as it is for now.  The server would relay message. 
-smtp_server_address: smtp.admin.iiit.ac.in
+smtp_server_address:
 
 #SMTP smart host via which various servers can send email
 #Set this to none if smtp_smart_host configuration is not required
-smtp_smart_host: none
+smtp_smart_host: smtp.admin.iiit.ac.in
 
 #DNS client configuration to configure DNS client on all machines
 #after DNS server have been setup.  If DNS is not setup then setup these 
@@ -382,7 +380,7 @@ smtp_smart_host: none
 #private_dns_zone: none 
 private_dns_ips:
   - 10.100.1.5
-private_dns_zone: virtual-labs.ac.in vlabs.ac.in
+private_dns_zone: base1.virtual-labs.ac.in base1.vlabs.ac.in
 
 #Rsyslog server IPs.  Set to none if there is no rsyslog server
 rsyslog_server_ips:
@@ -390,93 +388,96 @@ rsyslog_server_ips:
 
 #List of domains to pass through reverseproxy
 proxy_domains:
-  - {domain: "reverseproxy.virtual-labs.ac.in", alias: "reverseproxy.vlabs.ac.in", alias2: "rp.virtual-labs.ac.in"}
-  - {domain: "lab1.virtual-labs.ac.in", alias: "lab1.vlabs.ac.in"}
-  - {domain: "lab2.virtual-labs.ac.in", alias: "lab2.vlabs.ac.in"}
-  - {domain: "cse01-iiith.virtual-labs.ac.in", alias: "cse01-iiith.vlabs.ac.in"}
-  - {domain: "cse02-iiith.virtual-labs.ac.in", alias: "cse02-iiith.vlabs.ac.in"}
-  - {domain: "cse15-iiith.virtual-labs.ac.in", alias: "cse15-iiith.vlabs.ac.in"}
-  - {domain: "cse19-iiith.virtual-labs.ac.in", alias: "cse19-iiith.vlabs.ac.in"}
-  - {domain: "cse18-iiith.virtual-labs.ac.in", alias: "cse18-iiith.vlabs.ac.in"}
-  - {domain: "cse20-iiith.virtual-labs.ac.in", alias: "cse20-iiith.vlabs.ac.in"}
-  - {domain: "nagios.virtual-labs.ac.in", alias: "nagios.vlabs.ac.in"}
-  - {domain: "ads.virtual-labs.ac.in", alias: "ads.vlabs.ac.in"}
-  - {domain: "bmi-iitr.virtual-labs.ac.in", alias: "bmi-iitr.vlabs.ac.in"}
-  - {domain: "bmsip-iitr.virtual-labs.ac.in", alias: "bmsip-iitr.vlabs.ac.in"}
-  - {domain: "em-iitr.virtual-labs.ac.in", alias: "em-iitr.vlabs.ac.in"}
-  - {domain: "sl-iitr.virtual-labs.ac.in", alias: "sl-iitr.vlabs.ac.in"}
-  - {domain: "mrmsmtbs-iitk.virtual-labs.ac.in", alias: "mrmsmtbs-iitk.vlabs.ac.in"}
-  - {domain: "va-iitk.virtual-labs.ac.in", alias: "va-iitk.vlabs.ac.in"}
-  - {domain: "ufls-iitk.virtual-labs.ac.in", alias: "ufls-iitk.vlabs.ac.in"}
-  - {domain: "vlae-iitk.virtual-labs.ac.in", alias: "vlae-iitk.vlabs.ac.in"}
-  - {domain: "vcal-iitk.virtual-labs.ac.in", alias: "vcal-iitk.vlabs.ac.in"}
-  - {domain: "pev-au.virtual-labs.ac.in", alias: "pev-au.vlabs.ac.in"}
-  - {domain: "pevii-au.virtual-labs.ac.in", alias: "pevii-au.vlabs.ac.in"}
-  - {domain: "anthropology-iitg.virtual-labs.ac.in", alias: "anthropology-iitg.vlabs.ac.in"}
-  - {domain: "ergonomics-iitg.virtual-labs.ac.in", alias: "ergonomics-iitg.vlabs.ac.in"}
-  - {domain: "vem-iitg.virtual-labs.ac.in", alias: "vem-iitg.vlabs.ac.in"}
-  - {domain: "ve-iitg.virtual-labs.ac.in", alias: "ve-iitg.vlabs.ac.in"}
+  - {domain: "reverseproxy.base1.virtual-labs.ac.in", alias: "reverseproxy.base1.vlabs.ac.in", alias2: "rp.base1.virtual-labs.ac.in"}
+  - {domain: "nagios.base1.virtual-labs.ac.in", alias: "nagios.base1.vlabs.ac.in"}
+  - {domain: "ossec-server.base1.virtual-labs.ac.in", alias: "ossec-server.base1.vlabs.ac.in"}
+  - {domain: "cse01-iiith.base1.virtual-labs.ac.in", alias: "cse01-iiith.base1.vlabs.ac.in"}
+  - {domain: "cse15-iiith.base1.virtual-labs.ac.in", alias: "cse15-iiith.base1.vlabs.ac.in"}
+  - {domain: "cse19-iiith.base1.virtual-labs.ac.in", alias: "cse19-iiith.base1.vlabs.ac.in"}
+  - {domain: "cse18-iiith.base1.virtual-labs.ac.in", alias: "cse18-iiith.base1.vlabs.ac.in"}
+  - {domain: "cse20-iiith.base1.virtual-labs.ac.in", alias: "cse20-iiith.base1.vlabs.ac.in"}
+  - {domain: "emt-iiith.base1.virtual-labs.ac.in", alias: "emt-iiith.base1.vlabs.ac.in"}
+  - {domain: "cse29-iiith.base1.virtual-labs.ac.in", alias: "cse29-iiith.base1.vlabs.ac.in"}
+  - {domain: "cse22-iiith.base1.virtual-labs.ac.in", alias: "cse22-iiith.base1.vlabs.ac.in"}
+  - {domain: "cse11-iiith.base1.virtual-labs.ac.in", alias: "cse11-iiith.base1.vlabs.ac.in"}
+  - {domain: "cse14-iiith.base1.virtual-labs.ac.in", alias: "cse14-iiith.base1.vlabs.ac.in"}
+  - {domain: "eerc03-iiith.base1.virtual-labs.ac.in", alias: "eerc03-iiith.base1.vlabs.ac.in"}
+  - {domain: "phy14-iiith.base1.virtual-labs.ac.in", alias: "phy14-iiith.base1.vlabs.ac.in"}
+  - {domain: "ccnsb06-iiith.base1.virtual-labs.ac.in", alias: "ccnsb06-iiith.base1.vlabs.ac.in"}
+  - {domain: "eerc01-iiith.base1.virtual-labs.ac.in", alias: "eerc01-iiith.base1.vlabs.ac.in"}
+  - {domain: "ads.base1.virtual-labs.ac.in", alias: "ads.base1.vlabs.ac.in"}
+  - {domain: "bmi-iitr.base1.virtual-labs.ac.in", alias: "bmi-iitr.base1.vlabs.ac.in"}
+  - {domain: "bmsip-iitr.base1.virtual-labs.ac.in", alias: "bmsip-iitr.base1.vlabs.ac.in" }
+  - {domain: "em-iitr.base1.virtual-labs.ac.in", alias: "em-iitr.base1.vlabs.ac.in"}
+  - {domain: "sl-iitr.base1.virtual-labs.ac.in", alias: "sl-iitr.base1.vlabs.ac.in"}
+  - {domain: "mrmsmtbs-iitk.base1.virtual-labs.ac.in", alias: "mrmsmtbs-iitk.base1.vlabs.ac.in"}
+  - {domain: "va-iitk.base1.virtual-labs.ac.in", alias: "va-iitk.base1.vlabs.ac.in"}
+  - {domain: "ufls-iitk.base1.virtual-labs.ac.in", alias: "ufls-iitk.base1.vlabs.ac.in"}
+  - {domain: "vlae-iitk.base1.virtual-labs.ac.in", alias: "vlae-iitk.base1.vlabs.ac.in"}
+  - {domain: "vcal-iitk.base1.virtual-labs.ac.in", alias: "vcal-iitk.base1.vlabs.ac.in"}
+  - {domain: "pev-au.base1.virtual-labs.ac.in", alias: "pev-au.base1.vlabs.ac.in"}
+
 awstats_domains:
-  - reverseproxy.virtual-labs.ac.in
-  - lab1.virtual-labs.ac.in
-  - lab2.virtual-labs.ac.in
-  - cse01-iiith.virtual-labs.ac.in
-  - cse02-iiith.virtual-labs.ac.in
-  - cse15-iiith.virtual-labs.ac.in
-  - cse18-iiith.virtual-labs.ac.in
-  - cse20-iiith.virtual-labs.ac.in
-  - cse19-iiith.virtual-labs.ac.in
-  - bmi-iitr.virtual-labs.ac.in
-  - bmsip-iitr.virtual-labs.ac.in
-  - em-iitr.virtual-labs.ac.in
-  - sl-iitr.virtual-labs.ac.in
-  - mrmsmtbs-iitk.virtual-labs.ac.in
-  - va-iitk.virtual-labs.ac.in
-  - ufls-iitk.virtual-labs.ac.in
-  - vlae-iitk.virtual-labs.ac.in
-  - vcal-iitk.virtual-labs.ac.in
-  - pev-au.virtual-labs.ac.in
-  - pevii-au.virtual-labs.ac.in
-  - anthropology-iitg.virtual-labs.ac.in
-  - ergonomics-iitg.virtual-labs.ac.in
-  - vem-iitg.virtual-labs.ac.in
-  - ve-iitg.virtual-labs.ac.in
+  - reverseproxy.base1.virtual-labs.ac.in
+  - cse01-iiith.base1.virtual-labs.ac.in
+  - cse02-iiith.base1.virtual-labs.ac.in
+  - cse15-iiith.base1.virtual-labs.ac.in
+  - cse19-iiith.base1.virtual-labs.ac.in
+  - cse18-iiith.base1.virtual-labs.ac.in
+  - cse20-iiith.base1.virtual-labs.ac.in
+  - emt-iiith.base1.virtual-labs.ac.in
+  - cse29-iiith.base1.virtual-labs.ac.in
+  - cse22-iiith.base1.virtual-labs.ac.in
+  - cse11-iiith.base1.virtual-labs.ac.in
+  - cse14-iiith.base1.virtual-labs.ac.in
+  - eerc03-iiith.base1.virtual-labs.ac.in
+  - phy14-iiith.base1.virtual-labs.ac.in
+  - ccnsb06-iiith.base1.virtual-labs.ac.in
+  - eerc01-iiith.base1.virtual-labs.ac.in
+  - bmi-iitr.base1.virtual-labs.ac.in
+  - bmsip-iitr.base1.virtual-labs.ac.in
+  - em-iitr.base1.virtual-labs.ac.in
+  - sl-iitr.base1.virtual-labs.ac.in
+  - mrmsmtbs-iitk.base1.virtual-labs.ac.in
+  - va-iitk.base1.virtual-labs.ac.in
+  - ufls-iitk.base1.virtual-labs.ac.in
+  - vlae-iitk.base1.virtual-labs.ac.in
+  - vcal-iitk.base1.virtual-labs.ac.in
+  - pev-au.base1.virtual-labs.ac.in
+
 #IPs where router will forward web or DNS requests.
 #Multiple IPs or list of IPs wont work as request can be forwarded to only one machine
 ads_ip: 10.100.1.9
 reverseproxy_ip: 10.100.1.7
 public_dns_ip: 10.100.1.6
 local_subnet: 10.100.0.0/22
-router_interface_ip: 10.100.1.1
-router_external_interface: eth0
+router_interface_ip: 10.4.14.150
+router_external_interface: eth1
+#Needed for setting default gateway in common role
+router_internal_ip: 10.100.1.1
 
 #Configure IP address of nagios server.  This is used by iptables firewall templates
 nagios_server_ips:
   - 10.100.1.8
 #+END_SRC
+
 #+BEGIN_SRC yml :tangle roles/common_vars/vars/main-base4.yml
 ---
 #Proxy configuration in case direct access to Internet is not available
 proxy_env:
   none: none
-# http_proxy: http://proxy.iiit.ac.in:8080/
-# https_proxy: http://proxy.iiit.ac.in:8080/
-
-#Release number used in common task to add it to the target
-release_no:
- - 00
+#  http_proxy: http://proxy.iiit.ac.in:8080/
+#  https_proxy: http://proxy.iiit.ac.in:8080/
 
 #List of ansible servers.  Mutliple ansible servers are fine
 ansible_server_ips:
   - 10.100.1.2
-#List of rsnapshot servers.
-rsnapshot_server_ips:
-  - 10.100.1.10
 
 #List of management stations.  Multiple is ok
 management_ips:
-  - 14.139.82.6/32
-  - 196.12.53.133/32
+  - 10.2.56.3
+  - 196.12.53.130
+  - 10.2.56.0/22
 
 #OSSEC server IP.  Only one
 ossec_server_ip: 10.100.1.3
@@ -486,15 +487,13 @@ ossec_client_ips:
 #For some reasons {{ansible_default_ipv4.address}} on ansible and router is resolving
 #to 10.4.12.0/22 IPs and not to 10.100.0.0/22 IPs.  So those must be used for configuring
 #client
-  - 10.100.1.1
-  - 10.100.1.2
+  - 10.4.14.200
+  - 10.4.14.201
   - 10.100.1.4
   - 10.100.1.5
   - 10.100.1.6
   - 10.100.1.7
   - 10.100.1.8
-  - 10.100.1.9
-  - 10.100.1.10
 
 #Administrator email address and SMTP server through which
 #administrator can be reached.  Used by OSSEC server to send emails.
@@ -504,7 +503,7 @@ smtp_server_address: smtp.admin.iiit.ac.in
 
 #SMTP smart host via which various servers can send email
 #Set this to none if smtp_smart_host configuration is not required
-smtp_smart_host: none
+smtp_smart_host: smtp.admin.iiit.ac.in
 
 #DNS client configuration to configure DNS client on all machines
 #after DNS server have been setup.  If DNS is not setup then setup these 
@@ -513,73 +512,75 @@ smtp_smart_host: none
 #private_dns_zone: none 
 private_dns_ips:
   - 10.100.1.5
-private_dns_zone: virtual-labs.ac.in vlabs.ac.in
+private_dns_zone: base4.virtual-labs.ac.in base4.vlabs.ac.in
+
 
 #Rsyslog server IPs.  Set to none if there is no rsyslog server
 rsyslog_server_ips:
   - 10.100.1.4
 
+
 #List of domains to pass through reverseproxy
 proxy_domains:
-  - {domain: "reverseproxy.virtual-labs.ac.in", alias: "reverseproxy.vlabs.ac.in", alias2: "rp.virtual-labs.ac.in"}
-  - {domain: "lab1.virtual-labs.ac.in", alias: "lab1.vlabs.ac.in"}
-  - {domain: "lab2.virtual-labs.ac.in", alias: "lab2.vlabs.ac.in"}
-  - {domain: "cse01-iiith.virtual-labs.ac.in", alias: "cse01-iiith.vlabs.ac.in"}
-  - {domain: "cse02-iiith.virtual-labs.ac.in", alias: "cse02-iiith.vlabs.ac.in"}
-  - {domain: "cse15-iiith.virtual-labs.ac.in", alias: "cse15-iiith.vlabs.ac.in"}
-  - {domain: "cse19-iiith.virtual-labs.ac.in", alias: "cse19-iiith.vlabs.ac.in"}
-  - {domain: "cse18-iiith.virtual-labs.ac.in", alias: "cse18-iiith.vlabs.ac.in"}
-  - {domain: "cse20-iiith.virtual-labs.ac.in", alias: "cse20-iiith.vlabs.ac.in"}
-  - {domain: "nagios.virtual-labs.ac.in", alias: "nagios.vlabs.ac.in"}
-  - {domain: "ads.virtual-labs.ac.in", alias: "ads.vlabs.ac.in"}
-  - {domain: "bmi-iitr.virtual-labs.ac.in", alias: "bmi-iitr.vlabs.ac.in"}
-  - {domain: "bmsip-iitr.virtual-labs.ac.in", alias: "bmsip-iitr.vlabs.ac.in"}
-  - {domain: "em-iitr.virtual-labs.ac.in", alias: "em-iitr.vlabs.ac.in"}
-  - {domain: "sl-iitr.virtual-labs.ac.in", alias: "sl-iitr.vlabs.ac.in"}
-  - {domain: "mrmsmtbs-iitk.virtual-labs.ac.in", alias: "mrmsmtbs-iitk.vlabs.ac.in"}
-  - {domain: "va-iitk.virtual-labs.ac.in", alias: "va-iitk.vlabs.ac.in"}
-  - {domain: "ufls-iitk.virtual-labs.ac.in", alias: "ufls-iitk.vlabs.ac.in"}
-  - {domain: "vlae-iitk.virtual-labs.ac.in", alias: "vlae-iitk.vlabs.ac.in"}
-  - {domain: "vcal-iitk.virtual-labs.ac.in", alias: "vcal-iitk.vlabs.ac.in"}
-  - {domain: "pev-au.virtual-labs.ac.in", alias: "pev-au.vlabs.ac.in"}
-  - {domain: "pevii-au.virtual-labs.ac.in", alias: "pevii-au.vlabs.ac.in"}
-  - {domain: "anthropology-iitg.virtual-labs.ac.in", alias: "anthropology-iitg.vlabs.ac.in"}
-  - {domain: "ergonomics-iitg.virtual-labs.ac.in", alias: "ergonomics-iitg.vlabs.ac.in"}
-  - {domain: "vem-iitg.virtual-labs.ac.in", alias: "vem-iitg.vlabs.ac.in"}
-  - {domain: "ve-iitg.virtual-labs.ac.in", alias: "ve-iitg.vlabs.ac.in"}
+  - {domain: "reverseproxy.base4.virtual-labs.ac.in", alias: "reverseproxy.base4.vlabs.ac.in", alias2: "rp.base4.virtual-labs.ac.in"}
+  - {domain: "nagios.base4.virtual-labs.ac.in", alias: "nagios.base4.vlabs.ac.in"}
+  - {domain: "ossec-server.base4.virtual-labs.ac.in", alias: "ossec-server.base4.vlabs.ac.in"}
+# - {domain: "cse01-iiith.base1.virtual-labs.ac.in", alias: "cse01-iiith.base1.vlabs.ac.in"}
+# - {domain: "cse02-iiith.base1.virtual-labs.ac.in", alias: "cse02-iiith.base1.vlabs.ac.in"}
+# - {domain: "cse15-iiith.base1.virtual-labs.ac.in", alias: "cse15-iiith.base1.vlabs.ac.in"}
+# - {domain: "cse19-iiith.base1.virtual-labs.ac.in", alias: "cse19-iiith.base1.vlabs.ac.in"}
+# - {domain: "cse18-iiith.base1.virtual-labs.ac.in", alias: "cse18-iiith.base1.vlabs.ac.in"}
+# - {domain: "cse20-iiith.base1.virtual-labs.ac.in", alias: "cse20-iiith.base1.vlabs.ac.in"}
+# - {domain: "emt-iiith.base1.virtual-labs.ac.in", alias: "emt-iiith.base1.vlabs.ac.in"}
+# - {domain: "cse29-iiith.base1.virtual-labs.ac.in", alias: "cse29-iiith.base1.vlabs.ac.in"}
+# - {domain: "cse22-iiith.base1.virtual-labs.ac.in", alias: "cse22-iiith.base1.vlabs.ac.in"}
+# - {domain: "cse11-iiith.base1.virtual-labs.ac.in", alias: "cse11-iiith.base1.vlabs.ac.in"}
+# - {domain: "cse14-iiith.base1.virtual-labs.ac.in", alias: "cse14-iiith.base1.vlabs.ac.in"}
+# - {domain: "eerc03-iiith.base1.virtual-labs.ac.in", alias: "eerc03-iiith.base1.vlabs.ac.in"}
+# - {domain: "phy14-iiith.base1.virtual-labs.ac.in", alias: "phy14-iiith.base1.vlabs.ac.in"}
+# - {domain: "ccnsb06-iiith.base1.virtual-labs.ac.in", alias: "ccnsb06-iiith.base1.vlabs.ac.in"}
+# - {domain: "eerc01-iiith.base1.virtual-labs.ac.in", alias: "eerc01-iiith.base1.vlabs.ac.in"}
+
+
 awstats_domains:
-  - reverseproxy.virtual-labs.ac.in
-  - lab1.virtual-labs.ac.in
-  - lab2.virtual-labs.ac.in
-  - cse01-iiith.virtual-labs.ac.in
-  - cse02-iiith.virtual-labs.ac.in
-  - cse15-iiith.virtual-labs.ac.in
-  - cse18-iiith.virtual-labs.ac.in
-  - cse20-iiith.virtual-labs.ac.in
-  - cse19-iiith.virtual-labs.ac.in
-  - bmi-iitr.virtual-labs.ac.in
-  - bmsip-iitr.virtual-labs.ac.in
-  - em-iitr.virtual-labs.ac.in
-  - sl-iitr.virtual-labs.ac.in
-  - mrmsmtbs-iitk.virtual-labs.ac.in
-  - va-iitk.virtual-labs.ac.in
-  - ufls-iitk.virtual-labs.ac.in
-  - vlae-iitk.virtual-labs.ac.in
-  - vcal-iitk.virtual-labs.ac.in
-  - pev-au.virtual-labs.ac.in
-  - pevii-au.virtual-labs.ac.in
-  - anthropology-iitg.virtual-labs.ac.in
-  - ergonomics-iitg.virtual-labs.ac.in
-  - vem-iitg.virtual-labs.ac.in
-  - ve-iitg.virtual-labs.ac.in
+  - reverseproxy.base4.virtual-labs.ac.in
+#  - cse01-iiith.base1.virtual-labs.ac.in
+#  - cse02-iiith.base1.virtual-labs.ac.in
+#   - cse15-iiith.base1.virtual-labs.ac.in
+#   - cse19-iiith.base1.virtual-labs.ac.in
+#   - cse18-iiith.base1.virtual-labs.ac.in
+#   - cse20-iiith.base1.virtual-labs.ac.in
+#   - emt-iiith.base1.virtual-labs.ac.in
+#   - cse29-iiith.base1.virtual-labs.ac.in
+#   - cse22-iiith.base1.virtual-labs.ac.in
+#   - cse11-iiith.base1.virtual-labs.ac.in
+#   - cse14-iiith.base1.virtual-labs.ac.in
+#   - eerc03-iiith.base1.virtual-labs.ac.in
+#   - phy14-iiith.base1.virtual-labs.ac.in
+#   - ccnsb06-iiith.base1.virtual-labs.ac.in
+#   - eerc01-iiith.base1.virtual-labs.ac.in
+
+#  - lab1.base1.virtual-labs.ac.in
+#  - lab1.base1.vlabs.ac.in
+#  - lab2.base1.virtual-labs.ac.in
+#  - lab2.base1.vlabs.ac.in
+#  - nagios.base1.vlabs.ac.in
+#  - nagios.base1.virtual-labs.ac.in
+#  - ossec-server.base1.vlabs.ac.in
+#  - ossec-server.base1.virtual-labs.ac.in 
+#  - ads.base1.vlabs.ac.in
+#  - ads.base1.virtual-labs.ac.in
+
 #IPs where router will forward web or DNS requests.
 #Multiple IPs or list of IPs wont work as request can be forwarded to only one machine
 ads_ip: 10.100.1.9
 reverseproxy_ip: 10.100.1.7
 public_dns_ip: 10.100.1.6
 local_subnet: 10.100.0.0/22
-router_interface_ip: 10.100.1.1
+router_interface_ip: 10.4.14.200
 router_external_interface: eth0
+#Needed for setting default gateway in common role
+router_internal_ip: 10.100.1.1
 
 #Configure IP address of nagios server.  This is used by iptables firewall templates
 nagios_server_ips:

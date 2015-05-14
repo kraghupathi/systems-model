@@ -73,6 +73,33 @@
    This is the main cluster used by the external virtual-labs users
    across the nation.  
 
+<<<<<<< HEAD
+* Bootstrapping of a cluster deployment
+  The cluster is a collection of several nodes.  Each of these nodes
+  have a specific purpose that they serve.  To setup the entire
+  cluster for the first time we need to setup each of the nodes
+  individually.  This process is called the bootstrapping process.
+  This process is tightly related to provisioning on corresponding
+  cluster. 
+** Provisioning vs bootstrapping
+   *Provisioning* is a term used to describe the process for bringing up
+   a system for setting up the node.\\
+   *Bootstrapping* process uses this system to setup the
+   nodes. Provisioning is a part of the bootstrapping process, hence
+   they cannot be separated.\\
+** Bootstrapping of Cluster
+   All the nodes of the three deployments are same.  The main
+   difference is in the provisioning.  The details of provisioning of
+   these clusters is described in the following sections.
+
+*** Provisioning for Base1 and Base4
+    The 
+*** Provisioning for AWS
+    
+* Design of the Cluster model
+  The diagram below depicts the architecture of the systems in the
+  cluster model. This architecture does not change for the types of
+  clusters mentioned earlier.  
 * Difference in the base1 and AWS cluster
   Most of the components of base1 and base4 clusters are same as AWS
   cluster.  The main difference is in the provisioning.  The details of
@@ -98,6 +125,259 @@
    [[./diagrams/overall-cluster-network-diagram.png]]
    
    In this diagram IP1 and IP2 refer to the only two public IPs being
+   used by the system.  IP1 is the public IP assigned to router and
+   IP2 is the public IP assigned to ansible.  Normal virtual-lab users
+   only see and contact router.  VLEAD team uses ansible to manage the
+   cluster.  In near future ADS interface will also be accessible via
+   router, for all virtual-labs developers, perhaps through a
+   different port. \\
+   This diagram focuses on depicting the important connections in the
+   network. There are several other connections which are not shown.
+   For example, ansible is connected to every node in the cluster.
+   All the connections are not shown in the diagram. Also there are
+   some nodes which are not shown, for example the rsnapshot server,
+   rsyslog server, ossec server are not shown. But these nodes are
+   configured and are being used in the cluster but are not shown to
+   keep the diagram simple.
+
+* Nodes in the cluster
+  After the bootstrapping process the nodes in the cluster can be
+  brought up using the scripts below. 
+** Structure of the scripts
+  The tree structure of scripts which are used to configure the
+  cluster is as shown below. The structure shows all the roles which
+  are the nodes. The 
+#+BEGIN_EXAMPLE
+|-- ads_server.yaml
+|-- ansible_server.yaml
+|-- documentation
+|   |-- ads-setup-on-base1.org
+|   |-- base1-setup-notes.org
+|   `-- KNOWN_ISSUES.org
+|-- hosts
+|   |-- base1
+|   `-- host_only
+|-- lab_rnapshot_server.yaml
+|-- nagios_server.yaml
+|-- ossec_server.yaml
+|-- private_dns.yaml
+|-- public_dns.yaml
+|-- reverseproxy_server.yaml
+|-- router.yaml
+|-- rsnapshot_server.yaml
+|-- rsyslog_server.yaml
+|-- site.yaml
+|-- roles
+|   |-- ads_server
+|   |   |-- files
+|   |   |   `-- run_setup.sh
+|   |   |-- handlers
+|   |   |   `-- main.yml
+|   |   |-- tasks
+|   |   |   `-- main.yml
+|   |   |-- templates
+|   |   |   |-- iptables
+|   |   |   `-- mongodb.repo
+|   |   `-- vars
+|   |       `-- main.yml
+|   |-- ansible_server
+|   |   |-- handlers
+|   |   |   `-- main.yaml
+|   |   |-- tasks
+|   |   |   `-- main.yaml
+|   |   `-- templates
+|   |       `-- ansible_iptables
+|   |-- common
+|   |   |-- files
+|   |   |   `-- history.sh
+|   |   |-- handlers
+|   |   |   `-- main.yaml
+|   |   |-- meta
+|   |   |   `-- main.yaml
+|   |   |-- tasks
+|   |   |   `-- main.yaml
+|   |   |-- templates
+|   |   |   `-- resolv.conf
+|   |   `-- vars
+|   |       `-- main.yaml
+|   |-- common_vars
+|   |   `-- vars
+|   |       `-- main.yaml
+|   |-- glpi_server
+|   |   |-- files
+|   |   |   `-- index.html
+|   |   |-- handlers
+|   |   |   `-- main.yaml
+|   |   |-- meta
+|   |   |   `-- main.yaml
+|   |   |-- tasks
+|   |   |   `-- main.yaml
+|   |   `-- vars
+|   |       `-- main.yaml
+|   |-- lab_rsnapshot_server
+|   |   |-- handlers
+|   |   |   `-- main.yaml
+|   |   |-- tasks
+|   |   |   `-- main.yaml
+|   |   |-- templates
+|   |   |   |-- rsnapshot.conf.j2
+|   |   |   `-- rsnapshot_server_iptables
+|   |   `-- vars
+|   |       `-- main.yaml
+|   |-- nagios_client
+|   |   |-- defaults
+|   |   |   `-- main.yaml
+|   |   |-- handlers
+|   |   |   `-- main.yaml
+|   |   |-- inprogress.txt
+|   |   |-- tasks
+|   |   |   `-- main.yaml
+|   |   `-- templates
+|   |       `-- xinetd.conf.j2
+|   |-- nagios_server
+|   |   |-- defaults
+|   |   |   `-- main.yaml
+|   |   |-- handlers
+|   |   |   `-- main.yaml
+|   |   |-- tasks
+|   |   |   |-- configure_servers.yaml
+|   |   |   `-- main.yaml
+|   |   |-- templates
+|   |   |   |-- commands.cfg
+|   |   |   |-- contacts.cfg.j2
+|   |   |   `-- servers.cfg
+|   |   `-- vars
+|   |       `-- main.yaml
+|   |-- named_server
+|   |   |-- handlers
+|   |   |   `-- main.yaml
+|   |   |-- tasks
+|   |   |   `-- main.yaml
+|   |   `-- templates
+|   |       |-- named.conf
+|   |       |-- named_iptables
+|   |       `-- zone.forward
+|   |-- ossec_client
+|   |   |-- tasks
+|   |   |   `-- main.yaml
+|   |   |-- templates
+|   |   |   `-- ossec_client_input.j2
+|   |   `-- vars
+|   |       `-- main.yaml
+|   |-- ossec_server
+|   |   |-- files
+|   |   |   |-- add_agent.sh
+|   |   |   |-- index.html
+|   |   |   `-- ossec_webui_setup.sh
+|   |   |-- handlers
+|   |   |   `-- main.yaml
+|   |   |-- tasks
+|   |   |   |-- get_client_keys.yaml
+|   |   |   |-- main.yaml
+|   |   |   |-- setup_ossec_server.yaml
+|   |   |   `-- setup_webui.yaml
+|   |   |-- templates
+|   |   |   |-- ossec_iptables
+|   |   |   `-- ossec_server_input.j2
+|   |   `-- vars
+|   |       `-- main.yaml
+|   |-- redmine_server
+|   |   |-- handlers
+|   |   |   `-- main.yaml
+|   |   |-- meta
+|   |   |   `-- main.yaml
+|   |   |-- tasks
+|   |   |   `-- main.yaml
+|   |   `-- vars
+|   |       `-- main.yaml
+|   |-- reverseproxy_server
+|   |   |-- files
+|   |   |   `-- httpd_awstats.conf
+|   |   |-- handlers
+|   |   |   `-- main.yaml
+|   |   |-- tasks
+|   |   |   `-- main.yaml
+|   |   `-- templates
+|   |       |-- awstats.reverseproxy.conf
+|   |       |-- reverseproxy_iptables
+|   |       `-- virtualhost.conf
+|   |-- router
+|   |   |-- handlers
+|   |   |   `-- main.yaml
+|   |   |-- tasks
+|   |   |   `-- main.yaml
+|   |   `-- templates
+|   |       `-- router_iptables
+|   |-- rsnapshot_client
+|   |   |-- tasks
+|   |   |   `-- main.yaml
+|   |   `-- vars
+|   |       `-- main.yaml
+|   |-- rsnapshot_server
+|   |   |-- handlers
+|   |   |   `-- main.yaml
+|   |   |-- tasks
+|   |   |   `-- main.yaml
+|   |   |-- templates
+|   |   |   |-- rsnapshot.conf.j2
+|   |   |   `-- rsnapshot_server_iptables
+|   |   `-- vars
+|   |       `-- main.yaml
+|   |-- rsyslog_client
+|   |   |-- handlers
+|   |   |   `-- main.yaml
+|   |   |-- tasks
+|   |   |   `-- main.yaml
+|   |   `-- templates
+|   |       `-- rsyslog_client.conf
+|   `-- rsyslog_server
+|       |-- files
+|       |   `-- rsyslog_server.conf
+|       |-- handlers
+|       |   `-- main.yaml
+|       |-- tasks
+|       |   `-- main.yaml
+|       `-- templates
+|           `-- rsyslog_iptables
+|-- rsnapshot_server_pubic_key
+|   `-- 10.100.1.10
+|       `-- root
+`-- run.sh
+#+END_EXAMPLE
+
+** Scripts 
+  These are the Ansible scripts which are written in the form of
+  roles.
+  #+BEGIN_SRC 
+  ---
+  #Complete site configuration file
+  #One yaml file for each server is included here
+  #Server yaml file matches server FQDN
+
+  - include: ansible_server.yaml
+
+  - include: ossec_server.yaml
+
+  - include: public_dns.yaml
+
+  - include: private_dns.yaml
+
+  - include: rsyslog_server.yaml
+
+  - include: reverseproxy_server.yaml
+
+  - include: router.yaml
+
+  - include: nagios_server.yaml
+
+  #- include: ads_server.yaml
+
+  - include: rsnapshot_server.yaml
+  #+END_SRC 
+  There are several nodes in the cluster which are common to
+  the various deployments. The list of nodes is as below:
+- [[./rsyslog_server.org][Rsyslog]]
+=======
    used by the system.  IP1 is the public IP assigned to the router
    and IP2 is the public IP assigned to the ansible.  Normal
    virtual-lab users only see and contact router.  VLEAD team uses the
@@ -105,7 +385,7 @@
 
    /In near future an ADS interface will also be accessible via router, for all the virtual-labs developers, perhaps through a different port./
 
-* Nodes in the cluster
+** Nodes in the cluster
 - [[./rsyslog_server.org][Rsyslog server]]
 - [[./privatedns.org][Private DNS]]
 - [[./publicdns.org][Public DNS]]

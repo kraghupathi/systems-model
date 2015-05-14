@@ -13,6 +13,9 @@ for our domain name "virtual-labs.ac.in". The Public IP of this
 machine needs to be officially registered with ERNET to make this
 machine an authoritative name server for our domain.
 
+The public DNS is currently situated in IIIT infrastructure. This DNS
+is registered with ERNET to serve as the authoritative nameserver
+
 * Requirements
 The functional and security requirements of the Public DNS are
 mentioned in the following sections. These are specific to the Public
