@@ -7,10 +7,29 @@
 
 * Introduction
 This document describes the requirements, design and implementation of
-the configuration server which is part of the aws-cluster.
+the configuration server.  This server configures all other servers in
+the cluster and configures it self as well, through multiple roles and
+tasks.  A role is a specific set of configurations.
 
-This server configures all other servers in the cluster, through
-multiple roles.  A role is a specific set of configurations.
+In this documentation, we used to call config-server as ansible server
+some times. 
+
+This configuration server(config-server) will be able to ssh to other
+servers and lab instances/containers using *key based authentication
+only* since public key of configuration server is copied into all the
+servers and instances/containers. Password based authentication is not
+allowed for root user.
+
+Only from management ip machines, we will be able ssh to root account
+of configuration server. Password based authentication is not allowed
+to root user, only key based authentication is allowed from specific
+ip machines.  
+
+- Note  :: This configuration server setup is done without non-root
+           user. In the future we can have non-root(normal) user to
+           ssh to configuration server only from management ip
+           machines.
+
 
 * Requirements
 Requirements which are specific to configuration server described below
@@ -24,9 +43,12 @@ and security requirements for Configuration server are:
      consistent.
   2. Configuration server has only one `root' user.
   3. Only authorized VLEAD members can log-in as 'root' user from
-     IIIT IP range using key based authentication only.
+     IIIT IP range or management ip machines using key based authentication only.
 ** Security Requirements
-  1. SSH/Port 22 accessible *only* from IIIT IP range.
+   Configuration server accepts incoming connections on port 22 *only*
+   from IIIT IP range or management ip machines. All
+   other ports will be rejected
+
 
 * Design
 #+CAPTION:  Configuration Server Design Diagram
