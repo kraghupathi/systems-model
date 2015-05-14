@@ -25,17 +25,14 @@ of configuration server. Password based authentication is not allowed
 to root user, only key based authentication is allowed from specific
 ip machines.  
 
-- Note  :: This configuration server setup is done without non-root
-           user. In the future we can have non-root(normal) user to
-           ssh to configuration server only from management ip
-           machines.
+- Note  ::  In future we can have non-root(normal) user to
+            ssh to configuration server only from management ip
+            machines.
 
 
 * Requirements
 Requirements which are specific to configuration server described below
-and all other requirements are described in common role's requirements
-section. Please click [[./common.org][here]] for all other requirements.  The functional
-and security requirements for Configuration server are:
+and all other common requirements are described in [[./common.org][common role]]
 ** Functional Requirements
 
   1. Configuration server will configure all the nodes in the cluster
@@ -46,49 +43,50 @@ and security requirements for Configuration server are:
      IIIT IP range or management ip machines using key based authentication only.
 ** Security Requirements
    Configuration server accepts incoming connections on port 22 *only*
-   from IIIT IP range or management ip machines. All
-   other ports will be rejected
+   from IIIT IP range or management ip machines.
+
 
 
 * Design
+ *The design of this configuration server is as follows* 
+
+The following network diagram tells us how the configuration server is
+connecting to other nodes such as reverseproxy, DNS, router etc.
 #+CAPTION:  Configuration Server Design Diagram
 #+LABEL:  fig-config-diagram
-#+NAME: fig-config-diagram
-The following network diagram tells you how the configuration server
-is connecting to other servers such as reverseproxy, DNS, router
-etc. and configures servers.
-
-Only admin user from workstation/PC with management ip can be able ssh
-to configuration server using key(which is given by amazon) based
-authentication. From configuration server, admin user runs the scripts
-to setup server individually or all at once.
-
 [[./diagrams/config-server-network-diagram.png]]
 
-The design of the firewall rules ensures that this server is
-accessible only via port 22. All other ports are disabled. Moreover,
-port 22 is accessible only from IIIT IP range.  Only key-based login
-to this server is allowed. This server can be reached via ICMP (ping)
-requests.
+This node is one of the many other nodes of the cluster.  Only from
+IIIT ip range and management ip machines are allowed to ssh to root
+account of the configuration server. SSH access to this node allowed
+only on key-based authentication, password based authentication is not
+allowed to root user. The design of the firewall rules ensures that
+this server is accessible only via port 22. This server can be
+reached via ICMP (ping) requests.
 
-** Configuration Summary
+SSH configuration, fail2ban and locking root user password are taken
+care by common role. For more tasks which are done by common role in
+this node, please go through [[./common.org][common role]]. 
+
+This node's public key will be placed inside every
+instance/container. So that configuration server will be able to
+configure all other nodes, instances/containers and as well as itself
+by running the ansible scripts. These ansible scripts are implemented
+at [[Implementation]].
+
+
+** Configuration files Summary
 The following table gives the information about services and their configuration files and
-by which role configurations are applied.
-|--------------------+-----------------------------------+---------------------------|
-| *Service/Property* | *Relevant File or Command*        | *Associated with*         |
-|--------------------+-----------------------------------+---------------------------|
-| firewall           | =/etc/sysconfig/iptables/=        | configuration server Role |
-|--------------------+-----------------------------------+---------------------------|
-| sshd               | =/etc/sshd_config=                | Common  Role              |
-|--------------------+-----------------------------------+---------------------------|
-| nameserver         | =/etc/resolve.conf=               | Common role               |
-|--------------------+-----------------------------------+---------------------------|
-| IP                 | =/etc/sysconfig/network-scripts/= | amazon console            |
-|--------------------+-----------------------------------+---------------------------|
-| fail2ban           | =/etc/fail2ban/jail.local=        | Common Role               |
-|--------------------+-----------------------------------+---------------------------|
-| logwatch           | =/etc/logwatch/logwatch.conf=     | Common Role               |
-|--------------------+-----------------------------------+---------------------------|
+by which role configurations are applied. Other configuration files
+are updated in common role.
+|-----------+-----------------------------------+---------------------------|
+| *Service* | *Configuration file*             | *Description*             |
+|-----------+-----------------------------------+---------------------------|
+| firewall  | =/etc/sysconfig/iptables/=        | configuration server Role |
+|-----------+-----------------------------------+---------------------------|
+| IP        | =/etc/sysconfig/network-scripts/= | amazon console            |
+|-----------+-----------------------------------+---------------------------|
+
 #+TBLFM: $2=/etc/sysconfig/network-scripts
 
 * Implementation
@@ -97,9 +95,8 @@ following steps.
 - Note1 :: In this implementation, variables are used in different
           places using "{}". Values of these variables are defined in
           [[common_vars.org][common_vars role]]. For more information about variable
-          definition, go through the common_vars role.
-- Note2 :: Use proxy environment variable if network uses any proxy
-          server and give the proxy name in common_vars role
+          definition, please go through the common_vars role.
+
 ** Structure of the scripts
 The implementation of this system is in terms of a collection of ansible scripts that
 configures the machine. Scripts are organized as follows:
@@ -118,6 +115,8 @@ configures the machine. Scripts are organized as follows:
 |   |-- common
 |   |   ...
 #+END_EXAMPLE
+
+
 
 ** Firewall rules
 Rules which are specific to configuration server are described [[Firewall rules specific to config_server][below]].
