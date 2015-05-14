@@ -22,6 +22,17 @@ scripts.  +These scripts are executed only from configuration server.+
              trafic information such as number of visitors and visits,
              number of pages for a visit, etc. Data is graphically
              presented in easy to read web pages
+** COMMENT 
+   - It was decided that the description of Reverseproxy must be
+     simple and give an outline of its purpose and its service in the
+     cluster. Further specific details and how it connects to other
+     nodes can be mentioned in the design section.
+   - Awstats decsription could be a little more elaborate also
+     mentioning why it is being used.
+   - reverseproxy should be replaced with reverse proxy.
+ 
+   @Saurabh :: Please give your comments on this !!
+
 * Requirements
   Requirements which are specific to reverseproxy are defined below and
   common requirements are defined in the [[common.org][common role]].
@@ -46,11 +57,21 @@ scripts.  +These scripts are executed only from configuration server.+
      analytics of each lab using AWStats (Logfile analyzer). All the
      analytics will be stored at =/var/log/httpd/= 
 
-* COMMENT
+** COMMENT
   We had a discussion among us (model team) to decide whether we need
   to write in points or in a paragraph. Saurabh, we need your
-  suggestion on this !!
- 
+  suggestion on this !!  
+
+  - siva , Yogesh :: This node seems to have more points so we can
+  better explain them point wise as compared to paragraphs.
+  
+  - Soumya :: I felt that the description should be just describing
+  basic functionality of reverse proxy. This need not be in detail
+  which also explains the network related information. 
+
+  @Saurabh :: Please give your comments on this ?? Also do we require
+  communication requirements for this model ??
+
 ** Security Requirements 
    Reverseproxy accepts incoming and outgoing connections on tcp ports
    80 and 443 *only* from internal network and from the router.
@@ -63,6 +84,10 @@ scripts.  +These scripts are executed only from configuration server.+
 #+CAPTION:  Reverse-Proxy Network Diagram
 #+LABEL:  fig-reverseproxy-diagram
 [[./diagrams/Network-Diagram-of-ReverseProxy.png]]
+
+** COMMENT 
+   Some descriptions were found appropriate for this section. They can
+   be added here. The diagram must be described.
 
 ** System configuration files 
    The Following tables gives the information about the services and
@@ -91,6 +116,9 @@ scripts.  +These scripts are executed only from configuration server.+
 |------------+--------------------------------------+-------------------+--------------------------------------|
 | logwatch   | /etc/logwatch/logwatch.conf          | Common Role       | logwatch configuration file          |
 |------------+--------------------------------------+-------------------+--------------------------------------|
+** COMMENT 
+   The common role files are to be removed and the "associated with"
+   column would no longer be required.
 * Implementation 
 - Note  :: In this implementation, variables are used in various
            places using "{}".
@@ -104,9 +132,25 @@ scripts.  +These scripts are executed only from configuration server.+
 
    Values of these variables is fetched from the
    [[file:common_vars.org::*Common Variables][Common vars]] role.
+** COMMENT 
+   The variables above all belong to common_vars. They can be
+   described there and need not be described here.  
+
+   @Saurabh :: While reviewing Private DNS model we decided to have a
+   Tasks section (emacs level-2 section) in which there were
+   subsections for each task in the yaml file. The templates
+   associated with the tasks are mentioned in that subsection
+   itself. There is no separate section for templates (level2).  There
+   were concerns regarding this format of writing. Handlers is a
+   separate section.
+
+   Should all the models follow a similar structure in describing
+   their implementations ??\\
+   
 
 The implementation of the reverseproxy server and awstats is done with
 the following steps.
+
 ** Directory structure of the scripts
 The implementation of this system is in terms of a collection of Ansible scripts that
 configures the machine. Scripts are organized as follows:
