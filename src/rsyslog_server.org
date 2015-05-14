@@ -413,7 +413,7 @@ authpriv.*      ?TmplAuth
    [[file:common_vars.org::*Common Variables][Common vars]] role.
 
 ** Building rsyslog server hosts file with appropriate roles
-   Rsyslog server is configured using common and =rsyslog_server= role.
+   Rsyslog server is configured using =common= and =rsyslog_server= role.
 #+BEGIN_SRC yml -n :tangle rsyslog_server.yml
 ---
 - name: Configure rsyslog server 
