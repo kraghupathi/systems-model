@@ -10,67 +10,66 @@
 * Introduction
 This Documentation describes the *Reverse Proxy* server setup and
 *AWStats* setup for analytics of labs deployed on amazon/base1 using automated
-scripts.  These scripts are executed only from configuration server.
-This server is managed by [[./config-server.org][configuration server]]
+scripts.  +These scripts are executed only from configuration server.+
++This server is managed by [[./config-server.org][configuration server]]+
 
 - Reverse-Proxy :: The client requests comes from router to
                    reverseproxy and the reverse proxy then decides
                    where to send those requests, and returns the
                    content as if it was itself the destination.
-- AWStats :: AWStats is a one of the log analyzer which creates web
-             related trafic. This log analyzer gives us lab user's web
+- AWStats :: +AWStats is a one of the log analyzer which creates web+
+             +related trafic.+ This log analyzer gives us lab user's web
              trafic information such as number of visitors and visits,
              number of pages for a visit, etc. Data is graphically
              presented in easy to read web pages
 * Requirements
-Requirements which are specific to reverseproxy defined below and all
-other requirements are defined in common role's requirements
-section. Please click [[./common.org][here]] for all other requirements.  The
-requirements to configure reverseproxy server are as follows.
+  Requirements which are specific to reverseproxy are defined below and
+  common requirements are defined in the [[common.org][common role]].
 ** Functional Requirements 
-- Allow incoming 80 and 443 (HTTP and HTTPS) :: Reverseproxy has to
-     allows incoming connections on tcp ports 80 and 443 to accept the
-     web requests coming from the [[./router.org][router]] and internal network. This
-     requirement will be satisfied with the [[Allow HTTP(80) and
-     HTTPS(443) packets][firewall rules]]
-- Allow outgoing 80 (HTTP) ::  Reverseproxy has to allow outgoing
-     connections on tcp port 80 to forwards client requests which are
-     coming from router to corresponding internal web server(labs) and
-     sending reply to the client. This is required for yum to update
-     and upgrade the OS. For this requirement look at [[Firewall
+   - Allow incoming 80 and 443 (HTTP and HTTPS) :: Reverseproxy allows
+     incoming connections on tcp ports 80 and 443 to accept the web
+     requests coming from the [[./router.org][router]] and internal network. This
+     requirement is satisfied by the [[Allow HTTP(80) and
+     HTTPS(443) packets][firewall rules]].
+   - Allow outgoing 80 (HTTP) ::  Reverseproxy allows outgoing
+     connections on tcp port 80 to forward the client requests which
+     are coming from the router to the corresponding internal web
+     server(lab) and sending reply to the client. This is required
+     for yum to update and upgrade the OS. For this requirement look
+     at [[Firewall
      rules][OUTPUT rule for 80 in firewall rules section]]
-- Allow outgoing 443 (HTTPS) :: Reverseproxy has to allow outgoing
+   - Allow outgoing 443 (HTTPS) :: Reverseproxy has to allow outgoing
      connections on tcp port 443 and is required for yum. For this
      requirement look at [[ Firewall rules][OUTPUT rule for 443 in
      firewall rules section]]
-- Store the Analytics :: Reverseproxy will be able to store the
+   - Store the Analytics :: Reverseproxy will be able to store the
      analytics of each lab using AWStats (Logfile analyzer). All the
      analytics will be stored at =/var/log/httpd/= 
 
-For more functional requirements of reverseproxy you can find [[./common.org][here]]
+* COMMENT
+  We had a discussion among us (model team) to decide whether we need
+  to write in points or in a paragraph. Saurabh, we need your
+  suggestion on this !!
  
 ** Security Requirements 
-- Accept 80 and 443 (HTTP and HTTPS) :: Reverseproxy accepts incoming
-     and outgoing connections on tcp ports 80 and 443 *only* from
-     internal network and from the [[./router.org][router]] .  
-For more security requirements of reverseproxy you can find [[./common.org][here]]
+   Reverseproxy accepts incoming and outgoing connections on tcp ports
+   80 and 443 *only* from internal network and from the router.
+
 * Design
+** Overall network diagram of reverseproxy
+   The following network diagram represents the communication of
+   reverse proxy with other nodes in the cluster. 
+
 #+CAPTION:  Reverse-Proxy Network Diagram
 #+LABEL:  fig-reverseproxy-diagram
-#+NAME: fig-reverseproxy-diagram
-** Overall network diagram of reverseproxy
-The following network diagram represents the reverseproxy server's
-communication with other services and servers. In this diagram only
-reverseproxy is active node. It shows the connections from/to
-reverseproxy to/from other servers such as [[./router.org][router]], web servers  etc.
 [[./diagrams/Network-Diagram-of-ReverseProxy.png]]
 
 ** System configuration files 
-The Following tables gives the information about the services and
-their configuration files where modifications are required to setup
-reverseproxy server and AWStats
+   The Following tables gives the information about the services and
+   their configuration files where modifications are required to setup
+   reverseproxy server and AWStats
 |------------+--------------------------------------+-------------------+--------------------------------------|
-| Service    | File                                 | Associated with   | File Type                            |
+| Service    | File                                 | Associated with   | Description                          |
 |------------+--------------------------------------+-------------------+--------------------------------------|
 | httpd      | /etc/httpd/conf/httpd.conf           | reverseproxy role | httpd main Configuration             |
 |------------+--------------------------------------+-------------------+--------------------------------------|
