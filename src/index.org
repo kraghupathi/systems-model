@@ -26,11 +26,13 @@
   
 * Bootstrapping Cluster
   A independent operating system such as a container or a VM or even a
+# sandeep 'An independent' instead of 'a independent'
   physical machine is referred as a node.  The collection of such
   related and connected nodes forms a cluster.  Each node in the
   cluster has a specific purpose that it serves.  To setup an entire
   cluster initially, each of the component nodes are setup
   individually in an planned and specific manner.  This process of
+# sandeep 'in a planned' instead of 'in an planned'
   setup of individual nodes in a specific manner to setup a new
   cluster is called the bootstrapping process.  This process is
   tightly related to the provisioning method used on the corresponding
@@ -74,6 +76,7 @@
    across the nation.  
 
 <<<<<<< HEAD
+# sandeep the above statement is not clear
 * Bootstrapping of a cluster deployment
   The cluster is a collection of several nodes.  Each of these nodes
   have a specific purpose that they serve.  To setup the entire
@@ -94,10 +97,12 @@
 
 *** Provisioning for Base1 and Base4
     The 
+# sandeep Above statement is incomplete
 *** Provisioning for AWS
-    
+# sandeep This section needs to be filled    
 * Design of the Cluster model
   The diagram below depicts the architecture of the systems in the
+# sandeep Reference is made to a diagram that does not exist
   cluster model. This architecture does not change for the types of
   clusters mentioned earlier.  
 * Difference in the base1 and AWS cluster
@@ -147,6 +152,7 @@
   The tree structure of scripts which are used to configure the
   cluster is as shown below. The structure shows all the roles which
   are the nodes. The 
+# sandeep Above statement is incomplete
 #+BEGIN_EXAMPLE
 |-- ads_server.yaml
 |-- ansible_server.yaml
