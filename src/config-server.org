@@ -12,6 +12,7 @@ the cluster and configures it self as well, through multiple roles and
 tasks.  A role is a specific set of configurations.
 
 In this documentation, we used to call config-server as ansible server
+# comment replace 'we used to call' with 'we call'
 some times. 
 
 This configuration server(config-server) will be able to ssh to other
@@ -32,6 +33,7 @@ ip machines.
 
 * Requirements
 Requirements which are specific to configuration server described below
+# comment should be 'are described below'
 and all other common requirements are described in [[./common.org][common role]]
 ** Functional Requirements
 
