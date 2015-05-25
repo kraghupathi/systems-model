@@ -25,6 +25,7 @@ Given diagram describes the design of the monitoring server. Systems files are
 listed for a quick overview of whole systems.
 ** System Design Diagram
 [[./diagrams/nagios-client-design-diagram.png]]
+# comment diagram not appearing
 
 ** Editable Link
 [[https://docs.google.com/a/vlabs.ac.in/drawings/d/1TKAGbG8Fj5LcuY-kdZrVjE1ksHJQxFdXeRcWwE6TlWs/edit][Design Diagram Link]]
@@ -270,5 +271,6 @@ Return status of the services is displayed in the command output.
 
 *** Conclusion
 If the return status of the depicts the status of service in the client node.
+# comment Above statement not clear
 
 
