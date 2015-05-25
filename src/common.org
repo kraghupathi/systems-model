@@ -478,14 +478,14 @@ export HISTTIMEFORMAT HISTSIZE HISTFILESIZE
 
 *** Setup /etc/hosts file
    Sendmail tries to lookup hostname and IP mapping through
-   =/etc/hosts=. Sendmail assumes the first line in =/etc/hosts= is the nodes
-   own FQDN to IP mapping without this sendmail takes about 30 seconds to
-   timeout for host resolution. To take care of this assumption of sendmail
-   =/etc/hosts= file is configured.
+   =/etc/hosts=. Sendmail assumes the first line in =/etc/hosts= is
+   the nodes own FQDN to IP mapping without this sendmail takes about
+   30 seconds to timeout for host resolution. To take care of this
+   assumption of sendmail =/etc/hosts= file is configured.
 
-   Following variables are set by the ansible tool as it runs on the client
-   node. For each server in the cluster value of these variables will be
-   different and set according to the server role.
+   Following variables are set by the ansible tool as it runs on the
+   client node. For each server in the cluster value of these
+   variables will be different and set according to the server role.
 
 |-------+------------------------------+-------------------------------+--------------------------|
 | S.no. | Variable Name                | Description                   | Example                  |
@@ -505,16 +505,17 @@ export HISTTIMEFORMAT HISTSIZE HISTFILESIZE
 #+END_SRC
 
 *** Summary of Log files
-Servers and applications generally create "log files" to keep track of
-activities taking place at any given time. These log files are used for analysis
-of the system. 
+   Servers and applications create "log files" to keep track of the
+   events happening inside the system at any given time. These log
+   files are used for analysis of the system.
 
-To generate a unified report of all log files and send to system administrator
-*Logwatch* service is configured on all the servers in the cluster.
+   To generate a unified report of all log files and send to system
+   administrator *Logwatch* service is configured on all the servers
+   in the cluster.
 
-To configure logwatch following actions are performed:
-1) Install "logwatch" tool
-2) Set detail of log level to "medium"
+   To configure logwatch following actions are performed:
+   1) Install "logwatch" tool
+   2) Set detail of log level to "medium"
 
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 #Logwatch configuration
@@ -527,15 +528,15 @@ To configure logwatch following actions are performed:
 #+END_SRC
 
 *** Configure mail service
-Sendmail service is configured on all servers in the cluster. Services such as
-"logwatch" uses "sendmail" service to send mail alerts to the system
-administrator.
+   Sendmail service is configured on all the servers in the
+   cluster. Services such as "logwatch" uses "sendmail" service to
+   send mail alerts to the system administrator.
 
-To configure sendmail following actions are performed:
-1) Install sendmail
-2) Ensure postfix is stopped and disabled
-3) Set smtp smart host
-4) Start sendmail service
+   To configure sendmail following actions are performed:
+   1) Install sendmail
+   2) Ensure postfix is stopped and disabled
+   3) Set smtp smart host
+   4) Start sendmail service
 
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 #SMTP configuration
@@ -559,21 +560,24 @@ To configure sendmail following actions are performed:
 #+END_SRC
 
 *** Set Name Resolver
-Nameservers are set on all the servers in the cluster. An example of
-configuration file - =/etc/resolv.conf= is shown and described below:
+   Nameservers are set on all the servers in the cluster. An example
+   of configuration file - =/etc/resolv.conf= is shown and described
+   below:
 
 #+BEGIN_EXAMPLE
 search localdomain.com
 nameserver 10.4.12.230
 #+END_EXAMPLE
 
-- search :: This field allows users to type simple names instead of complete
-            'fqdn' to reach local resources. If something comes to resolver that
-            has no dots '.' in it, the resolver will try adding
-            =localdomain.com= in it.
-- nameserver :: This field specifies the ip address of the dns servers.
+   - search :: This field allows users to type simple names instead of
+               complete 'fqdn' to reach local resources. If something
+               comes to resolver that has no dots '.' in it, the
+               resolver will try adding =localdomain.com= in it.
+   - nameserver :: This field specifies the ip address of the dns
+                   servers.
 
-Configuration file is copied to the server from the configuration server.
+   Ansible jinja2 template is copied to the all nodes from the
+   configuration server node.
 
 #+BEGIN_SRC conf :tangle roles/common/templates/resolv.conf
 {% if private_dns_zone != "none" %}
@@ -592,35 +596,36 @@ nameserver {{private_dns}}
 #+END_SRC
 
 *** SSH Hardening
-All the servers in the cluster are made secure by hardening *ssh* service. SSH
-configuration file =/etc/ssh/sshd_config= is customized as per the requirement.
+   All the servers in the cluster are made secure by hardening *ssh*
+   service. SSH configuration file =/etc/ssh/sshd_config= is
+   customized as per the requirement.
 
-*** Permit Root Login without password
-Only system administrators with ssh private key can login as Root.
+**** Permit Root Login without password
+   Only system administrators with ssh private key can login as Root.
 
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 - name: Permit root login without-pasword(key based)
   lineinfile: dest=/etc/ssh/sshd_config regexp='PermitRootLogin ' line='PermitRootLogin without-password' state=present
 #+END_SRC
 
-*** Disable Password based access
-Password based access is disabled.
+**** Disable Password based access
+   Password based access is disabled.
 
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 - name: Disable Password authentication
   lineinfile: dest=/etc/ssh/sshd_config regexp='PasswordAuthentication ' line='PasswordAuthentication no'
 #+END_SRC
 
-*** Enable Key based authentication
-Only key based access is enabled.
+**** Enable Key based authentication
+   Only key based access is enabled.
 
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 - name: Enable Public key authentication
   lineinfile: dest=/etc/ssh/sshd_config regexp='PubkeyAuthentication ' line='PubkeyAuthentication yes'
 #+END_SRC
 
-*** Do not permit empty passwords
-Users are not allowed to set empty-password.
+**** Do not permit empty passwords
+   Users are not allowed to set empty-password.
 
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 - name: Do not permit empty password, also ensure proper owner, group and permissions
@@ -632,9 +637,10 @@ Users are not allowed to set empty-password.
 #+END_SRC
 
 *** Install Bind Utilities
-Bind utilities are installed on all the servers in the cluster. This package
-includes the programs such as *nslookup*, *dig* and *host*. These utilities are
-used by system administrators to trouble shoot the network related issues.
+   Bind utilities are installed on all the servers in the
+   cluster. This package includes programs such as *nslookup*, *dig*
+   and *host*. These utiities are used by system administrators to
+   trouble shoot the network related issues.
 
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 - name: install bind-utils
@@ -644,18 +650,16 @@ used by system administrators to trouble shoot the network related issues.
 #+END_SRC
 
 *** Disable Root Login
-Root login is disabled on all the servers in the cluster. Password for the root
-account is set to a value which matches no possible encrypted value, therefore
-nobody can login as root with password. Only system administrators with ssh
-private keys can login to root account.
+   Root login is disabled on all the servers in the cluster. Password
+   for the root account is set to a value which matches no possible
+   encrypted value, therefore nobody can login as root with
+   password. Only system administrators with ssh private keys can
+   login to root account.
 
-*** Lock root login
-#+BEGIN_EXAMPLE
-passwd -l root
-#+END_EXAMPLE
-
-Alternatively, edit =/etc/shadow= and replace the root's encrypted password with
-'!'.
+**** Lock root login
+   Root account is locked using =passwd= command command in the
+   terminal.  Another way to lock account is to replace the root's
+   encrypted password with '!' in =/etc/shadow= file as follows.
 
 #+BEGIN_EXAMPLE
 root:!:12345::::::
@@ -666,29 +670,34 @@ root:!:12345::::::
   shell: passwd -l root
 #+END_SRC
 
-*** Enable root login
+**** Enable root login
+   Root login can be enabled by setting the root password using
+   following command
 #+BEGIN_EXAMPLE
 sudo passwd root
 #+END_EXAMPLE
 
-*** Unlock root account 
+**** Unlock root account
+   Root login can be unlocked using following command.
 #+BEGIN_EXAMPLE
 sudo passwd -u root
 #+END_EXAMPLE
 
 *** Remove sudoers package
-We can do two things regarding sudoers. The current scripts perhaps does remove
-it, but we can always rewrite them.
+   We can do two things with sudoers package. The current scripts
+   perhaps does remove it, but we can always rewrite them.
 
-*** Why Remove ?
-Sudoers package is removed from all the servers in the cluster. There are no
-user account created on the server. Only the system administrator login as root
-user. There is no need of maintaining sudoers file. Removing this package causes
-no harm to the system.
+**** Why Remove ?
+   Sudoers package is removed from all the servers in the
+   cluster. There are no user account created on the server. Only the
+   system administrator login as root user. There is no need of
+   maintaining sudoers file. Removing this package causes no harm to
+   the system.
 
-*** Ensure that validity of sudoers file
-Ensure that =/etc/sudoers= file is same as it is during installation and no one
-has added new users or groups to sudoers, as backdoors to gain root access.
+**** Ensure that validity of sudoers file
+   Ensure that =/etc/sudoers= file is same as it is during
+   installation and no one has added new users or groups to sudoers,
+   as backdoors to gain root access.
 
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 - name: remove sudo
@@ -696,15 +705,18 @@ has added new users or groups to sudoers, as backdoors to gain root access.
 #+END_SRC
 
 *** Set the implementation/model release
-Release number is set in all the nodes in the cluster. Release number describes
-the version of the configuration applied on the node.
+   Release number is set in all the nodes in the cluster. Release
+   number describes the version of the configuration applied on the
+   node.
+
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 - name: setting the implementation/model release
   lineinfile: dest=/etc/motd regexp="^Release" line="Release number {{ release_no }}" state=present create=yes
 #+END_SRC
 *** Common Variables
-Variables which are common across all the ansible roles are defined in
-=common_vars= file. The file is included as a dependency for this role.
+   Variables which are common across all the ansible roles are defined
+   in =common_vars= file. The file is included as a dependency for
+   this role.
 
 #+BEGIN_SRC yml :tangle roles/common/meta/main.yml
 ---
@@ -713,11 +725,11 @@ dependencies:
 #+END_SRC
 
 ** Handlers
-When any changes are made in the configuration file of any service,
-the service needs to be restarted. For example, if modifications are
-made in =/etc/ssh/sshd_config= file to customize ssh service, then the
-ssh service needs to be restarted to enforce the modified properties
-of the system.
+   When any changes are made in the configuration file of any service,
+   the service needs to be restarted. For example, if modifications
+   are made in =/etc/ssh/sshd_config= file to customize ssh service,
+   then the ssh service needs to be restarted to enforce the modified
+   properties of the system.
 
 #+BEGIN_SRC yml :tangle roles/common/handlers/main.yml
 ---
@@ -731,9 +743,9 @@ of the system.
 * Test Cases
 ** Test Case-1: Check Bind utilities are installed
 *** Objective
-To check bind-utilities are installed on the system.
+   To check bind-utilities are installed on the system.
 *** Apparatus
-1) An instance of common role - a common server
+   1) An instance of common role - a common server
 
 *** Experiment
 **** Execute nslookup command
@@ -741,12 +753,12 @@ To check bind-utilities are installed on the system.
 nslookup localhost
 #+END_EXAMPLE
 
-**** Execute host command.
+**** Execute host command
 #+BEGIN_EXAMPLE
 host localhost
 #+END_EXAMPLE
 
-**** Execute dig command.
+**** Execute dig command
 #+BEGIN_EXAMPLE
 dig localhost
 #+END_EXAMPLE
@@ -796,26 +808,28 @@ localhost.		86400	IN	AAAA	::1
 #+END_EXAMPLE
 
 *** Observation
-*dig*, *nslookup* and *host* commands are executed on the server, and proper
-output is displayed.
+   *dig*, *nslookup* and *host* commands are executed on the server,
+   and proper output is displayed.
 
 *** Conclusion
-Bind-utilities are installed on all the servers in the cluster.
+   Bind-utilities are installed on all the servers in the cluster.
 
 ** Test Case-2: SSH access
 *** Objective
-Test ssh access is allowed only from ansible, nagios and management ips.
+   Test ssh access is allowed only from ansible, nagios and management
+   ips.
 
 *** Apparatus
-1) Configuration server
-2) A management server
-3) A nagios server
-4) An instance of common role - a common server
-5) Any other node
+   1) Configuration server
+   2) A management server
+   3) A nagios server
+   4) An instance of common role - a common server
+   5) Any other machine in the same network
 
 *** Experiment
-Servers in which common firewall rules are applied accept ssh connection on TCP
-port 22 only from ansible, nagios and management ips.
+   Servers in which common firewall rules are applied accept ssh
+   connection on TCP port 22 only from the ansible, nagios and
+   management ips.
 
 **** SSH from configuration server to a common server
 #+BEGIN_EXAMPLE
@@ -860,54 +874,56 @@ Permission Denied ....
 #+END_EXAMPLE
 
 *** Observation
-A common server accepts incoming ssh connections from configuration, nagios and
-management server.
+   A common server accepts incoming ssh connections from
+   configuration, nagios and management server.
 
 *** Conclusion
-Firewall rules are set properly to allow ssh connection only from ansible,
-nagios and management server.
+   Firewall rules are set properly to allow ssh connection only from
+   ansible, nagios and management server.
 
 ** Test Case-3: Root account is locked
 *** Objective
-Test root account is locked in a common server.
+   Test root account is locked in a common server.
 *** Apparatus
-1) Configuration server
-2) An instance of common role - a common server
+   1) Configuration server
+   2) An instance of common role - a common server
 
 *** Experiment
-Execute following command on the server.
+   Execute following command on the server.
 #+BEGIN_EXAMPLE
 sudo passwd -S root
 #+END_EXAMPLE
 
 *** Result
-Output of step-1 signifies the root account is locked.
+   Output of step-1 signifies the root account is locked.
 #+BEGIN_EXAMPLE
 root LK 2012-10-07 0 99999 7 -1 (Password locked.)
 #+END_EXAMPLE
 
 *** Observation
-Root account is disabled.
+   Root account is disabled.
 
 *** Conclusion
-Users can not login to the server as 'root' username with password.
+   Users can not login to the server as 'root' username with password.
 
 ** Test Case-4: Check default gateway is set
 *** Objective
-To check the default gateway of all the private servers are set as router.
+   To check the default gateway of all the private servers are set to
+   router node.
 *** Apparatus
-1) An instance of common role - a common server
+   1) An instance of common role - a common server
 
 *** Experiment
-Check routing table.
+   Check routing table by executing following command in the terminal.
+
 #+BEGIN_EXAMPLE
 route -n
 #+END_EXAMPLE
 
 *** Result
-Sample output of step-1 of experiment is shown below. Last entry in the routing
-table, shows that the gateway for all the traffic is set to =10.100.1.1= which
-is router's internal ip.
+   Sample output of step-1 of experiment is shown below. Last entry in
+   the routing table, shows that the gateway for all the traffic is
+   set to =10.100.1.1= which is router's internal ip.
 
 #+BEGIN_EXAMPLE
 Kernel IP routing table
@@ -918,36 +934,40 @@ Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
 #+END_EXAMPLE
 
 *** Observation
-Gateway for all the private servers in the cluster is set to the router.
+   Gateway for all the private servers in the cluster is set to the
+   router.
 
 *** Conclusion
-Gateway for all the private servers in the cluster is set to the router.
+   Gateway for all the private servers in the cluster is set to the
+   router.
 
 ** Test Case-5: Check blocking of malicious attacks
 *** Objective
-To check fail2ban service bans offensive users when malicious attacks are done.
+   To check fail2ban service bans offensive users when malicious
+   attacks are done.
 *** Apparatus
-1) An instance of common role - a common server
-2) Any other server in the same network
+   1) An instance of common role - a common server
+   2) Any other server in the same network
 
 *** Experiment
-
 **** Check fail2ban service is running
 #+BEGIN_EXAMPLE
 service fail2ban status
 #+END_EXAMPLE
 
 **** SSH to the server 
-SSH to the server from any other node by intentionally giving wrong
-passwords. Do this atleast three times. Then on the server execute the following
-command to check if fail2ban filter for ssh detects failed login attempts.
+   SSH to the server from any other node by intentionally giving wrong
+   passwords. Do this atleast three times. Then on the server execute
+   the following command to check if fail2ban filter for ssh detects
+   failed login attempts.
 #+BEGIN_EXAMPLE
 fail2ban-regex /var/log/secure /etc/fail2ban/filter.d/sshd.conf <username|ipaddress>
 #+END_EXAMPLE 
 
 **** Check firewall rule
-Check if there is any firewall rule for fail2ban-ssh is added to block the
-machine's ip from where multiple failed login attempts are made.
+   Check if there is any firewall rule for fail2ban-ssh is added to
+   block the machine's ip from where multiple failed login attempts
+   are made.
 #+BEGIN_EXAMPLE
 iptables --list
 #+END_EXAMPLE
@@ -962,8 +982,8 @@ Status
 #+END_EXAMPLE
 
 **** Output of step-2 of experiment
-It shows that there are failed login attempts were made to the ossec-server from
-"10.100.1.2" ipaddress.
+   It shows that there are failed login attempts were made to the
+   ossec-server from "10.100.1.2" ipaddress.
 #+BEGIN_EXAMPLE
 Running tests
 =============
@@ -1002,8 +1022,9 @@ Missed line(s): too many to print.  Use --print-all-missed to print all 159 line
 #+END_EXAMPLE
 
 **** Output of step-3 of experiment
-Output shows that fail2ban-ssh chain is now defined on the server, to reject all the
-incoming ssh connections from the malicious ipaddress.
+   Output shows that fail2ban-ssh chain is now defined on the server,
+   to reject all the incoming ssh connections from the malicious
+   ipaddress.
 #+BEGIN_EXAMPLE
 Chain fail2ban-SSH (1 references)
 target     prot opt source               destination         
@@ -1012,17 +1033,17 @@ RETURN     all  --  anywhere             anywhere
 #+END_EXAMPLE
 
 *** Observation
-*Fail2ban* service detects malicious attacks.
+   *Fail2ban* service detects malicious attacks.
 
 *** Conclusion
-*Fail2ban* service detects malicious attacks.
+   *Fail2ban* service detects malicious attacks.
 
 ** Test Case-6: Check Command History is getting saved
 *** Objective
-To check whether the commands executed on the server are getting logged with
-proper time stamp.
+   To check whether the commands executed on the server are getting
+   logged with proper time stamp.
 *** Apparatus
-1) An instance of common role - a common server
+   1) An instance of common role - a common server
 
 *** Experiment
 **** Execute following example sequence of commands on the server
@@ -1035,14 +1056,14 @@ proper time stamp.
 [root@common-server ~]$ ssh root@router.vlabs.ac.in
 ssh: connect to host router.vlabs.ac.in port 22: Connection refused
 #+END_EXAMPLE
-Now execute history commands to see whether the commands are getting saved with
-proper time stamp.
+   Now execute history commands to see whether the commands are
+   getting saved with proper time stamp.
 #+BEGIN_EXAMPLE
 [root@common-server ~]$ history
 #+END_EXAMPLE
 
 *** Result
-Output of step-1 of experiment.
+   Output of step-1 of experiment.
 #+BEGIN_EXAMPLE
    21  15 04 13 10:27:45ls
    22  15 04 13 10:27:46pwd
@@ -1051,38 +1072,18 @@ Output of step-1 of experiment.
    25  15 04 13 10:28:22history
 #+END_EXAMPLE
 *** Observation
-History of commands are getting saved with proper time stamp.
+   History of commands are getting saved with proper time stamp.
 
 *** Conclusion
-History of commands are getting saved with proper time stamp.
+   History of commands are getting saved with proper time stamp.
 
-** Test Case-7: Check IPtables service is running
+** Test Case-7: Check Sendmail is sending mail
 *** Objective
-To test whether the iptables service is running on the server. 
-
+   Test sendmail service is able to send mails to the system
+   administrator. The sendmail service is used by various other
+   services such as logwatch and fail2ban.
 *** Apparatus
-1) An instance of common role - a common server
-
-*** Experiment
-Execute following command to list out present firewall rules on the server.
-#+BEGIN_EXAMPLE
-iptables --list
-#+END_EXAMPLE
-Sample output
-#+BEGIN_EXAMPLE
-
-#+END_EXAMPLE
-*** Result
-*** Observation
-*** Conclusion
-Iptables service is running
-
-** Test Case-8: Check Sendmail is sending mail
-*** Objective
-Test sendmail service is able to send mails to the system administrator. The
-sendmail service is used by various other services such as logwatch and fail2ban.
-*** Apparatus
-1) An instance of common role - a common server
+   1) An instance of common role - a common server
 
 *** Experiment
 **** Send mail to an email-id using following command
@@ -1093,9 +1094,9 @@ Test
 EOT
 #+END_EXAMPLE
 
-**** Check the mail client if any mail is received from the server.
+**** Check the mail client if any mail is received from the server
 *** Result
-Sample mail of step-2 of experiment may look like as follows:
+   Sample mail of step-2 of experiment may look like as follows:
 #+BEGIN_EXAMPLE
 from:	root <root@common-server.virtual-labs.ac.in>
 to:	sysadmin@vlabs.ac.in
@@ -1106,17 +1107,17 @@ test
 #+END_EXAMPLE
 
 *** Observation
-An email is received from the server via sendmail service.
+   An email is received from the server via sendmail service.
 
 *** Conclusion
-Sendmail is configured properly and is able to send mail.
+   Sendmail is configured properly and is able to send mail.
 
-** Test Case-9: Check nameservers are set
+** Test Case-8: Check nameservers are set
 *** Objective
-To check nameserver is set on the server for name resolution.
+   To check nameserver is set on the server for name resolution.
 
 *** Apparatus
-1) An instance of common role - a common server
+   1) An instance of common role - a common server
 
 *** Experiment
 **** Check content of =/etc/resolv.conf= file.
@@ -1179,87 +1180,87 @@ ns4.google.com.		172800	IN	A	216.239.38.10
 #+END_EXAMPLE
 
 *** Observation
-Server is able to resolve the names using the given nameservers.
+   Server is able to resolve the names using the given nameservers.
 
 *** Conclusion
-Nameservers are properly set on all the servers in the cluster.
-** Test Case-10: Check empty passwords are not permitted
+   Nameservers are properly set on all the servers in the cluster.
+** Test Case-9: Check empty passwords are not permitted
 *** Objective
-Test that the users can not login to the server with empty password.
+   Test that the users can not login to the server with empty password.
 
 *** Apparatus
-1) An instance of common role - a common server
+   1) An instance of common role - a common server
 
 *** Experiment
-Login to the server with following command
+   Login to the server with following command
 #+BEGIN_EXAMPLE
 ssh root@<common-server-ip>
 #+END_EXAMPLE
 *** Result
-Output of step-1 of experiment is shown below.
+   Output of step-1 of experiment is shown below.
 #+BEGIN_EXAMPLE
 Permission denied (publickey,gssapi-keyex,gssapi-with-mic,password).
 #+END_EXAMPLE
 
 *** Observation
-When a user tries to login to the server with empty password and without ssh
-keys, the server denies the access.
+   When a user tries to login to the server with empty password and
+   without ssh keys, the server denies the access.
 
 *** Conclusion
-Users are not allowed access to the server with empty. Only administrators with
-private ssh keys can login to the server.
+   Users are not allowed access to the server with empty. Only
+   administrators with private ssh keys can login to the server.
 
-** Test Case-11: Password based access is disabled
+** Test Case-10: Password based access is disabled
 *** Objective
-To test that the password access is disabled on all the servers in the cluster.
+   To test that the password access is disabled on all the servers in the cluster.
 
 *** Apparatus
-1) An instance of common role - a common server
-2) Any other machine
+   1) An instance of common role - a common server
+   2) Any other machine
 
 *** Experiment
-Login to the common server from any other machine using following command:
+   Login to the common server from any other machine using following command:
 #+BEGIN_EXAMPLE
 ssh <username>@<common-server-ip>
 #+END_EXAMPLE
 
 *** Result
-Sample output of step-1 of experiment is shown below.
+   Sample output of step-1 of experiment is shown below.
 #+BEGIN_EXAMPLE
 Permission denied (publickey,gssapi-keyex,gssapi-with-mic).
 #+END_EXAMPLE
 
 *** Observation
-When a user tries to login to the server with password and without ssh keys, the
-server denies the access.
+   When a user tries to login to the server with password and without
+   ssh keys, the server denies the access.
 
 *** Conclusion
-Users are not allowed password based access. Only administrators with private
-ssh keys can login to the server.
+   Users are not allowed password based access. Only administrators
+   with private ssh keys can login to the server.
 
-** Test Case-12: Test sudoers package is removed
+** Test Case-11: Test sudoers package is removed
 *** Objective
-To test the sudoers package is removed from the server.
+   To test the sudoers package is removed from the server.
 *** Apparatus
-1) An instance of common role - a common server
+   1) An instance of common role - a common server
 
 *** Experiment
-Execute a command with sudo, for example
+   Execute a command with sudo, for example
 #+BEGIN_EXAMPLE
 sudo su -
 sudo ls
 #+END_EXAMPLE
 
 *** Result
-Sample output of step-1 of experiment.
+   Sample output of step-1 of experiment.
 #+BEGIN_EXAMPLE
 -bash: sudo: command not found
 #+END_EXAMPLE
 *** Observation
-If sudoers package is removed from the server, users can not execute command
-with sudo privileges.
+   If sudoers package is removed from the server, users can not
+   execute command with sudo privileges.
 *** Conclusion
-Sudoers package is removed from all the servers in the cluster.
+   Sudoers package is removed from all the servers in the cluster.
 
 
 

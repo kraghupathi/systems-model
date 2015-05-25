@@ -8,27 +8,32 @@
 #+OPTIONS: ^:nil
 
 * Introduction
-This document describes the design and implementation of Rsnapshot Client.
-Timely backups of configuration files of a node are saved at the central node in
-the cluster.
+   This document describes the design and implementation of Rsnapshot
+   Client. Timely backups of configuration files of a node are saved
+   at the central node in the cluster.
 
 * Requirements
+  The functional and security requirements of the Rsnapshot Client are
+  mentioned in the following sections. Only the Rsnapshot Client
+  specific requirements which differ from the generic requirements
+  specified in the [[common%20role][common role]] are mentioned here.
+
 ** Functional Requirements
-1) Accept incoming ssh connections from rsnapshot server.
-2) Install rsync package.
+   1) Accept incoming ssh connections from rsnapshot server.
+   2) Install rsync package.
 
 ** Security Requirements
-1) All common security requirements as described in [[file:common.org::*Security Requirements][common role]] are applicable
-   to rsnapshot client node.
+   1) All common security requirements as described in [[file:common.org::*Security Requirements][common role]] are
+      applicable to rsnapshot client node.
 
 * Design
-Given diagram describes the design of the rsnapshot client. Systems files are
-listed for a quick overview of whole systems.
+   Given diagram describes the design of the rsnapshot client. Systems
+   files are listed for a quick overview of whole systems.
 
 ** System Design Diagram
 [[./diagrams/rsnapshot-client-design-diagram.png]]
 
-** Editable Link
+** COMMENT Editable Link
 [[https://docs.google.com/drawings/d/1rrCMXTHNn8pS8cNscu3w1Ba4jitfmkL9EiYaWDvETWA/edit][Link to google drawing board]]
 
 ** System Files
@@ -41,13 +46,14 @@ listed for a quick overview of whole systems.
 |------+----------+----------------------------+--------------------|
 
 ** Configuration Design
-Rsnapshot server rsync's the files to be backed up from all the nodes in the
-cluster over ssh.
+   Rsnapshot server rsync's the files to be backed up from all the
+   nodes in the cluster over ssh.
 
 * Implementation
 ** Structure of Scripts
-The implementation of this system is in terms of a collection of Ansible scripts
-which configure the node. These scripts are organized as follows:
+   The implementation of this system is in terms of a collection of
+   Ansible scripts which configure the node. These scripts are
+   organized as follows:
 
 #+BEGIN_EXAMPLE
 |-- rsnapshot_client.yml
@@ -60,12 +66,14 @@ which configure the node. These scripts are organized as follows:
 #+END_EXAMPLE
 
 ** Firewall Rules
-Firewall rules applied to rsnapshot client are mentioned here. Description of
-firewall rules which are common across all the systems are defined in the [[file:common.org::*Common Firewall Rules][common
-role]]. There are no specific firewall rule, only the common rules are applied.
+   Firewall rules applied to rsnapshot client are mentioned
+   here. Description of firewall rules which are common across all the
+   systems are defined in the [[file:common.org::*Common Firewall Rules][common role]]. There are no specific
+   firewall rule, only the common rules are applied.
 
-** Install Rsync package
-Update the server and install the =rsync= package.
+** Tasks
+*** Install Rsync package
+   Update the server and install the =rsync= package.
 
 #+BEGIN_SRC yml :tangle roles/rsnapshot_client/tasks/main.yml :eval no
 - name: updating packages
@@ -77,10 +85,10 @@ Update the server and install the =rsync= package.
   environment: proxy_env
 #+END_SRC
 
-** Copy SSH Keys
-Rsnapshot server ssh public key is placed inside rsnapshot client node as
-authorized keys. Value of =rsnaphot_server_pub_key= variable is fetched from
-=vars/main.yml= file.
+*** Copy SSH Keys
+   Rsnapshot server ssh public key is placed inside rsnapshot client
+   node as authorized keys. Value of =rsnaphot_server_pub_key=
+   variable is fetched from =vars/main.yml= file.
 
 #+BEGIN_SRC yml :tangle roles/rsnapshot_client/tasks/main.yml :eval no
 - name: copying public key of rsnapshot-server to authorized_keys of client
@@ -88,9 +96,10 @@ authorized keys. Value of =rsnaphot_server_pub_key= variable is fetched from
 #+END_SRC
 
 ** Variables Definition
-Rsnaphost server's ssh-public keys are to be placed in the rsnapshot client node
-as authorized keys. System administrator has to assign the value of
-=rsnaphot_server_pub_key= variable as ssh-public key.
+   Rsnaphost server's ssh-public keys are to be placed in the
+   rsnapshot client node as authorized keys. System administrator has
+   to assign the value of =rsnaphot_server_pub_key= variable as
+   ssh-public key.
   
 #+BEGIN_SRC yml :tangle roles/rsnapshot_client/vars/main.yml :eval no
 #Public key fetched from rsnapshot server to ansible server( present in rsnapshot_public_key/<rsnapshot_server_name>/root/.ssh/id_rsa.pub)
@@ -99,13 +108,14 @@ rsnaphot_server_pub_key: "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6LPC+WU+OfFQtIqRZe
 
 * Test Cases
 ** Test Case-1
-*** Objective: 
-Test rsync package is installed.
-*** Apparatus:
-1. Rsnapshot client node
+*** Objective
+   Test rsync package is installed.
+*** Apparatus
+   1. Rsnapshot client node
 
 *** Theory
-Rsnapshot server takes backup of data from the client node using rsync tool.
+   Rsnapshot server takes backup of data from the client node using
+   rsync tool.
 *** Experiment
 **** Verify rsync package is installed using following command
 #+BEGIN_EXAMPLE
@@ -113,15 +123,17 @@ rpm -qa | grep rsync
 #+END_EXAMPLE
 
 *** Result
-Output of step-1 of experiment shows rsync package is installed. It also shows
-the version of the package which is =3.0.6-12= in this case.
+   Output of step-1 of experiment shows rsync package is installed. It
+   also shows the version of the package which is =3.0.6-12= in this
+   case.
+
 #+BEGIN_EXAMPLE
 rsync-3.0.6-12.el6.x86_64
 #+END_EXAMPLE
 
 *** Observation
-Rsync package is installed on the node.
+   Rsync package is installed on the node.
 
 *** Conclusion
-Rsync package is installed on the node.
+   Rsync package is installed on the node.
 
