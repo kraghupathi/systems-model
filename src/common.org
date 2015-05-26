@@ -1,11 +1,10 @@
-#+Title: Common Roles Design Model and Implementation
+#+Title: Common Roles
 #+Date: April 9, 2015. Thursday
 #+PROPERTY: session *scratch*
 #+PROPERTY: results output
 #+PROPERTY: exports code
 #+OPTIONS: ^:nil
 \#+SETUPFILE: org-templates/level-0.org
-
 
 * Introduction
   The document describes the requirements, design and implementation
