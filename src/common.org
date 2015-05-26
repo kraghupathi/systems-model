@@ -1,4 +1,4 @@
-#+Title: Common Roles Design Model and Implementation
+#+Title: Common Roles
 #+Date: April 9, 2015. Thursday
 #+PROPERTY: session *scratch*
 #+PROPERTY: results output
