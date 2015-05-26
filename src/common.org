@@ -10,7 +10,7 @@
 * Introduction
   The document describes the requirements, design and implementation
   of the common role. Common role consists of basic functional and
-  security requirements which are applied on all the nodes in the
+  security requirements, which are applied on all the nodes in the
   cluster. Examples and verifications are given wherever
   possible. Test Cases are also described to test the setup.
 
@@ -396,19 +396,13 @@
    cluster for a limited period of time.
 
    To configure Fail2ban following actions are performed:
-   1) Download epel repo
-   2) Install epel repo
-   3) Install fail2ban
-   4) Start fail2ban service
+   1) Install epel repo
+   2) Install fail2ban
+   3) Start fail2ban service
 
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
-#Setup epel for downloading fail2ban
-- name: Download epel RPM 
-  get_url: url="{{ epel_download_url }}" dest="{{epel_download_path}}" timeout=5
-  environment: proxy_env
-
 - name: Install epel RPM
-  yum: name="{{epel_download_path}}" state=present
+  yum: name=epel-release state=present
   environment: proxy_env
 
 #Install fail2ban and enable it on startup
@@ -483,9 +477,10 @@ export HISTTIMEFORMAT HISTSIZE HISTFILESIZE
    30 seconds to timeout for host resolution. To take care of this
    assumption of sendmail =/etc/hosts= file is configured.
 
-   Following variables are set by the ansible tool as it runs on the
-   client node. For each server in the cluster value of these
-   variables will be different and set according to the server role.
+   Following variables are set by the ansible playbook scripts as it
+   runs on the client node. For each server in the cluster value of
+   these variables will be different and set according to the server
+   role.
 
 |-------+------------------------------+-------------------------------+--------------------------|
 | S.no. | Variable Name                | Description                   | Example                  |

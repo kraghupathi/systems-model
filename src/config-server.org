@@ -63,7 +63,7 @@ This node is one of the many other nodes in the cluster.  Only from
 IIIT ip range and management ip machines are allowed to ssh to root
 account of the configuration server. 
 
-SSH access to this node allowed only via key-based authentication,
+SSH access to this node is allowed only via key-based authentication,
 password based authentication is not allowed to root user. The design
 of the firewall rules ensures that this server is accessible only via
 port 22.
