@@ -21,7 +21,7 @@ specific set of configurations.
 
 This configuration server will be able to ssh to other servers and lab
 instances/containers using *key based authentication only* since
-public key of configuration server will be placed into all aother
+public key of configuration server will be placed in all aother
 servers/nodes,instances/containers and itself also. Password based
 authentication is not allowed to this node
 
@@ -79,6 +79,8 @@ that configuration server will be able to configure all other nodes,
 instances/containers and as well as itself by running the ansible
 scripts. These ansible scripts are implemented at [[Implementation]]
 section.
+
+
 ** Configuration files Summary
 The following table gives the information about services and their
 configuration files. Other configuration files are updated in common role.
@@ -117,8 +119,8 @@ configures the machine. Scripts are organized as follows:
 |   |-- common
 |   |   ...
 #+END_EXAMPLE
-Here =config_server.yml= file configures config_server host with
-config_server and all other roles.
+Here =config_server.yml= file is a main playbook to configure
+configuration server host with config_server and all other roles.
 
 =roles/config_server/handlers/main.yml= file defines various handlers
 which are only only executed in case a task notifies them. Handlers
@@ -139,6 +141,7 @@ created at [[Firewall rules]] section and you can see the decription each
 firewall.
 
 ** Tasks
+
 *** Firewall rules
 Rules which are specific to configuration server are described [[Firewall rules specific to config_server][below]].
 Description of each firewall rule of this configuration server and
@@ -243,7 +246,8 @@ The following firewall rule accepts incoming connections on tcp port
 
 *** Installing ansible 
 Install latest ansible package to setup the configuration server
-itself and to run the ansible scripts.
+itself and to run the ansible scripts to configure the other nodes in
+the cluster.
 #+BEGIN_SRC yaml :tangle roles/config_server/tasks/main.yml
 ---
 - name: installing ansible
@@ -270,9 +274,9 @@ itself and to run the ansible scripts.
   notify: restart iptables
 #+END_SRC
 ** Handlers
-  Restarts the iptables service if anything is modified in
-  configuration file of iptables service.  These handlers are called
-  only when tasks are notified to start any service.
+  Restarts the iptables service if configuration file of iptables is
+  modified. These handlers are called only when tasks are notified to
+  start service.
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/handlers/main.yaml 
 ---
 - name: restart iptables
