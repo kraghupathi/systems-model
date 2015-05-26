@@ -32,7 +32,7 @@ Given diagram describes the design of the monitoring server. Systems files are
 listed for a quick overview of whole systems.
 ** System Design Diagram
 [[./diagrams/nagios-server-design-diagram.png]]
-
+# comment Unnable to view the diagram
 ** Editable Link
 [[https://docs.google.com/a/vlabs.ac.in/drawings/d/10tc9FolWsVoPfEXI1FbvJmZKg77SjkGbcix2yJMg81Q/edit][Design Diagram Link]]
 
@@ -54,7 +54,7 @@ listed for a quick overview of whole systems.
 ** Configuration Design
 In a system there may be many services of interest which are to be monitored,
 such as =ssh=, =ping= and =http=. Services and usage being monitored are
-different for various nodes in the cluter. In order to properly define which
+different for various nodes in the cluster. In order to properly define which
 services are to be monitored, groups of services are defined. A group consists
 of various services. For example a =basic_services= group consists of =ssh=,
 =ping=, =nrpe check users= and =nrpe checking load=.
