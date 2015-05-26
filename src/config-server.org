@@ -21,7 +21,7 @@ specific set of configurations.
 
 This configuration server will be able to ssh to other servers and lab
 instances/containers using *key based authentication only* since
-public key of configuration server will be placed in all aother
+public key of configuration server will be placed in all other
 servers/nodes,instances/containers and itself also. Password based
 authentication is not allowed to this node
 
@@ -43,12 +43,12 @@ below and all other common requirements are described in [[./common.org][common 
      including itself and ensures that the configuration is
      consistent.
   2. Configuration server has only one `root' user.
-  3. Only authorized VLEAD members can log-in as 'root' user from
-     IIIT IP range or management ip machines using key based authentication only.
+  3. Only authorized VLEAD members can log-in as 'root' user from IIIT
+     IP range or management ip machines using key based authentication
+     only.
 ** Security Requirements
    Configuration server accepts incoming connections on port 22 *only*
    from IIIT IP range or management ip machines.
-
 
 * Design
 *The design of this configuration server is as follows*: 
@@ -63,10 +63,10 @@ This node is one of the many other nodes in the cluster.  Only from
 IIIT ip range and management ip machines are allowed to ssh to root
 account of the configuration server. 
 
-SSH access to this node allowed only on key-based authentication,
+SSH access to this node allowed only via key-based authentication,
 password based authentication is not allowed to root user. The design
 of the firewall rules ensures that this server is accessible only via
-port 22. 
+port 22.
 
 SSH configuration, fail2ban and locking root user password are taken
 care by common role. For more tasks which are done by common role,
@@ -274,8 +274,8 @@ the cluster.
   notify: restart iptables
 #+END_SRC
 ** Handlers
-  Restarts the iptables service if configuration file of iptables is
-  modified. These handlers are called only when tasks are notified to
+  Restart the iptables service if configuration file of iptables is
+  modified. These handlers are called only when tasks notifies to
   start service.
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/handlers/main.yaml 
 ---
@@ -321,12 +321,12 @@ the cluster.
 *** Experiments
 **** SSH to the config_server from management ips/ IIIT ips
     Since configuration server is created using AWS console, KeyPair
-    of this server is generated during creation of the VM. So
-    the private KeyPair is placed in "ssh-tunnel" container on
-    base2. From "ssh-tunnel", only VLEAD members (who have ssh access to
-    ssh-tunnel and sudo permissions to root account) can be able to
-    ssh to configuration server only from IIIT network. 
-    ssh to configuration server using the bellow command:
+    of this server is generated during creation of the VM. So the
+    private KeyPair is placed in "ssh-tunnel" container on base2. From
+    "ssh-tunnel", only VLEAD members (who have ssh access to
+    ssh-tunnel and sudo permissions to root account) can ssh to
+    configuration server only from IIIT network.  ssh to configuration
+    server using the below command:
     #+BEGIN_SRC example
     ssh -i test.pem root@54.56.34.231
     #+END_SRC
@@ -386,9 +386,9 @@ the cluster.
 *** Experiments
 **** SSH to the config_server from IIIT ips/management ips
     From "workstation1", only VLEAD members (who have ssh access to
-    workstation and sudo permissions to root account) can be able to
-    ssh to configuration server only from IIIT network. 
-    ssh to configuration server using the bellow command:
+    workstation and sudo permissions to root account) can ssh to
+    configuration server only from IIIT network.  ssh to configuration
+    server using the bellow command:
     #+BEGIN_SRC example
     workstation1$ssh root@54.56.34.231
     #+END_SRC
@@ -416,9 +416,9 @@ the cluster.
     Configuration server is able to accept ssh connection only from
     IIIT/management ips and not from any other machines with
     unknown ips.
-*** Result 
+*** Result
     Test is passed. configuration is working fine
 *** Conclusion
   Iptables are configured and applied appropriately. Configuration
-  server is able accept ssh connections only from IIIT/management IPs and
-  not from unknown ips.
+  server is able accept ssh connections only from IIIT/management IPs
+  and not from unknown ips.
