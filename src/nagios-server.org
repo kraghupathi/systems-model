@@ -39,8 +39,13 @@
    systems.
 ** System Design Diagram
 [[./diagrams/nagios-server-design-diagram.png]]
+<<<<<<< HEAD:src/nagios_server.org
+# comment Unnable to view the diagram
+** Editable Link
+=======
 
 ** COMMENT Editable Link
+>>>>>>> ecc14bb108a0ad79e114f6e39b781e0a95c3aeb1:src/nagios-server.org
 [[https://docs.google.com/a/vlabs.ac.in/drawings/d/10tc9FolWsVoPfEXI1FbvJmZKg77SjkGbcix2yJMg81Q/edit][Design Diagram Link]]
 
 ** System Files
@@ -59,6 +64,24 @@
 |------+----------+---------------------------------------------+-------------------------|
   
 ** Configuration Design
+<<<<<<< HEAD:src/nagios_server.org
+In a system there may be many services of interest which are to be monitored,
+such as =ssh=, =ping= and =http=. Services and usage being monitored are
+different for various nodes in the cluster. In order to properly define which
+services are to be monitored, groups of services are defined. A group consists
+of various services. For example a =basic_services= group consists of =ssh=,
+=ping=, =nrpe check users= and =nrpe checking load=.
+
+Groups are assigned to the client system depending on the services that are to
+monitored inside the system. For example in a reverseproxy node, services being
+monitored are =http=, =ssh=, =https=, =ping=, =nrpe check users= and =nrpe check
+load=, so the group which consists of all these services i.e. =web= is assigned
+to the reverseproxy node.
+
+Nagios sends email whenever a problem is encountered on the client node.
+Example problem could be - some service is in critical state due to
+downtime. Example alert mail sent by nagios is shown below:
+=======
    In a system there may be many services of interest which are to be
    monitored, such as =ssh=, =ping= and =http=. Services and usage
    being monitored are different for various nodes in the cluter. In
@@ -77,6 +100,7 @@
    Nagios sends email whenever a problem is encountered on the client
    node. Example problem could be - some service is in critical state
    due to downtime. Example alert mail sent by nagios is shown below:
+>>>>>>> ecc14bb108a0ad79e114f6e39b781e0a95c3aeb1:src/nagios-server.org
 #+BEGIN_EXAMPLE
 *****Nagios*****
 
