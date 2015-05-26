@@ -108,6 +108,30 @@
 |   |   |   |   `-- main.yml
 #+END_EXAMPLE
 
+Here =common.yml= file is a main playbook to configure nodes in the
+cluster.
+
+=roles/common/files/history.sh= file is a shell script to do the
+history settings inside the system.
+
+=roles/common/handlers/main.yml= file defines various handlers which
+are only executed in case a task notifies them. Handlers are described
+in details at [[Handlers][handlers]].  The handlers are called only when tasks are
+called as part of the cmmon role. Various templates and files are
+being used during task execution for creating necessary configuration
+files.
+
+=roles/common/tasks/main.yml= file consist of various tasks which are
+needed for setting up the nodes in the cluster. These tasks are
+described [[Tasks][here]].
+
+=roles/common/templates/resolv.conf= template file consist of
+nameserver. This template uses various variables and these variable
+values are defined in common_vars role.
+
+=roles/common/vars/main.yml= file is the variables files which defines
+the variables used by the ansible playbooks.
+
 ** Common Firewall Rules
    Firewall rules are set on all servers in the cluster. Each node has
    a specific set of rules depending upon the purpose of the

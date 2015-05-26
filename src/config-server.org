@@ -123,11 +123,11 @@ Here =config_server.yml= file is a main playbook to configure
 configuration server host with config_server and all other roles.
 
 =roles/config_server/handlers/main.yml= file defines various handlers
-which are only only executed in case a task notifies them. Handlers
-are described in details at [[Handlers][handlers]].  The hanlders are caled only
-when tasks are called as part of the config_server role. Various
-templates and files are being used during task execution for creating
-necessary configuration files.
+which are only executed in case a task notifies them. Handlers are
+described in details at [[Handlers][handlers]].  The hanlders are caled only when
+tasks are called as part of the config_server role. Various templates
+and files are being used during task execution for creating necessary
+configuration files.
 
 =roles/config_server/tasks/main.yml= file consist of various tasks
 which are needed for setting up config_server. These tasks are
