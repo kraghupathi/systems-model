@@ -9,15 +9,19 @@
 
 * Introduction
   The document describes the requirements, design and implementation
+# comment Should be 'This document describes'
   of the common role. Common role consists of basic functional and
   security requirements, which are applied on all the nodes in the
   cluster. Examples and verifications are given wherever
+# comment It is not clear what are  verifications, it can probably be removed
   possible. Test Cases are also described to test the setup.
 
   Our cluster consists of many nodes. Every node has a specific
+# comment 'our cluster' is not the right word. replace 'our' with something else such as Base1/AWS
   purpose and its properties such as firewall rules and services are
   configured to serve the purpose. All the nodes are part of one
   cluster they share some common properties in terms of system
+# comment There should be a comma after 'one cluster'
   configuration. Some common system configuration is applied on all
   the nodes in the cluster. For example - packages such as
   =bind-utils=, =logwatch= are installed in all the systems and ssh
@@ -55,6 +59,7 @@
    #+CAPTION:  Overall Cluster Network Diagram
    #+LABEL:  fig-overall-cluster-network-diagram
 [[   ./diagrams/overall-cluster-network-diagram.png]]
+# comment unable to view the above diagram
 
 ** COMMENT Editable Link
 [[https://docs.google.com/drawings/d/1-_1DAonwj9mfJYaXqHwZVHbzYEgDkzdTjOzDCBTpr-c/edit][   Google Drawing Link]]
@@ -118,6 +123,7 @@ history settings inside the system.
 are only executed in case a task notifies them. Handlers are described
 in details at [[Handlers][handlers]].  The handlers are called only when tasks are
 called as part of the cmmon role. Various templates and files are
+# comment spelling mistake - common, not 'cmmon'
 being used during task execution for creating necessary configuration
 files.
 
@@ -137,6 +143,7 @@ the variables used by the ansible playbooks.
    a specific set of rules depending upon the purpose of the
    node. However, some rules are common (intersection of firewall
    rules in all the server). These common rules are applied in all the
+# comment should be 'applied to' rather than 'applied in'
    servers in the cluster.
 
    The common firewall rules are described here. The description of
@@ -240,7 +247,7 @@ the variables used by the ansible playbooks.
     #Allow to accept incoming nrpe queries from nagios server
     -A INPUT -m state --state NEW -p tcp -m tcp --dport 5666 -j ACCEPT
     #+END_EXAMPLE
-
+    
 *** Rule for all other incoming connections
     Drop all the INPUT packets which does not match any of the defined
     rules. Dropped packets are logged with a limited rate.
