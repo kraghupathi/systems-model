@@ -6,7 +6,6 @@
 #+OPTIONS: ^:nil
 \#+SETUPFILE: org-templates/level-0.org
 
-
 * Introduction
   The document describes the requirements, design and implementation
   of the common role. Common role consists of basic functional and

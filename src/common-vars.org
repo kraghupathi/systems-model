@@ -1,4 +1,4 @@
-#+Title: Common Vars Role Design Model and Implementation
+#+Title: Common Vars Role
 #+Date: April 14, 2015. Tuesday
 #+PROPERTY: session *scratch*
 #+PROPERTY: results output
@@ -32,6 +32,13 @@
 |   |   |   `-- vars
 |   |   |   |   `-- main.yml
 #+END_EXAMPLE
+
+Here =common_vars.yml= file is a main playbook to configure nodes in
+the cluster.
+
+=roles/common_vars/vars/main.yml= file defines the variables used by
+various other ansible playbooks. Variables value in ansible playbook
+is imported from this common_vars file.
 
 ** Common Variables
 *** Variable Description
