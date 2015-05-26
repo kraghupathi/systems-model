@@ -6,22 +6,27 @@
 #+options: ^:nil
 
 * Introduction
+In this documentation, we call config-server as ansible server,
+configuration server and also node.
+  
 This document describes the requirements, design and implementation of
-the configuration server.  This server configures all other servers in
-the cluster and configures it self as well, through multiple roles and
-tasks.  A role is a specific set of configurations.
+the configuration server.
+  
+This configuration server plays a vital role in this cluster to setup
+the complete infrastructure.   
 
-In this documentation, we used to call config-server as ansible server
-# comment replace 'we used to call' with 'we call'
-some times. 
+This server configures all other servers in the cluster and configures
+itself as well, through multiple roles and tasks.  A role is a
+specific set of configurations.
 
-This configuration server(config-server) will be able to ssh to other
-servers and lab instances/containers using *key based authentication
-only* since public key of configuration server is copied into all the
-servers and instances/containers. Password based authentication is not
-allowed for root user.
+This configuration server will be able to ssh to other servers and lab
+instances/containers using *key based authentication only* since
+public key of configuration server will be placed in all other
+servers/nodes,instances/containers and itself also. Password based
+authentication is not allowed to this node
 
-Only from management ip machines, we will be able ssh to root account
+
+** COMMENT Only from management ip machines, we will be able ssh to root account
 of configuration server. Password based authentication is not allowed
 to root user, only key based authentication is allowed from specific
 ip machines.  
@@ -30,59 +35,57 @@ ip machines.
             ssh to configuration server only from management ip
             machines.
 
-
 * Requirements
-Requirements which are specific to configuration server described below
-# comment should be 'are described below'
-and all other common requirements are described in [[./common.org][common role]]
+Requirements which are specific to configuration server are described
+below and all other common requirements are described in [[./common.org][common role]]
 ** Functional Requirements
-
   1. Configuration server will configure all the nodes in the cluster
      including itself and ensures that the configuration is
      consistent.
   2. Configuration server has only one `root' user.
-  3. Only authorized VLEAD members can log-in as 'root' user from
-     IIIT IP range or management ip machines using key based authentication only.
+  3. Only authorized VLEAD members can log-in as 'root' user from IIIT
+     IP range or management ip machines using key based authentication
+     only.
 ** Security Requirements
    Configuration server accepts incoming connections on port 22 *only*
    from IIIT IP range or management ip machines.
 
-
-
 * Design
- *The design of this configuration server is as follows* 
+*The design of this configuration server is as follows*: 
 
-The following network diagram tells us how the configuration server is
+The following network diagram shows us how the configuration server is
 connecting to other nodes such as reverseproxy, DNS, router etc.
 #+CAPTION:  Configuration Server Design Diagram
 #+LABEL:  fig-config-diagram
 [[./diagrams/config-server-network-diagram.png]]
 
-This node is one of the many other nodes of the cluster.  Only from
+This node is one of the many other nodes in the cluster.  Only from
 IIIT ip range and management ip machines are allowed to ssh to root
-account of the configuration server. SSH access to this node allowed
-only on key-based authentication, password based authentication is not
-allowed to root user. The design of the firewall rules ensures that
-this server is accessible only via port 22. This server can be
-reached via ICMP (ping) requests.
+account of the configuration server. 
+
+SSH access to this node is allowed only via key-based authentication,
+password based authentication is not allowed to root user. The design
+of the firewall rules ensures that this server is accessible only via
+port 22.
 
 SSH configuration, fail2ban and locking root user password are taken
-care by common role. For more tasks which are done by common role in
-this node, please go through [[./common.org][common role]]. 
+care by common role. For more tasks which are done by common role,
+please go through [[./common.org][common role]].
 
-This node's public key will be placed inside every
-instance/container. So that configuration server will be able to
-configure all other nodes, instances/containers and as well as itself
-by running the ansible scripts. These ansible scripts are implemented
-at [[Implementation]].
+This node can be reached via ICMP (ping) requests.
+
+This node's public key will be placed in every instance/container. So
+that configuration server will be able to configure all other nodes,
+instances/containers and as well as itself by running the ansible
+scripts. These ansible scripts are implemented at [[Implementation]]
+section.
 
 
 ** Configuration files Summary
-The following table gives the information about services and their configuration files and
-by which role configurations are applied. Other configuration files
-are updated in common role.
+The following table gives the information about services and their
+configuration files. Other configuration files are updated in common role.
 |-----------+-----------------------------------+---------------------------|
-| *Service* | *Configuration file*             | *Description*             |
+| *Service* | *Configuration file*              | *Description*             |
 |-----------+-----------------------------------+---------------------------|
 | firewall  | =/etc/sysconfig/iptables/=        | configuration server Role |
 |-----------+-----------------------------------+---------------------------|
@@ -94,10 +97,9 @@ are updated in common role.
 * Implementation
 The implementation of the configuration server is done with the
 following steps.
-- Note1 :: In this implementation, variables are used in different
-          places using "{}". Values of these variables are defined in
-          [[common_vars.org][common_vars role]]. For more information about variable
-          definition, please go through the common_vars role.
+- Note :: In this implementation, variables are used in various
+           places using "{}". Values of these variables are defined in
+           [[common_vars.org][common_vars role]].
 
 ** Structure of the scripts
 The implementation of this system is in terms of a collection of ansible scripts that
@@ -117,10 +119,30 @@ configures the machine. Scripts are organized as follows:
 |   |-- common
 |   |   ...
 #+END_EXAMPLE
+Here =config_server.yml= file is a main playbook to configure
+configuration server host with config_server and all other roles.
 
+=roles/config_server/handlers/main.yml= file defines various handlers
+which are only executed in case a task notifies them. Handlers are
+described in details at [[Handlers][handlers]].  The hanlders are caled only when
+tasks are called as part of the config_server role. Various templates
+and files are being used during task execution for creating necessary
+configuration files.
 
+=roles/config_server/tasks/main.yml= file consist of various tasks
+which are needed for setting up config_server. These tasks are
+described [[Tasks][here]].
 
-** Firewall rules
+=roles/confi_server/templates/iptables= template file consist of
+various firewall rules in order to configure this node securly by
+running the [[Apply firewall rules to Configuration server][task]]. This template uses various variables and these
+variable values are defined in common_vars role. This template is
+created at [[Firewall rules]] section and you can see the decription each
+firewall.
+
+** Tasks
+
+*** Firewall rules
 Rules which are specific to configuration server are described [[Firewall rules specific to config_server][below]].
 Description of each firewall rule of this configuration server and
 which are common across all the systems are described in [[.common.org][common role]].
@@ -222,23 +244,24 @@ The following firewall rule accepts incoming connections on tcp port
 {% endfor %}
 #+END_SRC
 
-** Installing ansible 
+*** Installing ansible 
 Install latest ansible package to setup the configuration server
-itself and to run the ansible scripts.
+itself and to run the ansible scripts to configure the other nodes in
+the cluster.
 #+BEGIN_SRC yaml :tangle roles/config_server/tasks/main.yml
 ---
 - name: installing ansible
   yum: name=ansible state=present
-  environment: proxy_env #please look at Note2
+#  environment: proxy_env
 #+END_SRC
-** Change hostname 
+*** Change hostname 
   The following task changes the hostname of the container/VM
   #+BEGIN_SRC yaml :tangle roles/config_server/tasks/main.yml
   ---
 - name: changing the hostname 
   hostname: config-server.vlabs.ac.in
   #+END_SRC
-** Apply firewall rules to Configuration server
+*** Apply firewall rules to Configuration server
    Firewall rules are applied by following steps:
     1) Copy the =iptables= template to the configuration server.
     2) Restart iptables service if the configuration file is modified
@@ -250,17 +273,18 @@ itself and to run the ansible scripts.
   template: src=iptables dest=/etc/sysconfig/iptables mode=600 owner=root group=root
   notify: restart iptables
 #+END_SRC
-** Restarting services
-  Restarting the iptables service if anything is modified in
-  configuration file.
+** Handlers
+  Restart the iptables service if configuration file of iptables is
+  modified. These handlers are called only when tasks notifies to
+  start service.
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/handlers/main.yaml 
 ---
 - name: restart iptables
   service: name=iptables state=restarted
 
 #+END_SRC
-** Putting all roles together
-   The configuration server is managed with all the above rules. The
+** Main configuration file
+   The configuration server is managed with all other roles. The
    implementation is done in terms of defining suitable scripts for
    each role.  The top level script is =build/code/config_server.yml=
 
@@ -297,12 +321,12 @@ itself and to run the ansible scripts.
 *** Experiments
 **** SSH to the config_server from management ips/ IIIT ips
     Since configuration server is created using AWS console, KeyPair
-    of this server is generated during creation of the VM. So
-    the private KeyPair is placed in "ssh-tunnel" container on
-    base2. From "ssh-tunnel", only VLEAD members (who have ssh access to
-    ssh-tunnel and sudo permissions to root account) can be able to
-    ssh to configuration server only from IIIT network. 
-    ssh to configuration server using the bellow command:
+    of this server is generated during creation of the VM. So the
+    private KeyPair is placed in "ssh-tunnel" container on base2. From
+    "ssh-tunnel", only VLEAD members (who have ssh access to
+    ssh-tunnel and sudo permissions to root account) can ssh to
+    configuration server only from IIIT network.  ssh to configuration
+    server using the below command:
     #+BEGIN_SRC example
     ssh -i test.pem root@54.56.34.231
     #+END_SRC
@@ -317,9 +341,9 @@ itself and to run the ansible scripts.
     [root@config-server~]$
     #+END_EXAMPLE
 **** SSH to config_server from workstation with unknown ip
-    Suppose a workstation with unknown ip and it has KeyPair, then
-    ssh to configuration server from that workstation with unknown
-    ip(other than IIIT network ip) using bellow command
+    Suppose a workstation with unknown ip(other than IIIT network ip)
+    and it has KeyPair, then try ssh to configuration server from that
+    workstation using bellow command:
 
     #+BEGIN_SRC example 
     unknown-machine$ ssh -i test.pem root@54.56.34.231
@@ -333,9 +357,10 @@ itself and to run the ansible scripts.
     IIIT/management ips and not from any other machines with unknown
     ips.
 *** Result 
-    Test is passed. Configuration is working fine
+    Test is passed. Firewall rules and ssh are configured and applied
+    properly. 
 *** Conclusion
-  Iptables are configured and applied appropriately. Configuration
+  Iptables and ssh are configured and applied appropriately. Configuration
   server is able accept ssh connections only from IIIT/management IPs and
   not from unknown ips.
 
@@ -361,9 +386,9 @@ itself and to run the ansible scripts.
 *** Experiments
 **** SSH to the config_server from IIIT ips/management ips
     From "workstation1", only VLEAD members (who have ssh access to
-    workstation and sudo permissions to root account) can be able to
-    ssh to configuration server only from IIIT network. 
-    ssh to configuration server using the bellow command:
+    workstation and sudo permissions to root account) can ssh to
+    configuration server only from IIIT network.  ssh to configuration
+    server using the bellow command:
     #+BEGIN_SRC example
     workstation1$ssh root@54.56.34.231
     #+END_SRC
@@ -391,9 +416,9 @@ itself and to run the ansible scripts.
     Configuration server is able to accept ssh connection only from
     IIIT/management ips and not from any other machines with
     unknown ips.
-*** Result 
+*** Result
     Test is passed. configuration is working fine
 *** Conclusion
   Iptables are configured and applied appropriately. Configuration
-  server is able accept ssh connections only from IIIT/management IPs and
-  not from unknown ips.
+  server is able accept ssh connections only from IIIT/management IPs
+  and not from unknown ips.

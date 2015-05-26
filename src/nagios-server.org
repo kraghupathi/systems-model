@@ -9,31 +9,43 @@
 #+ATTR_HTML: width="80px"
 
 * Introduction
-This document describes the design and implementation of the Monitoring System -
-Nagios. Nagios is a monitoring tool used to monitor services of a system such as
-ssh service, cpu usage, ram usage and disk usage. Examples and verification are
-given wherever possible. Test Cases are also described to test the setup.
+   This document describes the design and implementation of the
+   Monitoring System - Nagios. Nagios is a monitoring tool used to
+   monitor services of a system such as ssh service, cpu usage, ram
+   usage and disk usage. Examples and verification are given wherever
+   possible. Test Cases are also described to test the setup.
 
 * Requirements
+  The functional and security requirements of the Nagios Server are
+  mentioned in the following sections. Only the Nagios specific
+  requirements which differ from the generic requirements specified in
+  the [[common%20role][common role]] are mentioned here.
+
 ** Functional Requirements
-1) Monitor various services such as ssh, ping, http on all the system.
-2) Accept incoming connections on TCP port 80.
-3) Accept outgoing connections on TCP port 22.
-4) Accept outgoing connections on TCP port 5666 for nrpe.
-5) Run apache service.
-6) Run nagios service.
+   1) Monitor various services such as ssh, ping, http on all the system.
+   2) Accept incoming connections on TCP port 80.
+   3) Accept outgoing connections on TCP port 22.
+   4) Accept outgoing connections on TCP port 5666 for nrpe.
+   5) Run apache service.
+   6) Run nagios service.
 
 ** Security Requirements
-1) All common security requirements as described in [[file:common.org::*Security Requirements][common role]] are applicable
-   to nagios node.
+   1) All common security requirements as described in [[file:common.org::*Security Requirements][common role]] are
+      applicable to nagios node.
 
 * Design
-Given diagram describes the design of the monitoring server. Systems files are
-listed for a quick overview of whole systems.
+   Given diagram describes the design of the monitoring
+   server. Systems files are listed for a quick overview of whole
+   systems.
 ** System Design Diagram
 [[./diagrams/nagios-server-design-diagram.png]]
+<<<<<<< HEAD:src/nagios_server.org
 # comment Unnable to view the diagram
 ** Editable Link
+=======
+
+** COMMENT Editable Link
+>>>>>>> ecc14bb108a0ad79e114f6e39b781e0a95c3aeb1:src/nagios-server.org
 [[https://docs.google.com/a/vlabs.ac.in/drawings/d/10tc9FolWsVoPfEXI1FbvJmZKg77SjkGbcix2yJMg81Q/edit][Design Diagram Link]]
 
 ** System Files
@@ -52,6 +64,7 @@ listed for a quick overview of whole systems.
 |------+----------+---------------------------------------------+-------------------------|
   
 ** Configuration Design
+<<<<<<< HEAD:src/nagios_server.org
 In a system there may be many services of interest which are to be monitored,
 such as =ssh=, =ping= and =http=. Services and usage being monitored are
 different for various nodes in the cluster. In order to properly define which
@@ -68,6 +81,26 @@ to the reverseproxy node.
 Nagios sends email whenever a problem is encountered on the client node.
 Example problem could be - some service is in critical state due to
 downtime. Example alert mail sent by nagios is shown below:
+=======
+   In a system there may be many services of interest which are to be
+   monitored, such as =ssh=, =ping= and =http=. Services and usage
+   being monitored are different for various nodes in the cluter. In
+   order to properly define which services are to be monitored, groups
+   of services are defined. A group consists of various services. For
+   example a =basic_services= group consists of =ssh=, =ping=, =nrpe
+   check users= and =nrpe checking load=.
+
+   Groups are assigned to the client system depending on the services
+   that are to monitored inside the system. For example in a
+   reverseproxy node, services being monitored are =http=, =ssh=,
+   =https=, =ping=, =nrpe check users= and =nrpe check load=, so the
+   group which consists of all these services i.e. =web= is assigned
+   to the reverseproxy node.
+
+   Nagios sends email whenever a problem is encountered on the client
+   node. Example problem could be - some service is in critical state
+   due to downtime. Example alert mail sent by nagios is shown below:
+>>>>>>> ecc14bb108a0ad79e114f6e39b781e0a95c3aeb1:src/nagios-server.org
 #+BEGIN_EXAMPLE
 *****Nagios*****
 
@@ -85,15 +118,17 @@ Additional Info:
 CRITICAL - Plugin timed out while executing system call
 #+END_EXAMPLE
 
-Admin monitors client nodes via web interface. Web interface runs as an http
-service on nagios node - localhost port 80.
+   Admin monitors client nodes via web interface. Web interface runs
+   as an http service on nagios node - localhost port 80.
 
 [[./diagrams/nagios-dashboard-screenshot.png]]
 
 * Implementation
 ** Structure of Scripts
-The implementation of this system is in terms of a collection of Ansible scripts
-which configure the node. These scripts are organized as follows:
+   The implementation of this system is in terms of a collection of
+   Ansible scripts which configure the node. These scripts are
+   organized as follows:
+
 #+BEGIN_EXAMPLE
 |-- nagios_server.yaml
 |-- roles
@@ -113,19 +148,21 @@ which configure the node. These scripts are organized as follows:
 #+END_EXAMPLE
 
 ** Firewall rules for Nagios Server
-Firewall rules applied on Nagios server are mentioned here. Description of
-firewall rules which are common across all the systems are defined in the [[file:common.org::*Common Firewall Rules][common
-role]]. Rules for following specific purposes of nagios node are described here:
+   Firewall rules applied on Nagios server are mentioned
+   here. Description of firewall rules which are common across all the
+   systems are defined in the [[file:common.org::*Common Firewall Rules][common role]]. Rules for following
+   specific purposes of nagios node are described here:
 
-1. Nagios server hosts a web interface to display monitoring data. Admins access
-   this web interface on TCP port 80 for monitoring purposes. Defined in line
-   number 30.
-2. Nagios Server is not responsible for any packet forwarding, hence forwarding
-   rule is set to 'drop' policy. Defined in line number 39.
-3. Nagios server sends NRPE queries on TCP port 5666 to the client nodes being
-   monitored. Defined in line number 53.
-4. Nagios server sends SSH requests to systems where ssh service is being
-   monitored. Defined in line number 56.
+   1. Nagios server hosts a web interface to display monitoring
+      data. Admins access this web interface on TCP port 80 for
+      monitoring purposes. Defined in line number 30.
+   2. Nagios Server is not responsible for any packet forwarding,
+      hence forwarding rule is set to 'drop' policy. Defined in line
+      number 39.
+   3. Nagios server sends NRPE queries on TCP port 5666 to the client
+      nodes being monitored. Defined in line number 53.
+   4. Nagios server sends SSH requests to systems where ssh service is
+      being monitored. Defined in line number 56.
 
 *** Firewall Rules
 #+BEGIN_SRC yml -n :tangle roles/nagios_server/templates/nagios_server_iptables :eval no
@@ -215,15 +252,17 @@ COMMIT
 #+END_SRC
 
 ** Configure Commands
-Nagios server sends NRPE query to the client node to monitor the return status
-of some commands on the client node. The NRPE agent running on the client node
-executes and sends back the return status of the commands to the Nagios
-server. The commands used for monitoring something on the client node are
-defined in the configuration file.
+   Nagios server sends NRPE query to the client node to monitor the
+   return status of some commands on the client node. The NRPE agent
+   running on the client node executes and sends back the return
+   status of the commands to the Nagios server. The commands used for
+   monitoring something on the client node are defined in the
+   configuration file.
 
-Commands are specified by the two directives in the configuration
-file. Following table represents an example of directive name and the directive
-value.
+   Commands are specified by the two directives in the configuration
+   file. Following table represents an example of directive name and
+   the directive value.
+
 #+BEGIN_EXAMPLE
 |------+----------------+-----------------------------------------------|
 | S.no | Directive Name | Directive Value                               |
@@ -234,9 +273,10 @@ value.
 |------+----------------+-----------------------------------------------|
 #+END_EXAMPLE
 
-In the configuration template a 'for loop' loops over the commands list to
-define all the commands. Value of the directives are set to variables, and value
-of these variables are fetched from =vars/main.yml=.
+   In the configuration template a 'for loop' loops over the commands
+   list to define all the commands. Value of the directives are set to
+   variables, and value of these variables are fetched from
+   =vars/main.yml=.
 
 #+BEGIN_SRC yml :tangle roles/nagios_server/templates/commands.cfg
 {% for command in nagios_commands %}
@@ -247,9 +287,10 @@ define command {
 {% endfor %}
 #+END_SRC
 ** Configure Contacts Details
-Contact details of administrator are set by two directives in the configuration
-file. Following table represents an example of the directive name and directive
-value.
+   Contact details of administrator are set by two directives in the
+   configuration file. Following table represents an example of the
+   directive name and directive value.
+
 #+BEGIN_EXAMPLE
 |------+----------------+-------------------|
 | S.no | Directive Name | Directive Value   |
@@ -260,8 +301,9 @@ value.
 |------+----------------+-------------------|
 #+END_EXAMPLE
 
-In the configuration template value of the directives are set to variables, and
-value of these variables are fetched from =vars/main.yml=.
+   In the configuration template value of the directives are set to
+   variables, and value of these variables are fetched from
+   =vars/main.yml=.
 
 #+BEGIN_SRC yml :tangle roles/nagios_server/templates/contacts.cfg.j2
 ###############################################################################
@@ -319,10 +361,11 @@ define contactgroup{
         }
 #+END_SRC
 ** Configure Clients Address and Monitoring Services
-Nagios requires details such as Hostaddress and Hostname of client node to be
-monitored. These details of client node are specified in the configuration file
-using three directives. Following table represents an example of the directive
-name and directive value.
+   Nagios requires details such as Hostaddress and Hostname of client
+   node to be monitored. These details of client node are specified in
+   the configuration file using three directives. Following table
+   represents an example of the directive name and directive value.
+
 #+BEGIN_EXAMPLE
 |------+----------------+--------------------|
 | S.no | Directive Name | Directive Value    |
@@ -335,10 +378,11 @@ name and directive value.
 |------+----------------+--------------------|
 #+END_EXAMPLE
 
-Nagios is configured to monitor bunch of services inside each client. Services
-monitored inside each client are defined using three directives in the
-configuration file. Following table represents an example of the directive name
-and directive value.
+   Nagios is configured to monitor bunch of services inside each
+   client. Services monitored inside each client are defined using
+   three directives in the configuration file. Following table
+   represents an example of the directive name and directive value.
+
 #+BEGIN_EXAMPLE
 |------+---------------------+-----------------|
 | S.no | Directive Name      | Directive Value |
@@ -351,10 +395,11 @@ and directive value.
 |------+---------------------+-----------------|
 #+END_EXAMPLE
 
-In the configuration template directives are set to varaibles and the value of
-these variables are fetched from =vars/main.yml=. A 'for loop' loops over the
-hosts list to specify all the client nodes and another 'for loop' loops over the
-services defined in the group to specify all the services.
+   In the configuration template directives are set to varaibles and
+   the value of these variables are fetched from =vars/main.yml=. A
+   'for loop' loops over the hosts list to specify all the client
+   nodes and another 'for loop' loops over the services defined in the
+   group to specify all the services.
 
 #+BEGIN_SRC yml :tangle roles/nagios_server/templates/servers.cfg
 {% for h in nagios_hosts %}
@@ -378,21 +423,23 @@ check_command           {{ s.command }}
 {% endfor %}
 #+END_SRC
     
-** Update all packages
-All packages inside the node are updated before configuring the nagios server
-node.
+** Tasks
+*** Update all packages
+   All packages inside the node are updated before configuring the
+   nagios server node.
+
 #+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml :eval no
 - name: running yum update
   yum: name=* state=latest
   environment: proxy_env
 #+END_SRC
    
-** Install Nagios packages
-Following nagios packages are installed in the system:
-1) =nagios=
-2) =nagios-pulgins-all=
-3) =nagios-plugins-nrpe=
-4) =nrpe=
+*** Install Nagios packages
+   Following nagios packages are installed in the system:
+   1) =nagios=
+   2) =nagios-pulgins-all=
+   3) =nagios-plugins-nrpe=
+   4) =nrpe=
 
 #+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml :eval no
 - name: Installing nagios
@@ -411,55 +458,63 @@ Following nagios packages are installed in the system:
   yum: name=nrpe state=installed
   environment: proxy_env
 #+END_SRC 
-** Set firewall rules
-Firewall rules are set by following steps:
+*** Set firewall rules
+   Firewall rules are set by following steps:
 
-1) Copy iptables jinja2 template from ansible node to the server.
-2) Restart iptables service to enforce the configuration.
+   1) Copy iptables jinja2 template from ansible node to the server.
+   2) Restart iptables service to enforce the configuration.
+
 #+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
  - name: Copy iptables configuration file
    template: src=nagios_server_iptables dest=/etc/sysconfig/iptables owner=root group=root mode=600
    notify:
      - restart iptables
 #+END_SRC
-** Create Nagios admin user for web interface
-A user is created on the nagios server node for web interface. Value of
-=nagios_user= and =nagios_password= variables are fetched from =vars/main.yml=
-file.
+*** Create Nagios admin user for web interface
+   A user is created on the nagios server node for web
+   interface. Value of =nagios_user= and =nagios_password= variables
+   are fetched from =vars/main.yml= file.
+
 #+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
 - name: creating nagiosadmin user for web interface
   command: "htpasswd -b /etc/nagios/passwd {{nagios_user}} {{nagios_password}}"
   notify: restart apache
 #+END_SRC
 
-** Copy contancts.cfg configuration file to the server
-Configuration file is copied from ansible server to the nagios server and nagios
-service is restarted.
+*** Copy contancts.cfg configuration file to the server
+   Configuration file is copied from ansible server to the nagios
+   server and nagios service is restarted.
+
 #+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
 - name: Updating contacts.cfg
   template: src=contacts.cfg.j2 dest=/etc/nagios/objects/contacts.cfg
   notify: restart nagios
 #+END_SRC
 
-** Update nagios.cfg file
-Location of =servers.cfg= file is set in the =nagios.cfg= configuration file by
-=cfg_file= directive. Value of =nagios_cfg_path= variable is fetched from
-=vars/main.yml= file.
+*** Update nagios.cfg file
+   Location of =servers.cfg= file is set in the =nagios.cfg=
+   configuration file by =cfg_file= directive. Value of
+   =nagios_cfg_path= variable is fetched from =vars/main.yml= file.
+
 #+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
 - name: updating nagios.cfg
   lineinfile: dest="{{nagios_cfg_path}}" line="cfg_file=/etc/nagios/objects/servers.cfg" regexp="cfg_file\=/etc/nagios/objects/servers.cfg"
   notify: restart nagios
 #+END_SRC
 
-** Include another tasks file
+*** Include another tasks file
+   Some of the tasks are defined in another tasks file which is
+   included in the main tasks file.
+
 #+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
 - tasks:
   include: configure_servers.yaml
 #+END_SRc
 
-** Copy servers.cfg and commands.cfg configuration file
-Configuration files are copied from ansible node to the nagios server node and
-nagios service is restarted.
+*** Copy servers.cfg and commands.cfg configuration file
+   Configuration files are copied from ansible node to the nagios
+   server node and nagios service is restarted.
+
 #+BEGIN_SRC yml :tangle roles/nagios_server/tasks/configure_servers.yml
 ---
 #configuring hosts
@@ -472,36 +527,41 @@ nagios service is restarted.
   template: src=commands.cfg dest=/etc/nagios/objects/additional_commands.cfg mode=664
   notify: restart nagios
 #+END_SRC
-** Load additional commands
-Location of =servers.cfg= file is set in the =nagios.cfg= configuration file by
-=cfg_file= directive. Value of =nagios_cfg_path= variable is fetched from
-=vars/main.yml= file.
+*** Load additional commands
+   Location of =servers.cfg= file is set in the =nagios.cfg=
+   configuration file by =cfg_file= directive. Value of
+   =nagios_cfg_path= variable is fetched from =vars/main.yml= file.
+
 #+BEGIN_SRC yml :tangle roles/nagios_server/tasks/configure_servers.yml
 - name: load additional_commands.cfg
   lineinfile: dest=/etc/nagios/nagios.cfg line="cfg_file=/etc/nagios/objects/additional_commands.cfg" regexp="cfg_file\=/etc/nagios/objects/additional_commands\.cfg"
   notify: restart nagios
 #+END_SRC
-** Start nagios service
-Any changes in nagios configuration is enforced by restarting the nagios
-service.
+** Handlers
+*** Start nagios service
+   Any changes in nagios configuration is enforced by restarting the
+   nagios service.
+
 #+BEGIN_SRC yml :tangle roles/nagios_server/handlers/main.yml
 - name: restart nagios
   sudo: true
   service: name=nagios state=restarted
 #+END_SRC
 
-** Start apache service
-Any changes in apache configuration is enforced by restarting the apache
-service.
+*** Start apache service
+   Any changes in apache configuration is enforced by restarting the
+   apache service.
+
 #+BEGIN_SRC yml :tangle roles/nagios_server/handlers/main.yml
 - name: restart apache
   sudo: true
   service: name=httpd state=restarted
 #+END_SRC
 
-** Start firewall service
-Any changes in iptables configuration file, to update the firewall is enforced
-by restarting the iptables service.
+*** Start firewall service
+   Any changes in iptables configuration file, to update the firewall
+   is enforced by restarting the iptables service.
+
 #+BEGIN_SRC yml :tangle roles/nagios_server/handlers/main.yml
 - name: restart iptables
   sudo: true
@@ -509,8 +569,9 @@ by restarting the iptables service.
 #+END_SRC
 
 ** Define variables and services groups
-Various variables used by the ansible playbook are defined here. Following table
-represents the variables name and their description.
+   Various variables used by the ansible playbook are defined
+   here. Following table represents the variables name and their
+   description.
 
 |------+--------------------+--------------------------------------------------------|
 | S.no | Variable Name      | Description                                            |
@@ -576,11 +637,12 @@ nagios_commands:
 
 #+END_SRC
 ** Nagios server configuration script
-Nagiosg server is configured by using following roles:
-  1) =common=
-  2) =ossec_client=
-  3) =rsyslog_client=
-  4) =nagios_server=
+   Nagios server is configured by using following roles:
+   1) =common=
+   2) =ossec_client=
+   3) =rsyslog_client=
+   4) =nagios_server=
+
 #+BEGIN_SRC yml :tangle nagios_server.yml
 ---
 - name: This yml script configures nagios server
@@ -595,63 +657,67 @@ Nagiosg server is configured by using following roles:
 #+END_SRC
 * Test Cases
 ** Test Case-1
-*** Objective: 
-Test the nagios web dashboard.
-*** Apparatus:
-1) Nagios server
-2) Nagios client
+*** Objective
+   Test the nagios web dashboard is displaying the services status
+   properly.
+*** Apparatus
+   1) Nagios server
+   2) Nagios client
 
 *** Theory
-Nagios server provides a web interface to monitor client nodes. Web dashboard
-runs as an http server on port 80.
-
+   Nagios server provides a web interface to monitor client nodes. Web
+   dashboard runs as an http server on port 80.
+ 
 *** Experiment
-Verify whether the web url of dashboard is opening in a browser.
+   Verify whether the web url of dashboard is opening in a browser.
 
 *** Observation
-Web interface displays the services being monitored in the system.
+   Web interface displays the services being monitored in the system.
 
 *** Conclusion
-If the web interface is opening then its assure that server is configure
-properly.
+   If the web interface is opening then its assure that server is
+   configure properly.
 
 ** Test Case-2
-*** Objective:
-Test alert mails are send in case of critical situation.
+*** Objective
+   Test alert mails are send when something wrong happens with the
+   system or in case of critical situation.
 
-*** Apparatus:
-1) Nagios server
-2) Nagios client
+*** Apparatus
+   1) Nagios server
+   2) Nagios client
 
 *** Theory
-Nagios server sends alert messages whenever the client node goes to a critical
-state.
+   Nagios server sends alert messages whenever the client node goes to
+   a critical state.
 
 *** Experiment
-Stop a service for example "ssh" inside the client node manually using "service
-sshd stop" command. Now see in mail server if the email alerts are received.
+   Stop a service for example "ssh" inside the client node manually
+   using "service sshd stop" command. Now see in mail server if the
+   email alerts are received.
 
 *** Observation
-Nagios generates a mail alert in a critical situation.
+   Nagios generates a mail alert in a critical situation.
 
 *** Conclusion
-If the email alerts are being received then the mail service is configured
-properly.
+   If the email alerts are being received then the mail service is
+   configured properly.
   
 ** Test Case-3
-*** Objective:
-Test command status by executing them on the client node from the nagios server.
+*** Objective
+   Test command status by executing them on the client node from the
+   nagios server.
 
-*** Apparatus:
-1) Nagios server
-2) Nagios client
+*** Apparatus
+   1) Nagios server
+   2) Nagios client
 
 *** Theory
-Services can also be monitored by running some commands on the client node from
-the nagios server.
+   Services can also be monitored by running some commands on the
+   client node from the nagios server.
 
 *** Experiment
-Execute following commands from the nagios server:
+   Execute following commands from the nagios server:
 **** Check load
 #+BEGIN_EXAMPLE
 /usr/lib64/nagios/plugins/check_nrpe -H <ipaddress of client> -c check_load
@@ -667,7 +733,8 @@ Execute following commands from the nagios server:
 /usr/lib64/nagios/plugins/check_ssh -p 22 <ipaddress of client>
 #+END_EXAMPLE
 *** Result
-Output of commands when executed on client node: 10.4.15.117 are as follows:
+   Output of commands when executed on client node: 10.4.15.117 are as
+   follows:
 **** Sample output for command 1.
 #+BEGIN_EXAMPLE
 OK - load average: 0.00, 0.00, 0.00|load1=0.000;15.000;30.000;0; load5=0.000;10.000;25.000;0; load15=0.000;5.000;20.000;0; 
@@ -682,10 +749,11 @@ USERS OK - 0 users currently logged in |users=0;5;10;0
 SSH OK - OpenSSH_5.3 (protocol 2.0) | time=0.007418s;;;0.000000;10.000000
 #+END_EXAMPLE
 *** Observation
-Return status of the services is displayed in the command output.
+   Return status of the services is displayed in the command output.
 
 *** Conclusion
-If the return status of the depicts the status of service in the client node.
+   If the return status of the depicts the status of service in the
+   client node.
 
 
  

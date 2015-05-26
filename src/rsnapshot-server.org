@@ -8,28 +8,39 @@
 #+OPTIONS: ^:nil
 
 * Introduction
-This document describes the design and implementation of Rsnapshot Server.
-Rsnapshot server takes the timely backup of configuration files of various nodes
-in the cluster. These backups are saved at the central node in the cluster.
+  This document describes the design and implementation of Rsnapshot
+  Server.  Rsnapshot server takes the timely backup of configuration
+  files of various nodes in the cluster. These backups are saved at
+  the central node in the cluster.
+
+  Backup of configuration files is maintained in a central
+  location. These backup files are referred if a node gets compromised
+  due to any reason.
 
 * Requirements
+  The functional and security requirements of the Rsnapshot server are
+  mentioned in the following sections.  Only the Rsnapshot server
+  specific requirements which differ from the generic requirements
+  specified in the [[common%20role][common role]] are mentioned here.
+
 ** Functional Requirements
-1) Take periodic backup of various files on all the nodes in the cluster.
-2) Take periodic backup of various files on local node in case the node is
-   rsnapshot server itself.
+  1) Take periodic backup of various files on all the nodes in the
+     cluster.
+  2) Take periodic backup of various files on local node in case the
+     node is rsnapshot server itself.
 
 ** Security Requirements
-1) All common security requirements as described in [[file:common.org::*Security Requirements][common role]] are applicable
-   to rsnapshot server node.
+  1) All common security requirements as described in [[file:common.org::*Security Requirements][common role]] are
+     applicable to rsnapshot server node.
 
 * Design
-Given diagram describes the design of the rsnapshot server. Systems files are
-listed for a quick overview of whole systems.
+   Given diagram describes the design of the rsnapshot server. Systems
+   files are listed for a quick overview of whole systems.
 
 ** System Design Diagram
 [[./diagrams/rsnapshot-server-design-diagram.png]]
 
-** Editable Link
+** COMMENT Editable Link
 [[https://docs.google.com/drawings/d/1HQtQ_UsjmNYmeTcqh6e9l4_Fd6TfRhBh70NI43DuyDY/edit][Link to google drawing board]]
 
 ** System Files
@@ -44,16 +55,19 @@ listed for a quick overview of whole systems.
 |------+-----------+-------------------------+--------------------|
 
 ** Configuration Design
-Rsnapshot uses =/etc/rsnapshot.conf= file for configuration. Two very important
-points about configuration file are:
+   Rsnapshot uses =/etc/rsnapshot.conf= file for configuration. Two
+   very important points about configuration file are:
 
-- All paths must end with "/" and all backup destination should be relative
-- Various fields in file are separated using Tab, space does not separates fields
+   - All paths must end with "/" and all backup destination should be
+     relative
+   - Various fields in file are separated using Tab, space does not
+     separates fields
 
 * Implementation
 ** Structure of Scripts
-The implementation of this system is in terms of a collection of Ansible scripts
-which configure the node. These scripts are organized as follows:
+   The implementation of this system is in terms of a collection of
+   Ansible scripts which configure the node. These scripts are
+   organized as follows:
 
 #+BEGIN_EXAMPLE
 |-- rsnapshot_server.yml
@@ -71,10 +85,11 @@ which configure the node. These scripts are organized as follows:
 #+END_EXAMPLE
 
 ** Firewall Rules
-Firewall rules applied to rsnapshot server are mentioned here. Description of
-firewall rules which are common across all the systems are defined in the [[file:common.org::*Common Firewall Rules][common
-role]]. There are no specific firewall rule for rsnapshot node, only the common
-rules are applied.
+   Firewall rules applied to rsnapshot server are mentioned
+   here. Description of firewall rules which are common across all the
+   systems are defined in the [[file:common.org::*Common Firewall Rules][common role]]. There are no specific
+   firewall rule for rsnapshot node, only the common rules are
+   applied.
 
 *** Firewall Rules
 #+BEGIN_SRC yml -n :tangle roles/rsnapshot_server/templates/rsnapshot_server_iptables :eval no
@@ -164,23 +179,28 @@ COMMIT
 #+END_SRC
 
 ** Configure rsnapshot
-Following actions are performed in =/etc/rsnapshot.conf= file to configure
-rsnapshot service.
+   Following actions are performed in =/etc/rsnapshot.conf= file to
+   configure rsnapshot service.
 
 *** Configure absolute path of backup location
-Absolute path on current system where backup data will be stored is configured
-via 'snapshot_root' directive. In case of remote backups, rsnapshot always run
-on backup server and not on client to be backed up.
+   Absolute path on current system where backup data will be stored is
+   configured via 'snapshot_root' directive. In case of remote
+   backups, rsnapshot always run on backup server and not on client to
+   be backed up.
+
 #+BEGIN_EXAMPLE
 snapshot_root	/.snapshots/
 #+END_EXAMPLE
 
 *** Enable ssh
-Remote ssh backup over *rsync* is enabled by uncommenting =cmd_ssh= directive.
+   Remote ssh backup over *rsync* is enabled by uncommenting =cmd_ssh=
+   directive.
 
 *** Backup Intervals
-Proper backup intervals are set. In the configuration file the order of interval
-lines is important. More frequent backup lines should come first. Example:
+   Proper backup intervals are set. In the configuration file the
+   order of interval lines is important. More frequent backup lines
+   should come first. Example:
+
 #+BEGIN_EXAMPLE
 interval        hourly  6
 interval        daily   7
@@ -189,8 +209,10 @@ interval        monthly 3
 #+END_EXAMPLE
 
 *** Set log level
-Log level is set for the amount of information to print out when the program is
-run. Allowed values are 1 through 5. The default is 2.
+   Log level is set for the amount of information to print out when
+   the program is run. Allowed values are 1 through 5. The default
+   is 2.
+
 #+BEGIN_EXAMPLE
 Verbose level, 1 through 5.
 1     Quiet           Print fatal errors only
@@ -200,33 +222,37 @@ Verbose level, 1 through 5.
 5     Debug mode      Everything
 #+END_EXAMPLE
 
-In the rsnaphost server =loglevel= directive is set to 2.
+   In the rsnaphost server =loglevel= directive is set to 2.
+
 #+BEGIN_EXAMPLE
 loglevel 2
 #+END_EXAMPLE
 
 *** SSH keys path
-Path of SSH key is specified via =ssh_args= directive. Sometimes system
-administrator may place the public keys at some other location, the same path is
-specified here. The value of variable - 'rsnapshot_ssh_key' is fetched from
-=vars/main.yml=.
+   Path of SSH key is specified via =ssh_args= directive. Sometimes
+   system administrator may place the public keys at some other
+   location, the same path is specified here. The value of variable -
+   'rsnapshot_ssh_key' is fetched from =vars/main.yml=.
+
 #+BEGIN_EXAMPLE
 ssh_args	-i $HOME/.ssh/{{ rsnapshot_ssh_key }}
 #+END_EXAMPLE
 
 *** Support special files
-To support special files (FIFOs, etc) cross-platform, =link_dest= directive is
-enabled by setting its value to 1.
+   To support special files (FIFOs, etc) cross-platform, =link_dest=
+   directive is enabled by setting its value to 1.
 
 #+BEGIN_EXAMPLE
 link_dest 1
 #+END_EXAMPLE
 
 *** Local and Remote backup
-Local backup of rsnapshot server itself and remote backup of all other servers
-in the cluster are setup. A 'for loop' is defined which loops over all the nodes
-for which backup is to be taken e.g. localhost, nagios. Nested 'for loop' loops
-over all the folders which are to be backed up.
+   Local backup of rsnapshot server itself and remote backup of all
+   other servers in the cluster are setup. A 'for loop' is defined
+   which loops over all the nodes for which backup is to be taken
+   e.g. localhost, nagios. Nested 'for loop' loops over all the
+   folders which are to be backed up.
+
 #+BEGIN_EXAMPLE
 {% for backup in rsnapshot_config_backup %}
 {% for args in backup.points %}
@@ -485,8 +511,9 @@ link_dest	1
 
 #+END_SRC
 
-** Install Rsnapshot package
-Install the =rsnaphost= package.
+** Tasks
+*** Install Rsnapshot package
+   Install the =rsnaphost= package.
 
 #+BEGIN_SRC yml :tangle roles/rsnapshot_server/tasks/main.yml :eval no
 - name: Installing rsnapshot
@@ -494,19 +521,21 @@ Install the =rsnaphost= package.
   environment: proxy_env
 #+END_SRC
 
-** Set firewall rules
-Firewall rules are applied and iptables service is restarted.
+*** Set firewall rules
+   Firewall rules are applied and iptables service is restarted.
+
 #+BEGIN_SRC yml :tangle roles/rsnapshot_server/tasks/main.yml :eval no
 - name: Applying iptables for rsnapshot
   template: src=rsnapshot_server_iptables dest=/etc/sysconfig/iptables owner=root group=root
   notify: restart_iptables
 #+END_SRC
 
-** Generate SSH keys on the rsnapshot server and get it to ansible server
-Rsnapshot server connects to rsnapshot clients over ssh to take backup. For this
-SSH key is generated on the Rsnapshot server. The ssh public key is to be placed
-inside the rsnaphost client node's authorized_keys, for this keys are copied to
-ansible server and from there it will be placed inside rsnapshot client.
+*** Generate SSH keys on the rsnapshot server and get it to ansible server
+   Rsnapshot server connects to rsnapshot clients over ssh to take
+   backup. For this SSH key is generated on the Rsnapshot server. The
+   ssh public key is to be placed inside the rsnaphost client node's
+   authorized_keys, for this keys are copied to ansible server and
+   from there it will be placed inside rsnapshot client.
 
 #+BEGIN_SRC yml :tangle roles/rsnapshot_server/tasks/main.yml :eval no
 - name: Create a SSH key for 'root'
@@ -517,9 +546,9 @@ ansible server and from there it will be placed inside rsnapshot client.
   fetch: src=/root/.ssh/id_rsa.pub dest=rsnapshot_server_pubic_key
 #+END_SRC
 
-** Copy configuration file to rsnapshot server
-Copy "rsnapshot.conf" jinja2 template from the ansible server to rsnapshot
-server at =/etc/rsnapshot.conf=.
+*** Copy configuration file to rsnapshot server
+   Copy "rsnapshot.conf" jinja2 template from the ansible server to
+   rsnapshot server at =/etc/rsnapshot.conf=.
 
 #+BEGIN_SRC yml :tangle roles/rsnapshot_server/tasks/main.yml :eval no
 #updating rsnapshot.conf also includes configuring backup of remote nodes
@@ -527,10 +556,10 @@ server at =/etc/rsnapshot.conf=.
   template: src=rsnapshot.conf.j2 dest=/etc/rsnapshot.conf owner=root group=root mode=644 backup=yes
 #+END_SRC
 
-** Configure cron for backup
-Cronjobs are configured on the rsnapshot server to take backup of the files on
-the various server automatically at specified interval - hourly, daily, weekly
-and monthly.
+*** Configure cron for backup
+   Cronjobs are configured on the rsnapshot server to take backup of
+   the files on the various server automatically at specified
+   interval - hourly, daily, weekly and monthly.
 
 #+BEGIN_SRC yml :tangle roles/rsnapshot_server/tasks/main.yml :eval no
 - name: Configure cron
@@ -546,9 +575,12 @@ and monthly.
   with_items: rsnapshot_crontab
 #+END_SRC
 
-** Start iptables
-Any changes in iptables configuration file is enforced by restarting the
-iptables. To restart iptables, handlers (ansible terms) are defined here.
+** Handlers
+*** Start iptables
+   Any changes in iptables configuration file is enforced by
+   restarting the iptables. To restart iptables, handlers (ansible
+   terms) are defined here.
+
 #+BEGIN_SRC yml :tangle roles/rsnapshot_server/handlers/main.yml :eval no
 - name: restart_iptables
   sudo: true
@@ -556,17 +588,20 @@ iptables. To restart iptables, handlers (ansible terms) are defined here.
 #+END_SRC
 
 ** Variables Definition
-Following variables are defined which are used by ansible playbooks.
+   Following variables are defined which are used by ansible
+   playbooks.
 
-- rsnapshot_ssh_key :: SSH key file is specified
+   - rsnapshot_ssh_key :: SSH key file is specified
 
-- name :: Rsnaphot clients are specified.
+   - name :: Rsnaphot clients are specified.
 
-- points :: For each client what files are to be backed up are specified
+   - points :: For each client what files are to be backed up are
+               specified
 
-- rsnapshot_crontab :: Cronjobs are set to run - hourly, daily, weekly and monthly.
+   - rsnapshot_crontab :: Cronjobs are set to run - hourly, daily,
+        weekly and monthly.
   
-Complete vars file is shown below
+   Complete vars file is shown below
 
 #+BEGIN_SRC yml :tangle roles/rsnapshot_server/vars/main.yml :eval no
 ---
@@ -683,13 +718,14 @@ rsnapshot_crontab:
 
 * Test Cases
 ** Test Case-1
-*** Objective: 
-Test =rsnapshot= package is installed.
-*** Apparatus:
-1. Rsnapshot server node
+*** Objective
+   Test =rsnapshot= package is installed.
+*** Apparatus
+   1. Rsnapshot server node
 
 *** Theory
-Rsnapshot server takes backup of data from the client node using rsnapshot tool.
+   Rsnapshot server takes backup of data from the client node using
+   rsnapshot tool.
 *** Experiment
 **** Verify rsnapshot package is installed using following command
 #+BEGIN_EXAMPLE
@@ -697,27 +733,29 @@ rpm -qa | grep rsnapshot
 #+END_EXAMPLE
 
 *** Result
-Output of step-1 of experiment shows rsnapshot package is installed.
+   Output of step-1 of experiment shows rsnapshot package is
+   installed.
+
 #+BEGIN_EXAMPLE
 rsnapshot
 #+END_EXAMPLE
 
 *** Observation
-Rsnapshot package is installed on the node.
+   Rsnapshot package is installed on the node.
 
 *** Conclusion
-Rsnapshot package is installed on the node.
-
+   Rsnapshot package is installed on the node.
 
 ** Test Case-2
-*** Objective:
-Test server is able to rsync from rsnapshot clients.
-*** Apparatus:
-1. Rsnapshot server node
-2. Rsnapshot client node
+*** Objective
+   Test server is able to rsync from rsnapshot clients.
+*** Apparatus
+   1. Rsnapshot server node
+   2. Rsnapshot client node
 
 *** Theory
-Rsnapshot server takes backup of data from the client node using *rsync* tool.
+   Rsnapshot server takes backup of data from the client node using
+   *rsync* tool.
 *** Experiment
 **** Verify rsync is working
 #+BEGIN_EXAMPLE
@@ -725,13 +763,15 @@ Rsnapshot server takes backup of data from the client node using *rsync* tool.
 #+END_EXAMPLE
 
 *** Result
-Shell command of step-1 of experiment got executed without any error.
+   Shell command of step-1 of experiment got executed without any
+   error.
+
 #+BEGIN_EXAMPLE
 [root@rsnapshot-server ~]#
 #+END_EXAMPLE
 
 *** Observation
-Rsnapshot server is able to rsync from rsnapshot client.
+   Rsnapshot server is able to rsync from rsnapshot client.
 
 *** Conclusion
-Rsnapshot server is able to rsync from rsnapshot client.
+   Rsnapshot server is able to rsync from rsnapshot client.
