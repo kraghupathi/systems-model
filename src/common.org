@@ -7,20 +7,16 @@
 \#+SETUPFILE: org-templates/level-0.org
 
 * Introduction
-  The document describes the requirements, design and implementation
-# comment Should be 'This document describes'
+  This document describes the requirements, design and implementation
   of the common role. Common role consists of basic functional and
   security requirements, which are applied on all the nodes in the
-  cluster. Examples and verifications are given wherever
-# comment It is not clear what are  verifications, it can probably be removed
-  possible. Test Cases are also described to test the setup.
+  cluster. Examples are given wherever possible. Test Cases are also
+  described to test the setup.
 
-  Our cluster consists of many nodes. Every node has a specific
-# comment 'our cluster' is not the right word. replace 'our' with something else such as Base1/AWS
-  purpose and its properties such as firewall rules and services are
+  Cluster consists of many nodes. Every node has a specific purpose
+  and its properties such as firewall rules and services are
   configured to serve the purpose. All the nodes are part of one
-  cluster they share some common properties in terms of system
-# comment There should be a comma after 'one cluster'
+  cluster, they share some common properties in terms of system
   configuration. Some common system configuration is applied on all
   the nodes in the cluster. For example - packages such as
   =bind-utils=, =logwatch= are installed in all the systems and ssh
@@ -57,8 +53,7 @@
 
    #+CAPTION:  Overall Cluster Network Diagram
    #+LABEL:  fig-overall-cluster-network-diagram
-[[   ./diagrams/overall-cluster-network-diagram.png]]
-# comment unable to view the above diagram
+[[./diagrams/overall-cluster-network-diagram.png]]
 
 ** COMMENT Editable Link
 [[https://docs.google.com/drawings/d/1-_1DAonwj9mfJYaXqHwZVHbzYEgDkzdTjOzDCBTpr-c/edit][   Google Drawing Link]]
@@ -121,8 +116,7 @@ history settings inside the system.
 =roles/common/handlers/main.yml= file defines various handlers which
 are only executed in case a task notifies them. Handlers are described
 in details at [[Handlers][handlers]].  The handlers are called only when tasks are
-called as part of the cmmon role. Various templates and files are
-# comment spelling mistake - common, not 'cmmon'
+called as part of the common role. Various templates and files are
 being used during task execution for creating necessary configuration
 files.
 
@@ -141,8 +135,7 @@ the variables used by the ansible playbooks.
    Firewall rules are set on all servers in the cluster. Each node has
    a specific set of rules depending upon the purpose of the
    node. However, some rules are common (intersection of firewall
-   rules in all the server). These common rules are applied in all the
-# comment should be 'applied to' rather than 'applied in'
+   rules in all the server). These common rules are applied to all the
    servers in the cluster.
 
    The common firewall rules are described here. The description of
@@ -915,12 +908,14 @@ Permission Denied ....
 
 *** Experiment
    Execute following command on the server.
+
 #+BEGIN_EXAMPLE
 sudo passwd -S root
 #+END_EXAMPLE
 
 *** Result
    Output of step-1 signifies the root account is locked.
+
 #+BEGIN_EXAMPLE
 root LK 2012-10-07 0 99999 7 -1 (Password locked.)
 #+END_EXAMPLE
@@ -985,6 +980,7 @@ service fail2ban status
    passwords. Do this atleast three times. Then on the server execute
    the following command to check if fail2ban filter for ssh detects
    failed login attempts.
+
 #+BEGIN_EXAMPLE
 fail2ban-regex /var/log/secure /etc/fail2ban/filter.d/sshd.conf <username|ipaddress>
 #+END_EXAMPLE 
@@ -993,6 +989,7 @@ fail2ban-regex /var/log/secure /etc/fail2ban/filter.d/sshd.conf <username|ipaddr
    Check if there is any firewall rule for fail2ban-ssh is added to
    block the machine's ip from where multiple failed login attempts
    are made.
+
 #+BEGIN_EXAMPLE
 iptables --list
 #+END_EXAMPLE
@@ -1009,6 +1006,7 @@ Status
 **** Output of step-2 of experiment
    It shows that there are failed login attempts were made to the
    ossec-server from "10.100.1.2" ipaddress.
+
 #+BEGIN_EXAMPLE
 Running tests
 =============
@@ -1050,6 +1048,7 @@ Missed line(s): too many to print.  Use --print-all-missed to print all 159 line
    Output shows that fail2ban-ssh chain is now defined on the server,
    to reject all the incoming ssh connections from the malicious
    ipaddress.
+
 #+BEGIN_EXAMPLE
 Chain fail2ban-SSH (1 references)
 target     prot opt source               destination         
@@ -1089,6 +1088,7 @@ ssh: connect to host router.vlabs.ac.in port 22: Connection refused
 
 *** Result
    Output of step-1 of experiment.
+
 #+BEGIN_EXAMPLE
    21  15 04 13 10:27:45ls
    22  15 04 13 10:27:46pwd
@@ -1122,6 +1122,7 @@ EOT
 **** Check the mail client if any mail is received from the server
 *** Result
    Sample mail of step-2 of experiment may look like as follows:
+
 #+BEGIN_EXAMPLE
 from:	root <root@common-server.virtual-labs.ac.in>
 to:	sysadmin@vlabs.ac.in
@@ -1218,11 +1219,13 @@ ns4.google.com.		172800	IN	A	216.239.38.10
 
 *** Experiment
    Login to the server with following command
+
 #+BEGIN_EXAMPLE
 ssh root@<common-server-ip>
 #+END_EXAMPLE
 *** Result
    Output of step-1 of experiment is shown below.
+
 #+BEGIN_EXAMPLE
 Permission denied (publickey,gssapi-keyex,gssapi-with-mic,password).
 #+END_EXAMPLE
@@ -1244,13 +1247,16 @@ Permission denied (publickey,gssapi-keyex,gssapi-with-mic,password).
    2) Any other machine
 
 *** Experiment
-   Login to the common server from any other machine using following command:
+   Login to the common server from any other machine using following
+   command:
+
 #+BEGIN_EXAMPLE
 ssh <username>@<common-server-ip>
 #+END_EXAMPLE
 
 *** Result
    Sample output of step-1 of experiment is shown below.
+
 #+BEGIN_EXAMPLE
 Permission denied (publickey,gssapi-keyex,gssapi-with-mic).
 #+END_EXAMPLE
@@ -1271,6 +1277,7 @@ Permission denied (publickey,gssapi-keyex,gssapi-with-mic).
 
 *** Experiment
    Execute a command with sudo, for example
+
 #+BEGIN_EXAMPLE
 sudo su -
 sudo ls
@@ -1278,6 +1285,7 @@ sudo ls
 
 *** Result
    Sample output of step-1 of experiment.
+
 #+BEGIN_EXAMPLE
 -bash: sudo: command not found
 #+END_EXAMPLE
