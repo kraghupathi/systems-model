@@ -11,32 +11,41 @@
 The document describes the requirements, design and implementation of
 the *Reverse Proxy* server setup and *AWStats*. This server will be
 configured using ansible scripts/playbooks. 
-
+# comment: Instead of 'The document' it could be 'This document'
+# comment: Instead of 'will be configured' it could be 'is configured'
 Our cluster consist of many nodes. Reverse proxy is one of the main
 node in the cluster. All web related traffic (which are coming from
 external world) goes via this node to access the labs.
-
+# comment: Instead of 'web related traffic' it could be 'HTTP requests
+# from external world are forwarded to reverse proxy to access the labs'
 Configuration server is responsible for configuring the reverse proxy
-server by running the reverse_proxy server playbook. 
+server by running the reverse_proxy server playbook.
+# comment: 'configuration server ...' line is not needed in the
+# introduction section, why we are mentioning about configuration
+# server here.
 
 Reverse proxy server will be able to collect all the web related traffic
 of labs using awstats application. So that analytics can be analyzed.
-
+# comment: Avoid use of 'will'.
+# comment: Probably more description about analytics can be added
 * Requirements
   Requirements which are specific to reverse proxy are defined below and
   common requirements are defined in the [[common.org][common role]].
-** Functional Requirements 
+** Functional Requirements
  1) Allow incoming connections on tcp ports 80 and 443
     to accept the web requests coming from the [[./router.org][router]].
  2) Allow outgoing connections on tcp port 80 to forward the
     client. And also required for yum. For this requirement look at [[Firewall
      rules][OUTPUT rule for 80 in firewall rules section]]
+# comment: Instead of 'For this requirement' we can write 'this
+# requirement is fulfilled by [link to the section]'
  3) Allow outgoing connections on tcp port 443 for
     yum. For this requirement look at [[ Firewall rules][OUTPUT rule for 443 in firewall
     rules section]]
  4) Reverse proxy will be able to store the analytics of each lab using
     AWStats (Logfile analyzer).
-** Security Requirements 
+# comment: Avoid use of 'will'.
+** Security Requirements
  1) Accept incoming and outgoing connections on tcp ports 80 and 443
     *only* from internal network and from the router.
 * Design

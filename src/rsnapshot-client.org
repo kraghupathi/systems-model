@@ -64,10 +64,10 @@
 |   |   |       `-- main.yml
 #+END_EXAMPLE
 
-    Various tasks of [[Tasks][Tasks]] section are concatenated into
+   Various tasks of [[Tasks][Tasks]] section are concatenated into
    =roles/rsnapshot_client/tasks/main.yml= file.
 
-    =roles/rsnapshot_client/vars/main.yaml= file defines the variable
+   =roles/rsnapshot_client/vars/main.yaml= file defines the variable
    as described in the [[Variables Definition]] section.
 
 ** Firewall Rules
