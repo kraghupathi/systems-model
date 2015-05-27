@@ -13,13 +13,16 @@ This document describes the requirements, design and implementation of
 the configuration server.
   
 This configuration server plays a vital role in this cluster to setup
+# comment replace 'this' with 'the'. 'The configuration server...in the cluster'
 the complete infrastructure.   
 
 This server configures all other servers in the cluster and configures
+# comment replace 'this' with 'the'. 'The configuration server'
 itself as well, through multiple roles and tasks.  A role is a
 specific set of configurations.
 
 This configuration server will be able to ssh to other servers and lab
+# comment replace 'this' with 'the'. 'The configuration server'
 instances/containers using *key based authentication only* since
 public key of configuration server will be placed in all other
 servers/nodes,instances/containers and itself also. Password based
@@ -51,7 +54,8 @@ below and all other common requirements are described in [[./common.org][common 
    from IIIT IP range or management ip machines.
 
 * Design
-*The design of this configuration server is as follows*: 
+*The design of this configuration server is as follows*:
+# comment replace this with the 'the configuration server' 
 
 The following network diagram represents how the configuration server
 is connecting to other nodes such as reverseproxy, DNS, router etc.
@@ -60,6 +64,7 @@ is connecting to other nodes such as reverseproxy, DNS, router etc.
 [[./diagrams/config-server-network-diagram.png]]
 
 This node is one of the many other nodes in the cluster.  Only from
+# remove from in above sentence
 IIIT ip range and management ip machines are allowed to ssh to root
 account of the configuration server. 
 
@@ -73,8 +78,10 @@ care by common role. For more tasks which are done by common role,
 please go through [[./common.org][common role]].
 
 This node can be reached via ICMP (ping) requests.
+# comment replace 'this' with something else
 
 This node's public key will be placed in every instance/container. So
+# comment replace 'this' with something else
 that configuration server will be able to configure all other nodes,
 instances/containers and as well as itself by running the ansible
 scripts. These ansible scripts are implemented at [[Implementation]]
@@ -124,6 +131,7 @@ configuration server host with config_server and all other roles.
 
 =roles/config_server/handlers/main.yml= file defines various handlers
 <<<<<<< HEAD
+# commment It is not clear what is meaant by <<<<< HEAD
 which are only executed in case a task notifies them. Handlers
 are described in details at [[Handlers][handlers]].  The hanlders are caled only
 when tasks are called as part of the config_server role. Various
@@ -136,7 +144,7 @@ tasks are called as part of the config_server role. Various templates
 and files are being used during task execution for creating necessary
 configuration files.
 >>>>>>> fd313fa0fba89ba5decb920f54fb1c5f47bb86f7
-
+# comment It is not clear what above statement is,  starting with >>>>>
 =roles/config_server/tasks/main.yml= file consist of various tasks
 which are needed for setting up config_server. These tasks are
 described [[Tasks][here]].
