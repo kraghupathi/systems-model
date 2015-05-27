@@ -14,7 +14,11 @@
    monitor services of a system such as ssh service, cpu usage, ram
    usage and disk usage. Examples and verification are given wherever
    possible. Test Cases are also described to test the setup.
-
+** COMMENT 
+it can be "for monitoring" instead of "used to" We can add more
+intorduction about nrpe-client and nagios server for system and
+application level services monitoring such as cpu usage and ram usage
+etc.
 * Requirements
   The functional and security requirements of the Nagios Server are
   mentioned in the following sections. Only the Nagios specific
@@ -28,7 +32,11 @@
    4) Accept outgoing connections on TCP port 5666 for nrpe.
    5) Run apache service.
    6) Run nagios service.
-
+*** COMMENT
+ Instead of "Accept " we can write "Allow" because these are
+ functional requirements. Accept is like should. we can write this in
+ security requirements. We can describe each requirement as rsysolg
+ model.
 ** Security Requirements
    1) All common security requirements as described in [[file:common.org::*Security Requirements][common role]] are
       applicable to nagios node.
@@ -41,6 +49,8 @@
 [[./diagrams/nagios-server-design-diagram.png]]
 <<<<<<< HEAD:src/nagios_server.org
 # comment Unnable to view the diagram
+*** COMMENT 
+Remove "<<<<<" and commented line.
 ** Editable Link
 =======
 
@@ -49,6 +59,9 @@
 [[https://docs.google.com/a/vlabs.ac.in/drawings/d/10tc9FolWsVoPfEXI1FbvJmZKg77SjkGbcix2yJMg81Q/edit][Design Diagram Link]]
 
 ** System Files
+*** COMMENT 
+Description of System files, like purpose of this table!
+
 |------+----------+---------------------------------------------+-------------------------|
 | S.no | Service  | File                                        | Description             |
 |------+----------+---------------------------------------------+-------------------------|
@@ -64,6 +77,7 @@
 |------+----------+---------------------------------------------+-------------------------|
   
 ** Configuration Design
+
 <<<<<<< HEAD:src/nagios_server.org
 In a system there may be many services of interest which are to be monitored,
 such as =ssh=, =ping= and =http=. Services and usage being monitored are
@@ -122,8 +136,17 @@ CRITICAL - Plugin timed out while executing system call
    as an http service on nagios node - localhost port 80.
 
 [[./diagrams/nagios-dashboard-screenshot.png]]
+*** COMMENT 
+1. remove "<<< at the begining and end  >>>"
+2. not just some specific services, we can have many services in
+   system. Here you added only three services as example. we can say
+   ssh,ping,http, etc,.
+3. Repeated paragraphs 
+4. Nagios also running on port 443
+
 
 * Implementation
+
 ** Structure of Scripts
    The implementation of this system is in terms of a collection of
    Ansible scripts which configure the node. These scripts are
@@ -167,7 +190,8 @@ CRITICAL - Plugin timed out while executing system call
    =nagios_server_iptables= and =servers.cfg=.  These templates use
    variables defined at various places to configure the Nagios server
    with appropriate values.
-
+# templates uses different variables in various places, variables are not
+# defined in various places. These varibles are defined in =vars/= folder
    =roles/nagios_server/vars/main.yaml= file defines the variable as
    described in the [[Define variables and services groups]] section.
 
@@ -187,6 +211,7 @@ CRITICAL - Plugin timed out while executing system call
       nodes being monitored. Defined in line number 53.
    4. Nagios server sends SSH requests to systems where ssh service is
       being monitored. Defined in line number 56.
+# is Line number needed?
 
 *** Firewall Rules
 #+BEGIN_SRC yml -n :tangle roles/nagios_server/templates/nagios_server_iptables :eval no
@@ -451,7 +476,7 @@ check_command           {{ s.command }}
 *** Update all packages
    All packages inside the node are updated before configuring the
    nagios server node.
-
+# "has to be updated" instead of "are updated"
 #+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml :eval no
 - name: running yum update
   yum: name=* state=latest
@@ -565,7 +590,6 @@ check_command           {{ s.command }}
 *** Start nagios service
    Any changes in nagios configuration is enforced by restarting the
    nagios service.
-
 #+BEGIN_SRC yml :tangle roles/nagios_server/handlers/main.yml
 - name: restart nagios
   sudo: true
@@ -591,6 +615,10 @@ check_command           {{ s.command }}
   sudo: true
   service: name=iptables state=restarted
 #+END_SRC
+
+# no need of "sudo: true" here.  service is restarted when associated
+# task is notified to restart the service if the changes occured in
+# service configuration file.
 
 ** Define variables and services groups
    Various variables used by the ansible playbook are defined
@@ -679,6 +707,7 @@ nagios_commands:
 #    - rsyslog_client
     - nagios_server
 #+END_SRC
+# uncomment the roles
 * Test Cases
 ** Test Case-1
 *** Objective
@@ -687,17 +716,19 @@ nagios_commands:
 *** Apparatus
    1) Nagios server
    2) Nagios client
-
+# what is nagios client here?. We may need another client machine with
+# nagios-nrpe-client installed to monitor services
 *** Theory
    Nagios server provides a web interface to monitor client nodes. Web
    dashboard runs as an http server on port 80.
- 
+# and also runs on https 
 *** Experiment
    Verify whether the web url of dashboard is opening in a browser.
-
+# We suppese to give username and password in order to access the web
+# interface(?)
 *** Observation
    Web interface displays the services being monitored in the system.
-
+# "are being monitored"
 *** Conclusion
    If the web interface is opening then its assure that server is
    configure properly.
@@ -706,27 +737,29 @@ nagios_commands:
 *** Objective
    Test alert mails are send when something wrong happens with the
    system or in case of critical situation.
-
+# Test to send alerts when something goes wrong in local machine and
+# also client machines"
 *** Apparatus
    1) Nagios server
    2) Nagios client
-
+# what is nagios client here?. We may need another client machine with
+# nagios-nrpe-client installed to monitor services
 *** Theory
-   Nagios server sends alert messages whenever the client node goes to
+   Nagios server sends the alert messages whenever the client node goes to
    a critical state.
 
 *** Experiment
    Stop a service for example "ssh" inside the client node manually
    using "service sshd stop" command. Now see in mail server if the
    email alerts are received.
-
+# after a few minutes ( 5 to 10 minutes )
 *** Observation
    Nagios generates a mail alert in a critical situation.
 
 *** Conclusion
    If the email alerts are being received then the mail service is
    configured properly.
-  
+# you have tested this test case, so I think no need to mention "if".
 ** Test Case-3
 *** Objective
    Test command status by executing them on the client node from the
@@ -759,10 +792,14 @@ nagios_commands:
 *** Result
    Output of commands when executed on client node: 10.4.15.117 are as
    follows:
+
+# Either remove ip of client node or add nagios server ip also
+# wherever we required in test cases
 **** Sample output for command 1.
 #+BEGIN_EXAMPLE
 OK - load average: 0.00, 0.00, 0.00|load1=0.000;15.000;30.000;0; load5=0.000;10.000;25.000;0; load15=0.000;5.000;20.000;0; 
 #+END_EXAMPLE
+
 **** Sample output for command 2.
 #+BEGIN_EXAMPLE
 USERS OK - 0 users currently logged in |users=0;5;10;0
@@ -772,12 +809,14 @@ USERS OK - 0 users currently logged in |users=0;5;10;0
 #+BEGIN_EXAMPLE
 SSH OK - OpenSSH_5.3 (protocol 2.0) | time=0.007418s;;;0.000000;10.000000
 #+END_EXAMPLE
+     
+# command1, command2 and command3?
 *** Observation
    Return status of the services is displayed in the command output.
 
 *** Conclusion
    If the return status of the depicts the status of service in the
    client node.
-
+# Same as above conclusion
 
  
