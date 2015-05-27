@@ -147,6 +147,31 @@ CRITICAL - Plugin timed out while executing system call
 |   |   |       `-- main.yaml
 #+END_EXAMPLE
 
+   Here =nagios_server.yaml= file configures the nagios server with
+   the "nagios_server", "common", "ossec_client", "rsyslog_client" and
+   "nagios_server" roles as described in the [[Nagios server
+   configuration script]] section.  
+   
+   The =roles/nagios_server/handlers/main.yaml= file defines various
+   handlers which are only executed in case a task notifies them.
+   These handlers are described in detail in the [[Handlers]] section.
+   The handlers are called when the tasks described in the [[Tasks][Tasks]]
+   section notify them.  
+
+   Various tasks of [[Tasks][Tasks]] section are concatenated into
+   =roles/nagios_server/tasks/main.yaml= file. File
+   =roles/nagios_server/tasks/configure_servers.yaml= is included
+   inside main.yaml file.
+
+   The =roles/nagios_server/templates/= folder contains three jinja2
+   configuration templates - =commands.cfg=, =contancts.cfg.j2=,
+   =nagios_server_iptables= and =servers.cfg=.  These templates use
+   variables defined at various places to configure the Nagios server
+   with appropriate values.
+
+   =roles/nagios_server/vars/main.yaml= file defines the variable as
+   described in the [[Define variables and services groups]] section.
+
 ** Firewall rules for Nagios Server
    Firewall rules applied on Nagios server are mentioned
    here. Description of firewall rules which are common across all the
