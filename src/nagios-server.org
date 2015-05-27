@@ -1,4 +1,4 @@
-#+TITLE:     Nagios Server - Design Model and Implementation
+#+TITLE:     Nagios Server Role
 #+DATE:      2015-04-01 Wednesday
 #+PROPERTY: session *scratch*
 #+PROPERTY: results output
@@ -155,15 +155,14 @@ CRITICAL - Plugin timed out while executing system call
    The =roles/nagios_server/handlers/main.yaml= file defines various
    handlers which are only executed in case a task notifies them.
    These handlers are described in detail in the [[Handlers]] section.
-   The handlers are called when the tasks described in the [[Tasks][Tasks]]
-   section notify them.  
 
-   Various tasks of [[Tasks][Tasks]] section are concatenated into
-   =roles/nagios_server/tasks/main.yaml= file. File
+   The handlers are called when the tasks described in the [[Tasks][Tasks]]
+   section notify them. Various tasks of [[Tasks][Tasks]] section are
+   concatenated into =roles/nagios_server/tasks/main.yaml= file. File
    =roles/nagios_server/tasks/configure_servers.yaml= is included
    inside main.yaml file.
 
-   The =roles/nagios_server/templates/= folder contains three jinja2
+   The =roles/nagios_server/templates/= folder contains four jinja2
    configuration templates - =commands.cfg=, =contancts.cfg.j2=,
    =nagios_server_iptables= and =servers.cfg=.  These templates use
    variables defined at various places to configure the Nagios server

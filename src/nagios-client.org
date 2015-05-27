@@ -1,4 +1,4 @@
-#+TITLE:     Nagios Client - Design Model and Implementation
+#+TITLE:     Nagios Client Role
 #+DATE:      2015-04-01 Wednesday
 #+PROPERTY: session *scratch*
 #+PROPERTY: results output
@@ -60,7 +60,6 @@
    organized as follows:
 
 #+BEGIN_EXAMPLE
-|-- nagios_client.yaml
 |-- roles
 |   |   |-- nagios_client
 |   |   |   |-- handlers
@@ -72,6 +71,22 @@
 |   |   |   `-- vars
 |   |   |       `-- main.yaml
 #+END_EXAMPLE
+
+   The =roles/nagios_client/handlers/main.yaml= file defines various
+   handlers which are only executed in case a task notifies them.
+   These handlers are described in detail in the [[Handlers]] section.
+
+   The handlers are called when the tasks described in the [[Tasks][Tasks]]
+   section notify them. Various tasks of [[Tasks][Tasks]] section are
+   concatenated into =roles/nagios_client/tasks/main.yaml= file.
+
+   The =roles/nagios_client/templates/= folder contains one jinja2
+   configuration template - =xinetd.conf.j2=. This template use
+   variables defined at various places to configure the Nagios client
+   with appropriate values.
+
+   =roles/nagios_client/vars/main.yaml= file defines the variable as
+   described in the [[Define Variables and Services groups]] section.
 
 ** Firewall rules for Nagios Client
    Firewall rules applied to nagios client system are mentioned

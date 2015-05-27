@@ -51,26 +51,27 @@
 
 #+BEGIN_EXAMPLE
 |-code
-  |-- roles
-  |   |-- rsyslog_client
-  |   |   |-- files
-  |   |   |   `-- rsyslog_client.conf
-  |   |   |-- handlers
-  |   |   |   `-- main.yml
-  |   |   `-- tasks
-  |   |       `-- main.yml
+| |-- roles
+| |   |-- rsyslog_client
+| |   |   |-- handlers
+| |   |   |   `-- main.yaml
+| |   |   |-- tasks
+| |   |   |   `-- main.yaml
+| |   |   `-- templates
+| |   |       `-- rsyslog_client.conf
 #+END_EXAMPLE
-
-   Here =rsyslog_client.yml= file configures rsyslog_client host with
-   rsyslog_client role.
 
    =roles/rsylog_client/handlers/main.yml= file defines various
    handlers which are only executed in case a task notifies them.
    Handlers are described in detail at [[Building ansible handlers for configuring rsyslog server][Building ansible handlers for
    configuring rsyslog client]]
    
-   Various templates and files are used during task execution for
-   creating necessary configuration files.
+   The handlers are called when the tasks described in the [[Tasks][Tasks]]
+   section notify them. Various tasks of [[Tasks][Tasks]] section are
+   concatenated into =roles/rsyslog_client/tasks/main.yaml= file.
+
+   The =roles/nagios_client/templates= contains one configuration
+   file - =rsyslog_client.conf=.
 
 ** What are the firewall rules
    Firewall rules applied to rsyslog client system are mentioned

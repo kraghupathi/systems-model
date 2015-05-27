@@ -1,4 +1,4 @@
-#+TITLE:     Rsnapshot Server - Design Model and Implementation
+#+TITLE:     Rsnapshot Server Role
 #+DATE:      2015-04-15 Wednesday
 #+PROPERTY: session *scratch*
 #+PROPERTY: results output
@@ -83,6 +83,28 @@
 |   |   |   `-- vars
 |   |   |       `-- main.yml
 #+END_EXAMPLE
+
+   Here =rsnapshot_server.yml= file configures the Rsnapshot server
+   with the "common" and "rsnapshot_server" roles as described in the
+   [[Rsnapshot server configuration script]] section.
+   
+   The =roles/rsnapshot_server/handlers/main.yaml= file defines
+   various handlers which are only executed in case a task notifies
+   them. These handlers are described in detail in the [[Handlers]]
+   section.
+
+   The handlers are called when the tasks described in the [[Tasks][Tasks]]
+   section notify them. Various tasks of [[Tasks][Tasks]] section are
+   concatenated into =roles/rsnapshot_server/tasks/main.yml= file.
+
+   The =roles/rsnapshot_server/templates/= folder contains two jinja2
+   configuration templates - =rsnapshot.conf.j2= and
+   =rsnapshot_server_iptables=. These templates use variables defined
+   at various places to configure the Rsnapshot server with
+   appropriate values.
+
+   =roles/nagios_server/vars/main.yaml= file defines the variable as
+   described in the [[Variables Definition]] section.
 
 ** Firewall Rules
    Firewall rules applied to rsnapshot server are mentioned
@@ -716,6 +738,24 @@ rsnapshot_crontab:
        job: "/usr/bin/rsnapshot monthly"
 #+END_SRC
 
+** Rsnapshot server configuration script
+   Rsnapshot server is configured by using following roles:
+   1) =common=
+   2) =rsnapshot_server=
+
+#+BEGIN_SRC 
+---
+- name: This yml script configures rsnapshot server
+  hosts: rsnapshot_server
+  remote_user: root
+
+  vars:
+   host_name: rsnapshot-server
+  roles:
+    - common
+    - rsnapshot_server
+
+#+END_SRC
 * Test Cases
 ** Test Case-1
 *** Objective
