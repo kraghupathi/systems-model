@@ -1,4 +1,4 @@
-#+TITLE:     Rsyslog Client - Design Model and Implementation
+#+TITLE:     Rsyslog Client Role
 #+DATE:      2015-03-30 Monday
 #+PROPERTY: session *scratch*
 #+PROPERTY: results output
@@ -8,23 +8,32 @@
 
 
 * Introduction
-Rsyslog service is configured inside the systems to forward the log messages
-to the rsyslog server for safe storage. Rsyslog service also saves the system
-log messages locally in each system.
+   Rsyslog service is configured inside the systems to forward the log
+   messages to the rsyslog server for safe storage. Rsyslog service
+   also saves the system log messages locally in each system.
 
 * Requirements
+   The functional and security requirements of the Rsyslog Client are
+   mentioned in the following sections. Only the Rsyslog Client
+   specific requirements which differ from the generic requirements
+   specified in the [[common%20role][common role]] are mentioned here.
 ** Functional Requirements
-1) Allow outgoing connections on UDP port 514.
-2) Run Rsyslog service on udp port 514.
+   1) Allow outgoing connections on UDP port 514.
+   2) Run Rsyslog service on udp port 514.
     
 ** Security Requirements
-1) All common security requirements as described in [[file:common.org::*Security Requirements][common role]] are applicable
-   to rsyslog client.
+   1) All common security requirements as described in [[file:common.org::*Security Requirements][common role]] are
+      applicable to rsyslog client.
 
 * Design
 ** System Design Diagram
+   The following network diagram represents the interaction between
+   the Rsyslog client and all other machines in the cluster. This
+   diagram primarily focuses on the functionality of the Rsyslog
+   Client.
+
 [[./diagrams/rsyslog-client.png]]
-**** Editable link [[https://docs.google.com/a/vlabs.ac.in/drawings/d/1ZqFyzkKmdB3pkqdJUmKOOPUyzYmMa8Vix421-HiZXwk/edit][google drawing editable link]]
+**** COMMENT Editable link [[https://docs.google.com/a/vlabs.ac.in/drawings/d/1ZqFyzkKmdB3pkqdJUmKOOPUyzYmMa8Vix421-HiZXwk/edit][google drawing editable link]]
 ** System Files
 |------+----------+------------------------------+------------------------|
 | Sno. | Service  | File                         | File Type              |
@@ -36,28 +45,44 @@ log messages locally in each system.
 
 * Implementation
 ** Structure of Scripts
-The implementation of this system is in terms of a collection of Ansible
-scripts which configures the node. These scripts are organized as follows:
+   The implementation of this system is in terms of a collection of
+   Ansible scripts which configures the node. These scripts are
+   organized as follows:
+
 #+BEGIN_EXAMPLE
 |-code
-  |-- roles
-  |   |-- rsyslog_client
-  |   |   |-- files
-  |   |   |   `-- rsyslog_client.conf
-  |   |   |-- handlers
-  |   |   |   `-- main.yml
-  |   |   `-- tasks
-  |   |       `-- main.yml
+| |-- roles
+| |   |-- rsyslog_client
+| |   |   |-- handlers
+| |   |   |   `-- main.yaml
+| |   |   |-- tasks
+| |   |   |   `-- main.yaml
+| |   |   `-- templates
+| |   |       `-- rsyslog_client.conf
 #+END_EXAMPLE
 
+   =roles/rsylog_client/handlers/main.yml= file defines various
+   handlers which are only executed in case a task notifies them.
+   Handlers are described in detail at [[Building ansible handlers for configuring rsyslog server][Building ansible handlers for
+   configuring rsyslog client]]
+   
+   The handlers are called when the tasks described in the [[Tasks][Tasks]]
+   section notify them. Various tasks of [[Tasks][Tasks]] section are
+   concatenated into =roles/rsyslog_client/tasks/main.yaml= file.
+
+   The =roles/nagios_client/templates= contains one configuration
+   file - =rsyslog_client.conf=.
+
 ** What are the firewall rules
-Firewall rules applied to rsyslog client system are mentioned here. Description
-of firewall rules which are common across all the nodes are defined in the [[file:common.org::*Common Firewall
- Rules][common role]].
-Rule for allowing connections on UDP port 514 is specific to only rsyslog client
-and is described here.
+   Firewall rules applied to rsyslog client system are mentioned
+   here. Description of firewall rules which are common across all the
+   nodes are defined in the [[file:common.org::*Common Firewall Rules][common role]].  Rule for allowing
+   connections on UDP port 514 is specific to only rsyslog client and
+   is described here.
 *** Allow outgoing connections on UDP port 514
-Rsyslog client node sends log messages to rsyslog server on UDP port 514.
+   Rsyslog client node sends log messages to rsyslog server on UDP
+   port 514.
+
 #+BEGIN_EXAMPLE
 #Allow to send rsyslog log messages to rsyslog server
 -A OUTPUT -p udp -m udp --dport 514 -j ACCEPT
@@ -65,14 +90,16 @@ Rsyslog client node sends log messages to rsyslog server on UDP port 514.
 
 ** Build Configuration file
 *** Steps to configure
-Rsyslog service is configured using =/etc/rsyslog.conf= configuration file.
-Default configuration setup is edited as per our requirements. Append
-following line at the bottom of the file
-     #+BEGIN_EXAMPLE
-     *.* @<rsyslog_server>:<port>
-     #+END_EXAMPLE
+   Rsyslog service is configured using =/etc/rsyslog.conf=
+   configuration file.  Default configuration setup is edited as per
+   our requirements. Append following line at the bottom of the file
+
+#+BEGIN_EXAMPLE
+*.* @<rsyslog_server>:<port>
+#+END_EXAMPLE
 *** Complete configuration file
-Configuration file with modifications is shown below:
+   Configuration file with modifications is shown below:
+
 #+BEGIN_SRC yml :tangle roles/rsyslog_client/templates/rsyslog_client.conf :eval no
 # rsyslog v5 configuration file
 
@@ -169,8 +196,10 @@ $ActionQueueSaveOnShutdown on # save in-memory data if rsyslog shuts down
 {% endfor %}
 #+END_SRC
 
-** Install rsyslog package
-Rsyslog package is installed in the system.
+** Tasks
+*** Install rsyslog package
+   Rsyslog package is installed in the system.
+
 #+BEGIN_SRC yml :tangle roles/rsyslog_client/tasks/main.yml :eval no
 ---
 - name: Install rsyslog package
@@ -178,10 +207,12 @@ Rsyslog package is installed in the system.
   environment: proxy_env
 #+END_SRC 
 
-** Set Rsyslog service
-Rsyslog service is set by following steps:
+*** Set Rsyslog service
+   Rsyslog service is set by following steps:
+
    1) Copy configuration file from the ansible node.
    2) Restart rsyslog service to enforce the configuration.
+
 #+BEGIN_SRC yml :tangle roles/rsyslog_client/tasks/main.yml
 - name: Copy rsyslog configuration to rsyslog client
   template: src=rsyslog_client.conf dest=/etc/rsyslog.conf owner=root group=root mode=644
@@ -189,18 +220,20 @@ Rsyslog service is set by following steps:
     - restart rsyslog 
 #+END_SRC
 
-** Set rsyslog service to auto start
-Start rsyslog service and also configure it to automatically start on next
-reboot.
+*** Set rsyslog service to auto start
+   Start rsyslog service and also configure it to automatically start
+   on next reboot.
+
 #+BEGIN_SRC yml :tangle roles/rsyslog_client/tasks/main.yml :eval no
 - name: Set rsyslog service for auto startup
   service: name=rsyslog state=started enabled=yes
 #+END_SRC
 
-** Start rsyslog service
-Any changes in rsyslog configuration file is enforced to the system by
-restarting the rsyslog service. To restart rsyslog, handlers (ansible terms) are
-defined here.
+** Handlers
+   The services should be restarted if there are any changes made to
+   the configuration file. This is taken care of by the following
+   code.
+
 #+BEGIN_SRC yml :tangle roles/rsyslog_client/handlers/main.yml
 ---
 - name: restart rsyslog
@@ -208,14 +241,17 @@ defined here.
 #+END_SRC
 
 ** Variables Definition
-Following variables are used in the ansible scripts to configure rsyslog server.
+   Following variables are used in the ansible scripts to configure
+   rsyslog server.
    1) Proxy environment - =proxy_env=
    2) Anisble server ip - =ansible_server_ip=
    3) Nagios server ip - =nagios_server_ip=
-Values of these variables is fetched from the =common_vars= role.
+   Values of these variables is fetched from the =common_vars= role.
 
 ** Rsyslog configuration script
-Rsyslog server is configured using common and =rsyslog_client= role.
+   Rsyslog server is configured using common and =rsyslog_client=
+   role.
+
 #+BEGIN_SRC yml :tangle rsyslog_client.yml
 ---
 - name: Configure rsyslog 
@@ -228,105 +264,115 @@ Rsyslog server is configured using common and =rsyslog_client= role.
 
 * Test Cases
 ** Test Case-1
-*** Objective: 
-Test the system is forwarding log messages to rsyslog server on port UDP 514
-*** Apparatus:
+*** Objective
+   Test the system is forwarding log messages to rsyslog server on
+   port UDP 514
+*** Apparatus
 1) Rsyslog server
 2) Rsyslog client
 
 *** Theory
-Rsyslog server accepts log messages from rsyslog clients on UDP port 514. For
-node to be configured as rsyslog client firewall rule of the node has to
-allow outgoing connections on port 514.
+   Rsyslog server accepts log messages from rsyslog clients on UDP
+   port 514. For node to be configured as rsyslog client firewall rule
+   of the node has to allow outgoing connections on port 514.
 
 *** Experiment
-Login to rsyslog server from one terminal and navigate to
-=/var/log/<clienthostname>= directory. Do "tail -f su.log" in the present
-working directory. Now from another terminal login to rsyslog client
-node. Execute "sudo su -" command. Once login to the client node a session
-gets created for the user and a system log is generated. The log message are
-forwareded to rsyslog server and saved there in a file. As a result messages
-should appear in the first terminal screen.
+   Login to rsyslog server from one terminal and navigate to
+   =/var/log/<clienthostname>= directory. Do "tail -f su.log" in the
+   present working directory. Now from another terminal login to
+   rsyslog client node. Execute "sudo su -" command. Once login to the
+   client node a session gets created for the user and a system log is
+   generated. The log message are forwarded to rsyslog server and
+   saved there in a file. As a result messages should appear in the
+   first terminal screen.
 
 *** Result
-Sample output is shown below for above procedure.
+   Sample output is shown below for above procedure.
+
 #+BEGIN_EXAMPLE
 Mar 27 09:33:38 rsyslog-client su: pam_unix(su-l:session): session opened for user root by (uid=0)
 Mar 27 09:33:43 rsyslog-client su: pam_unix(su-l:session): session closed for user root
 #+END_EXAMPLE
 
 *** Obeservation
-Messages are getting logged in the server in =su.log= file inside
-=/var/log/<client-hostname>= directory with proper date and time.
+   Messages are getting logged in the server in =su.log= file inside
+   =/var/log/<client-hostname>= directory with proper date and time.
 
 *** Conclusion
-If the messages are getting logged in =su.log= file inside
-=/var/log/<client-hostname>= directory with proper date and time that means rsyslog
-server is configured properly.
+   If the messages are getting logged in =su.log= file inside
+   =/var/log/<client-hostname>= directory with proper date and time
+   that means rsyslog server is configured properly.
 
 ** Test Case-2
-*** Objective:
-Test ssh logs are getting logged in rsyslog server
+*** Objective
+   Test ssh logs are getting logged in rsyslog server
 
-*** Apparatus:
-1) Rsyslog server
-2) Rsyslog client
+*** Apparatus
+   1) Rsyslog server
+   2) Rsyslog client
 
 *** Theory
-System generates log message everytime an event occurs in the system. When a
-login is made inside the system using ssh, node generates "ssh log"
-message. This message is then forwarded to rsyslog server.
+   System generates log message everytime an event occurs in the
+   system. When a login is made inside the system using ssh, node
+   generates "ssh log" message. This message is then forwarded to
+   rsyslog server.
 
 *** Experiment
-Login to rsyslog server from one terminal and naviagate to
-=/var/log/<client-hostname>= directory. Monitor =sshd.log= file using =tail -f
-sshd.log= command. Now from another terminal login to rsyslog client node via
-ssh. The ssh log message is generated which is then forwarded to rsyslog server
-and saved in a file. As a result messages should appear in the first terminal
-screen.
+   Login to rsyslog server from one terminal and naviagate to
+   =/var/log/<client-hostname>= directory. Monitor =sshd.log= file
+   using =tail -f sshd.log= command. Now from another terminal login
+   to rsyslog client node via ssh. The ssh log message is generated
+   which is then forwarded to rsyslog server and saved in a file. As a
+   result messages should appear in the first terminal screen.
 
 *** Result
-Sample output is shown below for above chain of commands.
+   Sample output is shown below for above chain of commands.
+
 #+BEGIN_EXAMPLE
 Mar 27 09:51:18 rsyslog-client sshd[3565]: Accepted password for root from 192.168.101.106 port 35795 ssh2
 Mar 27 09:51:18 rsyslog-client sshd[3565]: pam_unix(sshd:session): session opened for user root by (uid=0)
 #+END_EXAMPLE
 
 *** Obeservation
-Messages are getting logged in the server in =sshd.log= file inside
-=/var/log/<client-hostname>= directory with proper date and time.
+   Messages are getting logged in the server in =sshd.log= file inside
+   =/var/log/<client-hostname>= directory with proper date and time.
 
 *** Conclusion
-If the messages are getting logged in =sshd.log= file inside
-=/var/log/<client-hostname>= directory with proper date and time that means rsyslog
-server is configured properly.
+   If the messages are getting logged in =sshd.log= file inside
+   =/var/log/<client-hostname>= directory with proper date and time
+   that means rsyslog server is configured properly.
 ** Test Case-3
-*** Objective:
-Test apache logs are getting logged in rsyslog server.
+*** Objective
+   Test apache logs are getting logged in rsyslog server.
 
-*** Apparatus:
+*** Apparatus
 1) Rsyslog server
 2) Rsyslog client with apache service running
 
 *** Theory
-Apache saves a log message everytime an an HTTP request is made to apache
-server.  By default apache saves log messages in =/var/log/httpd/access_log=
-file. These logs are forwarded to a central rsyslog server.  Apache is
-configured to pipes the log messages to external program by changing the value
-of "CustomLog" directive as follows:
+   Apache saves a log message everytime an an HTTP request is made to
+   apache server.  By default apache saves log messages in
+   =/var/log/httpd/access_log= file. These logs are forwarded to a
+   central rsyslog server.  Apache is configured to pipes the log
+   messages to external program by changing the value of "CustomLog"
+   directive as follows:
+
    #+BEGIN_EXAMPLE
    CustomLog "|/usr/bin/logger -t apache -p local6.info" combined
    #+END_EXAMPLE
 
 *** Experiment
-Make an http reqeust to rsyslog client using "lynx" program. HTTP service
-running at the client node will send a reply.
+   Make an http reqeust to rsyslog client using "lynx" program. HTTP
+   service running at the client node will send a reply.
+
 #+BEGIN_EXAMPLE
 lynx <rsyslog-client-ip>
 #+END_EXAMPLE
-After receiving the reply view the file at rsyslog server at
-=/var/log/<rsyslog-client>/apache.log= location. Log message similar to shown
-here should appear.
+
+   After receiving the reply view the file at rsyslog server at
+   =/var/log/<rsyslog-client>/apache.log= location. Log message
+   similar to shown here should appear.
+
 #+BEGIN_EXAMPLE
 Mar 27 14:46:55 rsyslog-client apache: 192.168.101.106 - -
 [27/Mar/2015:14:46:55 +0530] "GET / HTTP/1.0" 200 10 "-" "Lynx/2.8.6rel.5
@@ -334,13 +380,15 @@ libwww-FM/2.14 SSL-MM/1.4.1 OpenSSL/1.0.0-fips"\
 #+END_EXAMPLE
 
 *** Result
-Apache logs are getting saved at the central server using rsyslog service.
+   Apache logs are getting saved at the central server using rsyslog
+   service.
 
-*** Obeservation
-Messages are getting logged in the server in =apache.log= file inside
-=/var/log/<client-hostname>= directory with proper date and time.
+*** Observation
+   Messages are getting logged in the server in =apache.log= file
+   inside =/var/log/<client-hostname>= directory with proper date and
+   time.
 
 *** Conclusion
-If the messages are getting logged in =apache.log= file inside
-=/var/log/<client-hostname>= directory with proper date and time that means
-rsyslog server is configured properly.
+   If the messages are getting logged in =apache.log= file inside
+   =/var/log/<client-hostname>= directory with proper date and time
+   that means rsyslog server is configured properly.

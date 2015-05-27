@@ -1,4 +1,4 @@
-#+Title: Common Roles Design Model and Implementation
+#+Title: Common Roles
 #+Date: April 9, 2015. Thursday
 #+PROPERTY: session *scratch*
 #+PROPERTY: results output
@@ -6,18 +6,17 @@
 #+OPTIONS: ^:nil
 \#+SETUPFILE: org-templates/level-0.org
 
-
 * Introduction
-  The document describes the requirements, design and implementation
+  This document describes the requirements, design and implementation
   of the common role. Common role consists of basic functional and
-  security requirements which are applied on all the nodes in the
-  cluster. Examples and verifications are given wherever
-  possible. Test Cases are also described to test the setup.
+  security requirements, which are applied on all the nodes in the
+  cluster. Examples are given wherever possible. Test Cases are also
+  described to test the setup.
 
-  Our cluster consists of many nodes. Every node has a specific
-  purpose and its properties such as firewall rules and services are
+  Cluster consists of many nodes. Every node has a specific purpose
+  and its properties such as firewall rules and services are
   configured to serve the purpose. All the nodes are part of one
-  cluster they share some common properties in terms of system
+  cluster, they share some common properties in terms of system
   configuration. Some common system configuration is applied on all
   the nodes in the cluster. For example - packages such as
   =bind-utils=, =logwatch= are installed in all the systems and ssh
@@ -54,7 +53,7 @@
 
    #+CAPTION:  Overall Cluster Network Diagram
    #+LABEL:  fig-overall-cluster-network-diagram
-[[   ./diagrams/overall-cluster-network-diagram.png]]
+[[./diagrams/overall-cluster-network-diagram.png]]
 
 ** COMMENT Editable Link
 [[https://docs.google.com/drawings/d/1-_1DAonwj9mfJYaXqHwZVHbzYEgDkzdTjOzDCBTpr-c/edit][   Google Drawing Link]]
@@ -108,11 +107,35 @@
 |   |   |   |   `-- main.yml
 #+END_EXAMPLE
 
+Here =common.yml= file is a main playbook to configure nodes in the
+cluster.
+
+=roles/common/files/history.sh= file is a shell script to do the
+history settings inside the system.
+
+=roles/common/handlers/main.yml= file defines various handlers which
+are only executed in case a task notifies them. Handlers are described
+in details at [[Handlers][handlers]].  The handlers are called only when tasks are
+called as part of the common role. Various templates and files are
+being used during task execution for creating necessary configuration
+files.
+
+=roles/common/tasks/main.yml= file consist of various tasks which are
+needed for setting up the nodes in the cluster. These tasks are
+described [[Tasks][here]].
+
+=roles/common/templates/resolv.conf= template file consist of
+nameserver. This template uses various variables and these variable
+values are defined in common_vars role.
+
+=roles/common/vars/main.yml= file is the variables files which defines
+the variables used by the ansible playbooks.
+
 ** Common Firewall Rules
    Firewall rules are set on all servers in the cluster. Each node has
    a specific set of rules depending upon the purpose of the
    node. However, some rules are common (intersection of firewall
-   rules in all the server). These common rules are applied in all the
+   rules in all the server). These common rules are applied to all the
    servers in the cluster.
 
    The common firewall rules are described here. The description of
@@ -216,7 +239,7 @@
     #Allow to accept incoming nrpe queries from nagios server
     -A INPUT -m state --state NEW -p tcp -m tcp --dport 5666 -j ACCEPT
     #+END_EXAMPLE
-
+    
 *** Rule for all other incoming connections
     Drop all the INPUT packets which does not match any of the defined
     rules. Dropped packets are logged with a limited rate.
@@ -396,19 +419,13 @@
    cluster for a limited period of time.
 
    To configure Fail2ban following actions are performed:
-   1) Download epel repo
-   2) Install epel repo
-   3) Install fail2ban
-   4) Start fail2ban service
+   1) Install epel repo
+   2) Install fail2ban
+   3) Start fail2ban service
 
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
-#Setup epel for downloading fail2ban
-- name: Download epel RPM 
-  get_url: url="{{ epel_download_url }}" dest="{{epel_download_path}}" timeout=5
-  environment: proxy_env
-
 - name: Install epel RPM
-  yum: name="{{epel_download_path}}" state=present
+  yum: name=epel-release state=present
   environment: proxy_env
 
 #Install fail2ban and enable it on startup
@@ -483,9 +500,10 @@ export HISTTIMEFORMAT HISTSIZE HISTFILESIZE
    30 seconds to timeout for host resolution. To take care of this
    assumption of sendmail =/etc/hosts= file is configured.
 
-   Following variables are set by the ansible tool as it runs on the
-   client node. For each server in the cluster value of these
-   variables will be different and set according to the server role.
+   Following variables are set by the ansible playbook scripts as it
+   runs on the client node. For each server in the cluster value of
+   these variables will be different and set according to the server
+   role.
 
 |-------+------------------------------+-------------------------------+--------------------------|
 | S.no. | Variable Name                | Description                   | Example                  |
@@ -890,12 +908,14 @@ Permission Denied ....
 
 *** Experiment
    Execute following command on the server.
+
 #+BEGIN_EXAMPLE
 sudo passwd -S root
 #+END_EXAMPLE
 
 *** Result
    Output of step-1 signifies the root account is locked.
+
 #+BEGIN_EXAMPLE
 root LK 2012-10-07 0 99999 7 -1 (Password locked.)
 #+END_EXAMPLE
@@ -960,6 +980,7 @@ service fail2ban status
    passwords. Do this atleast three times. Then on the server execute
    the following command to check if fail2ban filter for ssh detects
    failed login attempts.
+
 #+BEGIN_EXAMPLE
 fail2ban-regex /var/log/secure /etc/fail2ban/filter.d/sshd.conf <username|ipaddress>
 #+END_EXAMPLE 
@@ -968,6 +989,7 @@ fail2ban-regex /var/log/secure /etc/fail2ban/filter.d/sshd.conf <username|ipaddr
    Check if there is any firewall rule for fail2ban-ssh is added to
    block the machine's ip from where multiple failed login attempts
    are made.
+
 #+BEGIN_EXAMPLE
 iptables --list
 #+END_EXAMPLE
@@ -984,6 +1006,7 @@ Status
 **** Output of step-2 of experiment
    It shows that there are failed login attempts were made to the
    ossec-server from "10.100.1.2" ipaddress.
+
 #+BEGIN_EXAMPLE
 Running tests
 =============
@@ -1025,6 +1048,7 @@ Missed line(s): too many to print.  Use --print-all-missed to print all 159 line
    Output shows that fail2ban-ssh chain is now defined on the server,
    to reject all the incoming ssh connections from the malicious
    ipaddress.
+
 #+BEGIN_EXAMPLE
 Chain fail2ban-SSH (1 references)
 target     prot opt source               destination         
@@ -1064,6 +1088,7 @@ ssh: connect to host router.vlabs.ac.in port 22: Connection refused
 
 *** Result
    Output of step-1 of experiment.
+
 #+BEGIN_EXAMPLE
    21  15 04 13 10:27:45ls
    22  15 04 13 10:27:46pwd
@@ -1097,6 +1122,7 @@ EOT
 **** Check the mail client if any mail is received from the server
 *** Result
    Sample mail of step-2 of experiment may look like as follows:
+
 #+BEGIN_EXAMPLE
 from:	root <root@common-server.virtual-labs.ac.in>
 to:	sysadmin@vlabs.ac.in
@@ -1193,11 +1219,13 @@ ns4.google.com.		172800	IN	A	216.239.38.10
 
 *** Experiment
    Login to the server with following command
+
 #+BEGIN_EXAMPLE
 ssh root@<common-server-ip>
 #+END_EXAMPLE
 *** Result
    Output of step-1 of experiment is shown below.
+
 #+BEGIN_EXAMPLE
 Permission denied (publickey,gssapi-keyex,gssapi-with-mic,password).
 #+END_EXAMPLE
@@ -1219,13 +1247,16 @@ Permission denied (publickey,gssapi-keyex,gssapi-with-mic,password).
    2) Any other machine
 
 *** Experiment
-   Login to the common server from any other machine using following command:
+   Login to the common server from any other machine using following
+   command:
+
 #+BEGIN_EXAMPLE
 ssh <username>@<common-server-ip>
 #+END_EXAMPLE
 
 *** Result
    Sample output of step-1 of experiment is shown below.
+
 #+BEGIN_EXAMPLE
 Permission denied (publickey,gssapi-keyex,gssapi-with-mic).
 #+END_EXAMPLE
@@ -1246,6 +1277,7 @@ Permission denied (publickey,gssapi-keyex,gssapi-with-mic).
 
 *** Experiment
    Execute a command with sudo, for example
+
 #+BEGIN_EXAMPLE
 sudo su -
 sudo ls
@@ -1253,6 +1285,7 @@ sudo ls
 
 *** Result
    Sample output of step-1 of experiment.
+
 #+BEGIN_EXAMPLE
 -bash: sudo: command not found
 #+END_EXAMPLE
