@@ -11,28 +11,61 @@
   This document describes in detail the model of the systems cluster
   at VLEAD.  The tools, systems, configurations, setup files and
   related discussions are all part of the model.
-  
+ 
+* Prerequisites
+  This section enlists the basic knowledge the reader must have to be
+  able to comprehend the details of this model. The reader must be
+  familiar with the following:
+  + Networking basics
+  + Ansible 
+  + Amazon Web Service (AWS) [EC2, VM creation, console, AMI etc.]
+  + openVZ 
+  + Version control basics
+To know further about these please refer the [[Appendix]].
+
 * The Cluster Model
   The cluster model describes the set of systems which together
   provide the infrastructure for the hosting of the virtual-labs.
-  These virtual-labs are deployed at the following different
-  locations:
+  This infrastructure is setup at the following different locations:
   + [[Base4 Cluster][Base4]]
   + [[Base1 Cluster][Base1]]
   + [[Amazon Web Services (AWS) Cluster][AWS]]
-  using the same model with the minor differences in the provisioning.
-  The minor differences in provisioning are highlighted later in this
-  model.
+  The names of the cluster are given based on the locations in which
+  they are deployed. Base1 and Base4 are Centos machines running
+  OpenVZ kernel and are physically located in IIIT. 
+
+* Purpose of multiple clusters
+** Base4 Cluster
+   This cluster is a development cluster.  This cluster is used to
+   test new changes made to the develop branch before they are
+   considered as stable and merged with master.
+
+** Base1 Cluster 
+   Master branches which are found to be stable on the base4 cluster
+   are released with a tag and version number.  The new release is
+   then tested on base1 cluster to re-verify its soundness on staging
+   environment, before it is pushed to production environment on AWS.
+   
+** Amazon Web Services (AWS) Cluster
+   This cluster is the production cluster.  This cluster is modified
+   after changes have been verified on both development (base4) and
+   staging (base1).
+
+   /It should be noted that ADS adapter used on base1 and base4 is/
+   /different than adapter used on AWS.  Hence some problems may arise/
+   /due to use of different adapter in production in comparison to/
+   /staging and development./
+
+   This is the main cluster used by the external virtual-labs users
+   across the nation.  
   
-* Bootstrapping Cluster
-  A independent operating system such as a container or a VM or even a
-# comment 'An independent' instead of 'a independent'
-  physical machine is referred as a node.  The collection of such
+* Bootstrapping of a cluster
+  An independent operating system such as a container or a VM or even
+  a physical machine is referred as a node.  The collection of such
   related and connected nodes forms a cluster.  Each node in the
   cluster has a specific purpose that it serves.  To setup an entire
   cluster initially, each of the component nodes are setup
-  individually in an planned and specific manner.  This process of
-# comment 'in a planned' instead of 'in an planned'
+  individually in a planned and specific manner.  This process of
   setup of individual nodes in a specific manner to setup a new
   cluster is called the bootstrapping process.  This process is
   tightly related to the provisioning method used on the corresponding
@@ -52,32 +85,309 @@
                      configurable routing so that we can set a custom
                      gateway.  
   - Base4 cluster :: Same as base1
-  
-* Purpose of multiple deployments
-** Base4 Cluster
-   This cluster is a development cluster.  This cluster is used to
-   test new changes made to the develop branch before they are
-   considered as stable and merged with master.
 
-** Base1 Cluster 
-   Master branches which are found to be stable on the base4 cluster
-   are released with a tag and version number.  The new release is
-   then tested on base1 cluster to re-verify its soundness on staging
-   environment, before it is pushed to production environment on AWS.
+** Bootstrapping the AWS cluster
+*** Machine creation and initial setup
+**** Ansible machine creation
+     Create a machine for ansible installation.  Setup rpmfusion-free,
+     rpmfusion-nonfree, rpmforge and epel repos on the system.  Use
+     #+BEGIN_EXAMPLE
+     yum -y install ansible
+     #+END_EXAMPLE
+     to install ansible
+
+**** Version control setup
+     Setup version control on ansible machine using:
+     #+BEGIN_EXAMPLE
+     yum -y install bzr
+     #+END_EXAMPLE
+
+**** Setup basic ansible server
+     Setup trust based ssh from ansible_server to itself.  Edit or
+     create hosts file to point to correct ansible server.  Ensure that
+     run.sh refers to correct hosts file.  
+     
+     Ensure that roles/common_vars/vars/main.yaml has:
+     1. Correct ansible_server_ips.
+     2. Private_dns_ips and private_dns_zone are set to none.  
+
+     Use only roles common and ansible to setup ansible server
+     directly using ansible.yaml.
+
+**** Setup ossec server
+     Create ossec server and setup trust based SSH to it.  Edit hosts
+     file to reflect correct IP of ossec-server.  Ensure that
+     roles/common_vars/vars/main.yaml has correct ossec_server_ip and
+     ossec_client_ips.  Ossec server should be setup with common and
+     ossec-server roles only.
+
+**** Enable ossec-client role on ansible server
+     Enable ossec-client role on ansible server and other additional
+     servers that have been configured earlier.  Ensure that
+     roles/common_vars/vars/main.yaml clearly includes ansible server ip
+     under ossec_client_ips.
+
+**** Create DNS servers
+     Create following servers:
+     - public DNS
+     - private DNS
+     For each of these servers do the following:
+     - Copy authorized keys from ansible server to these servers
+     - Add server IP in ossec_client_ips in
+       roles/common_vars/vars/main.yaml
+     - Add server IPs in hosts file 
+     
+     Specifically for DNS servers look at variables in respective DNS
+     server files.  Also ensure that roles/named_server/files has
+     correct zone files for each zone with necessary zone_file_prefix.
+
+**** Configure machines to use private DNS
+     Edit roles/common_vars/vars/main.yaml and set private_dns_ips and
+     private_dns_zone values appropriately.
+
+**** Create rsyslog server
+     Create a machine to setup rsyslog server.  Configure authorized
+     keys from ansible server to this machine.  Add the machine IP to
+     hosts file appropriately.  Add server IP to ossec_client_ips list.
+     Also add the rsyslog server to IP binding in private and public DNS
+     zone files.  Configure rsyslog server with common, ossec_client and
+     rsyslog_server roles.
+
+**** Configure machines to send logs to rsyslog server
+     Add or uncomment role rsyslog_client on all servers except rsyslog_servers
+
+**** Create machine for configuring reverseproxy
+     Note that proper configuration of this and future steps depends
+     upon availability of a few test labs.  Hence create a few lab
+     VMs/containers as necessary before continuing.  Also update private
+     DNS so that lab containers can be resolved using FQDN.
+
+     Create a machine for reverseproxy.  Add its IP to private DNS.  Add
+     its IP to ossec_client_IPs.  Configure reverseproxy with roles
+     common, ossec_client, rsyslog_client and reverseproxy_server roles.
+     Ensure that proxy_domains is set appropriately in
+     common_vars/vars/main.yaml file.  Private DNS must be setup
+     completely before reverseproxy is created.  
+     
+     Append following to /etc/httpd/conf/httpd.conf once after
+     =NameVirtualHost *:80= line
+     #+BEGIN_EXAMPLE
+     <VirtualHost *:80>
+      ServerAdmin contact@rekallsoftware.com
+      DocumentRoot /var/www/html
+      ServerName reverseproxy.virtual-labs.ac.in
+      ServerAlias reverseproxy.vlabs.ac.in
+      ErrorLog logs/reverseproxy.virtual-labs.ac.in-error_log
+      CustomLog logs/reverseproxy.virtual-labs.ac.in-access_log common
+     </VirtualHost>
+     #+END_EXAMPLE
+     and restart httpd.  This will help in seeing awstats statics on
+     reverseproxy machine.
+     
+**** Create and configure router
+     Create a router machine.  Add its ip in private zone files.  Add it
+     to ossec_client_ips.  Ensure that values of following common_vars
+     is set appropriately:
+     - reverseproxy_ip
+     - public_dns_ip
+     - local_subnet
+     - router_interface_ip
+     Add authorized access from ansible server to router
+     
+     Update public DNS entries such that all requests resolve to router
+     public IP except ansible for which there is a dedicated public IP.
+     
+** Bootstrapping the Base1/Base4 cluster
+*** Machine creation and initial setup
+**** Ansible machine creation
+     Create a machine for ansible installation.  Setup rpmfusion-free,
+     rpmfusion-nonfree, rpmforge and epel repos on the system.  Use
+     #+BEGIN_EXAMPLE
+     yum -y install ansible
+     #+END_EXAMPLE
+     to install ansible
+
+**** Version control setup
+     Setup version control on ansible machine using:
+     #+BEGIN_EXAMPLE
+     yum -y install bzr
+     #+END_EXAMPLE
+
+**** Setup basic ansible server
+     Setup trust based ssh from ansible_server to itself.  Edit or
+     create hosts file to point to correct ansible server.  Ensure that
+     run.sh refers to correct hosts file.  
+     
+     Ensure that roles/common_vars/vars/main.yaml has:
+     1. Correct ansible_server_ips.
+     2. Private_dns_ips and private_dns_zone are set to none.  
+
+     Use only roles common and ansible to setup ansible server
+     directly using ansible.yaml.
+
+**** Setup ossec server
+     Create ossec server and setup trust based SSH to it.  Edit hosts
+     file to reflect correct IP of ossec-server.  Ensure that
+     roles/common_vars/vars/main.yaml has correct ossec_server_ip and
+     ossec_client_ips.  Ossec server should be setup with common and
+     ossec-server roles only.
+
+**** Enable ossec-client role on ansible server
+     Enable ossec-client role on ansible server and other additional
+     servers that have been configured earlier.  Ensure that
+     roles/common_vars/vars/main.yaml clearly includes ansible server ip
+     under ossec_client_ips.
+
+**** Create DNS servers
+     Create following servers:
+     - public DNS
+     - private DNS
+     For each of these servers do the following:
+     - Copy authorized keys from ansible server to these servers
+     - Add server IP in ossec_client_ips in
+       roles/common_vars/vars/main.yaml
+     - Add server IPs in hosts file 
+     
+     Specifically for DNS servers look at variables in respective DNS
+     server files.  Also ensure that roles/named_server/files has
+     correct zone files for each zone with necessary zone_file_prefix.
+
+**** Configure machines to use private DNS
+     Edit roles/common_vars/vars/main.yaml and set private_dns_ips and
+     private_dns_zone values appropriately.
+
+**** Create rsyslog server
+     Create a machine to setup rsyslog server.  Configure authorized
+     keys from ansible server to this machine.  Add the machine IP to
+     hosts file appropriately.  Add server IP to ossec_client_ips list.
+     Also add the rsyslog server to IP binding in private and public DNS
+     zone files.  Configure rsyslog server with common, ossec_client and
+     rsyslog_server roles.
+
+**** Configure machines to send logs to rsyslog server
+     Add or uncomment role rsyslog_client on all servers except rsyslog_servers
+
+**** Create machine for configuring reverseproxy
+     Note that proper configuration of this and future steps depends
+     upon availability of a few test labs.  Hence create a few lab
+     VMs/containers as necessary before continuing.  Also update private
+     DNS so that lab containers can be resolved using FQDN.
+
+     Create a machine for reverseproxy.  Add its IP to private DNS.  Add
+     its IP to ossec_client_IPs.  Configure reverseproxy with roles
+     common, ossec_client, rsyslog_client and reverseproxy_server roles.
+     Ensure that proxy_domains is set appropriately in
+     common_vars/vars/main.yaml file.  Private DNS must be setup
+     completely before reverseproxy is created.  
+     
+     Append following to /etc/httpd/conf/httpd.conf once after
+     =NameVirtualHost *:80= line
+     #+BEGIN_EXAMPLE
+     <VirtualHost *:80>
+      ServerAdmin contact@rekallsoftware.com
+      DocumentRoot /var/www/html
+      ServerName reverseproxy.virtual-labs.ac.in
+      ServerAlias reverseproxy.vlabs.ac.in
+      ErrorLog logs/reverseproxy.virtual-labs.ac.in-error_log
+      CustomLog logs/reverseproxy.virtual-labs.ac.in-access_log common
+     </VirtualHost>
+     #+END_EXAMPLE
+     and restart httpd.  This will help in seeing awstats statics on
+     reverseproxy machine.
+     
+**** Create and configure router
+     Create a router machine.  Add its ip in private zone files.  Add it
+     to ossec_client_ips.  Ensure that values of following common_vars
+     is set appropriately:
+     - reverseproxy_ip
+     - public_dns_ip
+     - local_subnet
+     - router_interface_ip
+     Add authorized access from ansible server to router
+     
+     Update public DNS entries such that all requests resolve to router
+     public IP except ansible for which there is a dedicated public IP.
+
+* Design of the cluster model
+  The diagram below depicts the architecture of the nodes in the
+  cluster model.  This architecture is same for all the three
+  deployments (base1, base4 and AWS).  The diagram shows the
+  network-setup of the cluster and connectivity between a few key
+  nodes.
+
+   #+CAPTION:  Cluster Network Diagram
+   #+LABEL:  fig-cluster-network-diagram
+   [[./diagrams/overall-cluster-network-diagram.png]]
    
-** Amazon Web Services (AWS) Cluster
-   This cluster is the production cluster.  This cluster is modified
-   after changes have been verified on both development (base4) and
-   staging (base1).
+  In this diagram IP1 and IP2 refer to the only two public IP's being
+  used by the system.  IP1 is the public IP assigned to router and IP2
+  is the public IP assigned to ansible.  Normal virtual-lab users only
+  see and contact router.  VLEAD team uses ansible to manage the
+  cluster.  In near future ADS interface will also be accessible via
+  router, for all virtual-labs developers, perhaps through a different
+  port. \\
+  This diagram focuses on depicting the important connections in the
+  network. There are several other connections which are not shown.
+  For example, ansible is connected to every node in the cluster.  All
+  the connections are not shown in the diagram. Also there are some
+  nodes which are not shown, for example the rsnapshot server, rsyslog
+  server, ossec server are not shown. But these nodes are configured
+  and are being used in the cluster but are not shown to keep the
+  diagram simple.
+   
+  /In near future an ADS interface will also be accessible via/
+  /router, for all the virtual-labs developers, perhaps through a/
+  /different port./
 
-   /It should be noted that ADS adapter used on base1 and base4 is different than adapter used on AWS.  Hence some problems may arise due to use of different adapter in production in comparison to staging and development./ 
+* Nodes in the cluster
+  After the bootstrapping process the nodes in the cluster can be
+  brought up using the script below. It is an ansible script which
+  will bring up all the nodes one after another with the required
+  roles.
 
-   This is the main cluster used by the external virtual-labs users
-   across the nation.  
+#+BEGIN_SRC YAML :tangle site.yaml 
+---
+#Complete site configuration file
+#One yaml file for each server is included here
+#Server yaml file matches server FQDN
 
-<<<<<<< HEAD
-# comment the above statement is not clear
-* Bootstrapping of a cluster deployment
+- include: ansible_server.yaml
+
+- include: ossec_server.yaml
+
+- include: public_dns.yaml
+
+- include: private_dns.yaml
+
+- include: rsyslog_server.yaml
+
+- include: reverseproxy_server.yaml
+
+- include: router.yaml
+
+- include: nagios_server.yaml
+
+#- include: ads_server.yaml
+
+- include: rsnapshot_server.yaml
+#+END_SRC 
+
+** Nodes
+   There are several nodes in the cluster which are all common to the
+   various clusters. The list of nodes is as below:
+
+- [[./rsyslog_server.org][Rsyslog server]]
+- [[./privatedns.org][Private DNS]]
+- [[./publicdns.org][Public DNS]]
+- [[./rp-awstats.org][Reverse Proxy]]
+- [[./nagios_server.org][Nagios server]]
+- [[./router.org][Router]]
+- [[./rsnapshot_server.org][Backup server]]
+- [[./ossec_server.org][OSSEC server]] *TODO*
+
+* Appendix 
+
+* COMMENT Bootstrapping of a cluster deployment
   The cluster is a collection of several nodes.  Each of these nodes
   have a specific purpose that they serve.  To setup the entire
   cluster for the first time we need to setup each of the nodes
@@ -100,12 +410,7 @@
 # comment Above statement is incomplete
 *** Provisioning for AWS
 # comment This section needs to be filled    
-* Design of the Cluster model
-  The diagram below depicts the architecture of the systems in the
-# commment Reference is made to a diagram that does not exist
-  cluster model. This architecture does not change for the types of
-  clusters mentioned earlier.  
-* Difference in the base1 and AWS cluster
+* COMMENT Difference in the base1 and AWS cluster
   Most of the components of base1 and base4 clusters are same as AWS
   cluster.  The main difference is in the provisioning.  The details of
   provisioning of these clusters is described in this section.
@@ -114,290 +419,3 @@
    *TODO*
 ** Provisioning of the AWS cluster
    *TODO*
-
-* Design of the cluster model
-  The diagram below depicts the architecture of the nodes in the
-  cluster model.  This architecture is same for all the three
-  deployments (base1, base4 and AWS).
-  
-** Overall Network Diagram
-   The below diagram shows the network setup of the cluster and
-   connectivity between few key nodes.
-
-   #+CAPTION:  Cluster Network Diagram
-   #+LABEL:  fig-cluster-network-diagram
-   #+NAME: fig-cluster-network-diagram
-   [[./diagrams/overall-cluster-network-diagram.png]]
-   
-   In this diagram IP1 and IP2 refer to the only two public IPs being
-   used by the system.  IP1 is the public IP assigned to router and
-   IP2 is the public IP assigned to ansible.  Normal virtual-lab users
-   only see and contact router.  VLEAD team uses ansible to manage the
-   cluster.  In near future ADS interface will also be accessible via
-   router, for all virtual-labs developers, perhaps through a
-   different port. \\
-   This diagram focuses on depicting the important connections in the
-   network. There are several other connections which are not shown.
-   For example, ansible is connected to every node in the cluster.
-   All the connections are not shown in the diagram. Also there are
-   some nodes which are not shown, for example the rsnapshot server,
-   rsyslog server, ossec server are not shown. But these nodes are
-   configured and are being used in the cluster but are not shown to
-   keep the diagram simple.
-
-* Nodes in the cluster
-  After the bootstrapping process the nodes in the cluster can be
-  brought up using the scripts below. 
-** Structure of the scripts
-  The tree structure of scripts which are used to configure the
-  cluster is as shown below. The structure shows all the roles which
-  are the nodes. The 
-# comment Above statement is incomplete
-#+BEGIN_EXAMPLE
-|-- ads_server.yaml
-|-- ansible_server.yaml
-|-- documentation
-|   |-- ads-setup-on-base1.org
-|   |-- base1-setup-notes.org
-|   `-- KNOWN_ISSUES.org
-|-- hosts
-|   |-- base1
-|   `-- host_only
-|-- lab_rnapshot_server.yaml
-|-- nagios_server.yaml
-|-- ossec_server.yaml
-|-- private_dns.yaml
-|-- public_dns.yaml
-|-- reverseproxy_server.yaml
-|-- router.yaml
-|-- rsnapshot_server.yaml
-|-- rsyslog_server.yaml
-|-- site.yaml
-|-- roles
-|   |-- ads_server
-|   |   |-- files
-|   |   |   `-- run_setup.sh
-|   |   |-- handlers
-|   |   |   `-- main.yml
-|   |   |-- tasks
-|   |   |   `-- main.yml
-|   |   |-- templates
-|   |   |   |-- iptables
-|   |   |   `-- mongodb.repo
-|   |   `-- vars
-|   |       `-- main.yml
-|   |-- ansible_server
-|   |   |-- handlers
-|   |   |   `-- main.yaml
-|   |   |-- tasks
-|   |   |   `-- main.yaml
-|   |   `-- templates
-|   |       `-- ansible_iptables
-|   |-- common
-|   |   |-- files
-|   |   |   `-- history.sh
-|   |   |-- handlers
-|   |   |   `-- main.yaml
-|   |   |-- meta
-|   |   |   `-- main.yaml
-|   |   |-- tasks
-|   |   |   `-- main.yaml
-|   |   |-- templates
-|   |   |   `-- resolv.conf
-|   |   `-- vars
-|   |       `-- main.yaml
-|   |-- common_vars
-|   |   `-- vars
-|   |       `-- main.yaml
-|   |-- glpi_server
-|   |   |-- files
-|   |   |   `-- index.html
-|   |   |-- handlers
-|   |   |   `-- main.yaml
-|   |   |-- meta
-|   |   |   `-- main.yaml
-|   |   |-- tasks
-|   |   |   `-- main.yaml
-|   |   `-- vars
-|   |       `-- main.yaml
-|   |-- lab_rsnapshot_server
-|   |   |-- handlers
-|   |   |   `-- main.yaml
-|   |   |-- tasks
-|   |   |   `-- main.yaml
-|   |   |-- templates
-|   |   |   |-- rsnapshot.conf.j2
-|   |   |   `-- rsnapshot_server_iptables
-|   |   `-- vars
-|   |       `-- main.yaml
-|   |-- nagios_client
-|   |   |-- defaults
-|   |   |   `-- main.yaml
-|   |   |-- handlers
-|   |   |   `-- main.yaml
-|   |   |-- inprogress.txt
-|   |   |-- tasks
-|   |   |   `-- main.yaml
-|   |   `-- templates
-|   |       `-- xinetd.conf.j2
-|   |-- nagios_server
-|   |   |-- defaults
-|   |   |   `-- main.yaml
-|   |   |-- handlers
-|   |   |   `-- main.yaml
-|   |   |-- tasks
-|   |   |   |-- configure_servers.yaml
-|   |   |   `-- main.yaml
-|   |   |-- templates
-|   |   |   |-- commands.cfg
-|   |   |   |-- contacts.cfg.j2
-|   |   |   `-- servers.cfg
-|   |   `-- vars
-|   |       `-- main.yaml
-|   |-- named_server
-|   |   |-- handlers
-|   |   |   `-- main.yaml
-|   |   |-- tasks
-|   |   |   `-- main.yaml
-|   |   `-- templates
-|   |       |-- named.conf
-|   |       |-- named_iptables
-|   |       `-- zone.forward
-|   |-- ossec_client
-|   |   |-- tasks
-|   |   |   `-- main.yaml
-|   |   |-- templates
-|   |   |   `-- ossec_client_input.j2
-|   |   `-- vars
-|   |       `-- main.yaml
-|   |-- ossec_server
-|   |   |-- files
-|   |   |   |-- add_agent.sh
-|   |   |   |-- index.html
-|   |   |   `-- ossec_webui_setup.sh
-|   |   |-- handlers
-|   |   |   `-- main.yaml
-|   |   |-- tasks
-|   |   |   |-- get_client_keys.yaml
-|   |   |   |-- main.yaml
-|   |   |   |-- setup_ossec_server.yaml
-|   |   |   `-- setup_webui.yaml
-|   |   |-- templates
-|   |   |   |-- ossec_iptables
-|   |   |   `-- ossec_server_input.j2
-|   |   `-- vars
-|   |       `-- main.yaml
-|   |-- redmine_server
-|   |   |-- handlers
-|   |   |   `-- main.yaml
-|   |   |-- meta
-|   |   |   `-- main.yaml
-|   |   |-- tasks
-|   |   |   `-- main.yaml
-|   |   `-- vars
-|   |       `-- main.yaml
-|   |-- reverseproxy_server
-|   |   |-- files
-|   |   |   `-- httpd_awstats.conf
-|   |   |-- handlers
-|   |   |   `-- main.yaml
-|   |   |-- tasks
-|   |   |   `-- main.yaml
-|   |   `-- templates
-|   |       |-- awstats.reverseproxy.conf
-|   |       |-- reverseproxy_iptables
-|   |       `-- virtualhost.conf
-|   |-- router
-|   |   |-- handlers
-|   |   |   `-- main.yaml
-|   |   |-- tasks
-|   |   |   `-- main.yaml
-|   |   `-- templates
-|   |       `-- router_iptables
-|   |-- rsnapshot_client
-|   |   |-- tasks
-|   |   |   `-- main.yaml
-|   |   `-- vars
-|   |       `-- main.yaml
-|   |-- rsnapshot_server
-|   |   |-- handlers
-|   |   |   `-- main.yaml
-|   |   |-- tasks
-|   |   |   `-- main.yaml
-|   |   |-- templates
-|   |   |   |-- rsnapshot.conf.j2
-|   |   |   `-- rsnapshot_server_iptables
-|   |   `-- vars
-|   |       `-- main.yaml
-|   |-- rsyslog_client
-|   |   |-- handlers
-|   |   |   `-- main.yaml
-|   |   |-- tasks
-|   |   |   `-- main.yaml
-|   |   `-- templates
-|   |       `-- rsyslog_client.conf
-|   `-- rsyslog_server
-|       |-- files
-|       |   `-- rsyslog_server.conf
-|       |-- handlers
-|       |   `-- main.yaml
-|       |-- tasks
-|       |   `-- main.yaml
-|       `-- templates
-|           `-- rsyslog_iptables
-|-- rsnapshot_server_pubic_key
-|   `-- 10.100.1.10
-|       `-- root
-`-- run.sh
-#+END_EXAMPLE
-
-** Scripts 
-  These are the Ansible scripts which are written in the form of
-  roles.
-  #+BEGIN_SRC 
-  ---
-  #Complete site configuration file
-  #One yaml file for each server is included here
-  #Server yaml file matches server FQDN
-
-  - include: ansible_server.yaml
-
-  - include: ossec_server.yaml
-
-  - include: public_dns.yaml
-
-  - include: private_dns.yaml
-
-  - include: rsyslog_server.yaml
-
-  - include: reverseproxy_server.yaml
-
-  - include: router.yaml
-
-  - include: nagios_server.yaml
-
-  #- include: ads_server.yaml
-
-  - include: rsnapshot_server.yaml
-  #+END_SRC 
-  There are several nodes in the cluster which are common to
-  the various deployments. The list of nodes is as below:
-- [[./rsyslog_server.org][Rsyslog]]
-=======
-   used by the system.  IP1 is the public IP assigned to the router
-   and IP2 is the public IP assigned to the ansible.  Normal
-   virtual-lab users only see and contact router.  VLEAD team uses the
-   ansible node to manage the cluster.  
-
-   /In near future an ADS interface will also be accessible via router, for all the virtual-labs developers, perhaps through a different port./
-
-** Nodes in the cluster
-- [[./rsyslog_server.org][Rsyslog server]]
-- [[./privatedns.org][Private DNS]]
-- [[./publicdns.org][Public DNS]]
-- [[./rp-awstats.org][Reverse Proxy]]
-- [[./nagios_server.org][Nagios server]]
-- [[./router.org][Router]]
-- [[./rsnapshot_server.org][Backup server]]
-- [[./ossec_server.org][OSSEC server]] *TODO*
-
