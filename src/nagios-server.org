@@ -29,15 +29,12 @@
 
 ** Functional Requirements
    1) Monitor various services such as ssh, ping, http on all the system.
-   2) Accept incoming connections on TCP port 80.
-   3) Accept outgoing connections on TCP port 22.
-   4) Accept outgoing connections on TCP port 5666 for nrpe.
+   2) Allow incoming connections on TCP port 80.
+   3) Allow outgoing connections on TCP port 22.
+   4) Allow outgoing connections on TCP port 5666 for nrpe.
    5) Run apache service.
    6) Run nagios service.
-# COMMENT:  Instead of "Accept " we can write "Allow" because these are
-# functional requirements. Accept is like should. we can write this in
-# security requirements. We can describe each requirement as rsysolg
-# model.
+
 ** Security Requirements
    1) All common security requirements as described in [[file:common.org::*Security Requirements][common role]] are
       applicable to nagios node.
@@ -113,10 +110,8 @@ CRITICAL - Plugin timed out while executing system call
    as an http service on nagios node - localhost port 80 and 443.
 
 [[./diagrams/nagios-dashboard-screenshot.png]]
-# COMMENT : Repeated paragraphs 
 
 * Implementation
-
 ** Structure of Scripts
    The implementation of this system is in terms of a collection of
    Ansible scripts which configure the node. These scripts are
@@ -686,10 +681,12 @@ nagios_commands:
    dashboard runs as an http and https server on port 80.
 
 *** Experiment
-   Verify whether the web url of dashboard is opening in a browser.
+   1) Access the nagios dashboard in a browser by typing =ip-
+      address/nagios= of the nagios server.
    
-# We suppese to give username and password in order to access the web
-# interface(?)
+   2) Provide username and password as set while configuring the node
+      in order to access the web interface.
+
 *** Observation
    Web interface displays the services being monitored in the system.
 *** Conclusion
@@ -723,8 +720,8 @@ nagios_commands:
 
 ** Test Case-3
 *** Objective
-   Test command status by executing them on the client node from the
-   nagios server.
+   Test to check command's return status by executing them on the
+   client node from the nagios server.
 
 *** Apparatus
    1) Nagios server
@@ -769,10 +766,10 @@ SSH OK - OpenSSH_5.3 (protocol 2.0) | time=0.007418s;;;0.000000;10.000000
 #+END_EXAMPLE
      
 *** Observation
-   Return status of the services is displayed in the command output.
+   Return status of the services is displayed in the output of commands.
    
 *** Conclusion
-   The return status depicts the status of service in the client node.
+   Output of commands shows the status of service in the client node.
 
 
  
