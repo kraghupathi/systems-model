@@ -9,10 +9,12 @@
   of the private *Domain Name System (DNS)*.  This server provides the
   domain name resolution for all other servers in the cluster.  This
   server resolves both the private zones (vlabs.ac.in and
-  virtual-labs.ac.in) and the external zones (eg gnu.org, google.com)
+  virtual-labs.ac.in) and the external zones (eg. gnu.org, google.com)
   for all other servers.
-# I think private DNS does not resolve the external zones unless we
-# use forwarders(if i am wrong correct me), please check that.
+# Siva: I think private DNS does not resolve the external zones unless
+# we use forwarders(if i am wrong correct me), please check that.
+# Soumya: I dont think so. The recursion parameter is set for this
+# reason.
   Generally a DNS is configured in a master-slave replication
   topology.  In such a configuration, if any changes are performed on
   the master, then such changes are automatically replicated to the
@@ -29,37 +31,41 @@
   same way.  These scripts prevent human errors and do not require an
   additional effort in keeping multiple nodes synchronized.
 
-# this? these?, we can remove we, our in above paragraph.
-
   Further redundancy using multiple DNS servers has been avoided
   altogether.  This is because if the only available DNS server fails,
   then a new DNS server can be configured quickly using existing
   ansible scripts.  
 
 * Requirements
-  The functional and security requirements of the Private DNS are
+  The functional and security requirements of the private DNS are
   mentioned in the following sections.  Only the DNS specific
-  requirements which differ from the generic requirements specified in
-  the [[common%20role][common role]] are mentioned here.
-# replace "the DNS" with "the private DNS"
+  requirements which differ from the generic requirements (specified
+  in the [[common%20role][common role]] ) are mentioned here.
+
 ** Functional Requirements
    The Private DNS should resolve authoritative zones
    (vlabs.ac.in. and virtual-labs.ac.in.) for all the internal
    clients.  Private DNS should accept DNS queries on default UDP port
    53 from all internal clients.  It should also resolve all domain
    names for internal clients (Peer DNS) recursively.
-# use some other word instead of "should". What about external clients?
+# siva: use some other word instead of "should". What about external
+# clients? \\ 
+# Soumya: External clients cannot in anyway connect to the
+# private DNS. I thought it is not needed to be explicitly mentioned.
+
 ** Security Requirements
    All the common security requirements as described in the common
    role are applicable to the private DNS.  Along with them UDP port
    53 should be allowed only from machines in the cluster.
-# remove "should"
+# Siva: remove "should" Soumya: Since this is a mandatory requirement,
+# I guess the use of "should" does not do any harm.
+
 ** Communication Requirements
    The private DNS requires router for access to the Internet.  This
-   Internet access is used for recursive DNS lookups.  This is also
+   internet access is used for recursive DNS lookups.  This is also
    useful while updating packages using public package repositories.
-# Remove this or replace "this" with "the"
-
+# Siva: Remove this or replace "this" with "the"
+# Soumya: I guess this change is not required.
 * Design
 ** Private DNS communication diagram
    The following network diagram represents the interaction between
@@ -130,7 +136,7 @@
 # "use" with "uses". these variables are may be defined in common_vars
 # or =vars/mail.yaml= file
 
-** Building the  firewall rules
+** Building the firewall rules
    The firewall rules have to be configured. This is done by writing
    down the rules in a template. This template is later used as
    described in the [[Apply%20the%20firewall%20rules][Apply the firewall rules]] section.  The template
@@ -221,7 +227,7 @@ COMMIT
    queries. These queries are answered by the private DNS. The private
    DNS should be able to allow the incoming DNS queries on
    port 53. The =INPUT= table has a rule which specifies this access.
-  
+   
 ** Tasks
 *** Installing the bind service
     To configure the node as a DNS server the *bind* and *bind-utils*
@@ -247,7 +253,6 @@ COMMIT
     [[Creating%20the%20zone%20files][Creating the zone files]].  We configure the
     =/roles/named_server/templates/named.conf= template with these
     configurations. The template is as follows:
-# remove should. these?
 
 #+BEGIN_SRC YAML :tangle roles/named_server/templates/named.conf
 //
@@ -339,9 +344,9 @@ $TTL 3600
 {% endfor %}
 #+END_SRC
     
-    This template should be placed in the correct location on the
+    The above template should be placed in the correct location on the
     node. This is done by the following code:
-# replace "this" with "the above template" 
+
 #+BEGIN_SRC YAML :tangle roles/named_server/tasks/main.yaml
 - name: Copy zone forward files for all zones to /var/named
   template: src="zone.forward" dest="/var/named/{{item}}forward" owner=root group=named mode=640
