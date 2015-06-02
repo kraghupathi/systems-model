@@ -9,17 +9,21 @@
 
 * Introduction
   This document describes the design and implementation of Rsnapshot
-  Server.  Rsnapshot server takes the timely backup of configuration
-  files of various nodes in the cluster. These backups are saved at
-  the central node in the cluster.
-  # Please specify what the central node in the cluster
-  # is. Describe a bit more about why this node is important, why it
-  # was decided that this should be there etc.
-  Backup of configuration files is maintained in a central
-  location. These backup files are referred if a node gets compromised
-  due to any reason.
-  # Also mention why central location and why not in the node it self.
+  Server. Rsnapshot node is configured to take timely backup of
+  configuration files of various nodes in the cluster. 
 
+  Backup of configuration files of various nodes are saved in a
+  particular node in the cluster. If a node is compromised due to any
+  reason, the authenticity of the files in the node can not be
+  determined. For the same reason backup of configuration files are
+  not maintained locally. To setup the node again we refer backups of
+  configuration files stored in a separate node.
+
+  # Describe a bit more about why this node is important, why it
+  # was decided that this should be there etc.
+  # Also mention why central location and why not in the node it self.
+  # Mention link to rsnapshot-client documentation in introduction as
+  # well as in design section.
 * Requirements
   The functional and security requirements of the Rsnapshot server are
   mentioned in the following sections.  Only the Rsnapshot server
@@ -33,9 +37,8 @@
       node is rsnapshot server itself.
 
 ** Security Requirements
-   1) All common security requirements as described in [[file:common.org::*Security Requirements][common role]] are
-      applicable to rsnapshot server node.
-  # remove the number 1. Because there is only one point.
+   All common security requirements as described in [[file:common.org::*Security Requirements][common role]] are
+   applicable to rsnapshot server node.
 * Design
   Given diagram describes the design of the rsnapshot server. Systems
   files are listed for a quick overview of whole systems.
@@ -45,6 +48,8 @@
 # Re-size the diagram to remove the extra white space around the main
 # diagram. Also write some description about the diagram. How the
 # network is designed etc. etc.
+
+  Nodes are configured 
 
 ** COMMENT Editable Link
 [[https://docs.google.com/drawings/d/1HQtQ_UsjmNYmeTcqh6e9l4_Fd6TfRhBh70NI43DuyDY/edit][Link to google drawing board]]
@@ -59,10 +64,9 @@
 |------+-----------+-------------------------+--------------------|
 |   3. | SSH       | /root/.ssh/id_rsa.pub   | SSH public keys    |
 |------+-----------+-------------------------+--------------------|
-# change the description heading to purpose. Also describe what each
-# file is meant for. Very crisp and short sentence. Refer privateDNS.
-# also change the heading from system files to the same as in
-# private-dns.
+# Also describe what each file is meant for. Very crisp and short
+# sentence. Refer privateDNS.  also change the heading from system
+# files to the same as in private-dns.
 
 ** Configuration Design
    Rsnapshot uses =/etc/rsnapshot.conf= file for configuration. Two
@@ -123,10 +127,9 @@
 ** Firewall Rules
    Firewall rules applied to rsnapshot server are mentioned
    here. Description of firewall rules which are common across all the
-   systems are defined in the [[file:common.org::*Common Firewall Rules][common role]]. There are no specific
+   nodes are defined in the [[file:common.org::*Common Firewall Rules][common role]]. There are no specific
    firewall rule for rsnapshot node, only the common rules are
    applied.
-# replace "systems" with "nodes" in the second sentence.
 *** Firewall Rules
 # dont make this as a separate section. Put the template in the same
 # section "firewall rules" only.
