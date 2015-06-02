@@ -8,33 +8,21 @@
 * Introduction
   In this documentation, we call config-server as ansible server,
   configuration server and also node. 
-  # We need not mention here that it will be called as node
-  # because in index.org I have alread mentioned that all these are
-  # nodes.
   
   This document describes the requirements, design and implementation of
   the configuration server.
   
   This configuration server plays a vital role in the cluster to
-  complete the infrastructure.
-  # Since you have mentioned that it plays a vital role please
-  # justify this statement by mentioning how it is vital component in
-  # the cluster.
-  
-  Configiuration server configures all other nodes in the cluster and
-  configures itself as well, through multiple roles and tasks.  A role
-  is a specific set of configurations.
-  # 1.) Describe a little more about the config server. That is,
-  # mention that it contains all the ansible-scripts to bring up the
-  # other nodes. The purpose of this server is to avoid mannual
-  # configuration of nodes by team members. The mechanism ansible
-  # provides to configure other nodes is via ssh. etc, etc. Also
-  # describe what you mean by configures itself. This will help the
-  # reader understand the requirements better. 2.) Also we need not
-  # mention about roles here specifically. I have written in the
-  # index.org prerequisites that the reader is expected to know
-  # ansible basics. In case you have written anywhere else, please
-  # make the neccessary changes.
+  complete the infrastructure.  Since configuration server configures
+  all other nodes in the cluster and configures itself as well,
+  through multiple roles and tasks.  A role is a specific set of
+  configurations.
+
+  it contains all the ansible-scripts to bring up the other nodes. The
+  purpose of this server is to avoid manual configuration of nodes by
+  team members. The mechanism ansible provides to configure other nodes
+  is via ssh.
+ 
   The configuration server will be able to ssh to other servers and lab
   instances/containers using *key based authentication only* since
   public key of configuration server will be placed in all other
@@ -52,12 +40,8 @@ ip machines.
             machines.
 
 * Requirements
-  Requirements which are specific to configuration server are
-  described below and all other common requirements are described in
-  [[./common.org][common role]]
-# A better way of putting the sentence above would be: The
-# requirements of the config-server which differ from the generic
-# requirements(specified in common-role) are mentioned here.
+ The requirements of the config-server which differ from the generic
+ requirements(specified in common-role) are mentioned here.
 
 ** Functional Requirements
    1. Configuration server will configure all the nodes in the cluster
@@ -69,52 +53,38 @@ ip machines.
       authentication only.
 
 ** Security Requirements
-   Configuration server accepts incoming connections on port 22 *only*
-   from IIIT IP range or management ip machines.
-# It should be "the" configuration server accepts...
-
+   The Configuration server accepts incoming connections on port 22
+   *only* from IIIT IP range or management ip machines.
 * Design
-  *The design of the configuration server is as follows*:
-  # Why is the above line in bold ? I feel this line is not
-  # required. Also to maintain consistency among all the models I
-  # would suggest you to not to have this line.
   The following network diagram represents how the configuration
-  server is connecting to other nodes such as reverseproxy, DNS,
+  server is connecting to other nodes such as reverse proxy, DNS,
   router etc.
 
   #+CAPTION:  Configuration Server Design Diagram
   #+LABEL:  fig-config-diagram
   [[./diagrams/config-server-network-diagram.png]]
-  # resize the figure and remove the extra white spaces
-  
+   
   Configuration server is one of the many other nodes in the cluster.
-  Only IIIT ip range and management ip machines are allowed to ssh to
+  Only IIIT IP range and management ip machines are allowed to ssh to
   root account of the configuration server.
-  # change ip -> IP in the above para
+
   The design of the firewall rules ensures that this server is
   accessible only via port 22.  
-  # the above line can be mentioned in the implementation section,
-  # where firewall rules are explained.
+
   SSH access to the node is allowed only via *key-based
-  authentication*, password based authentication is not allowed to the
+  authentication*. Password based authentication is not allowed to the
   root user. SSH configuration, fail2ban and locking root user
   password are taken care by common role. For more tasks which are
   done by common role to the node are described in [[./common.org][common role]].
-  # break the first sentence into 2 sentences. Full stop after
-  # key-based authentication.  The entire paragraph can be reframed.
   
-  The Configuration serevr can be reached via ICMP (ping) requests.
-  # please do a thorough spell check. Thereare still some spelling
-  # mistakes.
+  The Configuration server can be reached via ICMP (ping) requests.
   Public key of the configuration server will be placed in every
   instance/container. So the configuration server will be able to
-  configure all other nodes, instances/containers and as well as itself
-  by running the ansible scripts. These ansible scripts are implemented
-  at the [[Implementation][implementation]] section.
-# these ansible scripts are described in the implementation section.
+  configure all other nodes, instances/containers and as well as
+  itself by running the ansible scripts. These ansible scripts are
+  described and implemented at the [[Implementation][implementation]] section.
 
-** Configuration files Summary
-# change the heading to "Important configuration and data files and folders"
+** System Configuration files Summary
 
 The following table gives the information about services and their
 configuration files. Other configuration files are updated in common role.
@@ -127,11 +97,6 @@ configuration files. Other configuration files are updated in common role.
 |-----------+-----------------------------------+---------------------------|
 
 #+TBLFM: $2=/etc/sysconfig/network-scripts
-# the ip can be removed as it is implicit and is not required to be
-# mentioned.  I guess you should mention the ssh key location too
-# here. Because that is the main thing in ansible server. Without the
-# keys it will not function. 
-# Also change "description" to "purpose" 
 
 * Implementation
   The implementation of the configuration server is done with the
@@ -142,9 +107,8 @@ configuration files. Other configuration files are updated in common role.
 
 ** Structure of the scripts
    The implementation of this system is in terms of a collection of
-   ansible scripts that configures the machine. Scripts are organized as
+   ansible scripts that configures the machine. The scripts are organized as
    follows:
-# "The" scripts are organized as..
 
 #+BEGIN_EXAMPLE
 |-- config_server.yml
@@ -156,10 +120,9 @@ configuration files. Other configuration files are updated in common role.
 |   |   |   |-- main.yml
 |   |   `-- templates
 |   |       `-- iptables
-|   |-- common
-|   |   ...
+
 #+END_EXAMPLE
-# remove the common in the above tree.
+
    Here =config_server.yml= file configures the configuration server
    with the config_server and all other roles. The other roles are:
     - [[./common.org][common]]
@@ -170,23 +133,20 @@ configuration files. Other configuration files are updated in common role.
 
    =roles/config_server/handlers/main.yml= file defines various
    handlers which are only executed in case a task notifies
-   them. Handlers are described in details at [[Handlers][handlers]].  The hanlders
-   are caled only when tasks are called as part of the config_server
+   them. Handlers are described in details at [[Handlers][handlers]].  The handlers
+   are called only when tasks are called as part of the config_server
    role. Various templates and files are being used during task
    execution for creating necessary configuration files.
-
-   # put this paragraph below the tasks paragraph.
 
    =roles/config_server/tasks/main.yml= file consist of various tasks
    which are needed for setting up config_server. These tasks are
    implemented and described [[Tasks][here]].
    
-   =roles/confi_server/templates/iptables= template file consist of
-   # config_server.
-   various firewall rules in order to configure this node securly by
+   =roles/config_server/templates/iptables= template file consist of
+   various firewall rules in order to configure this node securely by
    running the [[Apply firewall rules to Configuration server][task]]. This template uses various variables and these
    variable values are defined in common_vars role. This template is
-   created at [[Firewall rules]] section and you can see the decription
+   created at [[Firewall rules]] section and you can see the description
    each firewall.
 
 ** Tasks
@@ -309,12 +269,11 @@ configuration files. Other configuration files are updated in common role.
   yum: name=ansible state=present
 #  environment: proxy_env
 #+END_SRC
-*** Change hostname 
-    The following task changes the hostname of the container/VM
- # hostname of the node.
+*** Set the hostname 
+    The following task sets the hostname of the node
   #+BEGIN_SRC yaml :tangle roles/config_server/tasks/main.yml
   ---
-- name: changing the hostname 
+- name: setting the hostname 
   hostname: config-server.vlabs.ac.in
   #+END_SRC
 *** Apply firewall rules to Configuration server
