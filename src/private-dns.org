@@ -11,10 +11,7 @@
   server resolves both the private zones (vlabs.ac.in and
   virtual-labs.ac.in) and the external zones (eg. gnu.org, google.com)
   for all other servers.
-# Siva: I think private DNS does not resolve the external zones unless
-# we use forwarders(if i am wrong correct me), please check that.
-# Soumya: I dont think so. The recursion parameter is set for this
-# reason.
+
   Generally a DNS is configured in a master-slave replication
   topology.  In such a configuration, if any changes are performed on
   the master, then such changes are automatically replicated to the
@@ -48,24 +45,17 @@
    clients.  Private DNS should accept DNS queries on default UDP port
    53 from all internal clients.  It should also resolve all domain
    names for internal clients (Peer DNS) recursively.
-# siva: use some other word instead of "should". What about external
-# clients? \\ 
-# Soumya: External clients cannot in anyway connect to the
-# private DNS. I thought it is not needed to be explicitly mentioned.
 
 ** Security Requirements
    All the common security requirements as described in the common
    role are applicable to the private DNS.  Along with them UDP port
    53 should be allowed only from machines in the cluster.
-# Siva: remove "should" Soumya: Since this is a mandatory requirement,
-# I guess the use of "should" does not do any harm.
 
 ** Communication Requirements
    The private DNS requires router for access to the Internet.  This
    internet access is used for recursive DNS lookups.  This is also
    useful while updating packages using public package repositories.
-# Siva: Remove this or replace "this" with "the"
-# Soumya: I guess this change is not required.
+
 * Design
 ** Private DNS communication diagram
    The following network diagram represents the interaction between
@@ -118,23 +108,18 @@
 
 #+END_EXAMPLE
   
-  Here =private_dns.yaml= file configures the private DNS with the
-  "named_server" and "common" roles as described in the [[Creating%20the%20Private%20DNS][Creating the
-  Private DNS]] section.  The =roles/named_server/handlers/main.yaml=
-  file defines various handlers which are only executed in case a task
-  notifies them.  These handlers are described in detail in the
-  [[Handlers]] section.  The handlers are called when the tasks described
-  in the [[Tasks][Tasks]] section notify them.  Various tasks of [[Tasks][Tasks]] section
-  are concatenated into =roles/named_server/tasks/main.yaml= file.
-  The =roles/named-server/templates/= folder contains three jinja2
-  configuration templates - =named_iptables=, =zone.forward=,
-  =named.conf=.  These templates use variables defined at various
-  places to configure the DNS server with appropriate values.
-
-# write in separate paragraphs for each folder/file and we are
-# defining variables in templates, just declaring/using them. replace
-# "use" with "uses". these variables are may be defined in common_vars
-# or =vars/mail.yaml= file
+   Here =private_dns.yaml= file configures the private DNS with the
+   "named_server" and "common" roles as described in the [[Creating%20the%20Private%20DNS][Creating the
+   Private DNS]] section.  The =roles/named_server/handlers/main.yaml=
+   file defines various handlers which are only executed in case a task
+   notifies them.  These handlers are described in detail in the
+   [[Handlers]] section.  The handlers are called when the tasks described
+   in the [[Tasks][Tasks]] section notify them.  Various tasks of [[Tasks][Tasks]] section
+   are concatenated into =roles/named_server/tasks/main.yaml= file.
+   The =roles/named-server/templates/= folder contains three jinja2
+   configuration templates - =named_iptables=, =zone.forward=,
+   =named.conf=.  These templates use variables defined at various
+   places to configure the DNS server with appropriate values.
 
 ** Building the firewall rules
    The firewall rules have to be configured. This is done by writing
@@ -356,8 +341,7 @@ $TTL 3600
 #+END_SRC
 
 *** Some more configuration
-    We disable the IPv6 support. 
-# Remove we
+    Disabling the IPv6 support. 
 
 #+BEGIN_SRC  YAML :tangle roles/named_server/tasks/main.yaml
 - name: Disable IPv6 support
@@ -368,8 +352,7 @@ $TTL 3600
 
 *** Bringing up the Bind service
     After configuring the required configuration files in the above
-    sections, we now need to start the service.
-# Remove we. We can write when the service will be called/natified?
+    sections, the service needs to be restarted.
 
 #+BEGIN_SRC YAML :tangle roles/named_server/tasks/main.yaml
 - name: Start and enable bind service
@@ -378,10 +361,8 @@ $TTL 3600
 
 *** Apply the firewall rules
     The firewall rules which were written in a template, need to be
-    configured by placing need to be applied. This is done from the
-    following script.
-# read first sentence and make it clear. Use some other word instaed
-# of this
+    configured by placing them in their specific location. This is
+    done from the following script.
 
 #+BEGIN_SRC YAML :tangle roles/named_server/tasks/main.yaml
 - name: Configure strong firewall on bind/named server
@@ -394,7 +375,7 @@ $TTL 3600
    The services should be restarted if there are any changes made to
    the configuration file. This is taken care of by the following
    code.
-# Remove "should". Use some other word instead of "this"
+
 #+BEGIN_SRC YAML :tangle roles/named_server/handlers/main.yaml
 ---
 - name: restart bind
@@ -464,8 +445,6 @@ $TTL 3600
 #+END_SRC
 
 * Test Cases
-
-# Please remove "should" in two test cases
 ** Test case ID: TC01
 *** Objective
     The objective is to test the working of the name server to resolve
@@ -671,3 +650,25 @@ $TTL 3600
 *** Conclusion
     The Private DNS is able to resolve the public domain names as
     well.
+
+* Discussions
+  In the introduction section:
+  # Siva: I think private DNS does not resolve the external zones unless
+  # we use forwarders(if i am wrong correct me), please check that.
+  # Soumya: I dont think so. The recursion parameter is set for this
+  # reason.
+  
+  In the functional requirements section
+  # siva: use some other word instead of "should". What about external
+  # clients? \\ 
+  # Soumya: External clients cannot in anyway connect to the
+  # private DNS. I thought it is not needed to be explicitly mentioned.
+
+  In structure of the scripts section
+  # Siva: write in separate paragraphs for each folder/file and we are
+  # defining variables in templates, just declaring/using them. replace
+  # "use" with "uses". These variables are may be defined in common_vars
+  # or =vars/mail.yaml= file
+  # Soumya: I feel it does not make much difference writing them in
+  # different paragraphs. If i break them into paragraphs they will be
+  # just single lines and does not look good.
