@@ -12,12 +12,15 @@
    configure a system to be monitored by a monitoring system. Nagios
    system is used to monitor services of a system such as ssh service,
    cpu usage, ram usage and disk usage.
-
+# it could be how to configure the system'ss services .....by....
+#
 * Requirements
   The functional and security requirements of the Nagios Client are
   mentioned in the following sections. Only the Nagios Client specific
   requirements which differ from the generic requirements specified in
   the [[common%20role][common role]] are mentioned here.
+
+# Both paragraphs are same. One paragraph is enough, i think
 
 ** Functional Requirements
    1) Allow incoming connections on TCP port 5666 from Nagios server.
@@ -38,6 +41,7 @@
 [[https://docs.google.com/a/vlabs.ac.in/drawings/d/1TKAGbG8Fj5LcuY-kdZrVjE1ksHJQxFdXeRcWwE6TlWs/edit][Design Diagram Link]]
 
 ** System Files
+# Description of the table
 |------+----------+---------------------------------------------+-------------------------|
 | S.no | Service  | File                                        | Description             |
 |------+----------+---------------------------------------------+-------------------------|
@@ -52,12 +56,15 @@
    In a system there may be many services of interest which are to be
    monitored, such as =ssh=, =ping= and =http=. Services and usage
    being monitored may be different for various nodes.
-
+# ssh,ping...http..etc
 * Implementation
 ** Structure of Scripts
    The implementation of this system is in terms of a collection of
    Ansible scripts which configure the node. These scripts are
    organized as follows:
+# this system >> the node
+# configure >> configures
+# These >> The
 
 #+BEGIN_EXAMPLE
 |-- roles
@@ -84,11 +91,13 @@
    configuration template - =xinetd.conf.j2=. This template use
    variables defined at various places to configure the Nagios client
    with appropriate values.
-
+# we are declaring/using variables in various places.
+# This template uses various places which are defined in common_vars role
    =roles/nagios_client/vars/main.yaml= file defines the variable as
    described in the [[Define Variables and Services groups]] section.
 
 ** Firewall rules for Nagios Client
+# This section can be moved to tasks section
    Firewall rules applied to nagios client system are mentioned
    here. Description of firewall rules which are common across all the
    systems are defined in the [[file:common.org::*Common Firewall Rules][common role]].  Following rules are
@@ -101,6 +110,7 @@
    - Rule for incoming SSH connections from Nagios server :: Nagios
         monitors ssh service on the client node. Defined in line
         number 5 to 7.
+
 
 *** Firewall Rules
 #+BEGIN_EXAMPLE -n
@@ -191,7 +201,7 @@ includedir /etc/xinetd.d
    3) =nagios-plugins-nrpe=
    4) =nrpe=
    5) =xinetd=
-
+# nagios-plugins-all
 #+BEGIN_SRC yml :tangle roles/nagios_client/tasks/main.yml :eval no
 - name: Installing nagios
   yum: name=nagios state=installed
@@ -213,9 +223,13 @@ includedir /etc/xinetd.d
   yum: name=xinetd state=installed
   environment: proxy_env
 #+END_SRC 
+# Comment the environment variable, we are not using any proxy in any cluster
 *** Copy configuration file
    Changes in the configuration file are enforced by restarting the
    xinetd service.
+
+# Reframe the sentence. 
+# here just notifying the service to restart. In handler section these services called to restart
 
 #+BEGIN_SRC yml :tangle roles/nagios_client/tasks/main.yml :eval no
 - name: updating xinted.conf with nagios-server details
@@ -224,7 +238,7 @@ includedir /etc/xinetd.d
 #+END_SRC
 *** Allowed hosts for polling
    Configure IPs of nagios servers which will poll for information.
-
+# add more explanation. I did not understand this sentence.
 #+BEGIN_SRC yml :tangle roles/nagios_client/tasks/main.yml :eval no
 - name: updating nrpe.cfg with nagios-server details
   lineinfile: dest=/etc/nagios/nrpe.cfg line="allowed_hosts=127.0.0.1,{{ nagios_server }}" regexp="allowed_hosts\=127.0.0.1"
@@ -232,6 +246,7 @@ includedir /etc/xinetd.d
 #+END_SRC
 
 ** Handlers
+# Description about handlers
 *** Start xinetd service
    Any changes in xinetd configuration is enforced by restarting the
    xinetd service. To restart iptables, handlers (ansible terms) are
@@ -242,6 +257,7 @@ includedir /etc/xinetd.d
   sudo: true
   service: name=xinetd state=restarted
 #+END_SRC
+# delete "sudo: true"
 
 *** Start nrpe service
     Any changes in nrpe configuration is enforced by restarting the
@@ -252,7 +268,7 @@ includedir /etc/xinetd.d
   sudo: true
   service: name=nrpe state=restarted
 #+END_SRC
-
+# delete "sudo: true"
 ** Define Variables and Services groups
    Following variables are used by the ansible playbook:
 
@@ -264,10 +280,11 @@ nagios_server: 10.100.1.8
 *** Objective
    Test status of command by executing them on the client node from
    the nagios server node.
-
+# Test to check the ....
 *** Apparatus
    1) Nagios server
    2) Nagios client
+# Nagios client?
 
 *** Theory
    Services can also be monitored by running some commands on the
@@ -305,6 +322,7 @@ USERS OK - 0 users currently logged in |users=0;5;10;0
 #+BEGIN_EXAMPLE
 SSH OK - OpenSSH_5.3 (protocol 2.0) | time=0.007418s;;;0.000000;10.000000
 #+END_EXAMPLE
+# Command1,2,3..?
 *** Observation
    Return status of the services is displayed in the command output.
 
@@ -312,6 +330,6 @@ SSH OK - OpenSSH_5.3 (protocol 2.0) | time=0.007418s;;;0.000000;10.000000
    If the return status of the command depicts the status of service
    running in the client node that means we are able to check the
    status using command line option.
-# comment Above statement not clear
+# We are concluding the test case which we have tested. no need to mention "If".
 
 
