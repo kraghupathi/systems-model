@@ -15,20 +15,16 @@
   Backup of configuration files of various nodes are saved in a
   particular node in the cluster. If a node is compromised due to any
   reason, the authenticity of the files in the node can not be
-  determined. For the same reason backup of configuration files are
-  not maintained locally. To setup the node again we refer backups of
-  configuration files stored in a separate node.
+  relied. For this reason backup of configuration files are not
+  maintained locally, instead they are saved in a node in the private
+  network. To setup the node again these backups configuration files
+  are referred.
 
-  # Describe a bit more about why this node is important, why it
-  # was decided that this should be there etc.
-  # Also mention why central location and why not in the node it self.
-  # Mention link to rsnapshot-client documentation in introduction as
-  # well as in design section.
 * Requirements
   The functional and security requirements of the Rsnapshot server are
   mentioned in the following sections.  Only the Rsnapshot server
   specific requirements which differ from the generic requirements
-  specified in the [[common%20role][common role]] are mentioned here.
+  specified in the [[common][common role]] are mentioned here.
 
 ** Functional Requirements
    1) Take periodic backup of various files on all the nodes in the
@@ -40,44 +36,31 @@
    All common security requirements as described in [[file:common.org::*Security Requirements][common role]] are
    applicable to rsnapshot server node.
 * Design
-  Given diagram describes the design of the rsnapshot server. Systems
-  files are listed for a quick overview of whole systems.
-
 ** System Design Diagram
-[[./diagrams/rsnapshot-server-design-diagram.png]]
-# Re-size the diagram to remove the extra white space around the main
-# diagram. Also write some description about the diagram. How the
-# network is designed etc. etc.
+   The following network diagram represents the interaction between
+   the rsnapshot server and the [[./rsnapshot-client.org][rsnapshot client]] node in the cluster.
 
-  Nodes are configured 
+#+CAPTION:  Rsnapshot Server Network Diagram
+#+LABEL:  fig-rsnapshot-server-design-diagram
+[[./diagrams/rsnapshot-server-design-diagram.png]]
 
 ** COMMENT Editable Link
 [[https://docs.google.com/drawings/d/1HQtQ_UsjmNYmeTcqh6e9l4_Fd6TfRhBh70NI43DuyDY/edit][Link to google drawing board]]
 
 ** System Files
-|------+-----------+-------------------------+--------------------|
-| S.no | Service   | File                    | Description        |
-|------+-----------+-------------------------+--------------------|
-|   1. | iptables  | /etc/sysconfig/iptables | Configuration File |
-|------+-----------+-------------------------+--------------------|
-|   2. | Rsnapshot | /etc/rsnapshot.conf     | Configuration File |
-|------+-----------+-------------------------+--------------------|
-|   3. | SSH       | /root/.ssh/id_rsa.pub   | SSH public keys    |
-|------+-----------+-------------------------+--------------------|
-# Also describe what each file is meant for. Very crisp and short
-# sentence. Refer privateDNS.  also change the heading from system
-# files to the same as in private-dns.
+   The following table gives the information about the configuration
+   files which are modified to setup a Rsnapshot server.
 
-** Configuration Design
-   Rsnapshot uses =/etc/rsnapshot.conf= file for configuration. Two
-   very important points about configuration file are:
-   - All paths must end with "/" and all backup destination should be
-     relative
-   - Various fields in file are separated using Tab, space does not
-     separates fields
-  # this description should be placed where you describe the
-  # rsnapshot.conf template. You can remove this section from here and
-  # add the content there in that section.
+|------+-----------+-------------------------+----------------------------------------------|
+| S.no | Service   | File                    | Description                                  |
+|------+-----------+-------------------------+----------------------------------------------|
+|   1. | iptables  | /etc/sysconfig/iptables | Describes Firewall rules applied in the node |
+|------+-----------+-------------------------+----------------------------------------------|
+|   2. | Rsnapshot | /etc/rsnapshot.conf     | Configuration File                           |
+|------+-----------+-------------------------+----------------------------------------------|
+|   3. | SSH       | /root/.ssh/id_rsa.pub   | SSH public keys                              |
+|------+-----------+-------------------------+----------------------------------------------|
+
 * Implementation
 ** Structure of Scripts
    The implementation of this system is in terms of a collection of
@@ -102,7 +85,7 @@
    Here =rsnapshot_server.yml= file configures the Rsnapshot server
    with the "common" and "rsnapshot_server" roles as described in the
    [[Rsnapshot server configuration script]] section.
-   
+
    The =roles/rsnapshot_server/handlers/main.yaml= file defines
    various handlers which are only executed in case a task notifies
    them. These handlers are described in detail in the [[Handlers]]
@@ -120,9 +103,6 @@
 
    =roles/nagios_server/vars/main.yaml= file defines the variable as
    described in the [[Variables Definition]] section.
-# you need not write in small pragraphs, but still it is up to you. :)
-# this way of writing is also fine, but it will be better if you wrote
-# everything in one paragraph.
 
 ** Firewall Rules
    Firewall rules applied to rsnapshot server are mentioned
@@ -130,9 +110,6 @@
    nodes are defined in the [[file:common.org::*Common Firewall Rules][common role]]. There are no specific
    firewall rule for rsnapshot node, only the common rules are
    applied.
-*** Firewall Rules
-# dont make this as a separate section. Put the template in the same
-# section "firewall rules" only.
 
 #+BEGIN_SRC yml -n :tangle roles/rsnapshot_server/templates/rsnapshot_server_iptables :eval no
 *filter
@@ -221,6 +198,13 @@ COMMIT
 #+END_SRC
 
 ** Configure rsnapshot
+   Rsnapshot uses =/etc/rsnapshot.conf= file for configuration. Two
+   very important points about configuration file are:
+   - All paths must end with "/" and all backup destination should be
+     relative
+   - Various fields in file are separated using Tab, space does not
+     separates fields
+
    Following actions are performed in =/etc/rsnapshot.conf= file to
    configure rsnapshot service.
 
@@ -235,9 +219,9 @@ snapshot_root	/.snapshots/
 #+END_EXAMPLE
 
 *** Enable ssh
-    Remote ssh backup over *rsync* is enabled by uncommenting
+    Remote ssh backup over *rsync* is enabled by un commenting
     =cmd_ssh= directive.
-    # do a thorough spell check once again.
+
 *** Backup Intervals
     Proper backup intervals are set. In the configuration file the
     order of interval lines is important. More frequent backup lines
@@ -289,12 +273,12 @@ link_dest 1
 #+END_EXAMPLE
 
 *** Local and Remote backup
-    Local backup of rsnapshot server itself and remote backup of all
+    Local backup of rsnapshot node itself and remote backup of all
     other servers in the cluster are setup. A 'for loop' is defined
     which loops over all the nodes for which backup is to be taken
     e.g. localhost, nagios. Nested 'for loop' loops over all the
     folders which are to be backed up.
-    # change servers to nodes in the first sentence.
+
 #+BEGIN_EXAMPLE
 {% for backup in rsnapshot_config_backup %}
 {% for args in backup.points %}
@@ -322,7 +306,8 @@ backup_script        /bin/date "+ backup of nagios completed at %c" > end.txt   
 #+END_EXAMPLE
 
 *** Complete configuration file
-# Please write some description here.
+    The complete configuration file is shown below.
+
 #+BEGIN_SRC yml :tangle roles/rsnapshot_server/templates/rsnapshot.conf.j2 :eval no
 #################################################
 # rsnapshot.conf - rsnapshot configuration file #
@@ -643,8 +628,8 @@ link_dest	1
    - rsnapshot_crontab :: Cronjobs are set to run - hourly, daily,
         weekly and monthly.
   
-   Complete vars file is shown below
-# The complete...
+   The complete vars file is shown below
+
 #+BEGIN_SRC yml :tangle roles/rsnapshot_server/vars/main.yml :eval no
 ---
 rsnapshot_ssh_key: id_rsa
