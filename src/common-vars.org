@@ -4,20 +4,27 @@
 #+PROPERTY: results output
 #+PROPERTY: exports code
 #+OPTIONS: ^:nil
-\#+SETUPFILE: org-templates/level-0.org
+#+SETUPFILE: org-templates/level-0.org
 
 * Introduction
-   The document describes the requirements, design and implementation
-   of the "common_vars" ansible role. "common_vars" role defines
-   common variables used by jinja2 template in various other ansible
-   roles. Examples and verifications are given wherever possible.
-
+  The document describes the requirements, design and implementation
+  of the "common_vars" ansible role. "common_vars" role defines common
+  variables used by jinja2 template in various other ansible
+  roles. Examples and verifications are given wherever possible.
+  # used by jinja2 "templates".  Also explain the importance/purpose
+  # of this role and why we took the decision to have a role called
+  # common-vars. As this is not generally the way we use roles in
+  # ansible, we need to specify this. Also mention generally we use
+  # the vars facility provided by ansible but this does not meet our
+  # requirement, hence we took this decision etc etc..
 * Requirements
   The functional requirements of the Commonvars role are mentioned in
   the following sections.
+  # Commonvars -> common-vars / common vars.
 ** Functional Requirements
    1) Define variables used by various other ansible roles
-
+   # remove the numner. As there is only one point. Also add a little
+   # more description for this point.
 * Implementation
 ** Structure of the scripts
    The implementation of this system is in terms of a collection of
@@ -32,14 +39,14 @@
 |   |   |   `-- vars
 |   |   |   |   `-- main.yml
 #+END_EXAMPLE
-
-Here =common_vars.yml= file is a main playbook to configure nodes in
-the cluster.
-
-=roles/common_vars/vars/main.yml= file defines the variables used by
-various other ansible playbooks. Variables value in ansible playbook
-is imported from this common_vars file.
-
+   
+   Here =common_vars.yml= file is a main playbook to configure nodes
+   in the cluster.
+   
+   =roles/common_vars/vars/main.yml= file defines the variables used
+   by various other ansible playbooks. Variables value in ansible
+   playbook is imported from this common_vars file.
+   # make this into a single paragraph.
 ** Common Variables
 *** Variable Description
 
@@ -65,10 +72,10 @@ is imported from this common_vars file.
 |------+---------------------------+---------------------------+----------------------------------------------------------------|
 |   8. | Admin Email Address       | admin_email_addres        | Defines the email address of the system administrator          |
 |------+---------------------------+---------------------------+----------------------------------------------------------------|
-|   9. | SMTP Server Address       | smtp_server_address       | Defines the smptp server's address trough which administrator  |
+|   9. | SMTP Server Address       | smtp_server_address       | Defines the SMTP server's address trough which administrator   |
 |      |                           |                           | can be reached. Used by Ossec server to send mails             |
 |------+---------------------------+---------------------------+----------------------------------------------------------------|
-|  10. | SMTP Smart host           | smtp_smart_host           | Defines the smtp smart host via which various servers can send |
+|  10. | SMTP Smart host           | smtp_smart_host           | Defines the SMTP smart host via which various servers can send |
 |      |                           |                           | email                                                          |
 |------+---------------------------+---------------------------+----------------------------------------------------------------|
 |  11. | Private DNS IPs           | private_dns_ips           | Defines the ip address of private DNS server, to configure it  |
@@ -78,7 +85,7 @@ is imported from this common_vars file.
 |------+---------------------------+---------------------------+----------------------------------------------------------------|
 |  13. | Rsyslog Server IP         | rsyslog_server_ips        | Defines the ip address of rsyslog server                       |
 |------+---------------------------+---------------------------+----------------------------------------------------------------|
-|  14. | Virtual Hosts FQDN        | proxy_domains             | Defines list of FQDNs for which virtual hosts are to defined   |
+|  14. | Virtual Hosts FQDN        | proxy_domains             | Defines list of FQDNs for which virtual hosts are defined      |
 |      |                           |                           | in reverse proxy server                                        |
 |------+---------------------------+---------------------------+----------------------------------------------------------------|
 |  15. | Awstat Domain             | awstats_domains           | Defines list of domain for which analytics is to be collected  |
@@ -209,7 +216,7 @@ is imported from this common_vars file.
 |------+---------------------------+-----------------------+---------------+--------------------------------------------+-----------------------------------------|
 
 ** Generate yml files of common_vars role
-   Generate common_vars role yml file with all the variables defined.
+   Generate common_vars role .yml file with all the variables defined.
    There are three separate "common_vars" file for each cluster. One
    is for AWS cluster, one is for base1 cluster and one is for base4
    cluster.
@@ -219,7 +226,9 @@ is imported from this common_vars file.
    hosted on base1 cluster is "cse05.base1.virtual-labs.ac.in" and the
    FQDN of the same lab hosted on AWS cluster is
    "cse05.virtual-labs.ac.in".
-
+   # incorporate the prefix in the code also for all the three
+   # clusters. Check with aws-implementation code also. If it is not
+   # added there no problem we need to add it here.
 *** Variables for AWS Cluster
 Variables for AWS cluster are defined in the following section
 #+BEGIN_SRC yml :tangle roles/common_vars/vars/main-aws.yml
@@ -625,3 +634,4 @@ nagios_server_ips:
 
 
 
+  
