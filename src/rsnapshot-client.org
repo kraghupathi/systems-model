@@ -11,10 +11,13 @@
   This document describes the design and implementation of Rsnapshot
   Client. Timely backups of configuration files of a node are saved
   at the central node in the cluster.
-  # Same as in server! please describe what central node is or mention
-  # "as described in the server documentation".  Also give a
-  # description as to what the client is required or why this is
-  # required and what dos it do. In little easy to understand words.
+ 
+  If a node is compromised due to any reason, the authenticity of the
+  files in the node can not be relied. For this reason backup of the
+  configuration files of various nodes are saved in a specific node of
+  the cluster. To setup the nodes again these backups configuration
+  files are referred.
+
 * Requirements
   The functional and security requirements of the Rsnapshot Client are
   mentioned in the following sections. Only the Rsnapshot Client
@@ -34,28 +37,30 @@
   files are listed for a quick overview of whole systems.
 
 ** System Design Diagram
+   The below diagram shows various nodes that rsnapshot client
+   communicates with and the TCP/IP ports / protocols used for
+   communication. Only the important nodes are shown for brevity.
+
+#+CAPTION: Rsnapshot Client Network Diagram
+#+LABEL:  fig-rsnapshot-client-design-diagram
 [[./diagrams/rsnapshot-client-design-diagram.png]]
-   # give the caption and the figure name for the image also give
-   # description for the diagram explaining what it depicts.
+
 ** COMMENT Editable Link
 [[https://docs.google.com/drawings/d/1rrCMXTHNn8pS8cNscu3w1Ba4jitfmkL9EiYaWDvETWA/edit][Link to google drawing board]]
 
 ** System Files
-|------+----------+----------------------------+--------------------|
-| S.no | Service  | File                       | Description        |
-|------+----------+----------------------------+--------------------|
-|   1. | iptables | /etc/sysconfig/iptables    | Configuration File |
-|------+----------+----------------------------+--------------------|
-|   2. | SSH      | /root/.ssh/authorized_keys | Authorized keys    |
-|------+----------+----------------------------+--------------------|
-    # same as in server. Rename this to "Important configuration and
-    # data files and folders". also add a crisp description for each
-    # file.
-** Configuration Design
-   Rsnapshot server rsync's the files to be backed up from all the
-   nodes in the cluster over ssh.
-   # remove this section and add the contents in the corresponding
-   # implementation section itself.
+   The following tables gives the information about the services and
+   their configuration files where modifications are required to setup
+   rsnapshot client.
+
+|------+----------+----------------------------+------------------------|
+| S.no | Service  | File                       | Description            |
+|------+----------+----------------------------+------------------------|
+|   1. | iptables | /etc/sysconfig/iptables    | Defines firewall rules |
+|------+----------+----------------------------+------------------------|
+|   2. | SSH      | /root/.ssh/authorized_keys | Authorized keys        |
+|------+----------+----------------------------+------------------------|
+  
 * Implementation
 ** Structure of Scripts
    The implementation of this system is in terms of a collection of
@@ -76,14 +81,12 @@
 
    =roles/rsnapshot_client/vars/main.yaml= file defines the variable
    as described in the [[Variables Definition]] section.
-   # Same as in server.. Make them as a single paragraph. 
+
 ** Firewall Rules
-   Firewall rules applied to rsnapshot client are mentioned
-   here. Description of firewall rules which are common across all the
+   Description of firewall rules which are common across all the
    systems are defined in the [[file:common.org::*Common Firewall Rules][common role]]. There are no specific
    firewall rule, only the common rules are applied.
-# If there are no rules specific to rsnapshot client, then please
-# remove the first line. The second sentence is apt enough.
+
 ** Tasks
 *** Install Rsync package
     Update the server and install the =rsync= package.
@@ -113,7 +116,7 @@
    rsnapshot client node as authorized keys. System administrator has
    to assign the value of =rsnaphot_server_pub_key= variable as
    ssh-public key.
-   # "the" system administrator.. 
+
 #+BEGIN_SRC yml :tangle roles/rsnapshot_client/vars/main.yml :eval no
 #Public key fetched from rsnapshot server to ansible server( present in rsnapshot_public_key/<rsnapshot_server_name>/root/.ssh/id_rsa.pub)
 rsnaphot_server_pub_key: "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6LPC+WU+OfFQtIqRZe2pZ5+gyg+orCk4m8sLpQL25TU95pr/Z7inwS+0gScqBxV7n7tRuW+cojDOe0tE5hb7OuNob49hFHUMXZWPobEIRIBizvSqjp6XklEsRTfkalSXCE2vIYZRHqZ/RG3jY4ME+xyA82AV0UwsmvIAxgWW8rkQdyG34Jdo7h3iyEs8AHGwPsSWT0ckoA0H/39ZaAOIgvdsCjRVvUTwFfwwcuvbGgO6cyhwEcC077eRzshNAnagHOhD4kZ5aheFP4fZJMXkJMO9w0prT+SyoDdloPlvdqbFUjM6YC6JpuEuqs6+cY+qapGZZQnV13YZxbU2+XEEUQ== ansible-generated on rsnapshot.vlabs.ac.in"
@@ -150,3 +153,6 @@ rsync-3.0.6-12.el6.x86_64
 *** Conclusion
     Rsync package is installed on the node.
 
+* Discussion
+1) In variables definition section it should be written "The system
+   administrator" or just "System administrator"

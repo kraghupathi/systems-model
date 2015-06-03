@@ -12,13 +12,11 @@
   Server. Rsnapshot node is configured to take timely backup of
   configuration files of various nodes in the cluster. 
 
-  Backup of configuration files of various nodes are saved in a
-  particular node in the cluster. If a node is compromised due to any
-  reason, the authenticity of the files in the node can not be
-  relied. For this reason backup of configuration files are not
-  maintained locally, instead they are saved in a node in the private
-  network. To setup the node again these backups configuration files
-  are referred.
+  If a node is compromised due to any reason, the authenticity of the
+  files in the node can not be relied. For this reason backup of the
+  configuration files of various nodes are saved in a specific node of
+  the cluster. To setup the nodes again these backups configuration
+  files are referred.
 
 * Requirements
   The functional and security requirements of the Rsnapshot server are
