@@ -9,22 +9,26 @@
 * Introduction
   The document describes the requirements, design and implementation
   of the "common_vars" ansible role. "common_vars" role defines common
-  variables used by jinja2 template in various other ansible
+  variables used by the jinja2 templates in various other ansible
   roles. Examples and verifications are given wherever possible.
-  # used by jinja2 "templates".  Also explain the importance/purpose
-  # of this role and why we took the decision to have a role called
-  # common-vars. As this is not generally the way we use roles in
-  # ansible, we need to specify this. Also mention generally we use
-  # the vars facility provided by ansible but this does not meet our
-  # requirement, hence we took this decision etc etc..
+  
+  In ansible we can define variables in the =role/vars/main.yml=
+  file. The variables used by a role are mentioned in this file. Some
+  variables are common across several roles. When the value of such a
+  common variable changes, it has to be changed in the
+  =role/vars/main.yml= file of all the roles. To avoid this
+  redundancy, such common variables are defined in the "common_vars"
+  role. This allows us to update the variables value at a single
+  location i.e. =common_vars/vars/main.yml= file, and all the roles
+  then use the updated value.
+
 * Requirements
-  The functional requirements of the Commonvars role are mentioned in
+  The functional requirements of the common-vars role are mentioned in
   the following sections.
-  # Commonvars -> common-vars / common vars.
+
 ** Functional Requirements
-   1) Define variables used by various other ansible roles
-   # remove the numner. As there is only one point. Also add a little
-   # more description for this point.
+   Define variables used by various other ansible roles.
+
 * Implementation
 ** Structure of the scripts
    The implementation of this system is in terms of a collection of
@@ -46,7 +50,7 @@
    =roles/common_vars/vars/main.yml= file defines the variables used
    by various other ansible playbooks. Variables value in ansible
    playbook is imported from this common_vars file.
-   # make this into a single paragraph.
+
 ** Common Variables
 *** Variable Description
 
@@ -226,11 +230,10 @@
    hosted on base1 cluster is "cse05.base1.virtual-labs.ac.in" and the
    FQDN of the same lab hosted on AWS cluster is
    "cse05.virtual-labs.ac.in".
-   # incorporate the prefix in the code also for all the three
-   # clusters. Check with aws-implementation code also. If it is not
-   # added there no problem we need to add it here.
+
 *** Variables for AWS Cluster
 Variables for AWS cluster are defined in the following section
+
 #+BEGIN_SRC yml :tangle roles/common_vars/vars/main-aws.yml
 ---
 #Proxy configuration in case direct access to Internet is not available
@@ -361,10 +364,13 @@ router_external_interface: eth0
 #Configure IP address of nagios server.  This is used by iptables firewall templates
 nagios_server_ips:
   - 10.100.1.8
+
+prefix: ""
 #+END_SRC
 
 *** Variables for Base1 Cluster
 Variables for Base1 cluster are defined in the following section
+
 #+BEGIN_SRC yml :tangle roles/common_vars/vars/main-base1.yml
 ---
 #Proxy configuration in case direct access to Internet is not available
@@ -501,10 +507,13 @@ router_internal_ip: 10.100.1.1
 #Configure IP address of nagios server.  This is used by iptables firewall templates
 nagios_server_ips:
   - 10.100.1.8
+
+prefix: "base1."
 #+END_SRC
 
 *** Variables for Base4 Cluster
 Variables for Base4 cluster are defined in the following section
+
 #+BEGIN_SRC yml :tangle roles/common_vars/vars/main-base4.yml
 ---
 #Proxy configuration in case direct access to Internet is not available
@@ -629,6 +638,8 @@ router_internal_ip: 10.100.1.1
 #Configure IP address of nagios server.  This is used by iptables firewall templates
 nagios_server_ips:
   - 10.100.1.8
+
+prefix: "base4."
 #+END_SRC
 
 
