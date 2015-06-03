@@ -26,10 +26,9 @@
    2) Install rsync package.
 
 ** Security Requirements
-   1) All common security requirements as described in [[file:common.org::*Security Requirements][common role]] are
-      applicable to rsnapshot client node.
-   # make it as a single statement. Since there is only one point, do
-   # not mention the numbers.
+   All common security requirements as described in [[file:common.org::*Security Requirements][common role]] are
+   applicable to rsnapshot client node.
+   
 * Design
   Given diagram describes the design of the rsnapshot client. Systems
   files are listed for a quick overview of whole systems.
