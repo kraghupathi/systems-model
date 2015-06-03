@@ -9,15 +9,14 @@
 
 * Introduction
    This document describes the design and implementation of how to
-   configure a system to be monitored by a monitoring system. Nagios
-   system is used to monitor services of a system such as ssh service,
-   cpu usage, ram usage and disk usage.
+   configure the system's services to be monitored by a monitoring
+   system. Nagios system is used to monitor services of a system such
+   as ssh service, cpu usage, ram usage and disk usage.
 
 * Requirements
-  The functional and security requirements of the Nagios Client are
-  mentioned in the following sections. Only the Nagios Client specific
-  requirements which differ from the generic requirements specified in
-  the [[common%20role][common role]] are mentioned here.
+  The functional and security requirements of the Nagios Client which
+  differ from the generic requirements specified in the [[common%20role][common role]]
+  are mentioned here.
 
 ** Functional Requirements
    1) Allow incoming connections on TCP port 5666 from Nagios server.
@@ -32,12 +31,14 @@
    systems.
 ** System Design Diagram
 [[./diagrams/nagios-client-design-diagram.png]]
-# comment diagram not appearing
 
 ** COMMENT Editable Link
 [[https://docs.google.com/a/vlabs.ac.in/drawings/d/1TKAGbG8Fj5LcuY-kdZrVjE1ksHJQxFdXeRcWwE6TlWs/edit][Design Diagram Link]]
 
 ** System Files
+   The following table gives the information about the configuration
+   files which are modified to setup a nagios client.
+
 |------+----------+---------------------------------------------+-------------------------|
 | S.no | Service  | File                                        | Description             |
 |------+----------+---------------------------------------------+-------------------------|
@@ -50,13 +51,13 @@
   
 ** Configuration Design
    In a system there may be many services of interest which are to be
-   monitored, such as =ssh=, =ping= and =http=. Services and usage
+   monitored, such as =ssh=, =ping=, =http=, etc. Services and usage
    being monitored may be different for various nodes.
 
 * Implementation
 ** Structure of Scripts
-   The implementation of this system is in terms of a collection of
-   Ansible scripts which configure the node. These scripts are
+   The implementation of this node is in terms of a collection of
+   Ansible scripts which configures the node. The scripts are
    organized as follows:
 
 #+BEGIN_EXAMPLE
@@ -81,9 +82,8 @@
    concatenated into =roles/nagios_client/tasks/main.yaml= file.
 
    The =roles/nagios_client/templates/= folder contains one jinja2
-   configuration template - =xinetd.conf.j2=. This template use
-   variables defined at various places to configure the Nagios client
-   with appropriate values.
+   configuration template - =xinetd.conf.j2=. This template uses
+   various variables which are defined in common_vars role.
 
    =roles/nagios_client/vars/main.yaml= file defines the variable as
    described in the [[Define Variables and Services groups]] section.
@@ -102,7 +102,6 @@
         monitors ssh service on the client node. Defined in line
         number 5 to 7.
 
-*** Firewall Rules
 #+BEGIN_EXAMPLE -n
 #Allow to accept incoming nrpe queries from nagios server
 -A INPUT -m state --state NEW -p tcp -m tcp --dport 5666 -j ACCEPT
@@ -187,7 +186,7 @@ includedir /etc/xinetd.d
 *** Install Nagios packages
    Following nagios packages are installed in the system:
    1) =nagios=
-   2) =nagios-pulgins-all=
+   2) =nagios-plugins-all=
    3) =nagios-plugins-nrpe=
    4) =nrpe=
    5) =xinetd=
@@ -195,35 +194,39 @@ includedir /etc/xinetd.d
 #+BEGIN_SRC yml :tangle roles/nagios_client/tasks/main.yml :eval no
 - name: Installing nagios
   yum: name=nagios state=installed
-  environment: proxy_env
+#  environment: proxy_env
 
 - name: Installing all nagios plugins 
   yum: name=nagios-plugins-all state=installed
-  environment: proxy_env
+#  environment: proxy_env
 
 - name: Installing nrpe on client
   yum: name=nrpe state=installed
-  environment: proxy_env
+#  environment: proxy_env
 
 - name: Installing nrpe nagios plugins
   yum: name=nagios-plugins-nrpe state=installed
-  environment: proxy_env
+#  environment: proxy_env
 
 - name: Installing xinetd
   yum: name=xinetd state=installed
-  environment: proxy_env
+#  environment: proxy_env
 #+END_SRC 
+
 *** Copy configuration file
    Changes in the configuration file are enforced by restarting the
-   xinetd service.
+   xinetd service. In handlers section these services are called to
+   restart.
 
 #+BEGIN_SRC yml :tangle roles/nagios_client/tasks/main.yml :eval no
 - name: updating xinted.conf with nagios-server details
   template: src=xinetd.conf.j2 dest=/etc/xinetd.conf
   notify: restart xinetd
 #+END_SRC
+
 *** Allowed hosts for polling
-   Configure IPs of nagios servers which will poll for information.
+   Specify IPs of nagios servers in the nagios client node. Nagios
+   server polls for information.
 
 #+BEGIN_SRC yml :tangle roles/nagios_client/tasks/main.yml :eval no
 - name: updating nrpe.cfg with nagios-server details
@@ -232,6 +235,10 @@ includedir /etc/xinetd.d
 #+END_SRC
 
 ** Handlers
+   The services are restarted if there are any changes made to the
+   configuration file. Ansible handlers are defined to restart
+   services.
+
 *** Start xinetd service
    Any changes in xinetd configuration is enforced by restarting the
    xinetd service. To restart iptables, handlers (ansible terms) are
@@ -239,7 +246,6 @@ includedir /etc/xinetd.d
 
 #+BEGIN_SRC yml :tangle roles/nagios_client/handlers/main.yml
 - name: restart xinetd
-  sudo: true
   service: name=xinetd state=restarted
 #+END_SRC
 
@@ -249,7 +255,6 @@ includedir /etc/xinetd.d
 
 #+BEGIN_SRC yml :tangle roles/nagios_client/handlers/main.yml
 - name: restart nrpe
-  sudo: true
   service: name=nrpe state=restarted
 #+END_SRC
 
@@ -262,12 +267,12 @@ nagios_server: 10.100.1.8
 * Test Cases
 ** Test Case-1
 *** Objective
-   Test status of command by executing them on the client node from
-   the nagios server node.
+   Test to check the status of command by executing them on the client
+   node from the nagios server node.
 
 *** Apparatus
    1) Nagios server
-   2) Nagios client
+   2) Nagios client machine, configured as nagios-nrpe-client
 
 *** Theory
    Services can also be monitored by running some commands on the
@@ -289,29 +294,31 @@ nagios_server: 10.100.1.8
 #+BEGIN_EXAMPLE
 /usr/lib64/nagios/plugins/check_ssh -p 22 <ipaddress of client>
 #+END_EXAMPLE
+
 *** Result
    Output of commands when executed on client node: =10.4.15.117= are
    as follows:
-**** Sample output for command 1.
+**** Sample output for check load
 #+BEGIN_EXAMPLE
 OK - load average: 0.00, 0.00, 0.00|load1=0.000;15.000;30.000;0; load5=0.000;10.000;25.000;0; load15=0.000;5.000;20.000;0; 
 #+END_EXAMPLE
-**** Sample output for command 2.
+
+**** Sample output for check users
 #+BEGIN_EXAMPLE
 USERS OK - 0 users currently logged in |users=0;5;10;0
 #+END_EXAMPLE
 
-**** Sample output for command 3.
+**** Sample output for check ssh service
 #+BEGIN_EXAMPLE
 SSH OK - OpenSSH_5.3 (protocol 2.0) | time=0.007418s;;;0.000000;10.000000
 #+END_EXAMPLE
+
 *** Observation
    Return status of the services is displayed in the command output.
 
 *** Conclusion
-   If the return status of the command depicts the status of service
+   The return status of the command depicts the status of service
    running in the client node that means we are able to check the
    status using command line option.
-# comment Above statement not clear
 
 
