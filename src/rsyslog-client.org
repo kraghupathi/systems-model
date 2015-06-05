@@ -9,7 +9,7 @@
 
 * Introduction
    Rsyslog service is configured inside the systems to forward the log
-   messages to the rsyslog server for safe storage. Rsyslog service
+   messages to the [[./rsyslog-server.org][rsyslog server]] for safe storage. Rsyslog service
    also saves the system log messages locally in each system.
 
 * Requirements
@@ -215,7 +215,7 @@ $ActionQueueSaveOnShutdown on # save in-memory data if rsyslog shuts down
   yum: name=rsyslog state=present
 #+END_SRC 
 
-*** Set Rsyslog service
+*** Configure Rsyslog service
    Rsyslog service is set by following steps:
 
    1) Copy configuration file from the ansible node.
