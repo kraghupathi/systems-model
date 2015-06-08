@@ -32,7 +32,7 @@
   The setup of rsyslog server as a central storage system requires
   configuring all other nodes to send a copy of their log messages to
   the rsyslog server.  Thus the rsyslog server requires other nodes of
-  the cluster to be configured as the rsyslog clients (Ref [[./rsyslog_client.org][Rsyslog
+  the cluster to be configured as the rsyslog clients (Ref [[./rsyslog-client.org][Rsyslog
   Client]] role).
 
 * Description
@@ -359,7 +359,7 @@ authpriv.*      ?TmplAuth
   environment: proxy_env
 #+END_SRC 
 
-*** Setup rsyslog service
+*** Configure rsyslog service
     Rsyslog service is set by following steps:
     1. Copy configuration file build at [[Build rsyslog.conf
        configuration file for configuring rsyslog server][Build
@@ -375,7 +375,7 @@ authpriv.*      ?TmplAuth
     - restart rsyslog
 #+END_SRC
 
-*** Set rsyslog service to automatically start on system boot
+*** Configure rsyslog service to automatically start on system boot
     Start rsyslog service if it is not running and also configure it
     to automatically start on next reboot.
 
@@ -384,7 +384,7 @@ authpriv.*      ?TmplAuth
   service: name=rsyslog state=started enabled=yes
 #+END_SRC
 
-*** Set iptables firewall rules using template
+*** Configure iptables firewall rules using template
     Firewall rules are set by following steps:
     1. Copy iptables jinja2 template created in section [[Firewall rules for rsyslog server][Firewall rules
        for rsyslog server]] from the ansible node to the rsyslog node.
@@ -400,10 +400,10 @@ authpriv.*      ?TmplAuth
 
 ** Handlers
 *** Restart iptables handler
-    Any changes in iptables configuration file as part of task [[Set iptables firewall rules using template][Set
-    iptables firewall rules using template]] is enforced by restarting
-    the iptables.  Handler for restarting iptables is created as
-    follows:
+    Any changes in iptables configuration file as part of task [[Configure iptables firewall rules using
+ template][Configure iptables firewall rules using template]] is enforced by
+    restarting the iptables.  Handler for restarting iptables is created
+    as follows:
 
 #+BEGIN_SRC yml :tangle roles/rsyslog_server/handlers/main.yml
 ---
@@ -412,7 +412,7 @@ authpriv.*      ?TmplAuth
 #+END_SRC
 
 *** Restart rsyslog service handler
-    Any changes in rsyslog configuration file as part of [[Setup rsyslog service][Setup rsyslog
+    Any changes in rsyslog configuration file as part of [[Configure rsyslog service][Configure rsyslog
     service]] task is enforced to the system by restarting the rsyslog
     service using handler created as follows:
 
@@ -429,8 +429,7 @@ authpriv.*      ?TmplAuth
    3. Management station IPs - =management_ips=
    4. Nagios server IPs - =nagios_server_ips=
 
-   Values of these variables is fetched from the
-   [[file:common_vars.org::*Common Variables][Common vars]] role.
+   Values of these variables is fetched from the [[file:common-vars.org::*Common Variables][Common vars]] role.
 
 ** Building rsyslog server hosts file with appropriate roles
    Rsyslog server is configured using =common= and =rsyslog_server=
