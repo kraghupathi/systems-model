@@ -6,23 +6,12 @@
 
 * Introduction
   This document describes the requirements, design and implementation
-  of the public *Domain Name Server (DNS)* .  This server is used to
+  of the public *Domain Name Server (DNS)* .  This node is used to
   provide domain name resolution for all other servers in the
   cluster. This DNS will be the authoritative name server for the
-  domain name "virtual-labs.ac.in" ans "vlabs.ac.in". The Public IP of
+  domain name "virtual-labs.ac.in" and "vlabs.ac.in". The Public IP of
   this machine needs to be officially registered with ERNET to make
   this machine an authoritative name server for the domain.
-# In place of word 'server', 'node' could be used.
-# Sentence 'This DNS will be ... ' could be reframed as 'This DNS is
-# the authoritative ..'.
-# Spelling of 'and' is wrong in "virtual-labs.ac.in" ans
-# "vlabs.ac.in".
-# Again sentence "The Public IP of this machine needs .." could be
-# reframed as "The Public IP of this machine is officially .."
-
-# In this section, how outside users connect to public DNS could be
-# described, also about its role in the whole infrastructure which is
-# to provide name resolution for public domains.
 
 * Requirements
   The functional and security requirements of the Public DNS are
@@ -45,7 +34,7 @@
    The following network diagram represents the interaction between
    the public DNS and all other machines in the cluster.  This diagram
    primarily focuses on the functionality of the named server. The
-   router is the only machine which would contact the Public DNS for
+   router is the only machine which would contact the public DNS for
    name resolution. The requests for name resolution come from the
    external networks (lab users) for resolving the names of the labs.
 
@@ -59,24 +48,17 @@
    nameserver. The AWS cluster does not have a public DNS setup for
    now. It uses the public DNS in IIIT.  /Eventually this DNS will
    also be registered on AWS/.  Base1 and base4 clusters belong to the
-   IIIT network. Hence these clusters are setup as sub-zones in the
-   private DNS.  The query first reaches the private DNS in IIIT and
-   then is forwarded to the public DNS of the cluster to respond to
-   the query.
+   IIIT network.  Hence sub-zones in the private DNS are created to
+   resolve domain names of nodes setup in base1 and base4.  The query
+   first reaches the private DNS in IIIT and then is forwarded to the
+   public DNS of the cluster to respond to the query.
 
-# Sentence /Eventually this DNS will also be registered on AWS/ is not
-# clear. DNS will be registered on AWS or a public DNS will also be
-# setup in AWS.
-# Sentence 'Hence these clusters are ..' could be more elaborated
-# something like 'sub zones in the private DNS are created to resolves
-# domain names of nodes setup in base1 and base4'
-
-** Important configuration and data files and folders 
+** Important configuration and data files
    The following table gives the information about the configuration
-   files which may need to be modified to setup a DNS server. The
+   files which need to be modified to setup a DNS server. The
    =bind= package is used to configure the DNS server.
    |------+----------+-------------------------------+----------------------------------|
-   | S.no | Service  | File                          | Purpose                          |
+   | S.no | Service  | File                          | Description                      |
    |------+----------+-------------------------------+----------------------------------|
    |    1 | named    | /etc/name.conf                | Main Configuration file for      |
    |      |          |                               | bind DNS server                  |
@@ -90,9 +72,6 @@
    |      |          |                               | IPv6 support                     |
    |------+----------+-------------------------------+----------------------------------|
    
-# These configurations files are modified, then why are we writing
-# 'may need to be modified ..'?
-
 * Implementation
 ** Structure of the scripts
    The implementation of this system is in terms of a collection of
@@ -118,17 +97,12 @@
   Public DNS]] section.  The =roles/named_server/handlers/main.yaml=
   file defines various handlers which are only executed in case a task
   notifies them.  These handlers are described in detail in the
-  [[Handlers]] section.  The handlers are called when the tasks described
-  in the [[Tasks][Tasks]] section notify them.  Various tasks of [[Tasks][Tasks]] section
-  are concatenated into =roles/named_server/tasks/main.yaml= file.
-  The =roles/named-server/templates/= folder contains three jinja2
+  [[Handlers]] section.  Various tasks of [[Tasks][Tasks]] section are concatenated
+  into =roles/named_server/tasks/main.yaml= file.  The
+  =roles/named-server/templates/= folder contains three jinja2
   configuration templates - =named_iptables=, =zone.forward=,
   =named.conf=.  These templates use variables defined at various
   places to configure the DNS server with appropriate values.
-
-# Sentence 'in case a task notifies them' is repeated again in the
-# later sentence 'the tasks described in the [[Tasks][Tasks]] section notify
-# them', probably this is redundant information.
 
 ** Building the firewall rules
    The firewall rules have to be configured. This is done by writing
@@ -138,7 +112,7 @@
    in detail in the [[./common.org][common role]].  The rules which are specific to the
    public DNS are also mentioned here in this template.
 
-#+BEGIN_SRC YAML :tangle roles/named_server/templates/named_iptables
+#+BEGIN_SRC YAML -n :tangle roles/named_server/templates/named_iptables
 *filter
 :INPUT ACCEPT [-1:0]
 :FORWARD ACCEPT [0:0]
@@ -218,19 +192,17 @@ COMMIT
 #+END_SRC
 
    The public DNS should be able to allow the incoming DNS queries on
-   port 53 from anywhere. The =INPUT= table has a rule which specifies
-   this rule to allow DNS queries from everywhere.
+   port 53 from anywhere. The =INPUT= table has a rule (line num 34)
+   which specifies this rule to allow DNS queries from everywhere.
   
-# Line numbers at which specific firewall rules are defined could be
-# mentioned. To get line numbers in source block '-n' flag could be
-# used.
-
 ** Tasks
 *** Installing the bind service
-    To configure the node as a DNS server the *bind* and *bind-utils*
-    packages have to be installed.  We are currently using
-    /bind-9.8.2-0.30.rc1.el6_6.2.x86_64/ package.  This is done by the
-    following code:
+    To configure the node as a DNS server the *bind* package has to be
+    installed.  We are currently using
+    /bind-9.8.2-0.30.rc1.el6_6.2.x86_64/ package. Another
+    package *bind-utils* is also installed to help administrators in
+    debugging / validating DNS configuration by sending custom queries
+    to required DNS servers. This is done by the following code:
 
 #+BEGIN_SRC YAML :tangle roles/named_server/tasks/main.yaml
 ---
@@ -322,18 +294,10 @@ include "/etc/named.root.key";
 *** Creating the zone files
     Each zone (domain) is associated with a zone file which contains a
     list of all the sub-domains under that domain and also their
-    corresponding IP address to which the request for that FQDN should
-    be sent to. Here we create one zone file each for the domains
+    corresponding IP address to which the query for that FQDN should
+    resolve to. Here we create one zone file each for the domains
     "virtual-labs.ac.in" and "vlab.ac.in".  The zone file template
-    =/roles/named_server/templates/zone.forward= looks like the
-    following:
-
-# Sentence '.. FQDN should be sent to' could be written as 'IP address
-# to which the request for that FQDN resolve to'. Word 'sent' does not
-# seems to be appropriate here.
-# In last sentence '... looks like the following' word 'looks like'
-# does not seems to be appropriate, it could be removed.
-
+    =/roles/named_server/templates/zone.forward= is as below:
 
 #+BEGIN_SRC YAML :tangle roles/named_server/templates/zone.forward
 $TTL 3600
@@ -359,12 +323,8 @@ $TTL 3600
     - restart bind
 #+END_SRC
 
-*** Some more configuration
+*** Disabling IPv6
     We disable the IPv6 support. 
-
-# Section heading could be changed 'Disabling IPv6' instead of 'Some
-# more configuration'.
-# Description why ipv6 is disabled could be provided.
 
 #+BEGIN_SRC  YAML :tangle roles/named_server/tasks/main.yaml
 - name: Disable IPv6 support
@@ -383,11 +343,8 @@ $TTL 3600
 
 *** Apply the firewall rules
     The firewall rules which were written in a template, need to be
-    configured by placing need to be applied. This is done from the
-    following script.
-
-# There is some ambiguity in 'need to be configured by placing need to
-# be applied' sentence, it could be corrected.
+    configured by placing them in their specific location. This is
+    done from the following script.
 
 #+BEGIN_SRC YAML :tangle roles/named_server/tasks/main.yaml
 - name: Configure strong firewall on bind/named server
@@ -648,6 +605,7 @@ $TTL 3600
     for.
   
 # Sentence 'Dig also shows that the same result' could be corrected.
-
+    
 *** Conclusion
     The recursive lookup is not functional in the Public DNS.
+* Discussions
