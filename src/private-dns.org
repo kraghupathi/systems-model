@@ -29,7 +29,7 @@
   additional effort in keeping multiple nodes synchronized.
 
   Further redundancy using multiple DNS servers has been avoided
-  altogether.  This is because if the only available DNS server fails,
+  altogether.  This is because if a DNS server fails,
   then a new DNS server can be configured quickly using existing
   ansible scripts.  
 
@@ -85,7 +85,7 @@
    |    4 | named    | /etc/sysconfig/named          | This file is modified to disable |
    |      |          |                               | IPv6 support                     |
    |------+----------+-------------------------------+----------------------------------|
-
+   
 * Implementation
 ** Structure of the scripts
    The implementation of this system is in terms of a collection of
@@ -215,10 +215,12 @@ COMMIT
    
 ** Tasks
 *** Installing the bind service
-    To configure the node as a DNS server the *bind* and *bind-utils*
-    packages have to be installed.  We are currently using
-    /bind-9.8.2-0.30.rc1.el6_6.2.x86_64/ package.  This is done by the
-    following code:
+    To configure the node as a DNS server the *bind* package has to be
+    installed.  We are currently using
+    /bind-9.8.2-0.30.rc1.el6_6.2.x86_64/ package. Another
+    package *bind-utils* is also installed to help administrators in
+    debugging / validating DNS configuration by sending custom queries
+    to required DNS servers. This is done by the following code:
 
 #+BEGIN_SRC YAML :tangle roles/named_server/tasks/main.yaml
 ---
@@ -321,6 +323,12 @@ $TTL 3600
 @ SOA ns.{{item}} root.{{item}} (1 15m 5m 30d 1h)
                 IN      NS      {{name_server}}
                 IN      A       {{zone_address}}
+
+                MX      10 ASPMX.L.GOOGLE.COM.
+                MX      20 ALT1.ASPMX.L.GOOGLE.COM.
+                MX      20 ALT2.ASPMX.L.GOOGLE.COM.
+                MX      30 ASPMX2.GOOGLEMAIL.COM.
+                MX      30 ASPMX3.GOOGLEMAIL.COM.
 
 {% for server1 in servers %}
 
@@ -658,13 +666,13 @@ $TTL 3600
   # Soumya: I dont think so. The recursion parameter is set for this
   # reason.
   
-  In the functional requirements section
+  In the functional requirements section:
   # siva: use some other word instead of "should". What about external
   # clients? \\ 
   # Soumya: External clients cannot in anyway connect to the
   # private DNS. I thought it is not needed to be explicitly mentioned.
 
-  In structure of the scripts section
+  In structure of the scripts section:
   # Siva: write in separate paragraphs for each folder/file and we are
   # defining variables in templates, just declaring/using them. replace
   # "use" with "uses". These variables are may be defined in common_vars
