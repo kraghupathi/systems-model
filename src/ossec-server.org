@@ -1,0 +1,300 @@
+#+TITLE: Private DNS
+#+PROPERTY: session *scratch*
+#+PROPERTY: results output
+#+PROPERTY: exports code
+#+SETUPFILE: org-templates/level-0.org
+#+OPTIONS: ^nil
+
+* ossec-server.yml
+#+BEGIN_SRC YAML :tangle ossec_server.yaml
+---
+- name: This file configures ossec server
+  hosts: ossec_server
+  remote_user: root
+
+  vars:
+   host_name: ossec
+
+  roles:
+    - common
+    - rsyslog_client
+    - nagios_client
+    - ossec_server
+#+END_SRC
+
+* tasks/main.yaml
+#+BEGIN_SRC YAML :tangle roles/ossec_server/tasks/main.yaml
+---
+- include: setup_ossec_server.yaml
+- include: setup_webui.yaml
+- include: get_client_keys.yaml
+
+- name: Updating Hostname
+  lineinfile: dest=/etc/sysconfig/network regexp=^HOSTNAME= 'line=HOSTNAME="ossec.virtual-labs.ac.in"'
+
+- name: Setup appropriate firewall for OSSEC server
+  template: src=ossec_iptables dest=/etc/sysconfig/iptables
+  notify:
+    - restart iptables
+#+END_SRC
+
+** Get client keys
+#+BEGIN_SRC YAML :tangle  roles/ossec_server/tasks/get_client_keys.yaml
+---
+- name: Copy add_agent.sh script
+  copy: src=add_agent.sh dest=/root/add_agent.sh mode=755 owner=root group=root
+
+- name: Add agent to the server
+  shell: /root/add_agent.sh "{{item}}"
+  with_items: ossec_client_ips
+  notify:
+  - restart ossec
+
+- name: Get all client keys from OSSEC server to ansible server
+  fetch: src=/var/ossec/etc/client.keys dest=fetched
+#+END_SRC
+
+** Setup ossec server 
+#+BEGIN_SRC YAML: tangle  roles/ossec_server/tasks/setup_ossec_server.yaml
+---
+- name: Install necessary packages - gcc, postgresql-devel, mysql-devel, php and expect
+  yum: name="{{item}}" state=present
+  environment: proxy_env
+  with_items:
+    - gcc
+    - postgresql-devel
+    - mysql-devel
+    - php
+    - expect
+    - httpd
+  notify:
+    - restart apache
+
+- name: Download Ossec server/agent
+  get_url: url="{{ossec_url}}" dest="{{ossec_path}}".tar.gz
+  environment: proxy_env
+
+- name: Extract Ossec server code
+  unarchive: copy=no src="{{ossec_path}}".tar.gz dest="{{extract_path}}" creates="{{ossec_path}}"
+
+- name: Copy the Ossec_input file
+  template: src=ossec_server_input.j2 dest="{{ossec_path}}/ossec_server_input.txt"
+
+- name: Install Ossec server
+  shell: ./install.sh < ossec_server_input.txt
+  args:
+    chdir: "{{ossec_path}}"
+    creates: /var/ossec/etc/ossec.conf
+
+- name: Start ossec server
+  service: name=ossec state=started
+#+END_SRC
+
+** Setup web UI
+#+BEGIN_SRC YAML: tangle  roles/ossec_server/tasks/setup_webui.yaml
+---
+- name: Download Ossec web UI
+  get_url: url="{{webui_url}}" dest="{{webui_path}}".tar.gz
+  environment: proxy_env
+
+- name: Extract Ossec web UI code
+  unarchive: copy=no src="{{webui_path}}".tar.gz dest="{{extract_path}}" creates="{{webui_install_path}}"
+
+- name: Move the extracted web UI code to document root
+  command: mv "{{webui_path}}" "{{webui_install_path}}"
+  args:
+    creates: "{{webui_install_path}}"
+
+- name: Copy the Ossec_webui_input file
+  copy: src=ossec_webui_setup.sh dest="{{webui_install_path}}" mode=544
+
+- name: Install Ossec web UI
+  shell: ./ossec_webui_setup.sh
+  args:
+    chdir: /var/www/html/ossec
+    creates: /var/www/html/ossec/.htpasswd
+
+- name: Create index.html to automatically redirect to /ossec
+  copy: src=index.html dest="{{document_root}}" owner=root group=root mode=644
+  notify:
+    - restart ossec
+    - restart apache
+
+- name: Ensure that apache service is running
+  service: name=httpd state=started
+#+END_SRC
+* handlers/main.yaml
+#+BEGIN_SRC YAML :tangle roles/ossec_server/handlers/main.yaml
+---
+- name: restart ossec
+  service: name=ossec state=restarted
+
+- name: restart apache
+  service: name=httpd state=restarted
+
+- name: restart iptables
+  service: name=iptables state=restarted
+#+END_SRC
+
+* templates
+** iptables
+#+BEGIN_SRC YAML :tangle roles/ossec_server/templates/ossec_iptables
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+#Accept loopback connections
+-A INPUT -i lo -d 127.0.0.0/8 -j ACCEPT
+#Rate limit new connections to 20 new connections per 30 seconds
+-A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --set
+-A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --rcheck --seconds 30 --hitcount 20 -m limit --limit 2/min -j LOG --log-prefix "new_limit_"
+-A INPUT ! -p udp -m state --state NEW -m recent --name ssh_limit --rcheck --seconds 30 --hitcount 20 -j DROP
+#Accept ICMP ping requests at limited rate
+-A INPUT -p icmp --icmp-type echo-request -m limit --limit 60/minute --limit-burst 120 -j ACCEPT
+-A INPUT -p icmp --icmp-type echo-request -m limit --limit 1/minute --limit-burst 2 -j LOG
+-A INPUT -p icmp --icmp-type echo-request -j DROP
+#Allow ongoing connections
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+#Allow incoming SSH connections from management IPs.  Hopefully fail2ban will take care of bruteforce attacks from management IPs
+{% for item in management_ips  %}
+-A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
+#Allow incoming SSH connections from ansible server IPs.  Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
+{% for item in ansible_server_ips  %}
+-A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
+#Allow incoming SSH connections from rsnapshot server IPs.
+{% for item in rsnapshot_server_ips  %}
+-A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
+#Allow incoming SSH connections from nagios server IPs.
+{% for item in nagios_server_ips  %}
+-A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
+#Allow access to OSSEC webui from management stations.  Harmless on production even if accessed via reverseproxy
+{% for item in management_ips  %}
+-A INPUT -m state --state NEW -p tcp -m tcp --dport 80 -j ACCEPT
+-A INPUT -m state --state NEW -p tcp -m tcp --dport 443 -j ACCEPT
+{% endfor %}
+#Allow incoming connections to OSSEC server from ossec_client_ips
+{% for item in ossec_client_ips  %}
+-A INPUT -s {{item}} -p udp -m udp --dport 1514 -j ACCEPT
+{% endfor %}
+#Allow incoming NRPE queries for nagios from nagios servers
+-A INPUT -m state --state NEW -p tcp -m tcp --dport 5666 -j ACCEPT
+#Allow SNMP queries from cacti servers
+-A INPUT -p udp -m udp --dport 161 -j ACCEPT
+-A INPUT -p udp -m udp --dport 162 -j ACCEPT
+#Log all other "blocked_input_" attempts with rate limiting
+-A INPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_input_"
+#Reply with proper ICMP error message and reject the connection
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+#Disable packet forwarding through firewall
+-A FORWARD -j REJECT --reject-with icmp-host-prohibited
+#
+#
+##Output rules
+#Allow outgoing connections to localhost
+-A OUTPUT -s 127.0.0.0/8 -o lo -j ACCEPT
+#Allow outgoing replies to ansible from SSH server
+{% for item in ansible_server_ips  %}
+-A OUTPUT -d {{item}} -p tcp -m tcp --sport 22 -j ACCEPT
+{% endfor %}
+#Allow ongoing connections
+-A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+#Allow DNS queries
+-A OUTPUT -p udp -m udp --dport 53 -j ACCEPT
+#Allow server to send emails.  Required for sending logwatch emails
+-A OUTPUT -p tcp -m tcp --dport 25 -j ACCEPT
+#Allow server to contact web-servers.  Required for yum update and installation
+#For restrictive configurations this can be disabled after install
+-A OUTPUT -p tcp -m tcp --dport 80 -j ACCEPT
+-A OUTPUT -p tcp -m tcp --dport 443 -j ACCEPT
+#Allow outgoing connections to rsyslog server
+-A OUTPUT -p udp -m udp --dport 514 -j ACCEPT
+#Allow outgoing ping requests
+-A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT
+#Log all other "blocked_output_" attempts
+-A OUTPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_output_"
+#Reply with proper ICMP error message and reject the connection
+-A OUTPUT -j REJECT --reject-with icmp-host-prohibited
+COMMIT
+#
+#+END_SRC
+** ossec_server_input.j2
+#+BEGIN_SRC YAML :tangle roles/ossec_server/templates/ossec_server_input.j2
+en
+
+server
+
+
+{{ admin_email_address }}
+{{ smtp_server_address }}
+
+
+n
+y
+#+END_SRC
+* vars/main.yaml
+#+BEGIN_SRC YAML :tangle roles/ossec_server/vars/main.yaml
+---
+ossec_url: https://github.com/ossec/ossec-hids/releases/download/v2.8.0/ossec-hids-2.8.tar.gz
+ossec_path: /root/ossec-hids-2.8
+webui_url: http://www.ossec.net/files/ossec-wui-0.8.tar.gz
+webui_path: /root/ossec-wui-0.8
+webui_install_path: /var/www/html/ossec
+extract_path: /root
+document_root: /var/www/html
+#+END_SRC
+* files
+** add agent
+#+BEGIN_SRC sh :tangle roles/ossec_server/files/add_agent.sh
+#!/bin/bash
+
+cat > ossec_agent_input.txt <<EOF
+A
+$1
+$1
+
+y
+Q
+EOF
+
+/var/ossec/bin/manage_agents < ossec_agent_input.txt
+
+rm -f ossec_agent_input.txt
+
+exit 0
+#+END_SRC
+** ossec webui setup
+#+BEGIN_SRC sh :tangle roles/ossec_server/files/ossec_webui_setup.sh
+#!/usr/bin/expect -f
+
+spawn ./setup.sh
+
+expect "Username:"
+send "saurabh\r"
+expect "password:"
+send "rekall123\r"
+expect "password:"
+send "rekall123\r"
+expect "user name"
+send "apache\r"
+expect "directory path"
+send "/var/ossec\r"
+
+expect "anything that will not be there krati is responsible"
+send_user "$expect_out(buffer)"
+#+END_SRC
+** index.html
+#+BEGIN_SRC html :tangle roles/ossec_server/files/index.html
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+        <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+        <meta http-equiv="Refresh" content="0; URL=ossec" />
+</head>
+<body>
+</body>
+</html>
+#+END_SRC
