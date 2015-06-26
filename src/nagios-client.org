@@ -1,38 +1,48 @@
-#+TITLE:     Nagios Client - Design Model and Implementation
+#+TITLE:     Nagios Client Role
 #+DATE:      2015-04-01 Wednesday
 #+PROPERTY: session *scratch*
 #+PROPERTY: results output
 #+PROPERTY: exports code
-//#+SETUPFILE: org-templates/level-0.org
+#+SETUPFILE: org-templates/level-0.org
 #+DESCRIPTION: Nagios Client Design Model Documentation
 #+OPTIONS: ^:nil
 
 * Introduction
-This document describes the design and implementation of how to configure a
-system to be monitored by a monitoring system. Nagios system is used to monitor
-services of a system such as ssh service, cpu usage, ram usage and disk usage.
+   This document describes the design and implementation of how to
+   configure the system's services to be monitored by a monitoring
+   system. Nagios system is used to monitor services of a system such
+   as ssh service, cpu usage, ram usage and disk usage.
 
 * Requirements
+  The functional and security requirements of the Nagios Client which
+  differ from the generic requirements specified in the [[common%20role][common role]]
+  are mentioned here.
+
 ** Functional Requirements
-1) Allow incoming connections on TCP port 5666 from Nagios.
+   1) Allow incoming connections on TCP port 5666 from Nagios server.
 
 ** Security Requirements
-1) Security requirements are defined in common role.
+   1) All common security requirements as described in [[file:common.org::*Security Requirements][common role]] are
+      applicable to nagios client.
 
 * Design
-Given diagram describes the design of the monitoring server. Systems files are
-listed for a quick overview of whole systems.
+   Given diagram describes the design of the monitoring
+   server. Systems files are listed for a quick overview of whole
+   systems.
 ** System Design Diagram
 [[./diagrams/nagios-client-design-diagram.png]]
 
-** Editable Link
+** COMMENT Editable Link
 [[https://docs.google.com/a/vlabs.ac.in/drawings/d/1TKAGbG8Fj5LcuY-kdZrVjE1ksHJQxFdXeRcWwE6TlWs/edit][Design Diagram Link]]
 
 ** System Files
+   The following table gives the information about the configuration
+   files which are modified to setup a nagios client.
+
 |------+----------+---------------------------------------------+-------------------------|
 | S.no | Service  | File                                        | Description             |
 |------+----------+---------------------------------------------+-------------------------|
-|   1. | Iptables | /etc/sysconfig/iptables                     | Configuration File      |
+|   1. | iptables | /etc/sysconfig/iptables                     | Configuration File      |
 |------+----------+---------------------------------------------+-------------------------|
 |   2. | Nagios   | /etc/xinetd.conf                            | Main Configuration File |
 |------+----------+---------------------------------------------+-------------------------|
@@ -40,16 +50,17 @@ listed for a quick overview of whole systems.
 |------+----------+---------------------------------------------+-------------------------|
   
 ** Configuration Design
-In a system there may be many services of interest which are to be monitored,
-such as =ssh=, =ping= and =http=. Services and usage being monitored may be
-different for various machines.
+   In a system there may be many services of interest which are to be
+   monitored, such as =ssh=, =ping=, =http=, etc. Services and usage
+   being monitored may be different for various nodes.
 
 * Implementation
 ** Structure of Scripts
-The implementation of this system is in terms of a collection of Ansible scripts
-which configure the machine. These scripts are organized as follows:
+   The implementation of this node is in terms of a collection of
+   Ansible scripts which configures the node. The scripts are
+   organized as follows:
+
 #+BEGIN_EXAMPLE
-|-- nagios_client.yaml
 |-- roles
 |   |   |-- nagios_client
 |   |   |   |-- handlers
@@ -62,22 +73,39 @@ which configure the machine. These scripts are organized as follows:
 |   |   |       `-- main.yaml
 #+END_EXAMPLE
 
-** Firewall rules for Nagios Client
-Firewall rules applied to nagios client system are mentioned here. Description
-of firewall rules which are common across all the systems are defined in the
-common role. Rules [[Rule for incoming NRPE query from Nagios server][1]] and [[Rule for incoming SSH connections from Nagios server][2]] are specific to only nagios client and are described
-here.
+   The =roles/nagios_client/handlers/main.yaml= file defines various
+   handlers which are only executed in case a task notifies them.
+   These handlers are described in detail in the [[Handlers]] section.
 
-*** Rule for incoming NRPE query from Nagios server
-Nagios monitors systems disk usage, ram usage by sending a NRPE query.
-#+BEGIN_EXAMPLE
+   The handlers are called when the tasks described in the [[Tasks][Tasks]]
+   section notify them. Various tasks of [[Tasks][Tasks]] section are
+   concatenated into =roles/nagios_client/tasks/main.yaml= file.
+
+   The =roles/nagios_client/templates/= folder contains one jinja2
+   configuration template - =xinetd.conf.j2=. This template uses
+   various variables which are defined in common_vars role.
+
+   =roles/nagios_client/vars/main.yaml= file defines the variable as
+   described in the [[Define Variables and Services groups]] section.
+
+** Firewall rules for Nagios Client
+   Firewall rules applied to nagios client system are mentioned
+   here. Description of firewall rules which are common across all the
+   systems are defined in the [[file:common.org::*Common Firewall Rules][common role]].  Following rules are
+   specific to only nagios client and are described here:
+
+   - Rule for incoming NRPE query from Nagios server :: Nagios
+        monitors systems disk usage, ram usage by sending a NRPE
+        query. Defined in line number 2.
+
+   - Rule for incoming SSH connections from Nagios server :: Nagios
+        monitors ssh service on the client node. Defined in line
+        number 5 to 7.
+
+#+BEGIN_EXAMPLE -n
 #Allow to accept incoming nrpe queries from nagios server
 -A INPUT -m state --state NEW -p tcp -m tcp --dport 5666 -j ACCEPT
-#+END_EXAMPLE
 
-*** Rule for incoming SSH connections from Nagios server
-Nagios monitors ssh service on the client machine.
-#+BEGIN_EXAMPLE
 #Allow incoming SSH connections from nagios server IPs.  Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
 {% for item in nagios_server_ips  %}  
 -A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
@@ -85,8 +113,9 @@ Nagios monitors ssh service on the client machine.
 #+END_EXAMPLE
 
 ** Configure xinetd.conf
-Configure client to accept service requests only from nagios server. Following
-parameter is set to nagios server ip.
+   Configure client to accept service requests only from nagios
+   server. Following parameter is set to nagios server ip.
+
 #+BEGIN_EXAMPLE
 only_from = nagios-server-ip
 #+END_EXAMPLE
@@ -143,98 +172,114 @@ defaults
 includedir /etc/xinetd.d
 #+END_SRC
 
-** Update all packages
-All packages inside the machine are updated before configuring the nagios
-client machine.
+** Tasks
+*** Update all packages
+   All packages inside the node are updated before configuring the
+   nagios client.
+
 #+BEGIN_SRC yml :tangle roles/nagios_client/tasks/main.yml :eval no
 #- name: running yum update
 #  yum: name=* state=latest
 #  environment: proxy_env
 #+END_SRC
    
-** Install Nagios packages
-Following nagios packages are installed in the system:
-1) =nagios=
-2) =nagios-pulgins-all=
-3) =nagios-plugins-nrpe=
-4) =nrpe=
-5) =xinetd=
+*** Install Nagios packages
+   Following nagios packages are installed in the system:
+   1) =nagios=
+   2) =nagios-plugins-all=
+   3) =nagios-plugins-nrpe=
+   4) =nrpe=
+   5) =xinetd=
 
 #+BEGIN_SRC yml :tangle roles/nagios_client/tasks/main.yml :eval no
 - name: Installing nagios
   yum: name=nagios state=installed
-  environment: proxy_env
+#  environment: proxy_env
 
 - name: Installing all nagios plugins 
   yum: name=nagios-plugins-all state=installed
-  environment: proxy_env
+#  environment: proxy_env
 
 - name: Installing nrpe on client
   yum: name=nrpe state=installed
-  environment: proxy_env
+#  environment: proxy_env
 
 - name: Installing nrpe nagios plugins
   yum: name=nagios-plugins-nrpe state=installed
-  environment: proxy_env
+#  environment: proxy_env
 
 - name: Installing xinetd
   yum: name=xinetd state=installed
-  environment: proxy_env
+#  environment: proxy_env
 #+END_SRC 
-** Copy configuration file
-Changes in the configuration file are enforced by restarting the xinetd
-service.
+
+*** Copy configuration file
+   Changes in the configuration file are enforced by restarting the
+   xinetd service. In handlers section these services are called to
+   restart.
+
 #+BEGIN_SRC yml :tangle roles/nagios_client/tasks/main.yml :eval no
 - name: updating xinted.conf with nagios-server details
   template: src=xinetd.conf.j2 dest=/etc/xinetd.conf
   notify: restart xinetd
 #+END_SRC
-** Allowed hosts for polling
-Configure IPs of nagios servers which will poll for information.
+
+*** Allowed hosts for polling
+   Specify IPs of nagios servers in the nagios client node. Nagios
+   server polls for information.
+
 #+BEGIN_SRC yml :tangle roles/nagios_client/tasks/main.yml :eval no
 - name: updating nrpe.cfg with nagios-server details
   lineinfile: dest=/etc/nagios/nrpe.cfg line="allowed_hosts=127.0.0.1,{{ nagios_server }}" regexp="allowed_hosts\=127.0.0.1"
   notify: restart nrpe
 #+END_SRC
 
-** Start xinetd service
-Any changes in xinetd configuration is enforced by restarting the xinetd
-service.
+** Handlers
+   The services are restarted if there are any changes made to the
+   configuration file. Ansible handlers are defined to restart
+   services.
+
+*** Start xinetd service
+   Any changes in xinetd configuration is enforced by restarting the
+   xinetd service. To restart iptables, handlers (ansible terms) are
+   defined here.
+
 #+BEGIN_SRC yml :tangle roles/nagios_client/handlers/main.yml
 - name: restart xinetd
-  sudo: true
   service: name=xinetd state=restarted
 #+END_SRC
 
-** Start nrpe service
-Any changes in nrpe configuration is enforced by restarting the nrpe service.
+*** Start nrpe service
+    Any changes in nrpe configuration is enforced by restarting the
+    nrpe service.
+
 #+BEGIN_SRC yml :tangle roles/nagios_client/handlers/main.yml
 - name: restart nrpe
-  sudo: true
   service: name=nrpe state=restarted
 #+END_SRC
 
 ** Define Variables and Services groups
-Various used by the ansible playbook are defined here.
+   Following variables are used by the ansible playbook:
+
 #+BEGIN_SRC yml :tangle roles/nagios_client/vars/main.yml
 nagios_server: 10.100.1.8
 #+END_SRC
 * Test Cases
 ** Test Case-1
-*** Objective:
-Test command status by executing them on the client machine from the nagios
-server.
+*** Objective
+   Test to check the status of command by executing them on the client
+   node from the nagios server node.
 
-*** Apparatus:
-1) Nagios server
-2) Nagios client
+*** Apparatus
+   1) Nagios server
+   2) Nagios client machine, configured as nagios-nrpe-client
 
 *** Theory
-Services can also be monitored by running some commands on the client machine
-from the nagios server.
+   Services can also be monitored by running some commands on the
+   client node from the nagios server node.
 
 *** Experiment
-Execute following example commands from the nagios server:
+   Execute following example commands from the nagios server:
 **** Check load
 #+BEGIN_EXAMPLE
 /usr/lib64/nagios/plugins/check_nrpe -H <ipaddress of client> -c check_load
@@ -249,26 +294,31 @@ Execute following example commands from the nagios server:
 #+BEGIN_EXAMPLE
 /usr/lib64/nagios/plugins/check_ssh -p 22 <ipaddress of client>
 #+END_EXAMPLE
+
 *** Result
-Output of commands when executed on client machine: 10.4.15.117 are as
-follows:
-**** Sample output for command 1.
+   Output of commands when executed on client node: =10.4.15.117= are
+   as follows:
+**** Sample output for check load
 #+BEGIN_EXAMPLE
 OK - load average: 0.00, 0.00, 0.00|load1=0.000;15.000;30.000;0; load5=0.000;10.000;25.000;0; load15=0.000;5.000;20.000;0; 
 #+END_EXAMPLE
-**** Sample output for command 2.
+
+**** Sample output for check users
 #+BEGIN_EXAMPLE
 USERS OK - 0 users currently logged in |users=0;5;10;0
 #+END_EXAMPLE
 
-**** Sample output for command 3.
+**** Sample output for check ssh service
 #+BEGIN_EXAMPLE
 SSH OK - OpenSSH_5.3 (protocol 2.0) | time=0.007418s;;;0.000000;10.000000
 #+END_EXAMPLE
+
 *** Observation
-Return status of the services is displayed in the command output.
+   Return status of the services is displayed in the command output.
 
 *** Conclusion
-If the return status of the depicts the status of service in the client machine.
+   The return status of the command depicts the status of service
+   running in the client node that means we are able to check the
+   status using command line option.
 
 

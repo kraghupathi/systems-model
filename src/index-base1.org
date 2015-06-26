@@ -13,6 +13,7 @@ an elaborate description of all the components in the cluster.
   test the functionality of the systems in the cluster before setting
   up a cluster on Amazon. This cluster comprises of several components
   which areas follows:
+# comment should be 'which are as follows'  
   - [[./rsyslog_server.org][Rsyslog]]
   - [[./privatedns.org][Private DNS]]
   - [[./publicdns.org][Public DNS]]
@@ -36,6 +37,7 @@ an elaborate description of all the components in the cluster.
 
 ** Overall connectivity Diagram
    The diagram below shows how the different machines in the are
+# comment should be 'different machines in the cluster are' 
    connected to each other. It just shows the connection of each
    machine with the other, not specifying the protocol or the port with
    which they connect.

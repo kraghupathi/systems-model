@@ -8,111 +8,175 @@
 
 
 * Introduction
-This Documentation describes the *Reverse Proxy* server setup and
-*AWStats* setup for analytics of labs deployed on amazon/base1 using automated
-scripts.  These scripts are executed only from configuration server.
-This server is managed by [[./config-server.org][configuration server]]
+This document describes the requirements, design and implementation of
+the *Reverse Proxy* server setup and *AWStats*. The server is
+configured using ansible scripts/playbooks.  
 
-- Reverse-Proxy :: The client requests comes from router to
-                   reverseproxy and the reverse proxy then decides
-                   where to send those requests, and returns the
-                   content as if it was itself the destination.
-- AWStats :: AWStats is a one of the log analyzer which creates web
-             related trafic. This log analyzer gives us lab user's web
-             trafic information such as number of visitors and visits,
-             number of pages for a visit, etc. Data is graphically
-             presented in easy to read web pages
+Our cluster consist of many nodes. Reverse proxy is one of the main
+node in the cluster. All http and https requests external world are
+forwarded to reverse proxy to access the labs.  
+
+Log analyzer (AWStats) gives us lab user's web trafic information such
+as number of visitors and visits, number of pages for a visit,
+etc. Analytics can be viewed on terminal and also in the browser.
+
 * Requirements
-Requirements which are specific to reverseproxy defined below and all
-other requirements are defined in common role's requirements
-section. Please click [[./common.org][here]] for all other requirements.  The
-requirements to configure reverseproxy server are as follows.
-** Functional Requirements 
-  1) Allow incoming connections on tcp ports 80 and 443 from [[./router.org][router]]
-     and from internal network
-  2) Allow outgoing connections on tcp port 80
-    +  Forwards client requests to corresponding internal web server
-       where the lab has been deployed and sending reply to the
-       client.
-  3) Allow outgoing connections on tcp port 443
-    + OUTPUT rule for tcp port 443 is required for yum
-  5) Store the analytics of each lab using AWStats (Logfile analyzer) 
-  for more functional requirements of reverseproxy you can find [[./common.org][here]]
+  Requirements which are specific to reverse proxy are defined below and
+  common requirements are defined in the [[common.org][common role]].
+** Functional Requirements
+ 1) Allow incoming connections on tcp ports 80 and 443
+    to accept the web requests coming from the [[./router.org][router]].
+ 2) Allow outgoing connections on tcp port 80 to forward the
+    client. And also required for yum. This requirement is fulfilled by [[Firewall
+     rules][OUTPUT rule for 80 in firewall rules section]]
+ 3) Allow outgoing connections on tcp port 443 for yum. This
+    requirement is fulfilled by [[ Firewall rules][OUTPUT rule for 443 in firewall rules
+    section]]
+ 4) Stores analytics of each lab using AWStats (Logfile analyzer).
+ 5) Revers proxy uses router IP as default gateway to reach the
+    external world.
+** Security Requirements
+  1) Accept incoming connections on tcp ports 80 and 443 from
+     anywhere.
+  2) Allow outgoing connections on port 80 to local network only.
  
-** Security Requirements 
-  1) Accept incoming and outgoing connections on tcp ports 80 and 443 *only* from internal
-     network and from the [[./router.org][router]]
-   for more security requirements of reverseproxy you can find [[./common.org][here]]
 * Design
-#+CAPTION:  Reverse-Proxy Network Diagram
-#+LABEL:  fig-reverseproxy-diagram
-#+NAME: fig-reverseproxy-diagram
-** Overall network diagram of reverseproxy
-The following network diagram represents the reverseproxy server's
-communication with other services and servers. In this diagram only
-reverseproxy is active node. It shows the connections from/to
-reverseproxy to/from other servers such as [[./router.org][router]], web servers  etc.
-[[./diagrams/Network-Diagram-of-ReverseProxy.png]]
+   Reverse proxy server accepts the http and https requests(coming from
+   external world)from the router. Those requests are redirected to
+   reverse proxy server and the reverse proxy then decides where to send
+   those requests, and returns the content as if it was itself the
+   destination.
+   
+   Reverse proxy server is reachable(PINGable) from other nodes as well.
+   
+   This node has been configured using reverse proxy ansible role from
+   the config-server. If the requests coming from external world,
+   router accepts the requests and forwards them to reverse proxy
+   server.  Then the reverse proxy decides where to send those
+   requests based on virtual host entries in the reverse proxy
+   server's apache configuration. In this case both public DNS and
+   private DNS are needed for name resolving.
+   
+   So reverse proxy contacts other labs(containers) using private
+   DNS. After contacting lab servers, reverse proxy server sends
+   response back to the lab requester(via the router.  Note that only
+   external requests are served through reverseproxy.  If for some
+   strange reason lab1 need to access lab2 then they can contact each
+   other using private-dns without depending upon reverseproxy.
+
+   Firewall rules are configured as per the security
+   requirements. Other requirements such as fail2ban,logwatch etc.,
+   are configured by common role.
+   
+   AWStats configuration is also plays an important role in the
+   reverse proxy server.  Awstats configuration is for processing web
+   (http and https) usage logs of each lab such that analytics of
+   client / user history are available in the reverse proxy server.
+
+** Network diagram 
+   The following network diagram represents the communication between
+   reverse and the other nodes in the cluster.
+   #+CAPTION:  Reverse-Proxy Network Diagram
+   #+LABEL:  fig-reverse proxy-diagram
+   [[./diagrams/Network-Diagram-of-ReverseProxy.png]] 
 
 ** System configuration files 
-The Following tables gives the information about the services and
-their configuration files where modifications are required to setup
-reverseproxy server and AWStats
-|------------+--------------------------------------+-------------------+--------------------------------------|
-| Service    | File                                 | Associated with   | File Type                            |
-|------------+--------------------------------------+-------------------+--------------------------------------|
-| httpd      | /etc/httpd/conf/httpd.conf           | reverseproxy role | httpd main Configuration             |
-|------------+--------------------------------------+-------------------+--------------------------------------|
-| httpd      | /etc/httpd/conf.d/virtulhosts.conf   | reverseproxy role | virtual hosts entries  configuration |
-|------------+--------------------------------------+-------------------+--------------------------------------|
-| AWStats    | /etc/httpd/conf.d/awstats.conf       | reverseproxy role | httpd configuration file for AWStats |
-|------------+--------------------------------------+-------------------+--------------------------------------|
-| AWStats    | /etc/awstats/awstats.{{labURL}}.conf | reverseproxy role | awstats configuration files for labs |
-|------------+--------------------------------------+-------------------+--------------------------------------|
-| iptables   | /etc/sysconfig/iptables              | Reverseproxy      | firewall rules                       |
-|------------+--------------------------------------+-------------------+--------------------------------------|
-| sshd       | /etc/sshd_config                     | Common  Role      | ssh configuration file               |
-|------------+--------------------------------------+-------------------+--------------------------------------|
-| nameserver | /etc/resolve.conf                    | Common role       | nameservers                          |
-|------------+--------------------------------------+-------------------+--------------------------------------|
-| IP         | /etc/sysconfig/network-scripts/      | amazon console    | network interfaces  file             |
-|------------+--------------------------------------+-------------------+--------------------------------------|
-| fail2ban   | /etc/fail2ban/jail.local             | Common Role       | fail2ban configuration file          |
-|------------+--------------------------------------+-------------------+--------------------------------------|
-| logwatch   | /etc/logwatch/logwatch.conf          | Common Role       | logwatch configuration file          |
-|------------+--------------------------------------+-------------------+--------------------------------------|
-* Implementation 
-The implementation of the reverseproxy server and awstats are done
-with the following steps.
-- Note :: In this implementation, variables are used in different
-          places using "{}". Values of these variables are defined in
-          [[./common_vars.org][common_vars role]]. For more information about variable
-          definition, go through the common_vars role.
+   The Following table gives the information about the services and
+   their configuration files where modifications are required to setup
+   reverse proxy server and AWStats
+
+   |----------+--------------------------------------+--------------------------------------|
+   | Service  | File                                 | Description                          |
+   |----------+--------------------------------------+--------------------------------------|
+   | httpd    | /etc/httpd/conf/httpd.conf           | httpd main Configuration             |
+   |----------+--------------------------------------+--------------------------------------|
+   | httpd    | /etc/httpd/conf.d/virtulhosts.conf   | virtual hosts entries  configuration |
+   |----------+--------------------------------------+--------------------------------------|
+   | AWStats  | /etc/httpd/conf.d/awstats.conf       | httpd configuration file for AWStats |
+   |----------+--------------------------------------+--------------------------------------|
+   | AWStats  | /etc/awstats/awstats.{{labURL}}.conf | awstats configuration files for labs |
+   |----------+--------------------------------------+--------------------------------------|
+   | iptables | /etc/sysconfig/iptables              | firewall rules                       |
+   |----------+--------------------------------------+--------------------------------------|
+   | IP       | /etc/sysconfig/network-scripts/      | network interfaces  file             |
+   |----------+--------------------------------------+--------------------------------------|
+
+* Implementation
+  The implementation of the reverse proxy server and awstats is done with
+  the following steps.
+  
+- Note :: In this implementation, variables are used in various places
+          using "{}". Values of these variables are defined in
+          [[common_vars.org][common_vars role]].  Use proxy_env variable if network uses
+          any proxy, else comment that or remove the line.
+	  
 ** Directory structure of the scripts
-The implementation of this system is in terms of a collection of Ansible scripts that
-configures the machine. Scripts are organized as follows:
+   The implementation of this system is in terms of a collection of
+   Ansible scripts that configures the machine. Scripts are organized as
+   follows:
 
-#+BEGIN_EXAMPLE
-
-|-- reverseproxy_server.yaml
-roles/reverseproxy_sever/
-|-- files
-|   `-- httpd_awstats.conf
-|-- handlers
-|   `-- main.yaml
-|-- tasks
-|   `-- main.yaml
-`-- templates
+   #+BEGIN_EXAMPLE
+   
+   |-- reverseproxy_server.yaml
+   roles/reverseproxy_sever/
+   |-- files
+   |   `-- httpd_awstats.conf
+   |-- handlers
+   |   `-- main.yaml
+   |-- tasks
+   |   `-- main.yaml
+   `-- templates
     |-- awstats.reverseproxy.conf
     |-- iptables
     `-- virtualhosts.conf
+   
+   #+END_EXAMPLE
+   Here =reverseproxy_server.yaml= file configures reverseproxy with
+   reverseproxy_server and other roles. [[Main Configuration file][See here for other roles]]
+   
+   =roles/reverseproxy_server/files/httpd_awstats.conf= file is to
+   configure awstats, so that user can see awstats of labs from
+   specific ips. Template is created [[Allow access to awstats from management ips][here]] and task is implemented [[Apply allow access to awstats from management ips][here]]
+   
+   =roles/reverseproxy_server/handlers/main.yaml= file defines various
+   handlers which are only executed in case a task notifies them.
+   Handlers are described in detail at [[Handlers][handlers]]. The handlers are only
+   called when tasks are called as part of the reverseproxy_server
+   role.  Various templates and files are used during task execution
+   for creating necessary configuration files.
+   
+   =roles/reverseproxy_server/tasks/main.yaml= file consist of various
+   tasks which are needed for setting up reverseproxy server and
+   awstats.
+   
+   =roles/reverseproxy_server/templates/awstats.reverseproxy.conf=
+   file is a template to configure awstats for each lab. This template
+   is created at [[Default template to configure AWStats][template]] section and the task is implemented [[Configure AWStats for each lab][here]]
+   
+   =roles/reverseproxy_server/templates/iptables= is a firewall rules
+   template. Implementation of these firewall rules are [[Firewall rules][here]]
+   
+   =roles/reverseproxy_server/templates/virtualhosts.conf= is a
+   virtual hosts template for adding various domains as virtual hosts
+   in apache configuration file. This template is created [[Create a template for virtualhosts][here]] and
+   task of this is [[Configuring virualhosts][here]]
 
+** Tasks
+*** Firewall rules
+- Description of firewall rules which are common across all the nodes
+  in the cluster including reverse proxy server are described in
+  [[./common.org][common role]].
+- Rules which are specific to reverse proxy server are described [[Allow HTTP(80) and HTTPS(443) packets][here]].
+
+<<<<<<< HEAD
 #+END_EXAMPLE
 
 ** Firewall rules
 - Rules which are specific to reverseproxy server are described [[Allow HTTP(80) and HTTPS(443) packets][here]].
 - Description of some firewall rules of this reverseproxy and which are common
   across all the systems are described in [[./common.org][common role]].  
+=======
+>>>>>>> develop
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/templates/iptables
 *filter
 :INPUT ACCEPT [0:0]
@@ -145,11 +209,19 @@ roles/reverseproxy_sever/
 
 -A INPUT -p tcp -m tcp -s {{nagios_server_ip}} --dport 22 -j ACCEPT
 ####### Begin Specific to reverseproxy #######
+<<<<<<< HEAD
 # Allow incoming http packets from internal network
 -A INPUT -s {{local_subnet}} -p tcp -m tcp --dport 80 -j ACCEPT
 
 #Allow incoming https packets from internal network and router
 #-A INPUT -s {{local_subnet}} -p tcp -m tcp --dport 443 -j ACCEPT
+=======
+# Allow incoming http packets from local subnet via the router
+-A INPUT -s {{local_subnet}} -p tcp -m tcp --dport 80 -j ACCEPT
+
+#Allow incoming https packets from local subnet via the router
+-A INPUT -s {{local_subnet}} -p tcp -m tcp --dport 443 -j ACCEPT
+>>>>>>> develop
 ###### END specific reverseproxy #######
 #Allow incoming NRPE queries for nagios from nagios servers
 -A INPUT -m state --state NEW -p tcp -m tcp --dport 5666 -j ACCEPT
@@ -194,18 +266,26 @@ roles/reverseproxy_sever/
 #Reply with proper ICMP error message and reject the connection
 -A OUTPUT -j REJECT --reject-with icmp-host-prohibited
 #+END_SRC
+<<<<<<< HEAD
 *** Allow HTTP(80) and HTTPS(443) packets
 - The firewall rule accepts HTTP(80) and HTTPS(443) packets from internal network and
 from the [[.router.org][router]]. 
 - In this model, only HTTP packets are accepted. As a future
   requirement, accept rule for incoming connections on tcp port 443 is
   commented.
+=======
+**** Allow HTTP(80) and HTTPS(443) packets
+     The firewall rule accepts HTTP(80) and HTTPS(443) packets from the
+     [[.router.org][router]].
+
+>>>>>>> develop
 #+BEGIN_SRC example
 # Allow incoming http packets from internal network
 -A INPUT -s {{local_subnet}} -p tcp -m tcp --dport 80 -j ACCEPT
 #Allow incoming https packets from internal network and router
 #-A INPUT -s {{local_subnet}} -p tcp -m tcp --dport 443 -j ACCEPT
 #+END_SRC
+<<<<<<< HEAD
 ** Install required packages
   Install required packages for setting up reverse proxy and awstats.
   Required packages are
@@ -216,6 +296,17 @@ from the [[.router.org][router]].
 - Note :: Install "mod_ssl" for HTTPS access. Currently HTTPS access
           is not enabled. Enable it if it has a valid certificate and
           test the implementation using
+=======
+*** Install required packages
+    Following packages are installed for setting up reverse proxy.
+    Required packages are:
+    =httpd=
+    =awstats=
+    =mod_ssl=
+    
+- Note :: Install "mod_ssl" for HTTPS access. Enable it if it has a
+          valid certificate and test the implementation using
+>>>>>>> develop
           https://www.ssllabs.com/ssltest/index.html
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml
 ---
@@ -224,42 +315,58 @@ from the [[.router.org][router]].
   with_items:
     - httpd
     - awstats
-   environment: proxy_env
+    - mod_ssl
+#   environment: proxy_env
 #+END_SRC
-** Hostname 
- This task changes the hostname of VM.
+*** Set the hostname 
+    The following task sets the hostname of the instance.
+
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml
 ---
-- name: Changing the hostname
+- name: Setting the hostname
   hostname: name=reverseproxy.virtual-vlabs.ac.in
 #+END_SRC
-** Configuring firewall rules 
-Copy =iptables= template which was created at [[Firewall rules]] to reverseproxy.
-#+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml
- - name: Configure iptables firewall
-   template: src=iptables dest=/etc/sysconfig/iptables owner=root group=root mode=600
-   notify:
-    - restart iptables
-#+END_SRC
-** Configuring apache web server
- To support multiple virtual-hosts, enable *NameVirtualHost *:80* in =/etc/httpd/conf/httpd.conf=, and
- restart the apache web-server
-#+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml
-- name: Configure apache to support multiple virtualhosts
-  lineinfile: line="NameVirtualHost *:80" regexp="^NameVirtualHost .*:80" dest=/etc/httpd/conf/httpd.conf
-  notify:
-    - restart httpd
-#+END_SRC
-** Create a template for virtualhosts
-This =virtualhosts.conf= template defines virtual-hosts.  The
-template uses "proxy_domains" variable which is defined in common_vars
-role, "proxy_domains" variable defines the lab's hostname/FQDN.  
-In the following template added default virtual host entry to
-reverseproxy server itself to access awstats from browser.
+*** Configuring firewall rules 
+    The following task Copies =iptables= template created at [[Firewall
+    rules section]] to reverse proxy and notifies to restart the
+    iptables service if there are any modifications in the
+    configuration.
 
-- Note :: If you are working on BASE1, Please change *if condition* of
-          the following template according to your domain name of
-          reverseproxy which is defined in [[./common_vars.org][common_vars role]]
+#+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml
+- name: Configure iptables firewall
+  template: src=iptables dest=/etc/sysconfig/iptables owner=root group=root mode=600
+  notify:
+   - restart iptables
+#+END_SRC
+*** Configuring apache web server
+**** Enable http virtual-hosts
+     To support multiple http virtual-hosts *NameVirtualHost *:80* in
+     =/etc/httpd/conf/httpd.conf= is enabled with the following task.
+
+#+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml
+- name: Configure apache to support multiple http virtualhosts
+  lineinfile: line="NameVirtualHost *:80" regexp="^NameVirtualHost .*:80" dest=/etc/httpd/conf/httpd.conf
+#+END_SRC
+**** Enable https virtual-hosts
+     To support multiple https virtual-hosts *NameVirtualHost *:443* in
+     =/etc/httpd/conf/httpd.conf= is enabled with the following task.
+
+#+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml
+- name: Configure apache to support multiple https virtualhosts
+  lineinfile: line="NameVirtualHost *:443" regexp="^NameVirtualHost .*:443" dest=/etc/httpd/conf/httpd.conf
+#+END_SRC
+*** Create a template for virtualhosts
+    Following =virtualhosts.conf= template defines http and https
+    virtual-hosts.  The template uses "proxy_domains" variable which
+    is defined in common_vars role. In the following template, default
+    virtual host entry is added as reverse proxy server, to access the
+    awstats from browser.
+
+- Note :: If you are working on BASE1/BASE4, Please change *if
+          condition* of the following template according to your
+          domain name of reverse proxy which is defined in [[./common_vars.org][common_vars
+          role]]. if not, you will not be able to view the awstats from
+          browser.
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/templates/virtualhosts.conf
 
 {% for domain in proxy_domains %}
@@ -284,30 +391,39 @@ CustomLog logs/{{domain.domain}}-access_log combined
 ProxyPass http://{{domain.domain}}/
 </Location>
 </VirtualHost>
+
+<VirtualHost *:443>
+ServerAdmin engg@vlabs.ac.in
+#DocumentRoot /var/www/html
+ServerName {{domain.domain}}
+ServerAlias {{domain.alias}}
+ErrorLog logs/{{domain.domain}}-error_log
+CustomLog logs/{{domain.domain}}-access_log combined
+<Location />
+ProxyPass http://{{domain.domain}}/
+</Location>
+</VirtualHost>
 {% endif %}
 
 {% endfor %
 #+END_SRC   
-** Configuring virualhosts
-Copy =virtualhosts.conf= template to reverseproxy server's apache
-configuration file  =/etc/httpd/conf.d/virtualhosts.conf=  and
-restart the apache web server if configuration file is modified.
+*** Configuring virualhosts
+    Copy =virtualhosts.conf= template to reverse proxy server's apache
+    configuration file.
  #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml
- - name: Configure virtual-host for all proxy_domains
-   template: src=virtualhosts.conf dest=/etc/httpd/conf.d/virtualhosts.conf
-   notify:
-    - restart httpd
+- name: Configure virtual-host for all proxy_domains
+  template: src=virtualhosts.conf dest=/etc/httpd/conf.d/virtualhosts.conf
  #+END_SRC
-** AWStats configuration
-*** Default template to configure AWStats
-In this following template we modified three fields in order to
-configure AWStats for each lab. ={item}= variable used as domain name
-of each lab which is defined in [[./common.org][common role]]
-  + LogFile
-  + SiteDomain
-  + Hostaliases
-
-The actual default template to be copied to reverseproxy is 
+*** AWStats configuration
+**** Default template to configure AWStats
+     In the following template three fields are modified in order to
+     configure AWStats for each lab. ={item}= variable used as domain
+     name of each lab is defined in [[./common.org][common role]] 
+     =LogFile= 
+     =SiteDomain=
+     =Hostaliases=
+    
+     The actual default template to be copied to reverseproxy is 
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/templates/awstats.reverseproxy.conf
 # AWSTATS CONFIGURE FILE 7.0
 #-----------------------------------------------------------------------------
@@ -1860,20 +1976,27 @@ ExtraTrackedRowsLimit=500
 #Include ""
 
 #+END_SRC
-*** Configure AWStats for each lab
-Copy default [[AWStats configuration][awstats.reverseproxy.conf]] template to reverseproxy 
+**** Configure AWStats for each lab
+     The following task does:
+     1) Copy default [[AWStats configuration][awstats.reverseproxy.conf]] template to reverse proxy.
+     2) creates separate awstats configuration file for each
+        domain-name.
+     (NOTE:: This task uses awstats_domains variable and this is
+     defined in common-vars role. This task)
+
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml
-#Note that extra awstats file which are not deleted when a domain is removed from proxy_domains list 
+#Note that extra awstats file which are not deleted when a domain is removed from awstats_domains list 
 #is not an issue
 - name: Create one awstats file for each proxy domain
   template: src=awstats.reverseproxy.conf dest="/etc/awstats/awstats.{{item}}.conf"
   with_items: awstats_domains
 #+END_SRC
 
-*** Allow access to awstats  from management ips
-To allow access to awstats from management ips , configure apache
-server's configuration file =/etc/httpd/conf.d/awstats.conf= by adding
-"allow from management ips".
+**** Allow access to awstats from management ips
+To access awstats from management ips , configure apache server
+configuration file =/etc/httpd/conf.d/awstats.conf= by adding "allow
+from management ips" and proper apache syntax.
+
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/files/httpd_awstats.conf
 #
 # Content of this file, with correct values, can be automatically added to
@@ -1912,20 +2035,24 @@ ScriptAlias /awstats/ "/usr/share/awstats/wwwroot/cgi-bin/"
     SetEnv PERL5LIB /usr/share/awstats/lib:/usr/share/awstats/plugins
 </IfModule>
 #+END_SRC
-*** Apply allow access to awstats from everywhere
-Copy configured [[Allow access to awstats from everywhere][httpd_awstats.conf]] file for accessing
-awstats from everywhere to reverseproxy and apply proper ownership, group and mode
-permissions to the configuration file. Restart the apache web server if
-anything is modified in the configuration file
+**** Apply allow access to awstats from management ips
+Copy [[Allow access to awstats from everywhere][httpd_awstats.conf]] configuration file to reverseproxy and with
+proper ownership, group and mode permissions for accessing awstats
+from specific ips. The following task is notified to restart apache
+web server if there are any changes in the apache configuration.
+
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml
-- name: Allow access to awstats from everywhere
+- name: Allow access to awstats from specific ips
   copy: src=httpd_awstats.conf dest=/etc/httpd/conf.d/awstats.conf owner=root group=root mode=644
   notify:
     - restart httpd
 #+END_SRC
-** Restarting services
-Restarting the services (httpd and iptables) if anything is modified in
-configuration file 
+** Handlers
+*** Restart the services
+    Restart the services httpd and iptables if there are any changes
+    in the configuration. These handlers are called when associated
+    tasks in =tasks/main.yaml= notifies to restart the services.
+
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/handlers/main.yaml 
 ---
 - name: restart httpd
@@ -1936,15 +2063,16 @@ configuration file
 
 #+END_SRC
 ** Main Configuration file
-This is the main script which includes other tasks/roles mentioned
-below which we run on reverseproxy server.
- 1) common
- 2) ossec_client
- 3) common_vars
- 4) rsyslog_client 
+   The main script which includes other tasks/roles mentioned below
+   which runs on the reverse proxy server as follows.
 
+ 1) =common=
+ 2) =ossec_client=
+ 3) =common_vars=
+ 4) =rsyslog-client=
+ 5) =nagios-client=
 
-#+BEGIN_SRC yaml :tangle reverseproxy_server.yaml
+#+BEGIN_SRC yaml :tangle reverseproxy-server.yaml
 ---
 - name: This file configures reverseproxy server
   hosts: reverseproxy_server
@@ -1960,18 +2088,19 @@ below which we run on reverseproxy server.
 #+END_SRC
 * Test Cases
 ** Test Case ID: Reverseproxy test Without internal(Private) DNS  
-This test case is done without internal (private)DNS configuration.
-For internal name resolving used =/etc/hosts/= file of the container
-***  Objective 
-Test to check whether the client requests are going via reverseproxy
-and returns the content of particular lab.
+   This test is done without internal (private)DNS configuration.  For
+   internal name resolving =/etc/hosts/= file is used.
+
+*** Objective
+    Test to check whether the client requests are going via
+    reverseproxy and particular lab is served.
 *** Apparatus 
             - Three containers ::
               1) reverseproxy server 
               2) lab1 container 
               3) lab2 container 
-            - /etc/hosts of reverseproxy  ::
-              1) To add hostnames of labs. These labs points to
+            - Reverseproxy ::
+              1) To add hostnames of the labs. These labs points to
                  corresponding lab ips and 
 	      2) For internal name resolution.
             - PC/extra container ::
@@ -1980,9 +2109,10 @@ and returns the content of particular lab.
              
 *** Procedure 
 + Follow the bellow steps to test the reverseproxy 
-  1) Create a container for reverseproxy server
-     IP:172.172.172.92
-     Run the reverserproxy_server.yaml script to setup reverseproxy server
+  1) Reverse proxy server is already setup by running the ansible
+     playbooks from config_server and IP of reverse proxy server is
+     172.172.172.92
+
   2) Create two new containers lab1 and lab2 and install dependencies
      + lab1 details
        IP: 172.172.172.250
@@ -1993,18 +2123,13 @@ and returns the content of particular lab.
      + Dependencies ::
          a) httpd
          b) php(if needed)
-  3) Add virtual host entries in reverseproxy.
+  3) Add virtual host entries in reverse proxy.
      + Adding virtual host entries is taken care by ansible scripts
        of reverseproxy_server.
-     + This virtualhost entry is needed for reverseproxy in order to
-       send the incoming HTTP and HTTPS packets to internal web
-       servers and reverseproxy is responsible for where to send these
-       packets based on ServerName field in virtualhost entry
-  4) create index.html file in each lab container  
-     + These index.html files are may be dummy html files just for testing. 
-     + these files are required to test whether the reverseproxy is forwarding
-       the HTTP packets to internal web server or not, based on virtualhost
-       entry.
+  4) create an index.html file just for testing in each lab container  
+     + These files are used to test whether the reverse proxy is
+       forwarding the http and https packets to corresponding lab or
+       not, based on virtualhost entry.
   5) Add hostname of each lab in =/etc/hosts= by giving ip of lab in
      reverseproxy and for internal name resolution.
   6) Use command line commands such as wget, curl, ping etc to test
@@ -2073,8 +2198,9 @@ and returns the content of particular lab.
       #+END_SRC
   
 *** Observation 
-  - Absence of --no-proxy (if network uses any proxy server), gives
-    you following error.
+  - Absence of --no-proxy (if network uses any proxy server), throws
+    the follwoing error.
+
    #+BEGIN_SRC example
    Proxy request sent, awaiting response... 503 Service Unavailable
    2015-03-26 02:06:09 ERROR 503: Service Unavailable.
@@ -2082,13 +2208,16 @@ and returns the content of particular lab.
   - Logs are being stored in reverseproxy    
 *** Result 
  Reverse Proxy is working
+*** Conclusion 
+    Reverse proxy server is able to forward requests to corresponding
+    labs.
 ** Test Case ID : Reverseproxy test using internal(private) DNS, Public DNS and Router 
 
 *** Objective 
 Test to check the reverseproxy function using private DNS and Public DN
-  - Note :: Here Public DNS not yet configured on AWS. So we are using
-            existing public DNS(ns1-pub.virtual-labs.ac.in) which is configured in  BASE2
-            machine.
+  - Note :: Here Public DNS is not yet configured on AWS. So we are
+            using existing public DNS(ns1-pub.virtual-labs.ac.in)
+            which is configured in BASE2 machine.
 *** Apparatus 
   1) *Router*: 
      To forward HTTP(80), HTTPS(443) and DNS(53) packets to specific servers. 
@@ -2101,22 +2230,23 @@ Test to check the reverseproxy function using private DNS and Public DN
      To add DNS entries, so that labs can be accessible anywhere
      within in the internal network using host name of the lab
 *** Procedure  
-  - Assume private DNS and public DNS are configured and added DNS
-    entries of each lab properly. 
+  - Assume private DNS and public DNS are configured and DNS
+    entries of each lab are added properly. 
   - Now browse the Lab URL from browser. Then the next procedure
-    takes place.
-  - Router accepts HTTP and HTTPS packets from external world (lab
-    user)and [[./router.org][router]] forwards the requests to reverseproxy server since
-    router has the forwarding capacity. And then reverseproxy accepts
-    the HTTP and HTTPS packets from [[./router.org][router]] and from internal network,
-    based on ServerName directive in virtualhost, reverseproxy sends
-    these packets to internal web servers and returns reply to
-    internal network and to the router. Router then gives the reply to
-    lab user with the requested web pages.
+    takes place as follows:
 
+  - Router accepts HTTP and HTTPS packets from external world (lab
+    user)and router forwards the requests to reverseproxy server since
+    router has the forwarding functionality. And then reverseproxy
+    accepts the HTTP and HTTPS packets from router and from internal
+    network, based on ServerName directive in virtualhost,
+    reverseproxy sends these packets to internal web servers and
+    returns reply to internal network and to the router. Router then
+    gives the reply to lab user with the requested web pages for
+    external lab users.
 *** Experiment 
-  - Added lab1's ip to private DNS by giving the sub-domain as lab1.
-  - Added router's public ip to public DNS by giving the sub-domain as lab1.
+  - Add lab1's ip to private DNS by giving the sub-domain as lab1.
+  - Add router's public ip to public DNS by giving the sub-domain as lab1.
   - Using browser ::
    Browse the following lab URL 
    #+BEGIN_SRC example
@@ -2127,22 +2257,20 @@ Test to check the reverseproxy function using private DNS and Public DN
  Displaying lab's content and logs are being stored at reverseproxy
  server.
 *** Result 
-Reverseproxy working
+Reverse proxy working.
 *** Conclusion 
-Reverseproxy setup properly, we are able to access the lab using
-domain name of the lab and logs are being stored for analytics.
+Reverse proxy is setup properly, lab users are able to access the lab
+using domain name of the lab and logs are being stored for analytics.
+
 ** Test Case ID : AWStats test
 *** Objective 
 Test to check the AWStats for virtual hosts
 *** Apparatus 
-     1) Default virtual-host entry for reverseproxy to serve awstats
-        from the browser
-     2) Access log file for each lab to check the accepted log messages 
-     3) Error log file for each lab to check the error log messages.
-     4) A workstation to access the analytics from the browser.
+     1) Reverse proxy : To store analytics and serve awstats from the
+        browser
+     2) A workstation : To access the analytics/awstats from reverse
+        proxy using the browser.
 *** Procedure  
-     - Run the reverseproxy_server ansible scripts to setup
-       virtualhost entries and awstats. 
      - Run the following command to update analytics of all the labs
        at a time     
        #+BEGIN_SRC example
@@ -2193,7 +2321,7 @@ Test to check the AWStats for virtual hosts
 *** Observation 
  Analytics are being stored 
 *** Result 
- Awstats are running fine
+    Awstats are running fine
 *** Conclusion 
   Awstats ( analytics of each lab ) are storing and able to access the
   analytics from browser

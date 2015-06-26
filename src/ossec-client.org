@@ -1,0 +1,68 @@
+#+TITLE: Ossec Client
+#+PROPERTY: session *scratch*
+#+PROPERTY: results output
+#+PROPERTY: exports code
+#+SETUPFILE: org-templates/level-0.org
+#+OPTIONS: ^nil
+
+* tasks/main.yaml
+#+BEGIN_SRC YAML :tangle roles/ossec_client/tasks/main.yaml
+---
+  - name: Install gcc postgres and mysql
+    yum: name="{{item}}" state=present
+    environment: proxy_env
+    with_items:
+      - gcc
+      - postgresql-devel
+      - mysql-devel
+
+  - name: Download Ossec server/agent
+    get_url: url="{{ossec_url}}" dest="{{ossec_path}}".tar.gz
+    environment: proxy_env
+
+  - name: Extract Ossec server code
+    unarchive: copy=no src="{{ossec_path}}".tar.gz dest="{{ossec_extract_path}}" creates="{{ossec_path}}"
+
+  - name: Copy the Ossec_input file
+    template: src=ossec_client_input.j2 dest="{{ossec_path}}/ossec_client_input.txt"
+
+  - name: Install Ossec-agent
+    shell: ./install.sh < ossec_client_input.txt
+    args:
+      chdir: "{{ossec_path}}"
+      creates: /var/ossec/etc/ossec.conf
+
+  - name: Get the client key from server
+    copy: src="fetched/{{ossec_server_ip}}/var/ossec/etc/client.keys" dest=/var/ossec/etc/client2.keys
+
+  - name: Extract only the key for current client
+    shell: grep "{{ansible_default_ipv4.address}}" /var/ossec/etc/client2.keys > /var/ossec/etc/client.keys
+
+  - name: Delete other client keys
+    file: name=/var/ossec/etc/client2.keys state=absent
+
+  - name: Start Ossec server
+    service: name=ossec state=started
+#+END_SRC
+
+* templates
+** ossec client input
+#+BEGIN_SRC YAML :tangle roles/ossec_client/templates/ossec_client_input.j2
+en
+
+agent
+/var/ossec
+{{ ossec_server_ip }}
+y
+y
+y
+#+END_SRC
+
+* vars/main.yaml
+#+BEGIN_SRC YAML :tangle roles/ossec_client/vars/main.yaml
+---
+  ossec_url: https://github.com/ossec/ossec-hids/releases/download/v2.8.0/ossec-hids-2.8.tar.gz
+  ossec_path: /root/ossec-hids-2.8
+  ossec_manage_agent_input: /root/ossec_manage_agent_input.txt
+  ossec_extract_path: /root
+#+END_SRC

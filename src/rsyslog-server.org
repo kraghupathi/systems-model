@@ -1,0 +1,577 @@
+#+TITLE:     Rsyslog Server Role
+#+DATE:      2015-03-18 Wednesday
+#+PROPERTY: session *scratch*
+#+PROPERTY: results output
+#+PROPERTY: exports code
+#+SETUPFILE: org-templates/level-0.org
+#+DESCRIPTION: Rsyslog Server - Design and Documentation
+#+OPTIONS: ^:nil
+
+* Introduction
+  The rsyslog server provides the support for building a central
+  logging system, where a copy of the logs from the other nodes is
+  forwarded to the rsyslog server for security purposes.  If a node is
+  compromised then the attacker can potentially modify or delete the
+  logs present on the compromised node.  This limits the usability of
+  the locally stored logs on a node, after the node has been
+  compromised.
+
+  However an attacker cannot modify a copy of the logs sent by the
+  node to the rsyslog server. Attacker can at most send more spurious
+  log messages to the log server, but he/she cannot affect the
+  existing logs created during the machine compromise. Attacker can
+  also not affect the order of existing stored logs on the central log
+  server.
+
+  Thus initial logs which are created during break-in are available in
+  chronological order on central log server for enabling Root Cause
+  Analysis (RCA) of the break-in using log messages.  Without
+  performing RCA it is not possible to prevent the attacker from again
+  compromising the machine with reasonable confidence.
+
+  The setup of rsyslog server as a central storage system requires
+  configuring all other nodes to send a copy of their log messages to
+  the rsyslog server.  Thus the rsyslog server requires other nodes of
+  the cluster to be configured as the rsyslog clients (Ref [[./rsyslog-client.org][Rsyslog
+  Client]] role).
+
+* Description
+  Logs in rsyslog server will be kept for long duration (3 months or
+  more).  After the desired duration logs should be rotated
+  automatically with logrotate (*TODO*).  In current implementation
+  UDP is chosen over TCP for performance at the cost of reliability.
+  If a TCP based central log server is desired then both client and
+  server configuration would need to be changed appropriately.  Also
+  in case of TCP firewall rules at both rsyslog server and client
+  would have to be modified to allow communication over TCP 514,
+  instead of UDP 514.
+
+* Requirements
+   The functional and security requirements of the Rsyslog Server are
+   mentioned in the following sections. Only the Rsyslog Server
+   specific requirements which differ from the generic requirements
+   specified in the [[common%20role][common role]] are mentioned here.
+
+** Functional Requirements
+   Rsyslog service should run on UDP port 514 to accept log messages
+   from clients. These log messages should be saved in different
+   folders / files per client for easy reference.
+
+** Security Requirements
+   All common security requirements as described in [[file:common.org::*Security Requirements][common role]] are
+   applicable to rsyslog node with an exception for allowing incoming
+   connections to UDP port 514.
+
+* Design
+** Rsyslog server communication diagram
+   The below diagram shows various nodes that rsyslog server
+   communicates with and the TCP/IP ports / protocols used for
+   communication.  Only the important nodes are shown for brevity.
+
+#+CAPTION: Rsyslog server communication diagram
+#+LABEL: rsyslog-server-communication-diagram
+[[./diagrams/rsyslog-design-diagram.png]]
+
+** COMMENT Editable link for diagram
+   Editable link [[https://docs.google.com/a/vlabs.ac.in/drawings/d/16iv5DYT3_zrf6mrxTF1F7K_XkE9wfZdpaDNbPpDx99A/edit][google drawing editable link]]
+
+** Important configuration and data files and folders
+|------+----------+------------------------------+------------------------|
+| Sno. | Service  | File                         | File Type              |
+|------+----------+------------------------------+------------------------|
+|   1. | rsyslog  | /etc/rsyslog.conf            | System Configuration   |
+|------+----------+------------------------------+------------------------|
+|   2. | rsyslog  | /var/log/<client-hostname>/* | Log Data               |
+|------+----------+------------------------------+------------------------|
+|   3. | iptables | /etc/sysconfig/iptables      | Firewall Configuration |
+|------+----------+------------------------------+------------------------|
+
+** Installed packages
+   Stable packages available for chosen distribution are installed
+   from the standard repositories.
+
+   =rsyslog-5.8.10-10.el6_6.x86_64= /is the latest stable rsyslog package for CentOS 6.6 at the time of writing./
+
+* Implementation
+** Structure of Scripts
+   The implementation of this system is in terms of a collection of
+   ansible scripts which configures the node. These scripts are
+   organized as follows:
+
+#+BEGIN_EXAMPLE
+|-code
+|   |-- rsyslog_server.yml
+|   |-- roles
+|   |   |-- rsyslog_server
+|   |   |   |-- handlers
+|   |   |   |   `-- main.yml
+|   |   |   |-- tasks
+|   |   |   |   `-- main.yml
+|   |   |   |-- templates
+|   |   |   |   `-- iptables
+|   |   |   |-- files
+|   |   |   |   `-- rsyslog_server.conf
+#+END_EXAMPLE
+
+   Here =rsyslog_server.yml= file configures rsyslog_server host with
+   rsyslog_server and common roles as explained in detail at [[Building rsyslog server hosts file with appropriate roles][Building
+   rsyslog server hosts file with appropriate roles]].
+   =roles/rsylog_server/handlers/main.yml= file defines various
+   handlers which are only executed in case a task notifies them.
+   Handlers are described in detail at [[Building ansible handlers for configuring rsyslog server][Building ansible handlers for
+   configuring rsyslog server]]
+   
+   The handlers are only called when tasks described at [[Building ansible tasks for configuring rsyslog server][Building
+   ansible tasks for configuring rsyslog server]] are called as part of
+   the rsyslog_server role.  Various templates and files are used
+   during task execution for creating necessary configuration files.  
+
+** Firewall rules for rsyslog server
+   The firewall rules applied to the rsyslog server are mentioned here
+   in ansible template format.  Description of firewall rules which
+   are common across all the systems is present in the [[file:common.org::*Common Firewall Rules][common role]].
+   Deviation from firewall rules proposed in common role are described here:
+
+   1. Server accepts incoming log messages on port 514 from anywhere. Defined in
+      line number 37, 38 below.
+*** Firewall Rules
+    Following ansible template is created in
+    =roles/rsyslog_server/templates/iptables= file which is later
+    installed by ansible task [[Set iptables firewall rules using template][Set iptables firewall rules using template]].
+#+BEGIN_SRC yml -n :tangle roles/rsyslog_server/templates/iptables :eval no
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+
+#Accept loopback connections
+-A INPUT -i lo -d 127.0.0.0/8 -j ACCEPT
+
+#Rate limit new connections to 20 new connections per 30 seconds
+-A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --set
+-A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --rcheck --seconds 30 --hitcount 20 -m limit --limit 2/min -j LOG --log-prefix "new_limit_"
+-A INPUT ! -p udp -m state --state NEW -m recent --name ssh_limit --rcheck --seconds 30 --hitcount 20 -j DROP
+
+#Accept ICMP ping requests at limited rate
+-A INPUT -p icmp --icmp-type echo-request -m limit --limit 60/minute --limit-burst 120 -j ACCEPT
+-A INPUT -p icmp --icmp-type echo-request -m limit --limit 1/minute --limit-burst 2 -j LOG 
+-A INPUT -p icmp --icmp-type echo-request -j DROP
+
+#Allow ongoing connections
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+#Allow incoming SSH connections from management IPs.  Hopefully fail2ban will take care of bruteforce attacks from management IPs
+{% for item in management_ips  %}  
+-A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
+
+#Allow incoming SSH connections from ansible server IPs.  Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
+{% for item in ansible_server_ips  %}  
+-A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
+
+#Allow incoming SSH connections from nagios server IPs.  Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
+{% for item in nagios_server_ips  %}  
+-A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
+
+#Allow to accept incoming rsyslog messages from anywhere
+-A INPUT -m state --state NEW -p udp -m udp --dport 514 -j ACCEPT
+
+#Allow incoming NRPE queries for nagios from nagios servers
+-A INPUT -m state --state NEW -p tcp -m tcp --dport 5666 -j ACCEPT
+
+#Log all other "blocked_input_" attempts with rate limiting
+-A INPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_input_"
+
+#Drop all other packets without sending ICMP error message back
+-A INPUT -j DROP
+
+#Do not allow any packet to be forwarded
+-A FORWARD -j DROP
+
+#Allow outgoing connections to localhost
+-A OUTPUT -s 127.0.0.0/8 -o lo -j ACCEPT
+
+#Allow outgoing replies to ansible from local SSH server
+{% for item in ansible_server_ips  %}
+-A OUTPUT -d {{item}} -p tcp -m tcp --sport 22 -j ACCEPT
+{% endfor %}
+
+#Allow ongoing connections
+-A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+
+#Allow DNS queries
+-A OUTPUT -p udp -m udp --dport 53 -j ACCEPT
+
+#Allow server to send emails.  Required for sending logwatch emails
+-A OUTPUT -p tcp -m tcp --dport 25 -j ACCEPT
+
+#Allow server to contact web-servers.  Required for yum update and installation
+#For restrictive configurations this can be disabled after install
+-A OUTPUT -p tcp -m tcp --dport 80 -j ACCEPT
+-A OUTPUT -p tcp -m tcp --dport 443 -j ACCEPT
+
+#Allow outgoing connections to OSSEC server
+-A OUTPUT -p udp -m udp --dport 1514 -j ACCEPT
+
+#Allow outgoing ping requests
+-A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT
+
+#Log all other "blocked_output_" attempts
+-A OUTPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_output_"
+
+#Reply with proper ICMP error message and reject the connection
+-A OUTPUT -j REJECT --reject-with icmp-host-prohibited
+
+COMMIT
+#+END_SRC
+    
+** Build configuration file
+*** Steps to configure rsyslog server by creating rsyslog.conf file
+    Rsyslog service is configured using =/etc/rsyslog.conf=
+    configuration file. Default configuration setup is edited as per
+    our requirements.
+**** Append following lines at the bottom of the file
+     Refer lines 81-84 at [[Complete rsyslog.conf configuration file][Complete rsyslog.conf configuration file]]
+     These lines configure rsyslog server to store log messages for
+     different hosts in separate folder based on hostname in /var/log
+     folder.  Further even for same remote host, separate files are
+     created to store messages from different programs.
+
+     #+BEGIN_EXAMPLE
+     $template TmplAuth, "/var/log/%HOSTNAME%/%PROGRAMNAME%.log"
+     authpriv.*      ?TmplAuth
+     *.info,mail.none,authpriv.none,cron.none   ?TmplAuth
+     #+END_EXAMPLE
+
+**** Uncomment following directives:
+     Refer lines 13-14 at [[Complete rsyslog.conf configuration file][Complete rsyslog.conf configuration file]]
+     These lines configure rsyslog server to accept log messages over
+     UDP 514 port
+
+     #+BEGIN_EXAMPLE
+     $ModLoad imudp
+     $UDPServerRun 514
+     #+END_EXAMPLE
+
+*** Complete rsyslog.conf configuration file
+    Configuration file with modifications is shown below:
+
+#+BEGIN_SRC yml -n :tangle roles/rsyslog_server/files/rsyslog_server.conf :eval no
+# rsyslog v5 configuration file
+
+# For more information see /usr/share/doc/rsyslog-*/rsyslog_conf.html
+# If you experience problems, see http://www.rsyslog.com/doc/troubleshoot.html
+
+#### MODULES ####
+
+$ModLoad imuxsock # provides support for local system logging (e.g. via logger command)
+$ModLoad imklog   # provides kernel logging support (previously done by rklogd)
+#$ModLoad immark  # provides --MARK-- message capability
+
+# Provides UDP syslog reception
+$ModLoad imudp
+$UDPServerRun 514
+
+# Provides TCP syslog reception
+#$ModLoad imtcp
+#$InputTCPServerRun 514
+
+
+#### GLOBAL DIRECTIVES ####
+
+# Use default timestamp format
+$ActionFileDefaultTemplate RSYSLOG_TraditionalFileFormat
+
+# File syncing capability is disabled by default. This feature is usually not required,
+# not useful and an extreme performance hit
+#$ActionFileEnableSync on
+
+# Include all config files in /etc/rsyslog.d/
+$IncludeConfig /etc/rsyslog.d/*.conf
+
+
+#### RULES ####
+
+# Log all kernel messages to the console.
+# Logging much else clutters up the screen.
+#kern.*                                                 /dev/console
+
+# Log anything (except mail) of level info or higher.
+# Don't log private authentication messages!
+*.info;mail.none;authpriv.none;cron.none                -/var/log/messages
+
+# The authpriv file has restricted access.
+authpriv.*                                              -/var/log/secure
+
+# Log all the mail messages in one place.
+mail.*                                                  -/var/log/maillog
+
+
+# Log cron stuff
+cron.*                                                  -/var/log/cron
+
+# Everybody gets emergency messages
+*.emerg                                                 *
+
+# Save news errors of level crit and higher in a special file.
+uucp,news.crit                                          -/var/log/spooler
+
+# Save boot messages also to boot.log
+local7.*                                                -/var/log/boot.log
+
+
+# ### begin forwarding rule ###
+# The statement between the begin ... end define a SINGLE forwarding
+# rule. They belong together, do NOT split them. If you create multiple
+# forwarding rules, duplicate the whole block!
+# Remote Logging (we use TCP for reliable delivery)
+#
+# An on-disk queue is created for this action. If the remote host is
+# down, messages are spooled to disk and sent when it is up again.
+#$WorkDirectory /var/lib/rsyslog # where to place spool files
+#$ActionQueueFileName fwdRule1 # unique name prefix for spool files
+#$ActionQueueMaxDiskSpace 1g   # 1gb space limit (use as much as possible)
+#$ActionQueueSaveOnShutdown on # save messages to disk on shutdown
+#$ActionQueueType LinkedList   # run asynchronously
+#$ActionResumeRetryCount -1    # infinite retries if host is down
+# remote host is: name/ip:port, e.g. 192.168.0.1:514, port optional
+#*.* @@remote-host:514
+# ### end of the forwarding rule ###
+$template TmplAuth, "/var/log/%HOSTNAME%/%PROGRAMNAME%.log"
+
+authpriv.*      ?TmplAuth
+*.info,mail.none,authpriv.none,cron.none   ?TmplAuth
+
+#+END_SRC
+
+    This configuration file is installed on rsyslog server using [[Set Rsyslog service][Set
+    Rsyslog service]] ansible task described later.
+
+** Tasks
+*** Install rsyslog package
+    Rsyslog package is installed on the node using [[./yum_ansible_module.org][Yum ansible module]].
+
+#+BEGIN_SRC yml :tangle roles/rsyslog_server/tasks/main.yml :eval no
+- name: Install rsyslog package
+  yum: name=rsyslog state=present
+  environment: proxy_env
+#+END_SRC 
+
+*** Configure rsyslog service
+    Rsyslog service is set by following steps:
+    1. Copy configuration file build at [[Build rsyslog.conf
+       configuration file for configuring rsyslog server][Build
+       rsyslog.conf configuration file for configuring rsyslog
+       server]] from the ansible node to the rsyslog server node.
+    2. Restart rsyslog service using [[Restart rsyslog service handler][Restart rsyslog service handler]]
+       to enforce the configuration.
+
+#+BEGIN_SRC yml :tangle roles/rsyslog_server/tasks/main.yml
+- name: Copying rsyslog configuration files
+  copy: src=rsyslog_server.conf dest=/etc/rsyslog.conf owner=root group=root mode=600
+  notify:
+    - restart rsyslog
+#+END_SRC
+
+*** Configure rsyslog service to automatically start on system boot
+    Start rsyslog service if it is not running and also configure it
+    to automatically start on next reboot.
+
+#+BEGIN_SRC yml :tangle roles/rsyslog_server/tasks/main.yml
+- name: Set rsyslog service for auto startup
+  service: name=rsyslog state=started enabled=yes
+#+END_SRC
+
+*** Configure iptables firewall rules using template
+    Firewall rules are set by following steps:
+    1. Copy iptables jinja2 template created in section [[Firewall rules for rsyslog server][Firewall rules
+       for rsyslog server]] from the ansible node to the rsyslog node.
+    2. Restart iptables service using [[Restart iptables handler][Restart iptables handler]] to
+       enforce the configuration.
+
+#+BEGIN_SRC yml :tangle roles/rsyslog_server/tasks/main.yml
+- name: Copy iptables configuration file
+  template: src=iptables dest=/etc/sysconfig/iptables owner=root group=root mode=600
+  notify:
+    - restart iptables
+#+END_SRC
+
+** Handlers
+*** Restart iptables handler
+    Any changes in iptables configuration file as part of task [[Configure iptables firewall rules using
+ template][Configure iptables firewall rules using template]] is enforced by
+    restarting the iptables.  Handler for restarting iptables is created
+    as follows:
+
+#+BEGIN_SRC yml :tangle roles/rsyslog_server/handlers/main.yml
+---
+ - name: Restart iptables
+   service: name=iptables state=restarted
+#+END_SRC
+
+*** Restart rsyslog service handler
+    Any changes in rsyslog configuration file as part of [[Configure rsyslog service][Configure rsyslog
+    service]] task is enforced to the system by restarting the rsyslog
+    service using handler created as follows:
+
+#+BEGIN_SRC yml :tangle roles/rsyslog_server/handlers/main.yml
+ - name: Restart rsyslog
+   service: name=rsyslog state=restarted
+#+END_SRC
+
+** Variables Definition
+   Following variables are used in the ansible scripts to configure
+   rsyslog server.
+   1. Proxy environment - =proxy_env=
+   2. Anisble server IPs - =ansible_server_ips=
+   3. Management station IPs - =management_ips=
+   4. Nagios server IPs - =nagios_server_ips=
+
+   Values of these variables is fetched from the [[file:common-vars.org::*Common Variables][Common vars]] role.
+
+** Building rsyslog server hosts file with appropriate roles
+   Rsyslog server is configured using =common= and =rsyslog_server=
+   role.
+
+#+BEGIN_SRC yml -n :tangle rsyslog_server.yml
+---
+- name: Configure rsyslog server 
+  hosts: rsyslog_server
+  remote_user: root
+  roles:
+   - common
+   - rsyslog_server
+#+END_SRC
+
+* Test Cases for testing rsyslog server soundness and completeness
+** Test Case-1 - Receiving sudo logs from client
+*** Objective
+   Test the system to accept incoming log messages from clients on
+   port UDP 514.
+*** Apparatus
+   1) Rsyslog server
+   2) Rsyslog client
+
+*** Theory
+   Rsyslog server accepts log messages from rsyslog clients on UDP
+   port 514. For node to be configured as rsyslog server firewall rule
+   of the node has to allow incoming connections on port 514.
+
+*** Experiment
+   Login to rsyslog server from one terminal and navigate to
+   =/var/log/<clienthostname>= directory. Do "tail -f su.log" in the
+   present working directory. Now from another terminal login to
+   rsyslog client node. Execute "sudo su -" command. Once login to the
+   client node a session gets created for the user and a system log is
+   generated. The log message are forwarded to rsyslog server and
+   saved there in a file. As a result messages should appear in the
+   first terminal screen.
+
+*** Result
+   Sample output is shown below for above procedure.
+
+#+BEGIN_EXAMPLE
+Mar 27 09:33:38 rsyslog-client su: pam_unix(su-l:session): session opened for user root by (uid=0)
+Mar 27 09:33:43 rsyslog-client su: pam_unix(su-l:session): session closed for user root
+#+END_EXAMPLE
+
+*** Observation
+   Messages are getting logged in the server in =su.log= file inside
+   =/var/log/<client-hostname>= directory with proper date and time.
+
+*** Conclusion
+   If the messages are getting logged in =su.log= file inside
+   =/var/log/<client-hostname>= directory with proper date and time
+   that means rsyslog server is configured properly.
+
+** Test Case-2 - Receiving SSH logs from client
+*** Objective
+   Test ssh logs are getting logged in rsyslog server
+
+*** Apparatus
+   1) Rsyslog server
+   2) Rsyslog client
+
+*** Theory
+   System generates log message every time an event occurs in the
+   system. When a login is made inside the system using ssh, node
+   generates "ssh log" message. This message is then forwarded to
+   rsyslog server.
+
+*** Experiment
+   Login to rsyslog server from one terminal and navigate to
+   =/var/log/<client-hostname>= directory. Monitor =sshd.log= file
+   using =tail -f sshd.log= command. Now from another terminal login
+   to rsyslog client node via ssh. The ssh log message is generated
+   which is then forwarded to rsyslog server and saved in a file. As a
+   result messages should appear in the first terminal screen.
+
+*** Result
+   Sample output is shown below for above chain of commands.
+
+#+BEGIN_EXAMPLE
+Mar 27 09:51:18 rsyslog-client sshd[3565]: Accepted password for root from 192.168.101.106 port 35795 ssh2
+Mar 27 09:51:18 rsyslog-client sshd[3565]: pam_unix(sshd:session): session opened for user root by (uid=0)
+#+END_EXAMPLE
+
+*** Observation
+   Messages are getting logged in the server in =sshd.log= file inside
+   =/var/log/<client-hostname>= directory with proper date and time.
+
+*** Conclusion
+   If the messages are getting logged in =sshd.log= file inside
+   =/var/log/<client-hostname>= directory with proper date and time
+   that means rsyslog server is configured properly.
+** Test Case-3 - Receiving apache logs from client
+*** Objective
+   Test apache logs are getting logged in rsyslog server.
+
+*** Apparatus
+   1) Rsyslog server
+   2) Rsyslog client with apache service running
+
+*** Theory
+   Apache saves a log message every time an an HTTP request is made to
+   apache server.  By default apache saves log messages in
+   =/var/log/httpd/access_log= file. These logs are forwarded to a
+   central rsyslog server.  Apache is configured to pipes the log
+   messages to external program by changing the value of "CustomLog"
+   directive as follows:
+
+   #+BEGIN_EXAMPLE
+   CustomLog "|/usr/bin/logger -t apache -p local6.info" combined
+   #+END_EXAMPLE
+
+*** Experiment
+   Make an http request to rsyslog client using "lynx" program. HTTP
+   service running at the client node will send a reply.
+
+#+BEGIN_EXAMPLE
+lynx <rsyslog-client-ip>
+#+END_EXAMPLE
+
+   After receiving the reply view the file at rsyslog server at
+   =/var/log/<rsyslog-client>/apache.log= location. Log message
+   similar to shown here should appear.
+
+#+BEGIN_EXAMPLE
+Mar 27 14:46:55 rsyslog-client apache: 192.168.101.106 - -
+[27/Mar/2015:14:46:55 +0530] "GET / HTTP/1.0" 200 10 "-" "Lynx/2.8.6rel.5
+libwww-FM/2.14 SSL-MM/1.4.1 OpenSSL/1.0.0-fips"\
+#+END_EXAMPLE
+
+*** Result
+   Apache logs are getting saved at the central server using rsyslog
+   service.
+
+*** Observation
+   Messages are getting logged in the server in =apache.log= file
+   inside =/var/log/<client-hostname>= directory with proper date and
+   time.
+
+*** Conclusion
+   If the messages are getting logged in =apache.log= file inside
+   =/var/log/<client-hostname>= directory with proper date and time
+   that means rsyslog server is configured properly.

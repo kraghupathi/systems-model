@@ -1,0 +1,155 @@
+#+TITLE:     Rsnapshot Client Role
+#+DATE:      2015-04-15 Wednesday
+#+PROPERTY: session *scratch*
+#+PROPERTY: results output
+#+PROPERTY: exports code
+#+SETUPFILE: org-templates/level-0.org
+#+DESCRIPTION: Rsnapshot Client Design Model Documentation
+#+OPTIONS: ^:nil
+
+* Introduction
+  This document describes the design and implementation of Rsnapshot
+  Client. Timely backups of configuration files of a node are saved
+  at the central node in the cluster.
+ 
+  If a node is compromised due to any reason, the authenticity of the
+  files in the node can not be relied. For this reason backup of the
+  configuration files of various nodes are saved in a specific node of
+  the cluster. To setup the nodes again these backups configuration
+  files are referred.
+
+* Requirements
+  The functional and security requirements of the Rsnapshot Client are
+  mentioned in the following sections. Only the Rsnapshot Client
+  specific requirements which differ from the generic requirements
+  specified in the [[common%20role][common role]] are mentioned here.
+
+** Functional Requirements
+   1) Accept incoming ssh connections from rsnapshot server.
+   2) Install rsync package.
+
+** Security Requirements
+   All common security requirements as described in [[file:common.org::*Security Requirements][common role]] are
+   applicable to rsnapshot client node.
+   
+* Design
+  Given diagram describes the design of the rsnapshot client. Systems
+  files are listed for a quick overview of whole systems.
+
+** System Design Diagram
+   The below diagram shows various nodes that rsnapshot client
+   communicates with and the TCP/IP ports / protocols used for
+   communication. Only the important nodes are shown for brevity.
+
+#+CAPTION: Rsnapshot Client Network Diagram
+#+LABEL:  fig-rsnapshot-client-design-diagram
+[[./diagrams/rsnapshot-client-design-diagram.png]]
+
+** COMMENT Editable Link
+[[https://docs.google.com/drawings/d/1rrCMXTHNn8pS8cNscu3w1Ba4jitfmkL9EiYaWDvETWA/edit][Link to google drawing board]]
+
+** System Files
+   The following tables gives the information about the services and
+   their configuration files where modifications are required to setup
+   rsnapshot client.
+
+|------+----------+----------------------------+------------------------|
+| S.no | Service  | File                       | Description            |
+|------+----------+----------------------------+------------------------|
+|   1. | iptables | /etc/sysconfig/iptables    | Defines firewall rules |
+|------+----------+----------------------------+------------------------|
+|   2. | SSH      | /root/.ssh/authorized_keys | Authorized keys        |
+|------+----------+----------------------------+------------------------|
+  
+* Implementation
+** Structure of Scripts
+   The implementation of this system is in terms of a collection of
+   ansible scripts which configure the node. These scripts are
+   organized as follows:
+
+#+BEGIN_EXAMPLE
+|-- roles
+|   |   |-- rsnapshot_client
+|   |   |   |-- tasks
+|   |   |   |   `-- main.yml
+|   |   |   `-- vars
+|   |   |       `-- main.yml
+#+END_EXAMPLE
+
+   Various tasks of [[Tasks][Tasks]] section are concatenated into
+   =roles/rsnapshot_client/tasks/main.yml= file.
+
+   =roles/rsnapshot_client/vars/main.yaml= file defines the variable
+   as described in the [[Variables Definition]] section.
+
+** Firewall Rules
+   Description of firewall rules which are common across all the
+   systems are defined in the [[file:common.org::*Common Firewall Rules][common role]]. There are no specific
+   firewall rule, only the common rules are applied.
+
+** Tasks
+*** Install Rsync package
+    Update the server and install the =rsync= package.
+
+#+BEGIN_SRC yml :tangle roles/rsnapshot_client/tasks/main.yml :eval no
+- name: updating packages
+  yum: name=* state=latest
+  environment: proxy_env 
+
+- name: Installing rsync
+  yum: name=rsync state=installed
+  environment: proxy_env
+#+END_SRC
+
+*** Copy SSH Keys
+    Rsnapshot server ssh public key is placed inside rsnapshot client
+    node as authorized keys. Value of =rsnaphot_server_pub_key=
+    variable is fetched from =vars/main.yml= file.
+
+#+BEGIN_SRC yml :tangle roles/rsnapshot_client/tasks/main.yml :eval no
+- name: copying public key of rsnapshot-server to authorized_keys of client
+  shell: echo {{ rsnaphot_server_pub_key }} >> /root/.ssh/authorized_keys
+#+END_SRC
+    
+** Variables Definition
+   Rsnapshost server's ssh-public keys are to be placed in the
+   rsnapshot client node as authorized keys. System administrator has
+   to assign the value of =rsnaphot_server_pub_key= variable as
+   ssh-public key.
+
+#+BEGIN_SRC yml :tangle roles/rsnapshot_client/vars/main.yml :eval no
+#Public key fetched from rsnapshot server to ansible server( present in rsnapshot_public_key/<rsnapshot_server_name>/root/.ssh/id_rsa.pub)
+rsnaphot_server_pub_key: "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6LPC+WU+OfFQtIqRZe2pZ5+gyg+orCk4m8sLpQL25TU95pr/Z7inwS+0gScqBxV7n7tRuW+cojDOe0tE5hb7OuNob49hFHUMXZWPobEIRIBizvSqjp6XklEsRTfkalSXCE2vIYZRHqZ/RG3jY4ME+xyA82AV0UwsmvIAxgWW8rkQdyG34Jdo7h3iyEs8AHGwPsSWT0ckoA0H/39ZaAOIgvdsCjRVvUTwFfwwcuvbGgO6cyhwEcC077eRzshNAnagHOhD4kZ5aheFP4fZJMXkJMO9w0prT+SyoDdloPlvdqbFUjM6YC6JpuEuqs6+cY+qapGZZQnV13YZxbU2+XEEUQ== ansible-generated on rsnapshot.vlabs.ac.in"
+#+END_SRC
+
+* Test Cases
+** Test Case-1
+*** Objective
+    Test rsync package is installed.
+*** Apparatus
+    1. Rsnapshot client node
+
+*** Theory
+    Rsnapshot server takes backup of data from the client node using
+    rsync tool.
+*** Experiment
+**** Verify rsync package is installed using following command
+#+BEGIN_EXAMPLE
+rpm -qa | grep rsync
+#+END_EXAMPLE
+
+*** Result
+    Output of step-1 of experiment shows rsync package is
+    installed. It also shows the version of the package which is
+    =3.0.6-12= in this case.
+
+#+BEGIN_EXAMPLE
+rsync-3.0.6-12.el6.x86_64
+#+END_EXAMPLE
+
+*** Observation
+    Rsync package is installed on the node.
+
+*** Conclusion
+    Rsync package is installed on the node.
+
