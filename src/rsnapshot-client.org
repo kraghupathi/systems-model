@@ -153,6 +153,3 @@ rsync-3.0.6-12.el6.x86_64
 *** Conclusion
     Rsync package is installed on the node.
 
-* Discussion
-1) In variables definition section it should be written "The system
-   administrator" or just "System administrator"

@@ -495,13 +495,13 @@ Mar 27 09:33:43 rsyslog-client su: pam_unix(su-l:session): session closed for us
    2) Rsyslog client
 
 *** Theory
-   System generates log message everytime an event occurs in the
+   System generates log message every time an event occurs in the
    system. When a login is made inside the system using ssh, node
    generates "ssh log" message. This message is then forwarded to
    rsyslog server.
 
 *** Experiment
-   Login to rsyslog server from one terminal and naviagate to
+   Login to rsyslog server from one terminal and navigate to
    =/var/log/<client-hostname>= directory. Monitor =sshd.log= file
    using =tail -f sshd.log= command. Now from another terminal login
    to rsyslog client node via ssh. The ssh log message is generated
@@ -533,7 +533,7 @@ Mar 27 09:51:18 rsyslog-client sshd[3565]: pam_unix(sshd:session): session opene
    2) Rsyslog client with apache service running
 
 *** Theory
-   Apache saves a log message everytime an an HTTP request is made to
+   Apache saves a log message every time an an HTTP request is made to
    apache server.  By default apache saves log messages in
    =/var/log/httpd/access_log= file. These logs are forwarded to a
    central rsyslog server.  Apache is configured to pipes the log
@@ -545,7 +545,7 @@ Mar 27 09:51:18 rsyslog-client sshd[3565]: pam_unix(sshd:session): session opene
    #+END_EXAMPLE
 
 *** Experiment
-   Make an http reqeust to rsyslog client using "lynx" program. HTTP
+   Make an http request to rsyslog client using "lynx" program. HTTP
    service running at the client node will send a reply.
 
 #+BEGIN_EXAMPLE

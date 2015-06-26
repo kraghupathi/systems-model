@@ -159,7 +159,7 @@ the variables used by the ansible playbooks.
 
 *** Rule for INPUT loopback packets
     Allow internal communication between services running within the
-    system, over loopback interface. Destination ip is also specified
+    system, over loopback interface. Destination IP is also specified
     to avoid any security breaches.
 
     #+BEGIN_EXAMPLE
@@ -212,7 +212,7 @@ the variables used by the ansible playbooks.
 *** Rule for incoming ssh connection
     Allow server to accept incoming ssh TCP port 22 connections *only*
     from the ansible, nagios and management ips. To add the same rule
-    for multiple input ips, a 'for loop' is defined in ansible
+    for multiple input IPs, a 'for loop' is defined in ansible
     template.
 
     #+BEGIN_EXAMPLE
@@ -452,11 +452,10 @@ the variables used by the ansible playbooks.
     - HISTSIZE       :: sets the number of lines or commands that are
                         stored in memory in a history list while bash
                         session is ongoing
-    - HISTFILESIZE   :: sets the number of lines or commands that are
-                        allowed in the history file at startup time of
-                        a session, and are stored in the history file
-                        at the end of bash session for use in future
-                        sessions.
+    - HISTFILESIZE   :: sets the number of lines or commands that are allowed in
+                        the history file at start up time of a session, and are
+                        stored in the history file at the end of bash session
+                        for use in future sessions.
 
 #+BEGIN_SRC shell :tangle roles/common/files/history.sh
 #!/bin/bash
@@ -478,7 +477,7 @@ export HISTTIMEFORMAT HISTSIZE HISTFILESIZE
 *** Start iptables service
    While setting up the cluster, iptables service is restarted on all
    the servers - to make sure the service is running inside each
-   server. If anyone inserts a temporary or ad hoc rule using terminal
+   server. If anyone inserts a temporary or adhoc rule using terminal
    commands such as =iptables -A INPUT -p tcp --dport 80 -j ACCEPT=,
    the rules will not be saved in the file. These rules we assume are
    not necessary for the system, so restarting "iptables" will remove
@@ -622,7 +621,7 @@ nameserver {{private_dns}}
    Only system administrators with ssh private key can login as Root.
 
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
-- name: Permit root login without-pasword(key based)
+- name: Permit root login without-password(key based)
   lineinfile: dest=/etc/ssh/sshd_config regexp='PermitRootLogin ' line='PermitRootLogin without-password' state=present
 #+END_SRC
 
@@ -657,7 +656,7 @@ nameserver {{private_dns}}
 *** Install Bind Utilities
    Bind utilities are installed on all the servers in the
    cluster. This package includes programs such as *nslookup*, *dig*
-   and *host*. These utiities are used by system administrators to
+   and *host*. These utilities are used by system administrators to
    trouble shoot the network related issues.
 
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
@@ -977,7 +976,7 @@ service fail2ban status
 
 **** SSH to the server 
    SSH to the server from any other node by intentionally giving wrong
-   passwords. Do this atleast three times. Then on the server execute
+   passwords. Do this at least three times. Then on the server execute
    the following command to check if fail2ban filter for ssh detects
    failed login attempts.
 

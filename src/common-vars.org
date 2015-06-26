@@ -10,7 +10,7 @@
   The document describes the requirements, design and implementation
   of the "common_vars" ansible role. "common_vars" role defines common
   variables used by the jinja2 templates in various other ansible
-  roles. Examples and verifications are given wherever possible.
+  roles. Examples and verification are given wherever possible.
   
   In ansible we can define variables in the =role/vars/main.yml=
   file. The variables used by a role are mentioned in this file. Some
@@ -220,7 +220,7 @@
 |------+---------------------------+-----------------------+---------------+--------------------------------------------+-----------------------------------------|
 
 ** Generate yml files of common_vars role
-   Generate common_vars role .yml file with all the variables defined.
+   Generate common_vars role ".yml" file with all the variables defined.
    There are three separate "common_vars" file for each cluster. One
    is for AWS cluster, one is for base1 cluster and one is for base4
    cluster.
