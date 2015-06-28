@@ -406,8 +406,8 @@ $TTL 3600
     host_name: private-dns
     zone_file_prefix: private.
     zone_names:
-      - virtual-labs.ac.in.
-      - vlabs.ac.in.
+      - "{{prefix}}virtual-labs.ac.in."
+      - "{{prefix}}vlabs.ac.in."
     zone_address: 10.100.1.7
     allow_query_from: "10.0.0.0/8; 172.16.0.0/12; 192.168.0.0/16;"
     name_server: private-dns
@@ -452,7 +452,7 @@ $TTL 3600
     - nagios_client
     - named_server
 #+END_SRC
-
+   
 * Test Cases
 ** Test case ID: TC01
 *** Objective
