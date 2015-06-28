@@ -247,10 +247,14 @@ release_no:
  - 00
 
 #List of ansible servers.  Mutliple ansible servers are fine
-ansible_server_ips:
+ansible_server_ips: 
   - 10.100.1.2
+
+#Anlytics IP used by RP role to rsync logs,awstats
+analytics_server_ip: 10.100.1.12
+
 #List of rsnapshot servers.
-rsnapshot_server_ips:
+rsnapshot_server_ips: 
   - 10.100.1.10
 
 #List of management stations.  Multiple is ok
@@ -262,7 +266,7 @@ management_ips:
 ossec_server_ip: 10.100.1.3
 
 #OSSEC client IPs.  Multiple is ok.
-ossec_client_ips:
+ossec_client_ips: 
 #For some reasons {{ansible_default_ipv4.address}} on ansible and router is resolving
 #to 10.4.12.0/22 IPs and not to 10.100.0.0/22 IPs.  So those must be used for configuring
 #client
@@ -291,25 +295,36 @@ smtp_smart_host: none
 #values to none
 #private_dns_ips: none
 #private_dns_zone: none 
-private_dns_ips:
+private_dns_ips: 
   - 10.100.1.5
 private_dns_zone: virtual-labs.ac.in vlabs.ac.in
+
 
 #Rsyslog server IPs.  Set to none if there is no rsyslog server
 rsyslog_server_ips:
   - 10.100.1.4
 
+
 #List of domains to pass through reverseproxy
 proxy_domains:
   - {domain: "reverseproxy.virtual-labs.ac.in", alias: "reverseproxy.vlabs.ac.in", alias2: "rp.virtual-labs.ac.in"}
-  - {domain: "lab1.virtual-labs.ac.in", alias: "lab1.vlabs.ac.in"}
-  - {domain: "lab2.virtual-labs.ac.in", alias: "lab2.vlabs.ac.in"}
+  - {domain: "bandwidthd.virtual-labs.ac.in", alias: "bandwidthd.vlabs.ac.in", alias2: "bwd.virtual-labs.ac.in"}
   - {domain: "cse01-iiith.virtual-labs.ac.in", alias: "cse01-iiith.vlabs.ac.in"}
   - {domain: "cse02-iiith.virtual-labs.ac.in", alias: "cse02-iiith.vlabs.ac.in"}
   - {domain: "cse15-iiith.virtual-labs.ac.in", alias: "cse15-iiith.vlabs.ac.in"}
   - {domain: "cse19-iiith.virtual-labs.ac.in", alias: "cse19-iiith.vlabs.ac.in"}
   - {domain: "cse18-iiith.virtual-labs.ac.in", alias: "cse18-iiith.vlabs.ac.in"}
   - {domain: "cse20-iiith.virtual-labs.ac.in", alias: "cse20-iiith.vlabs.ac.in"}
+  - {domain: "emt-iiith.virtual-labs.ac.in", alias: "emt-iiith.vlabs.ac.in"}
+  - {domain: "cse29-iiith.virtual-labs.ac.in", alias: "cse29-iiith.vlabs.ac.in"}
+  - {domain: "cse22-iiith.virtual-labs.ac.in", alias: "cse22-iiith.vlabs.ac.in"}
+  - {domain: "cse11-iiith.virtual-labs.ac.in", alias: "cse11-iiith.vlabs.ac.in"}
+  - {domain: "cse14-iiith.virtual-labs.ac.in", alias: "cse14-iiith.vlabs.ac.in"}
+  - {domain: "eerc03-iiith.virtual-labs.ac.in", alias: "eerc03-iiith.vlabs.ac.in"}
+  - {domain: "phy14-iiith.virtual-labs.ac.in", alias: "phy14-iiith.vlabs.ac.in"}
+  - {domain: "ccnsb06-iiith.virtual-labs.ac.in", alias: "ccnsb06-iiith.vlabs.ac.in"}
+  - {domain: "eerc01-iiith.virtual-labs.ac.in", alias: "eerc01-iiith.vlabs.ac.in"}
+  - {domain: "csc-iiith.virtual-labs.ac.in", alias: "csc-iiith.vlabs.ac.in"}
   - {domain: "nagios.virtual-labs.ac.in", alias: "nagios.vlabs.ac.in"}
   - {domain: "ads.virtual-labs.ac.in", alias: "ads.vlabs.ac.in"}
   - {domain: "bmi-iitr.virtual-labs.ac.in", alias: "bmi-iitr.vlabs.ac.in"}
@@ -327,16 +342,48 @@ proxy_domains:
   - {domain: "ergonomics-iitg.virtual-labs.ac.in", alias: "ergonomics-iitg.vlabs.ac.in"}
   - {domain: "vem-iitg.virtual-labs.ac.in", alias: "vem-iitg.vlabs.ac.in"}
   - {domain: "ve-iitg.virtual-labs.ac.in", alias: "ve-iitg.vlabs.ac.in"}
+  - {domain: "sl-coep.virtual-labs.ac.in", alias: "sl-coep.vlabs.ac.in"}
+  - {domain: "plc-coep.virtual-labs.ac.in", alias: "plc-coep.vlabs.ac.in"}
+  - {domain: "em-coep.virtual-labs.ac.in", alias: "em-coep.vlabs.ac.in" }
+  - {domain: "va-coep.virtual-labs.ac.in", alias: "va-coep.vlabs.ac.in" }
+  - {domain: "mm-coep.virtual-labs.ac.in", alias: "mm-coep.vlabs.ac.in" }
+  - {domain: "fab-coep.virtual-labs.ac.in", alias: "fab-coep.vlabs.ac.in" }
+  - {domain: "bmsp-coep.virtual-labs.ac.in", alias: "bmsp-coep.vlabs.ac.in"}
+  - {domain: "ial-coep.virtual-labs.ac.in", alias: "ial-coep.vlabs.ac.in"}
+  - {domain: "ied-nitk.virtual-labs.ac.in", alias: "ied-nitk.vlabs.ac.in"}
+  - {domain: "sa-nitk.virtual-labs.ac.in", alias: "sa-nitk.vlabs.ac.in"}
+  - {domain: "fm-nitk.virtual-labs.ac.in", alias: "fm-nitk.vlabs.ac.in"}
+  - {domain: "sm-nitk.virtual-labs.ac.in", alias: "sm-nitk.vlabs.ac.in"}
+  - {domain: "mm-nitk.virtual-labs.ac.in", alias: "mm-nitk.vlabs.ac.in"}
+  - {domain: "mdmv-nitk.virtual-labs.ac.in", alias: "mdmv-nitk.vlabs.ac.in"}
+  - {domain: "uorepc-nitk.virtual-labs.ac.in", alias: "uorepc-nitk.vlabs.ac.in"}
+  - {domain: "vssd-iitd.virtual-labs.ac.in", alias: "vssd-iitd.vlabs.ac.in"} 
+  - {domain: "qnm-iitd.virtual-labs.ac.in", alias: "qnm-iitd.vlabs.ac.in"}
+  - {domain: "msvs-dei.virtual-labs.ac.in", alias: "msvs-dei.vlabs.ac.in"}
+  - {domain: "vp-dei.virtual-labs.ac.in", alias: "vp-dei.vlabs.ac.in"}
+  - {domain: "he-coep.virtual-labs.ac.in", alias: "he-coep.vlabs.ac.in"}
+  - {domain: "eem-iitd.virtual-labs.ac.in", alias: "eem-iitd.vlabs.ac.in"}
+  - {domain: "pe-iitb.virtual-labs.ac.in", alias: "pe-iitb.vlabs.ac.in"}
+  - {domain: "ce-iitb.virtual-labs.ac.in", alias: "ce-iitb.vlabs.ac.in"}
+  - {domain: "ee-iitb.virtual-labs.ac.in", alias: "ee-iitb.vlabs.ac.in"}
+  - {domain: "vc-dei.virtual-labs.ac.in", alias: "vc-dei.vlabs.ac.in"}
 awstats_domains:
-  - reverseproxy.virtual-labs.ac.in
-  - lab1.virtual-labs.ac.in
-  - lab2.virtual-labs.ac.in
   - cse01-iiith.virtual-labs.ac.in
   - cse02-iiith.virtual-labs.ac.in
   - cse15-iiith.virtual-labs.ac.in
+  - cse19-iiith.virtual-labs.ac.in
   - cse18-iiith.virtual-labs.ac.in
   - cse20-iiith.virtual-labs.ac.in
-  - cse19-iiith.virtual-labs.ac.in
+  - emt-iiith.virtual-labs.ac.in
+  - cse29-iiith.virtual-labs.ac.in
+  - cse22-iiith.virtual-labs.ac.in
+  - cse11-iiith.virtual-labs.ac.in
+  - cse14-iiith.virtual-labs.ac.in
+  - eerc03-iiith.virtual-labs.ac.in
+  - phy14-iiith.virtual-labs.ac.in
+  - ccnsb06-iiith.virtual-labs.ac.in
+  - eerc01-iiith.virtual-labs.ac.in
+  - csc-iiith.virtual-labs.ac.in
   - bmi-iitr.virtual-labs.ac.in
   - bmsip-iitr.virtual-labs.ac.in
   - em-iitr.virtual-labs.ac.in
@@ -352,6 +399,31 @@ awstats_domains:
   - ergonomics-iitg.virtual-labs.ac.in
   - vem-iitg.virtual-labs.ac.in
   - ve-iitg.virtual-labs.ac.in
+  - sl-coep.virtual-labs.ac.in
+  - plc-coep.virtual-labs.ac.in
+  - em-coep.virtual-labs.ac.in
+  - va-coep.virtual-labs.ac.in
+  - mm-coep.virtual-labs.ac.in
+  - fab-coep.virtual-labs.ac.in
+  - bmsp-coep.virtual-labs.ac.in  
+  - ial-coep.virtual-labs.ac.in
+  - ied-nitk.virtual-labs.ac.in
+  - sa-nitk.virtual-labs.ac.in
+  - fm-nitk.virtual-labs.ac.in
+  - sm-nitk.virtual-labs.ac.in
+  - mm-nitk.virtual-labs.ac.in
+  - mdmv-nitk.virtual-labs.ac.in
+  - uorepc-nitk.virtual-labs.ac.in
+  - vssd-iitd.virtual-labs.ac.in
+  - qnm-iitd.virtual-labs.ac.in
+  - msvs-dei.virtual-labs.ac.in
+  - vp-dei.virtual-labs.ac.in
+  - he-coep.virtual-labs.ac.in
+  - eem-iitd.virtual-labs.ac.in
+  - pe-iitb.virtual-labs.ac.in
+  - ce-iitb.virtual-labs.ac.in
+  - ee-iitb.virtual-labs.ac.in
+  - vc-dei.virtual-labs.ac.in
 #IPs where router will forward web or DNS requests.
 #Multiple IPs or list of IPs wont work as request can be forwarded to only one machine
 ads_ip: 10.100.1.9
@@ -360,11 +432,14 @@ public_dns_ip: 10.100.1.6
 local_subnet: 10.100.0.0/22
 router_interface_ip: 10.100.1.1
 router_external_interface: eth0
+#Used by bandwidthd, similar to base1 nomenclature 
+router_internal_ip: 10.100.1.1
 
 #Configure IP address of nagios server.  This is used by iptables firewall templates
 nagios_server_ips:
   - 10.100.1.8
 
+#Used by private-dns ans public dns to set their zone file names
 prefix: ""
 #+END_SRC
 
@@ -384,7 +459,7 @@ release_no:
  - 00
 
 #List of ansible servers.  Mutliple ansible servers are fine
-ansible_server_ips:
+ansible_server_ips: 
   - 10.100.1.2
 
 #List of management stations.  Multiple is ok
@@ -399,7 +474,7 @@ management_ips:
 ossec_server_ip: 10.100.1.3
 
 #OSSEC client IPs.  Multiple is ok.
-ossec_client_ips:
+ossec_client_ips: 
 #For some reasons {{ansible_default_ipv4.address}} on ansible and router is resolving
 #to 10.4.12.0/22 IPs and not to 10.100.0.0/22 IPs.  So those must be used for configuring
 #client
@@ -415,7 +490,7 @@ ossec_client_ips:
 #administrator can be reached.  Used by OSSEC server to send emails.
 admin_email_address: alerts@vlabs.ac.in
 #Leaving as it is for now.  The server would relay message. 
-smtp_server_address:
+smtp_server_address: 
 
 #SMTP smart host via which various servers can send email
 #Set this to none if smtp_smart_host configuration is not required
@@ -426,20 +501,24 @@ smtp_smart_host: smtp.admin.iiit.ac.in
 #values to none
 #private_dns_ips: none
 #private_dns_zone: none 
-private_dns_ips:
+private_dns_ips: 
   - 10.100.1.5
 private_dns_zone: base1.virtual-labs.ac.in base1.vlabs.ac.in
+
 
 #Rsyslog server IPs.  Set to none if there is no rsyslog server
 rsyslog_server_ips:
   - 10.100.1.4
 
+
 #List of domains to pass through reverseproxy
 proxy_domains:
   - {domain: "reverseproxy.base1.virtual-labs.ac.in", alias: "reverseproxy.base1.vlabs.ac.in", alias2: "rp.base1.virtual-labs.ac.in"}
+  - {domain: "bandwidthd.base1.virtual-labs.ac.in", alias: "bandwidthd.base1.vlabs.ac.in", alias2: "bwd.base1.virtual-labs.ac.in"}  
   - {domain: "nagios.base1.virtual-labs.ac.in", alias: "nagios.base1.vlabs.ac.in"}
   - {domain: "ossec-server.base1.virtual-labs.ac.in", alias: "ossec-server.base1.vlabs.ac.in"}
   - {domain: "cse01-iiith.base1.virtual-labs.ac.in", alias: "cse01-iiith.base1.vlabs.ac.in"}
+  - {domain: "cse02-iiith.base1.virtual-labs.ac.in", alias: "cse02-iiith.base1.vlabs.ac.in"}
   - {domain: "cse15-iiith.base1.virtual-labs.ac.in", alias: "cse15-iiith.base1.vlabs.ac.in"}
   - {domain: "cse19-iiith.base1.virtual-labs.ac.in", alias: "cse19-iiith.base1.vlabs.ac.in"}
   - {domain: "cse18-iiith.base1.virtual-labs.ac.in", alias: "cse18-iiith.base1.vlabs.ac.in"}
@@ -464,6 +543,29 @@ proxy_domains:
   - {domain: "vlae-iitk.base1.virtual-labs.ac.in", alias: "vlae-iitk.base1.vlabs.ac.in"}
   - {domain: "vcal-iitk.base1.virtual-labs.ac.in", alias: "vcal-iitk.base1.vlabs.ac.in"}
   - {domain: "pev-au.base1.virtual-labs.ac.in", alias: "pev-au.base1.vlabs.ac.in"}
+  - {domain: "anthropology-iitg.base1.virtual-labs.ac.in", alias: "anthropology-iitg.base1.vlabs.ac.in"}
+  - {domain: "ergonomics-iitg.base1.virtual-labs.ac.in", alias: "ergonomics-iitg.base1.vlabs.ac.in"}
+  - {domain: "vem-iitg.base1.virtual-labs.ac.in", alias: "vem-iitg.base1.vlabs.ac.in"}
+  - {domain: "ve-iitg.base1.virtual-labs.ac.in", alias: "ve-iitg.base1.vlabs.ac.in"}
+  - {domain: "ial-coep.base1.virtual-labs.ac.in", alias: "ial-coep.base1.vlabs.ac.in"}
+  - {domain: "sl-coep.base1.virtual-labs.ac.in", alias: "sl-coep.base1.vlabs.ac.in"}
+  - {domain: "plc-coep.base1.virtual-labs.ac.in", alias: "plc-coep.base1.vlabs.ac.in"}
+  - {domain: "em-coep.base1.virtual-labs.ac.in", alias: "em-coep.base1.vlabs.ac.in"}
+  - {domain: "va-coep.base1.virtual-labs.ac.in", alias: "va-coep.base1.vlabs.ac.in"}
+  - {domain: "mm-coep.base1.virtual-labs.ac.in", alias: "mm-coep.base1.vlabs.ac.in"}
+  - {domain: "fab-coep.base1.virtual-labs.ac.in", alias: "fab-coep.base1.vlabs.ac.in"}
+  - {domain: "bmsp-coep.base1.virtual-labs.ac.in", alias: "bmsp-coep.base1.vlabs.ac.in"}
+  - {domain: "ied-nitk.base1.virtual-labs.ac.in", alias: "ied-nitk.base1.vlabs.ac.in"}
+  - {domain: "sa-nitk.base1.virtual-labs.ac.in", alias: "sa-nitk.base1.vlabs.ac.in"}
+  - {domain: "fm-nitk.base1.virtual-labs.ac.in", alias: "fm-nitk.base1.vlabs.ac.in"}
+  - {domain: "sm-nitk.base1.virtual-labs.ac.in", alias: "sm-nitk.base1.vlabs.ac.in"}
+  - {domain: "mm-nitk.base1.virtual-labs.ac.in", alias: "mm-nitk.base1.vlabs.ac.in"}
+  - {domain: "mdmv-nitk.base1.virtual-labs.ac.in", alias: "mdmv-nitk.base1.vlabs.ac.in"}
+  - {domain: "uorepc-nitk.base1.virtual-labs.ac.in", alias: "uorepc-nitk.base1.vlabs.ac.in"}
+  - {domain: "vssd-iitd.base1.virtual-labs.ac.in", alias: "vssd-iitd.base1.vlabs.ac.in"}
+  - {domain: "qnm-iitd.base1.virtual-labs.ac.in", alias: "qnm-iitd.base1.vlabs.ac.in"}
+  - {domain: "msvs-dei.base1.virtual-labs.ac.in", alias: "msvs-dei.base1.vlabs.ac.in"}
+  - {domain: "vp-dei.base1.virtual-labs.ac.in", alias: "vp-dei.base1.vlabs.ac.in"}
 
 awstats_domains:
   - reverseproxy.base1.virtual-labs.ac.in
@@ -492,6 +594,29 @@ awstats_domains:
   - vlae-iitk.base1.virtual-labs.ac.in
   - vcal-iitk.base1.virtual-labs.ac.in
   - pev-au.base1.virtual-labs.ac.in
+  - anthropology-iitg.base1.virtual-labs.ac.in
+  - ergonomics-iitg.base1.virtual-labs.ac.in
+  - vem-iitg.base1.virtual-labs.ac.in
+  - ve-iitg.base1.virtual-labs.ac.in
+  - ial-coep.base1.virtual-labs.ac.in
+  - sl-coep.base1.virtual-labs.ac.in
+  - plc-coep.base1.virtual-labs.ac.in
+  - em-coep.base1.virtual-labs.ac.in
+  - va-coep.base1.virtual-labs.ac.in
+  - mm-coep.base1.virtual-labs.ac.in
+  - fab-coep.base1.virtual-labs.ac.in
+  - bmsp-coep.base1.virtual-labs.ac.in
+  - ied-nitk.base1.virtual-labs.ac.in
+  - sa-nitk.base1.virtual-labs.ac.in
+  - fm-nitk.base1.virtual-labs.ac.in
+  - sm-nitk.base1.virtual-labs.ac.in
+  - mm-nitk.base1.virtual-labs.ac.in
+  - mdmv-nitk.base1.virtual-labs.ac.in
+  - uorepc-nitk.base1.virtual-labs.ac.in
+  - vssd-iitd.base1.virtual-labs.ac.in
+  - qnm-iitd.base1.virtual-labs.ac.in
+  - msvs-dei.base1.virtual-labs.ac.in
+  - vp-dei.base1.virtual-labs.ac.in
 
 #IPs where router will forward web or DNS requests.
 #Multiple IPs or list of IPs wont work as request can be forwarded to only one machine
@@ -508,7 +633,7 @@ router_internal_ip: 10.100.1.1
 nagios_server_ips:
   - 10.100.1.8
 
-prefix: "base1."
+prefix: base1.
 #+END_SRC
 
 *** Variables for Base4 Cluster
