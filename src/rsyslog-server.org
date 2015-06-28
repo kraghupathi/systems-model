@@ -399,6 +399,15 @@ authpriv.*      ?TmplAuth
 #+END_SRC
 
 ** Handlers
+*** Restart rsyslog service handler
+    Any changes in rsyslog configuration file as part of [[Configure rsyslog service][Configure rsyslog
+    service]] task is enforced to the system by restarting the rsyslog
+    service using handler created as follows:
+
+#+BEGIN_SRC yml :tangle roles/rsyslog_server/handlers/main.yml
+ - name: Restart rsyslog
+   service: name=rsyslog state=restarted
+#+END_SRC
 *** Restart iptables handler
     Any changes in iptables configuration file as part of task [[Configure iptables firewall rules using
  template][Configure iptables firewall rules using template]] is enforced by
@@ -409,16 +418,6 @@ authpriv.*      ?TmplAuth
 ---
  - name: Restart iptables
    service: name=iptables state=restarted
-#+END_SRC
-
-*** Restart rsyslog service handler
-    Any changes in rsyslog configuration file as part of [[Configure rsyslog service][Configure rsyslog
-    service]] task is enforced to the system by restarting the rsyslog
-    service using handler created as follows:
-
-#+BEGIN_SRC yml :tangle roles/rsyslog_server/handlers/main.yml
- - name: Restart rsyslog
-   service: name=rsyslog state=restarted
 #+END_SRC
 
 ** Variables Definition
