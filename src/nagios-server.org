@@ -470,18 +470,19 @@ check_command           {{ s.command }}
   yum: name=nrpe state=installed
   environment: proxy_env
 #+END_SRC 
-*** Set firewall rules
+*** COMMENT Set firewall rules
    Firewall rules are set by following steps:
 
    1) Copy iptables jinja2 template from ansible node to the server.
    2) Restart iptables service to enforce the configuration.
-
+#+BEGIN_EXAMPLE
 #+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
  - name: Copy iptables configuration file
    template: src=nagios_server_iptables dest=/etc/sysconfig/iptables owner=root group=root mode=600
    notify:
      - restart iptables
 #+END_SRC
+#+END_EXAMPLE
 *** Create Nagios admin user for web interface
    A user is created on the nagios server node for web
    interface. Value of =nagios_user= and =nagios_password= variables
@@ -569,15 +570,16 @@ check_command           {{ s.command }}
   service: name=httpd state=restarted
 #+END_SRC
 
-*** Start firewall service
+*** COMMENT Start firewall service
    Any changes in iptables configuration file, to update the firewall
    is enforced by restarting the iptables service.
-
+#+BEGIN_EXAMPLE
 #+BEGIN_SRC yml :tangle roles/nagios_server/handlers/main.yml
 - name: restart iptables
   sudo: true
   service: name=iptables state=restarted
 #+END_SRC
+#+END_EXAMPLE
 
 ** Define variables and services groups
    Various variables used by the ansible playbook are defined
