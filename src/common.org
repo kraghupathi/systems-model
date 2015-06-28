@@ -610,9 +610,11 @@ nameserver {{private_dns}}
 - name: Configure node to use private DNS (peerDNS)
   template: src=resolv.conf dest=/etc/resolv.conf owner=root group=root mode=644
   when: private_dns_ips != "none" 
+  tags:
+    - setup_private_dns
 #+END_SRC
 
-*** SSH Hardening
+*** COMMENT SSH Hardening
    All the servers in the cluster are made secure by hardening *ssh*
    service. SSH configuration file =/etc/ssh/sshd_config= is
    customized as per the requirement.
@@ -620,30 +622,34 @@ nameserver {{private_dns}}
 **** Permit Root Login without password
    Only system administrators with ssh private key can login as Root.
 
+#+BEGIN_EXAMPLE
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 - name: Permit root login without-password(key based)
   lineinfile: dest=/etc/ssh/sshd_config regexp='PermitRootLogin ' line='PermitRootLogin without-password' state=present
 #+END_SRC
+#+END_EXAMPLE
 
 **** Disable Password based access
    Password based access is disabled.
-
+#+BEGIN_EXAMPLE
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 - name: Disable Password authentication
   lineinfile: dest=/etc/ssh/sshd_config regexp='PasswordAuthentication ' line='PasswordAuthentication no'
 #+END_SRC
+#+END_EXAMPLE
 
 **** Enable Key based authentication
    Only key based access is enabled.
-
+#+BEGIN_EXAMPLE
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 - name: Enable Public key authentication
   lineinfile: dest=/etc/ssh/sshd_config regexp='PubkeyAuthentication ' line='PubkeyAuthentication yes'
 #+END_SRC
+#+END_EXAMPLE
 
 **** Do not permit empty passwords
    Users are not allowed to set empty-password.
-
+#+BEGIN_EXAMPLE
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 - name: Do not permit empty password, also ensure proper owner, group and permissions
   lineinfile: dest=/etc/ssh/sshd_config regexp='PermitEmptyPasswords ' line='PermitEmptyPasswords no' mode=0600 owner=root group=root
@@ -652,21 +658,23 @@ nameserver {{private_dns}}
   notify:
       - restart sshd
 #+END_SRC
+#+END_EXAMPLE
 
-*** Install Bind Utilities
-   Bind utilities are installed on all the servers in the
-   cluster. This package includes programs such as *nslookup*, *dig*
-   and *host*. These utilities are used by system administrators to
-   trouble shoot the network related issues.
+*** COMMENT Install Bind Utilities
+   Bind utilities are installed on all the servers in the cluster. This package
+   includes programs such as *nslookup*, *dig* and *host*. These utilities are
+   used by system administrators to trouble shoot the network related issues.
 
+#+BEGIN_EXAMPLE
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 - name: install bind-utils
   yum: name=bind-utils state=present
   environment:
    proxy_env
 #+END_SRC
+#+END_EXAMPLE
 
-*** Disable Root Login
+*** COMMENT Disable Root Login
    Root login is disabled on all the servers in the cluster. Password
    for the root account is set to a value which matches no possible
    encrypted value, therefore nobody can login as root with
@@ -682,10 +690,12 @@ nameserver {{private_dns}}
 root:!:12345::::::
 #+END_EXAMPLE
 
+#+BEGIN_EXAMPLE
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 - name: lock root account
   shell: passwd -l root
 #+END_SRC
+#+END_EXAMPLE
 
 **** Enable root login
    Root login can be enabled by setting the root password using
@@ -700,7 +710,7 @@ sudo passwd root
 sudo passwd -u root
 #+END_EXAMPLE
 
-*** Remove sudoers package
+*** COMMENT Remove sudoers package
    We can do two things with sudoers package. The current scripts
    perhaps does remove it, but we can always rewrite them.
 
@@ -716,10 +726,12 @@ sudo passwd -u root
    installation and no one has added new users or groups to sudoers,
    as backdoors to gain root access.
 
+#+BEGIN_EXAMPLE
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 - name: remove sudo
   yum: name=sudo state=absent
 #+END_SRC
+#+END_EXAMPLE
 
 *** Set the implementation/model release
    Release number is set in all the nodes in the cluster. Release
@@ -730,6 +742,7 @@ sudo passwd -u root
 - name: setting the implementation/model release
   lineinfile: dest=/etc/motd regexp="^Release" line="Release number {{ release_no }}" state=present create=yes
 #+END_SRC
+
 *** Common Variables
    Variables which are common across all the ansible roles are defined
    in =common_vars= file. The file is included as a dependency for
@@ -742,19 +755,16 @@ dependencies:
 #+END_SRC
 
 ** Handlers
-   When any changes are made in the configuration file of any service,
-   the service needs to be restarted. For example, if modifications
-   are made in =/etc/ssh/sshd_config= file to customize ssh service,
-   then the ssh service needs to be restarted to enforce the modified
-   properties of the system.
+   When any changes are made in the configuration file of any service, the
+   service needs to be restarted. For example, if modifications are made in
+   sendmail configuration file to customize sendmail service, then the sendmail
+   service needs to be restarted to enforce the modified properties of the
+   system.
 
 #+BEGIN_SRC yml :tangle roles/common/handlers/main.yml
 ---
 - name: restart sendmail
   service: name=sendmail state=restarted
-
-- name: restart sshd
-  service: name=sshd state=restarted
 #+END_SRC
     
 * Test Cases
