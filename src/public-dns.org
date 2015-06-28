@@ -382,8 +382,8 @@ $TTL 3600
   vars:
     zone_file_prefix: public.
     zone_names:
-      - virtual-labs.ac.in.
-      - vlabs.ac.in.
+      - "{{prefix}}virtual-labs.ac.in."
+      - "{{prefix}}vlabs.ac.in."
     zone_address: 54.85.93.7
     allow_query_from: "any; "
     name_server: public-dns
@@ -413,7 +413,7 @@ $TTL 3600
 *** Objective
     The objective is to test the working of the name server to resolve
     the hostnames of other machines which have been configured in the
-    Private DNS zone file.
+    Public DNS zone file.
 *** Apparatus
     - The Public DNS container/machine
     - Access to ssh-tunnel
@@ -442,7 +442,7 @@ $TTL 3600
       #+END_EXAMPLE
     - We can also use the nslookup tool.
       #+BEGIN_EXAMPLE
-      nslookup <FQDN>
+      nslookup <FQDN> <public IP-address of DNS>
       #+END_EXAMPLE
     - By running these commands we can determine if the DNS is
       resolving the names properly or not.
@@ -451,12 +451,6 @@ $TTL 3600
     We need to perform testing by using the command line tools. After
     logging into ssh tunnel do the following:
 
-# In the procedure section only one input to 'nslookup' command is
-# specified i.e. '<FQDN>'. Here in the experiment section, second
-# parameter as ip address is also supplied. So it could be better if
-# description of second parameter is also provided either in procedure
-# or experiment section.
-
     #+BEGIN_EXAMPLE
     nslookup ossec-server.virtual-labs.ac.in 54.85.937
     #+END_EXAMPLE
@@ -464,11 +458,9 @@ $TTL 3600
     #+BEGIN_EXAMPLE
     dig ossec-server.virtual-labs.ac.in @54.85.93.7
     #+END_EXAMPLE
-*** Result
-    - The result obtained from the first command is as below : 
-    
-# What is 'first command' ? Instead 'nslookup' command could be used.
 
+*** Result
+    - The result obtained from the "nslookup" command is as below : 
     #+BEGIN_EXAMPLE
     Server:		54.85.93.7
     Address:	54.85.93.7#53
@@ -477,9 +469,7 @@ $TTL 3600
     Address: 54.85.93.7
     #+END_EXAMPLE
     
-    - The result obtained from the second command is as below:
-# What is 'second command' ? Instead 'dig' command could be used.
-
+    - The result obtained from the "dig" command is as below:
     #+BEGIN_EXAMPLE
     ; <<>> DiG 9.8.2rc1-RedHat-9.8.2-0.30.rc1.el6_6.2 <<>> ossec-server.vlabs.ac.in @54.85.93.7
     ;; global options: +cmd
@@ -519,13 +509,8 @@ $TTL 3600
     showed that this FQDN comes from an address =54.85.93.7=.
     This shows that the Public DNS was able to resolve the hostname.
 
-# In the observation what 'dig' and 'nslookup' command does are more
-# described. Only sentences from 'The given FQDN was
-# =ossec-server.base1.virtual-labs.ac.in= ....' seems to be sufficient.
-
 *** Conclusion
     The Public DNS is resolving the hostnames correctly.
-
 
 ** Test case ID: TC02
 *** Objective
@@ -554,32 +539,28 @@ $TTL 3600
       #+END_EXAMPLE
 
 *** Experiments
+    *Note*: This test has to be done on the publice DNS machine
+    itself.
     - To test if we can resolve gnu.org using nslookup
-
-# In which machine these commands are executed is not mentioned. It
-# could be better to mention that.
-
     #+BEGIN_EXAMPLE
     nslookup gnu.org 54.85.93.7
     #+END_EXAMPLE
     - To test if we can resolve gnu.org using dig
-
     #+BEGIN_EXAMPLE
     dig gnu.org @54.85.93.7
     #+END_EXAMPLE
 *** Result
     - The result for the first case with nslookup is as below:
 
-
     #+BEGIN_EXAMPLE
     Server:		54.85.93.7
     Address:	54.85.93.7#53
 
     ** server can't find gnu.org: REFUSED
- 
     #+END_EXAMPLE
     
     - The result of the first case with dig is as below:
+
     #+BEGIN_EXAMPLE
     ; <<>> DiG 9.8.2rc1-RedHat-9.8.2-0.30.rc1.el6_6.2 <<>> gnu.org @54.85.93.7
     ;; global options: +cmd
@@ -595,18 +576,14 @@ $TTL 3600
     ;; SERVER: 54.85.93.7#53(54.85.93.7)
     ;; WHEN: Wed Apr 22 00:49:28 2015
     ;; MSG SIZE  rcvd: 25
-
     #+END_EXAMPLE
 
 *** Observation
     The results show that the Private DNS is being used to query the
     IP address of =gnu.org=. Nslookup does not show us the IP of
-    gnu.org. Dig also shows that the same result. The Public DNS does
+    gnu.org. Dig also shows the same result. The Public DNS does
     not resolve any hostname other than the one that it is registered
     for.
-  
-# Sentence 'Dig also shows that the same result' could be corrected.
     
 *** Conclusion
     The recursive lookup is not functional in the Public DNS.
-* Discussions

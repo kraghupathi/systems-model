@@ -130,7 +130,7 @@
    in detail in the [[./common.org][common role]].  The rules which are specific to the
    private DNS are also mentioned here in this template.
 
-#+BEGIN_SRC YAML :tangle roles/named_server/templates/named_iptables
+#+BEGIN_SRC YAML -n :tangle roles/named_server/templates/named_iptables
 *filter
 :INPUT ACCEPT [-1:0]
 :FORWARD ACCEPT [0:0]
@@ -660,7 +660,7 @@ $TTL 3600
     The Private DNS is able to resolve the public domain names as
     well.
 
-* Discussions
+* COMMENT Discussions
   In the introduction section:
   # Siva: I think private DNS does not resolve the external zones unless
   # we use forwarders(if i am wrong correct me), please check that.
