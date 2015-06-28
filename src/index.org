@@ -144,7 +144,7 @@ To know further about these please refer the [[Appendix]].
 *** Configure machines to use private DNS
     Edit roles/common_vars/vars/main.yaml and set private_dns_ips and
     private_dns_zone values appropriately.
-
+    
 *** Create rsyslog server
     Create a machine to setup rsyslog server.  Configure authorized
     keys from ansible server to this machine.  Add the machine IP to
@@ -384,11 +384,47 @@ To know further about these please refer the [[Appendix]].
 #+END_SRC 
 
 * Appendix
-** Networking
-** Ansible
-** AWS
-** OpenVZ
 ** Version control
+   The cluster model would involve timely changes, be it in the
+   configuration of the nodes or the architecture of the
+   cluster. Version control provides a mechanism which would keep
+   track of all such changes. Along with tracking changes, it also
+   provides the facility to revert back to a previous state of the
+   system. The version control system used in this model is "git". To
+   know more about git [[https://git-scm.com/][click here]].
+
+** OpenVZ
+   OpenVZ is a simple open source kernel level virtualization.  It is
+   used to create several isolated containers (Virtual Environments)
+   on the same physical resources. Details on why OpenVZ is used can
+   be found [[https://openvz.org/Use_cases][here]]. 
+
+   Base1 and Base4 clusters are built using such containers. To know
+   more about how to setup containers etc. [[https://openvz.org/User_Guide/Operations_on_Containers][click here]].
+
+** AWS
+   AWS stands for Amazon Web Services. It is a proprietary cloud
+   service provider. Maintenance and allocation of resources are taken
+   care of by the service provider (Amazon). 
+
+   AWS cluster is setup using the Amazon web services. To know more
+   about AWS service please read the following :
+   + [[https://en.wikipedia.org/wiki/Amazon_Web_Services][Amazon Web services]]
+   + [[http://aws.amazon.com/free/][AWS Free Tier]]
+   + [[http://aws.amazon.com/ec2/][Amazon EC2]]
+   + [[https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/concepts.html][AWS EC2 user guide]]
+
+** Networking
+   Some basics topics in networking that are required to know are:
+   + Bridged networks (using OpenVZ) [[[https://en.wikipedia.org/wiki/Bridging_%2528networking%2529][ Bridging]], [[https://openvz.org/Virtual_Ethernet_device][Bridging in OpenVZ]], [[https://openvz.org/Category:Networking][OpenVZ Networking]] ]
+   + Concept of subnets [ [[https://en.wikipedia.org/wiki/Subnetwork][Subnetwork]] ] 
+   + Basic knowledge of IP addressing [ [[https://en.wikipedia.org/wiki/IP_address][IP addresing]] ]
+
+** Ansible
+   Ansible is a configuration management tool which is used for
+   configuring the cluster. It provides remote configuration of nodes
+   over SSH. For more details view the following [[https://en.wikipedia.org/wiki/Ansible_%2528software%2529][Ansible]] , [[http://docs.ansible.com/][Ansible
+   Documentation]].
 * COMMENT Bootstrapping of a cluster deployment
   The cluster is a collection of several nodes.  Each of these nodes
   have a specific purpose that they serve.  To setup the entire
