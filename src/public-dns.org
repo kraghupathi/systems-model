@@ -380,6 +380,7 @@ $TTL 3600
   remote_user: root
 
   vars:
+    host_name: public-dns
     zone_file_prefix: public.
     zone_names:
       - "{{prefix}}virtual-labs.ac.in."
@@ -390,15 +391,72 @@ $TTL 3600
     recursion: no
     servers:
       - { hostname: router, ip: 54.85.93.7 }
+      - { hostname: bandwidthd, ip: 54.85.93.7 }
       - { hostname: ansible, ip: 52.4.150.142 }
       - { hostname: ossec-server, ip: 54.85.93.7 }
-#      - { hostname: rsyslog-server, ip: 54.85.93.7 }
-#      - { hostname: private-dns, ip: 54.85.93.7 }
+      - { hostname: rsyslog-server, ip: 54.85.93.7 }
+      - { hostname: private-dns, ip: 54.85.93.7 }
       - { hostname: public-dns, ip: 54.85.93.7 }
       - { hostname: reverseproxy, ip: 54.85.93.7 }
       - { hostname: nagios, ip: 54.85.93.7 }
-      - { hostname: lab1, ip: 54.85.93.7 }
-      - { hostname: lab2, ip: 54.85.93.7 }
+      - { hostname: ads, ip: 54.85.93.7 }
+      - { hostname: rsnapshot-server, ip: 54.85.93.7 }
+      - { hostname: cse01-iiith, ip: 54.85.93.7 }
+      - { hostname: cse02-iiith, ip: 54.85.93.7 }
+      - { hostname: cse15-iiith, ip: 54.85.93.7 }
+      - { hostname: cse18-iiith, ip: 54.85.93.7 }
+      - { hostname: cse19-iiith, ip: 54.85.93.7 }
+      - { hostname: cse20-iiith, ip: 54.85.93.7 }
+      - { hostname: emt-iiith, ip: 54.85.93.7 }
+      - { hostname: cse29-iiith, ip: 54.85.93.7 }
+      - { hostname: cse22-iiith, ip: 54.85.93.7 }
+      - { hostname: cse11-iiith, ip: 54.85.93.7 }
+      - { hostname: cse14-iiith, ip: 54.85.93.7 }
+      - { hostname: eerc03-iiith, ip: 54.85.93.7 }
+      - { hostname: phy14-iiith, ip: 54.85.93.7 }
+      - { hostname: ccnsb06-iiith, ip: 54.85.93.7 }
+      - { hostname: eerc01-iiith, ip: 54.85.93.7 }
+      - { hostname: csc-iiith, ip: 54.85.93.7 }
+      - { hostname: bmi-iitr, ip: 54.85.93.7 }
+      - { hostname: bmsip-iitr, ip: 54.85.93.7 }
+      - { hostname: em-iitr, ip: 54.85.93.7 }
+      - { hostname: sl-iitr, ip: 54.85.93.7 }
+      - { hostname: mrmsmtbs-iitk, ip: 54.85.93.7 }
+      - { hostname: va-iitk, ip: 54.85.93.7 }
+      - { hostname: ufls-iitk, ip: 54.85.93.7 }
+      - { hostname: vlae-iitk, ip: 54.85.93.7 }
+      - { hostname: vcal-iitk, ip: 54.85.93.7 }
+      - { hostname: pev-au, ip: 54.85.93.7 }
+      - { hostname: pevii-au, ip: 54.85.93.7 }
+      - { hostname: anthropology-iitg, ip: 54.85.93.7 }
+      - { hostname: ergonomics-iitg, ip: 54.85.93.7 }
+      - { hostname: vem-iitg, ip: 54.85.93.7 }
+      - { hostname: ve-iitg, ip: 54.85.93.7 }
+      - { hostname: sl-coep, ip: 54.85.93.7 }
+      - { hostname: plc-coep, ip: 54.85.93.7 }
+      - { hostname: em-coep, ip: 54.85.93.7 }
+      - { hostname: va-coep, ip: 54.85.93.7 }
+      - { hostname: mm-coep, ip: 54.85.93.7 }
+      - { hostname: fab-coep, ip: 54.85.93.7 }
+      - { hostname: bmsp-coep, ip: 54.85.93.7 }
+      - { hostname: ial-coep, ip: 54.85.93.7 }
+      - { hostname: ied-nitk, ip: 54.85.93.7 }
+      - { hostname: sa-nitk, ip: 54.85.93.7 }
+      - { hostname: fm-nitk, ip: 54.85.93.7 }
+      - { hostname: sm-nitk, ip: 54.85.93.7 }
+      - { hostname: mm-nitk, ip: 54.85.93.7 }
+      - { hostname: mdmv-nitk, ip: 54.85.93.7 }
+      - { hostname: uorepc-nitk, ip: 54.85.93.7 }
+      - { hostname: vssd-iitd, ip: 54.85.93.7 }
+      - { hostname: qnm-iitd, ip: 54.85.93.7 }
+      - { hostname: msvs-dei, ip: 54.85.93.7 }
+      - { hostname: vp-dei, ip: 54.85.93.7 }
+      - { hostname: he-coep, ip: 54.85.93.7 }
+      - { hostname: eem-iitd, ip: 54.85.93.7 }
+      - { hostname: pe-iitb, ip: 54.85.93.7 }
+      - { hostname: ee-iitb, ip: 54.85.93.7 }
+      - { hostname: ce-iitb, ip: 54.85.93.7 }
+      - { hostname: vc-dei, ip: 54.85.93.7 }
 
   roles:
     - common
