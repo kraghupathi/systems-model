@@ -22,7 +22,7 @@
   + Amazon Web Service (AWS) [EC2, VM creation, console, AMI etc.]
   + OpenVZ 
   + Version control basics
-To know further about these please refer the [[Appendix]].
+To know further about these please refer [[Appendix][Appendix]].
 
 * The Cluster Model
   The cluster model describes the set of systems which together
@@ -39,18 +39,19 @@ To know further about these please refer the [[Appendix]].
 ** Base4 Cluster
    This cluster is a development cluster.  This cluster is used to
    test new changes made to the develop branch before they are
-   considered as stable and merged with master.
+   considered as stable and merged with the master branch.
 
 ** Base1 Cluster 
-   Master branches which are found to be stable on the base4 cluster
-   are released with a tag and version number.  The new release is
-   then tested on base1 cluster to re-verify its soundness on staging
-   environment, before it is pushed to production environment on AWS.
+   Stable commits to the master branch on the base4 cluster are
+   released.  Each release has a tag and a version number.  A new
+   release is tested on base1 cluster to re-verify its soundness on
+   the staging environment, before it is pushed to the production
+   environment on AWS.
 
 ** Amazon Web Services (AWS) Cluster
    This cluster is the production cluster.  This cluster is modified
-   after changes have been verified on both development (base4) and
-   staging (base1).
+   only after changes have been verified on both development (base4)
+   and staging (base1) clusters.
 
    /It should be noted that ADS adapter used on base1 and base4 is/
    /different than adapter used on AWS.  Hence some problems may arise/
