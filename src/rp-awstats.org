@@ -199,11 +199,17 @@ etc. Analytics can be viewed on terminal and also in the browser.
 {% endfor %}
 
 -A INPUT -p tcp -m tcp -s {{nagios_server_ip}} --dport 22 -j ACCEPT
+{% for item in rsnapshot_server_ips  %} 
+-A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT  
+{% endfor %}  
+
 ####### Begin Specific to reverseproxy #######
 # Allow incoming http packets from local subnet via the router
+-A INPUT -m state --state NEW -p tcp -m tcp --dport 80 -j ACCEPT  
 -A INPUT -s {{local_subnet}} -p tcp -m tcp --dport 80 -j ACCEPT
 
 #Allow incoming https packets from local subnet via the router
+-A INPUT -m state --state NEW -p tcp -m tcp --dport 443 -j ACCEPT
 -A INPUT -s {{local_subnet}} -p tcp -m tcp --dport 443 -j ACCEPT
 ###### END specific reverseproxy #######
 #Allow incoming NRPE queries for nagios from nagios servers
@@ -214,7 +220,7 @@ etc. Analytics can be viewed on terminal and also in the browser.
 #Reply with proper ICMP error message and reject the connection
 -A INPUT -j REJECT --reject-with icmp-host-prohibited
 #Do not allow any packet to be forwarded
--A FORWARD -j REJECT --reject-with icmp-host-prohibited
+-A FORWARD -j REJECT 
 ##Output rules
 #Allow outgoing connections to localhost
 -A OUTPUT -s 127.0.0.0/8 -o lo -j ACCEPT
@@ -356,6 +362,39 @@ ServerAlias {{domain.alias}}
 ServerAlias {{domain.alias1}}
 ErrorLog logs/{{domain.domain}}-error_log
 </Virtualhost>
+
+<Virtualhost *:443>
+ServerAdmin engg@vlabs.ac.in
+ServerName {{domain.domain}}
+ServerAlias {{domain.alias}}
+ErrorLog logs/{{domain.domain}}-error_log
+</Virtualhost>
+
+{% elif domain.domain == "bandwidthd.virtual-labs.ac.in" %}
+<Virtualhost *:80>
+ServerAdmin engg@vlabs.ac.in
+ServerName {{domain.domain}}
+ServerAlias {{domain.alias}}
+ErrorLog logs/{{domain.domain}}--error_log
+CustomLog logs/{{domain.domain}}--access_log combined
+<Location />
+ProxyPass http://{{domain.domain}}:8000/bandwidthd/
+ProxyPassReverse  http://{{domain.domain}}:8000/bandwidthd/
+</Location>
+</Virtualhost>
+
+<Virtualhost *:443>
+ServerAdmin engg@vlabs.ac.in
+ServerName {{domain.domain}}
+ServerAlias {{domain.alias}}
+ErrorLog logs/{{domain.domain}}--error_log
+CustomLog logs/{{domain.domain}}--access_log combined
+<Location />
+ProxyPass http://{{domain.domain}}:8000/bandwidthd/
+ProxyPassReverse  http://{{domain.domain}}:8000/bandwidthd/
+</Location>
+</Virtualhost>
+
 {% else %}
 
 <VirtualHost *:80>
@@ -381,10 +420,12 @@ CustomLog logs/{{domain.domain}}-access_log combined
 ProxyPass http://{{domain.domain}}/
 </Location>
 </VirtualHost>
+
+
 {% endif %}
 
-{% endfor %
-#+END_SRC   
+{% endfor %}
+#+END_SRC  
 *** Configuring virualhosts
     Copy =virtualhosts.conf= template to reverse proxy server's apache
     configuration file.
@@ -1955,10 +1996,10 @@ ExtraTrackedRowsLimit=500
 
 #+END_SRC
 **** Configure AWStats for each lab
-     The following task does:
      1) Copy default [[AWStats configuration][awstats.reverseproxy.conf]] template to reverse proxy.
      2) creates separate awstats configuration file for each
         domain-name.
+     The following task does:
      (NOTE:: This task uses awstats_domains variable and this is
      defined in common-vars role. This task)
 
@@ -1968,9 +2009,39 @@ ExtraTrackedRowsLimit=500
 - name: Create one awstats file for each proxy domain
   template: src=awstats.reverseproxy.conf dest="/etc/awstats/awstats.{{item}}.conf"
   with_items: awstats_domains
- notify:
-    - restart httpd
+- name: register configtest                                                                        
+  command: apachectl configtest                                                                    
+  register: op_configtest                                                                          
+  notify:                                                                                          
+    - restart httpd            
+
 #+END_SRC
+**** Generating and copying ssh keypair for rsyncing logs, stats to analytics server
+#+BEGIN_SRC  yaml :tangle roles/reverseproxy_server/tasks/main.yaml
+#Generating and copying ssh keypair for rsyncing logs, stats to analytics server
+  
+- name: Generate key pair under user root.
+  user: name=root generate_ssh_key=yes ssh_key_file=.ssh/id_rsa ssh_key_type=rsa
+    
+  #Get the .pub key generated in previous step to Ansible machine, which
+  # will then be used by analytics role and placed in analytics server
+    
+- name: Fetch the public key from RP to Ansible
+  fetch: src=/root/.ssh/id_rsa.pub dest=rp_pub_key fail_on_missing=yes flat=yes validate_checksum=yes
+
+  #Set hourly cronjobs to rsync the AWstats statistics files to
+  #Analytics server the "name= " parameter should not be changed and
+  #must be unique
+    
+- name: Rsync the AWstats stats file to analytics server
+  cron:
+        name=rsync_stats
+        user=root
+        hour=01
+        state=present
+        job="rsync -arR /var/lib/awstats root@10.100.1.12:/root/aws/"
+#+END_SRC                                                                           
+
 
 **** Allow access to awstats from management ips
      To access awstats from management ips , configure apache server
