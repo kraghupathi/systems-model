@@ -383,7 +383,18 @@ To know further about these please refer [[Appendix][Appendix]].
 
 - include: rsnapshot_server.yaml
 #+END_SRC 
+* AWS compliance
+  AWS provides a list of security best practices which should be
+  followed. These practices help the AWS client take safety
+  precautions based on the various features Amazon provides. Using
+  these a compliance test of the AWS cluster was done. The following
+  file describes the same.
 
+  [[./vlead-compliance-with-aws-security-best-practicses.org][Vlead compliance with aws security best practicses]]
+
+* Known Issues
+  A separate repository for systems related issues which includes the
+  cluster and its implementation can be viewed [[https://bitbucket.org/vlead/systems/issues?status%3Dnew&status%3Dopen][here]].
 * Appendix
 ** Version control
    The cluster model would involve timely changes, be it in the
@@ -414,7 +425,7 @@ To know further about these please refer [[Appendix][Appendix]].
    + [[http://aws.amazon.com/free/][AWS Free Tier]]
    + [[http://aws.amazon.com/ec2/][Amazon EC2]]
    + [[https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/concepts.html][AWS EC2 user guide]]
-
+     
 ** Networking
    Some basics topics in networking that are required to know are:
    + Bridged networks (using OpenVZ) [[[https://en.wikipedia.org/wiki/Bridging_%2528networking%2529][ Bridging]], [[https://openvz.org/Virtual_Ethernet_device][Bridging in OpenVZ]], [[https://openvz.org/Category:Networking][OpenVZ Networking]] ]
