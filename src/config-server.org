@@ -181,9 +181,13 @@ configuration files. Other configuration files are updated in common role.
 -A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
 #Allow incoming SSH connections from ansible_server IPs.  Hopefully fail2ban will take care of bruteforce attacks from management IPs
-{% for item in ansible_server_ips_ips  %}
+{% for item in ansible_server_ips  %}
 -A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
+#Allow incoming SSH connections from rsnapshot_server IPs.  Hopefully fail2ban will take care of bruteforce attacks from management IPs
+{% for item in rsnapshot_server_ips  %} 
+-A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT  
+{% endfor %}  
 
 #Allow incoming NRPE queries for nagios from nagios servers
 -A INPUT -m state --state NEW -p tcp -m tcp --dport 5666 -j ACCEPT
@@ -267,7 +271,6 @@ configuration files. Other configuration files are updated in common role.
 ---
 - name: installing ansible
   yum: name=ansible state=present
-#  environment: proxy_env
 #+END_SRC
 *** Set the hostname 
     The following task sets the hostname of the node
@@ -288,12 +291,13 @@ configuration files. Other configuration files are updated in common role.
   template: src=iptables dest=/etc/sysconfig/iptables mode=600 owner=root group=root
   notify: restart iptables
 #+END_SRC
+
 ** Handlers
    Restart the iptables service if configuration file of iptables is
    modified. These handlers are called only when tasks notifies to
    start service.
 
-#+BEGIN_SRC yaml :tangle roles/reverseproxy_server/handlers/main.yaml 
+#+BEGIN_SRC yaml :tangle roles/config_server/handlers/main.yaml 
 ---
 - name: restart iptables
   service: name=iptables state=restarted
