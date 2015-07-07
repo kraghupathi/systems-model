@@ -696,7 +696,11 @@ private_dns_zone: base4.virtual-labs.ac.in base4.vlabs.ac.in
 #Rsyslog server IPs.  Set to none if there is no rsyslog server
 rsyslog_server_ips:
   - 10.100.1.4
-
+rsnapshot_server_ip:
+  - 10.100.1.10
+#Release number used in common task to add it to the target
+release_no:
+  - 00
 
 #List of domains to pass through reverseproxy
 proxy_domains:
