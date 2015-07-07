@@ -314,6 +314,10 @@ configuration files. Other configuration files are updated in common role.
   hosts: ansible_server
   remote_user: root
 
+  vars:
+    i_ans: yes
+    host_name: ansible
+
   roles:
     - common
     - rsyslog_client
