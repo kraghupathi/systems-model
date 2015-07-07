@@ -741,6 +741,7 @@ sudo passwd -u root
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 - name: setting the implementation/model release
   lineinfile: dest=/etc/motd regexp="^Release" line="Release number {{ release_no }}" state=present create=yes
+  ignore_errors: yes
 #+END_SRC
 
 *** Common Variables
