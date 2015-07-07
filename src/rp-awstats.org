@@ -271,7 +271,6 @@ etc. Analytics can be viewed on terminal and also in the browser.
     =httpd=
     =awstats=
     =mod_ssl=
-    
 - Note :: Install "mod_ssl" for HTTPS access. Enable it if it has a
           valid certificate and test the implementation using
           https://www.ssllabs.com/ssltest/index.html
@@ -282,19 +281,8 @@ etc. Analytics can be viewed on terminal and also in the browser.
   with_items:
     - httpd
     - awstats
-    - mod_ssl
+#    - mod_ssl
 #+END_SRC
-
-*** COMMENT Set the hostname 
-    The following task sets the hostname of the instance.
-#+BEGIN_EXAMPLE
-#+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml
----
-- name: Setting the hostname
-  hostname: name=reverseproxy.virtual-vlabs.ac.in
-#+END_SRC
-#+END_EXAMPLE
-
 *** Configuring firewall rules 
     The following task Copies =iptables= template created at [[Firewall
     rules section]] to reverse proxy and notifies to restart the
@@ -320,6 +308,19 @@ etc. Analytics can be viewed on terminal and also in the browser.
      To support multiple https virtual-hosts *NameVirtualHost *:443* in
      =/etc/httpd/conf/httpd.conf= is enabled with the following task.
 
+     *NOTE* : Following playbook is having tags for https. These tags
+     are added because it is causing ssl certificate issue while
+     starting httpd server on reverse proxy server. Since ssl
+     certificates are not available on all the clusters, httpd server
+     will not start. We can run this playbook as it is without
+     skipping tags on AWS. 
+
+     When you want to run this playbook on base1 and base4 clusters,
+     run the following command.
+     #+BEGIN_EXAMPLE
+     ansible-playbook -i hosts reverseproxy-server.yaml  --skip-tags "https"
+     #+END_EXAMPLE 
+
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml
 - name: Configure apache to support multiple https virtualhosts
   lineinfile: line="NameVirtualHost *:443" regexp="^NameVirtualHost .*:443" dest=/etc/httpd/conf/httpd.conf
@@ -328,16 +329,22 @@ etc. Analytics can be viewed on terminal and also in the browser.
 
 - name: Configure apache httpd.conf to listen on 443
   lineinfile: line="Listen *:443 http" regexp="^Listen .*443" dest=/etc/httpd/conf/httpd.conf state=present
+  tags: 
+   - https
 
 - name: Disable SSLv3 on ssl.conf
 #SSLv3 will be disabled in recent version of Debian/Ubuntu, have to check for CentOS
   lineinfile: line="SSLProtocol all -SSLv2 -SSLv3" regexp="^SSLProtocol all -SSLv2" dest=/etc/httpd/conf.d/ssl.conf state=present
-
+  tags:
+   - https
 - name: Enable PFS
   lineinfile: line="SSLCipherSuite AES256+EECDH:AES256+EDH" regexp="^SSLCipherSuite " dest=/etc/httpd/conf.d/ssl.conf state=present
-
+  tags:
+   - https
 - name: Enforce SSL cipher order
   lineinfile: line="SSLHonorCipherOrder On" regexp="^SSLHonorCipherOrder " dest=/etc/httpd/conf.d/ssl.conf state=present
+  tags:
+   - https
 #+END_SRC
 *** Create a template for virtualhosts
     Following =virtualhosts.conf= template defines http and https
@@ -2009,6 +2016,8 @@ ExtraTrackedRowsLimit=500
 - name: Create one awstats file for each proxy domain
   template: src=awstats.reverseproxy.conf dest="/etc/awstats/awstats.{{item}}.conf"
   with_items: awstats_domains
+  notify: restart httpd
+
 - name: register configtest                                                                        
   command: apachectl configtest                                                                    
   register: op_configtest                                                                          
@@ -2130,7 +2139,7 @@ ScriptAlias /awstats/ "/usr/share/awstats/wwwroot/cgi-bin/"
     remote_user: root
     
     vars:
-     host_name: reverse-proxy
+     host_name: reverseproxy
     roles:
       - common
       - ossec_client
