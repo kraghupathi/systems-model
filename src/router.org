@@ -152,7 +152,9 @@ COMMIT
 -A INPUT -m state --state NEW -s {{nagios_server_ips[0]}} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
 #Allow incoming NRPE queries for nagios from nagios servers
--A INPUT -m state --state NEW -p tcp -m tcp --dport 5666 -j ACCEPT
+{% for ip in nagios_server_ips %}
+-A INPUT -m state --state NEW -s {{ip}} -p tcp -m tcp --dport 5666 -j ACCEPT
+{% endfor %}
 #Allow SNMP queries from cacti servers
 #-A INPUT -p udp -m udp --dport 161 -j ACCEPT
 #-A INPUT -p udp -m udp --dport 162 -j ACCEPT
@@ -214,10 +216,10 @@ COMMIT
       machine.
    2) Restart iptables service to enforce the configuration.
 #+BEGIN_SRC yml :tangle roles/router/tasks/main.yml
- - name: Copying iptables config files
-   template: src=router_iptables dest=/etc/sysconfig/iptables owner=root group=root mode=600
-   notify:
-     - restart iptables
+- name: Copying iptables config files
+  template: src=router_iptables dest=/etc/sysconfig/iptables owner=root group=root mode=600
+  notify:
+    - restart iptables
 #+END_SRC
    
 ** Applying Firewall rules 
@@ -248,6 +250,73 @@ COMMIT
 
 - name: restart apache to start bandwidthd monitoring
   service: name=httpd state=restarted enabled=yes
+#+END_SRC
+
+- =bandwidthd= is configured to listen on the internal ethernet device
+  =eth0= and monitor the internal/private subnet on which all other
+  machines are bound to communicate, except the config server.
+#+BEGIN_SRC yml :tangle roles/router/templates/bandwidthd.conf
+####################################################
+# Bandwidthd.conf
+# 
+# Commented out options are here to provide
+# documentation and represent defaults
+
+# Subnets to collect statistics on.  Traffic that 
+# matches none of these subnets will be ignored.
+# Syntax is either IP Subnet Mask or CIDR
+#subnet 10.0.0.0 255.0.0.0
+#subnet 192.168.0.0/16
+#subnet 172.16.0.0/12
+
+#Adding subnets from common_vars
+subnet {{local_subnet}}
+#subnet {{router_interface_ip}}/32
+
+# Device to listen on
+# Bandwidthd listens on the first device it detects
+# by default.  Run "bandwidthd -l" for a list of 
+# devices. 
+#dev "eth0"
+
+#Interface both internal and external of the router
+
+dev "eth0"
+#dev "eth1"
+
+###################################################
+# Options that don't usually get changed
+
+# An interval is 2.5 minutes, this is how many 
+# intervals to skip before doing a graphing run
+#skip_intervals 0
+
+# Graph cutoff is how many k must be transfered by an
+# ip before we bother to graph it
+#graph_cutoff 1024
+
+#Put interface in promiscuous mode to score to traffic
+#that may not be routing through the host machine.
+#promiscuous true
+
+#Log data to cdf file htdocs/log.cdf
+#output_cdf false
+
+#Read back the cdf file on startup
+#recover_cdf false
+
+#Libpcap format filter string used to control what bandwidthd see's
+#Please always include "ip" in the string to avoid strange problems
+#filter "ip"
+
+#Draw Graphs - This default to true to graph the traffic bandwidthd is recording
+#Usually set this to false if you only want cdf output or
+#you are using the database output option.  Bandwidthd will use very little
+#ram and cpu if this is set to false.
+#graph true
+
+#Set META REFRESH seconds (default 150, use 0 to disable).
+#meta_refresh 150
 #+END_SRC
 ** Variables Definition
 - Variables are used by the ansible scripts to configure router. Values of these
