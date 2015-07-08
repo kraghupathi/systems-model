@@ -189,19 +189,20 @@ etc. Analytics can be viewed on terminal and also in the browser.
 -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
 
 #Allow incoming SSH connections from management IPs.  Hopefully fail2ban will take care of bruteforce attacks from management IPs
-{% for item in management_ips  %}
+{% for item in management_ips %}
 -A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
 
 #Allow incoming SSH connections from configuration server IPs.  Hopefully fail2ban will take care of brute force attacks from ansible server IPs
-{% for item in ansible_server_ips  %}
+{% for item in ansible_server_ips %}
 -A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
-
--A INPUT -p tcp -m tcp -s {{nagios_server_ip}} --dport 22 -j ACCEPT
-{% for item in rsnapshot_server_ips  %} 
--A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT  
-{% endfor %}  
+{% for item in nagios_server_ips %}
+-A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
+{% for item in rsnapshot_server_ips %}
+-A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
 
 ####### Begin Specific to reverseproxy #######
 # Allow incoming http packets from local subnet via the router
