@@ -462,6 +462,9 @@ release_no:
 ansible_server_ips: 
   - 10.100.1.2
 
+#Anlytics IP used by RP role to rsync logs,awstats
+analytics_server_ip: 10.100.1.12
+
 #List of management stations.  Multiple is ok
 management_ips:
   - 10.2.56.3
@@ -650,6 +653,9 @@ proxy_env:
 #List of ansible servers.  Mutliple ansible servers are fine
 ansible_server_ips:
   - 10.100.1.2
+
+#Anlytics IP used by RP role to rsync logs,awstats
+analytics_server_ip: 10.100.1.12
 
 #List of management stations.  Multiple is ok
 management_ips:
