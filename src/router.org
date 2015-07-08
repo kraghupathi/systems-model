@@ -215,7 +215,7 @@ COMMIT
    2) Restart iptables service to enforce the configuration.
 #+BEGIN_SRC yml :tangle roles/router/tasks/main.yml
  - name: Copying iptables config files
-   template: src=iptables dest=/etc/sysconfig/iptables owner=root group=root mode=600
+   template: src=router_iptables dest=/etc/sysconfig/iptables owner=root group=root mode=600
    notify:
      - restart iptables
 #+END_SRC
