@@ -252,8 +252,13 @@ etc. Analytics can be viewed on terminal and also in the browser.
 #Log all other "blocked_output_" attempts
 -A OUTPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_output_"
 
+#Allow outgoing connections on tcp port 8000 to router, this is for bandwidthd on router
+-A OUTPUT -p tcp -m tcp -d {{router_internal_ip}} --dport 8000 -j ACCEPT
+
 #Reply with proper ICMP error message and reject the connection
 -A OUTPUT -j REJECT --reject-with icmp-host-prohibited
+
+COMMIT
 #+END_SRC
 **** Allow HTTP(80) and HTTPS(443) packets
      The firewall rule accepts HTTP(80) and HTTPS(443) packets from the
