@@ -175,7 +175,7 @@ configuration files. Other configuration files are updated in common role.
 
 #Allow ongoing connections
 -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-{% for ip in nagios_server_ip %}
+{% for ip in nagios_server_ips %}
 -A INPUT -p tcp -m tcp -s {{ip}} --dport 22 -j ACCEPT
 {% endfor %}
 #Allow incoming SSH connections from management IPs.  Hopefully fail2ban will take care of bruteforce attacks from management IPs
@@ -190,7 +190,7 @@ configuration files. Other configuration files are updated in common role.
 {% for item in rsnapshot_server_ips  %}
 -A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
-Allow incoming NRPE queries for nagios from nagios servers
+#Allow incoming NRPE queries for nagios from nagios servers
 -A INPUT -m state --state NEW -p tcp -m tcp --dport 5666 -j ACCEPT
 #Log all other "blocked_input_" attempts with rate limiting
 -A INPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_input_"
@@ -226,7 +226,7 @@ Allow incoming NRPE queries for nagios from nagios servers
 {% endfor %}
 #Allow outgoing SSH connections from ansible_server IPs.  Hopefully
 #fail2ban will take care of bruteforce attacks from ansible server IPs
-{% for item in ansible_server_ips_ips  %}
+{% for item in ansible_server_ips  %}
 -A OUTPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
 
