@@ -161,17 +161,17 @@
 -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
 
 #Allow incoming SSH connections from management IPs.  Hopefully fail2ban will take care of bruteforce attacks from management IPs
-{% for item in management_ips  %}  
+{% for item in management_ips  %}
 -A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
 
 #Allow incoming SSH connections from ansible server IPs.  Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
-{% for item in ansible_server_ips  %}  
+{% for item in ansible_server_ips  %}
 -A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
 
 #Allow incoming SSH connections from nagios server IPs.  Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
-{% for item in nagios_server_ips  %}  
+{% for item in nagios_server_ips  %}
 -A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
 
@@ -184,11 +184,11 @@
 #Log all other "blocked_input_" attempts with rate limiting
 -A INPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_input_"
 
-#Drop all other packets without sending ICMP error message back
--A INPUT -j DROP
+#Reply with proper ICMP error message and reject the connection
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
 
-#Do not allow any packet to be forwarded
--A FORWARD -j DROP
+#Disable packet forwarding through firewall
+-A FORWARD -j REJECT --reject-with icmp-host-prohibited
 
 #Allow outgoing connections to localhost
 -A OUTPUT -s 127.0.0.0/8 -o lo -j ACCEPT
@@ -405,7 +405,8 @@ authpriv.*      ?TmplAuth
     service using handler created as follows:
 
 #+BEGIN_SRC yml :tangle roles/rsyslog_server/handlers/main.yml
- - name: Restart rsyslog
+---
+ - name: restart rsyslog
    service: name=rsyslog state=restarted
 #+END_SRC
 *** Restart iptables handler
@@ -415,8 +416,7 @@ authpriv.*      ?TmplAuth
     as follows:
 
 #+BEGIN_SRC yml :tangle roles/rsyslog_server/handlers/main.yml
----
- - name: Restart iptables
+ - name: restart iptables
    service: name=iptables state=restarted
 #+END_SRC
 
@@ -436,12 +436,17 @@ authpriv.*      ?TmplAuth
 
 #+BEGIN_SRC yml -n :tangle rsyslog_server.yml
 ---
-- name: Configure rsyslog server 
+- name: Configure rsyslog server
   hosts: rsyslog_server
   remote_user: root
+  vars:
+   - iam_router: false
+
   roles:
-   - common
-   - rsyslog_server
+    - common
+    - ossec_client
+    - nagios_client
+    - rsyslog_server
 #+END_SRC
 
 * Test Cases for testing rsyslog server soundness and completeness
