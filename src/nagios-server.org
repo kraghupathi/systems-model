@@ -476,10 +476,10 @@ check_command           {{ s.command }}
    1) Copy iptables jinja2 template from ansible node to the server.
    2) Restart iptables service to enforce the configuration.
 #+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
- - name: Copy iptables configuration file
-   template: src=nagios_server_iptables dest=/etc/sysconfig/iptables owner=root group=root mode=600
-   notify:
-     - restart iptables
+- name: Copy iptables configuration file
+  template: src=nagios_server_iptables dest=/etc/sysconfig/iptables owner=root group=root mode=600
+  notify:
+    - restart iptables
 #+END_SRC
 *** Create Nagios admin user for web interface
    A user is created on the nagios server node for web
@@ -518,7 +518,6 @@ check_command           {{ s.command }}
    included in the main tasks file.
 
 #+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
----
 - tasks:
   include: configure_servers.yml
 #+END_SRc
