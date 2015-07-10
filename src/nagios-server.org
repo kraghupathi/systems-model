@@ -566,17 +566,13 @@ check_command           {{ s.command }}
   service: name=httpd state=restarted
 #+END_SRC
 
-*** COMMENT Start firewall service
+*** Start firewall service
    Any changes in iptables configuration file, to update the firewall
    is enforced by restarting the iptables service.
-#+BEGIN_EXAMPLE
 #+BEGIN_SRC yml :tangle roles/nagios_server/handlers/main.yml
 - name: restart iptables
-  sudo: true
   service: name=iptables state=restarted
 #+END_SRC
-#+END_EXAMPLE
-
 ** Define variables and services groups
    Various variables used by the ansible playbook are defined
    here. Following table represents the variables name and their
