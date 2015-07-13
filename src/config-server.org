@@ -1,4 +1,4 @@
- #+TITLE:  Configuration Server
+#+TITLE:  Configuration Server
 #+PROPERTY: session *scratch*
 #+PROPERTY: results output
 #+PROPERTY: exports code
@@ -51,11 +51,13 @@ ip machines.
    3. Only authorized VLEAD members can login as 'root' user from IIIT
       IP range or management ip machines using key based
       authentication only.
+   4. Provide service to register and de-register labs. 
 
 ** Security Requirements
    The Configuration server accepts incoming connections on port 22
    *only* from IIIT IP range or management ip machines.
 * Design
+** Configuration
   The following network diagram represents how the configuration
   server is connecting to other nodes such as reverse proxy, DNS,
   router etc.
@@ -84,6 +86,10 @@ ip machines.
   itself by running the ansible scripts. These ansible scripts are
   described and implemented at the [[Implementation][implementation]] section.
 
+** Services
+  #+CAPTION:  Configuration Server Services Design Diagram
+  #+LABEL:  fig-config-services-diagram
+  [[./diagrams/hooks.png]]
 ** System Configuration files Summary
 
 The following table gives the information about services and their
@@ -99,13 +105,14 @@ configuration files. Other configuration files are updated in common role.
 #+TBLFM: $2=/etc/sysconfig/network-scripts
 
 * Implementation
+** Configuration
   The implementation of the configuration server is done with the
   following steps.
   - Note :: In this implementation, variables are used in various
             places using "{}". Values of these variables are defined
             in [[common_vars.org][common_vars role]].
 
-** Structure of the scripts
+*** Structure of the scripts
    The implementation of this system is in terms of a collection of
    ansible scripts that configures the machine. The scripts are organized as
    follows:
@@ -149,7 +156,7 @@ configuration files. Other configuration files are updated in common role.
    created at [[Firewall rules]] section and you can see the description
    each firewall.
 
-** Tasks
+*** Tasks
 
 *** Firewall rules
     Rules which are specific to configuration server are described [[Firewall rules specific to config_server][below]].
@@ -286,7 +293,7 @@ COMMIT
   notify: restart iptables
 #+END_SRC
 
-** Handlers
+*** Handlers
    Restart the iptables service if configuration file of iptables is
    modified. These handlers are called only when tasks notifies to
    start service.
@@ -297,7 +304,7 @@ COMMIT
   service: name=iptables state=restarted
 #+END_SRC
 
-** Main configuration file
+*** Main configuration file
    The configuration server is managed with all other roles. The
    implementation is done in terms of defining suitable scripts for
    each role.  The top level script is =build/code/config_server.yml=
@@ -320,6 +327,15 @@ COMMIT
     - config_server
 #+END_SRC
 
+** Services
+*** Requirements of the hooks:: 
+   - A SSH call from ads server to register.sh script.
+   - register.sh then writes data into lab.txt
+   - then invokes python program to convert lab.txt into a separate file.
+   - Collate entries from models and newly generated file and provide it to
+     playbook.
+   - Invoke the playbook of setting up server again with updated entries or
+     directly call site.yml.
 * Test Cases
 ** Test case ID :: SSH access using AWS KeyPair
 *** Objective
@@ -440,3 +456,28 @@ COMMIT
   Iptables are configured and applied appropriately. Configuration
   server is able accept ssh connections only from IIIT/management IPs
   and not from unknown ips.
+* TODO
+** DONE Add requirements of registering and de-registering labs in the config server.
+** Add section for this implementation of the above requirements in the config-server.org. 
+** First make the scripts. 
+** Write a separate section with code and logic of registering labs in the  config-server.org.
+** Write a tasks in playbook to place the code in proper directory, set PATH environment variable.
+** DONE Requirements of the hooks:: 
+   - A SSH call from ads server to register.sh script.
+   - register.sh then writes data into lab.txt
+   - then invokes python program to convert lab.txt into a separate file.
+   - Collate entries from models and newly generated file and provide it to
+     playbook.
+   - then invoke the playbook of setting up server again with updated entries
+     or directly call site.yml.
+** Separate out the lab entries from the node models. Because in future ads
+   will be registering new labs and making changes directly to implementation
+   files and those entries could not be updated in the model. So it is better
+   to separate out lab entries. Instead we can have only system services
+   entries in the model and lab entries could be directly added by ads hooks in
+   the implementation files. And playbook collate these entries from two files
+   and set the node. 
+** Put hooks diagram in the config-server.org
+** Create two section in the design one is services and another is
+   configuration.
+** In the implementation section create two subsection one is for configuration and other for services.
