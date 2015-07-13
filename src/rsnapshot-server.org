@@ -84,7 +84,7 @@
    with the "common" and "rsnapshot_server" roles as described in the
    [[Rsnapshot server configuration script]] section.
 
-   The =roles/rsnapshot_server/handlers/main.yaml= file defines
+   The =roles/rsnapshot_server/handlers/main.yml= file defines
    various handlers which are only executed in case a task notifies
    them. These handlers are described in detail in the [[Handlers]]
    section.
@@ -99,7 +99,7 @@
    at various places to configure the Rsnapshot server with
    appropriate values.
 
-   =roles/nagios_server/vars/main.yaml= file defines the variable as
+   =roles/nagios_server/vars/main.yml= file defines the variable as
    described in the [[Variables Definition]] section.
 
 ** Firewall Rules
@@ -172,6 +172,7 @@
 
 #Allow https to contact yum
 -A OUTPUT -p tcp -m tcp --dport 443 -j ACCEPT
+-A OUTPUT -p tcp -m tcp --dport 80 -j ACCEPT
 
 #Allow to make DNS queries
 -A OUTPUT -p udp -m udp --dport 53 -j ACCEPT
@@ -608,7 +609,6 @@ link_dest	1
 
 #+BEGIN_SRC yml :tangle roles/rsnapshot_server/handlers/main.yml :eval no
 - name: restart_iptables
-  sudo: true
   service: name=iptables state=restarted
 #+END_SRC
 
@@ -746,7 +746,7 @@ rsnapshot_crontab:
    1) =common=
    2) =rsnapshot_server=
 
-#+BEGIN_SRC 
+#+BEGIN_SRC yml :tangle rsnapshot_server.yml :eval no
 ---
 - name: This yml script configures rsnapshot server
   hosts: rsnapshot_server
