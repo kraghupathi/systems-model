@@ -12,23 +12,24 @@
   This document describes the requirements, design and implementation of
   the configuration server.
   
-  This configuration server plays a vital role in the cluster to
-  complete the infrastructure.  Since configuration server configures
-  all other nodes in the cluster and configures itself as well,
-  through multiple roles and tasks.  A role is a specific set of
-  configurations.
+  This configuration server plays a vital role in the cluster to complete the
+  infrastructure.  Since configuration server configures all other nodes in the
+  cluster and configures itself as well, through multiple roles and tasks.  A
+  role is a specific set of configurations.
 
-  it contains all the ansible-scripts to bring up the other nodes. The
-  purpose of this server is to avoid manual configuration of nodes by
-  team members. The mechanism ansible provides to configure other nodes
-  is via ssh.
+  It contains all the ansible-scripts to bring up the other nodes. The purpose
+  of this server is to avoid manual configuration of nodes by team members. The
+  mechanism ansible provides to configure other nodes is via ssh.
  
   The configuration server will be able to ssh to other servers and lab
-  instances/containers using *key based authentication only* since
-  public key of configuration server will be placed in all other
+  instances/containers using *key based authentication only* since public key of
+  configuration server will be placed in all other
   servers/nodes,instances/containers and itself also. Password based
   authentication is not allowed to this node
-  
+
+  This document also describes the implementation of a python program which
+  takes a text file as input and writes the data in yml format into another
+  file.
 
 ** COMMENT Only from management ip machines, we will be able ssh to root account
 of configuration server. Password based authentication is not allowed
@@ -336,6 +337,251 @@ COMMIT
      playbook.
    - Invoke the playbook of setting up server again with updated entries or
      directly call site.yml.
+*** Input Format
+Input format for the program is as follows.
+#+BEGIN_SRC txt :tangle lab.txt :eval no
+router 10.100.1.1
+bandwidthd 10.100.1.1
+ansible 10.100.1.2
+ossec-server 10.100.1.3
+rsyslog-server 10.100.1.4
+private-dns 10.100.1.5
+public-dns 10.100.1.6
+#+END_SRC
+
+*** Output format
+Output format of the program is as follows.
+#+BEGIN_SRC yml :tangle output.yml :eval no
+- { hostname: router, ip: 10.100.1.1 }
+- { hostname: bandwidthd, ip: 10.100.1.1 }
+- { hostname: ansible, ip: 10.100.1.2 }
+- { hostname: ossec-server, ip: 10.100.1.3 }
+- { hostname: rsyslog-server, ip: 10.100.1.4 }
+- { hostname: private-dns, ip: 10.100.1.5 }
+- { hostname: public-dns, ip: 10.100.1.6 }
+#+END_SRC
+*** Add author name
+#+BEGIN_SRC python :tangle format.py :eval no
+#Author: Yogesh Agrawal
+#Date: 2015, June 26. Friday
+#Email: yogesh@vlabs.ac.in
+#+END_SRC
+
+*** Function for modifying DNS files
+**** Function definition
+#+BEGIN_SRC python :tangle format.py :eval no
+def dns(inputFile, outputFile):
+#+END_SRC
+
+**** Open Input File and Output File
+Open input file - "lab.txt" to read the content. Also open output file -
+"private_dns.yaml" to write data.
+
+#+BEGIN_SRC python :tangle format.py :eval no
+    labFile = open(inputFile, "r")
+    ymlFile = open(outputFile, "r")
+#+END_SRC
+
+**** Read yml file
+Read yml file line by line and save data in a variable.
+#+BEGIN_SRC python :tangle format.py :eval no	
+    ymlData = ymlFile.readlines()
+#+END_SRC
+
+**** Find start and end index of markers
+Find the start and end index of the markers in the yml file.
+#+BEGIN_SRC python :tangle format.py :eval no
+    startIndex = ymlData.index("#START\n")
+    endIndex = ymlData.index("#END\n")
+#+END_SRC	
+
+**** Save existing entries in a variable
+Data is in between the markers, so entries are fetched from file and saved in a
+variable.
+#+BEGIN_SRC python :tangle format.py :eval no
+    existingEntries = []
+
+    for index in range(startIndex + 2, endIndex):
+        existingEntries.append(ymlData[index])
+#+END_SRC
+
+**** Save new entries in the variable
+New entries are appended in the same variable with proper format.
+#+BEGIN_SRC python :tangle format.py :eval no
+    newEntries = []
+	
+    for line in labFile.readlines():
+        splitLine = line.split()
+	hostnameAndIP = "      - { hostname: %s, ip: %s }\n" %(splitLine[0], splitLine[1])
+	newEntries.append(hostnameAndIP)
+#+END_SRC
+
+**** Combine existing and new entries in a variable
+#+BEGIN_SRC python :tangle format.py :eval no
+    totalEntries = existingEntries + newEntries
+#+END_SRC
+
+**** Remove duplicate entries
+Remove duplicates by converting list into set first and then again into list.
+#+BEGIN_SRC python :tangle format.py :eval no
+    totalEntries = list(set(totalEntries))
+#+END_SRC
+
+**** Complete file content
+#+BEGIN_SRC python :tangle format.py :eval no
+    newYmlData = ymlData[0:startIndex + 1] + totalEntries + ymlData[endIndex:-1]
+#+END_SRC
+
+**** Close file pointers
+#+BEGIN_SRC python :tangle format.py :eval no
+    labFile.close()
+    ymlFile.close()
+#+END_SRC
+
+**** Write complete data to a file
+Data is written to a file line by line.
+#+BEGIN_SRC python :tangle format.py :eval no
+    newYmlFile = open(outputFile, "w")
+
+    for lines in newYmlData:
+        newYmlFile.write(lines)
+#+END_SRC
+
+**** Close file pointers
+#+BEGIN_SRC python :tangle format.py :eval no
+    newYmlFile.close()
+#+END_SRC
+
+**** Return function call
+#+BEGIN_SRC python :tangle format.py :eval no
+    return
+#+END_SRC
+
+*** Function for modifying reverseproxy files
+**** Function definition
+#+BEGIN_SRC python :tangle format.py :eval no
+def reverseproxy(inputFile, outputFile):
+#+END_SRC
+
+**** Open Input File and Output File
+Open input file - "lab.txt" to read the content. Also open output file -
+"private_dns.yaml" to write data.
+#+BEGIN_SRC python :tangle format.py :eval no 
+    labFile = open(inputFile, "r")
+    ymlFile = open(outputFile, "r")
+#+END_SRC
+
+**** Read yml file
+Read yml file line by line and save data in a variable.
+#+BEGIN_SRC python :tangle format.py :eval no
+    ymlData = ymlFile.readlines()
+#+END_SRC
+
+**** Find start and end index of markers
+Find the start and end index of the markers in the yml file.
+#+BEGIN_SRC python :tangle format.py :eval no
+    domainStartIndex = ymlData.index("#DOMAIN_START\n")
+    domainEndIndex = ymlData.index("#DOMAIN_END\n")
+
+    awstatsStartIndex = ymlData.index("#AWSTATS_START\n")
+    awstatsEndIndex = ymlData.index("#AWSTATS_END\n")
+#+END_SRC
+
+**** Save existing entries in a variable
+Data is in between the markers, so entries are fetched from file and saved in a
+variable.
+#+BEGIN_SRC python :tangle format.py :eval no
+    domainExistingEntries = []
+    awstatsExistingEntries = []
+
+    for index in range(domainStartIndex + 2, domainEndIndex):
+        domainExistingEntries.append(ymlData[index])
+    
+    for index in range(awstatsStartIndex + 2, awstatsEndIndex):
+        awstatsExistingEntries.append(ymlData[index])
+#+END_SRC
+
+**** Save new entries in the variable
+New entries are appended in the same variable with proper format.
+
+#+BEGIN_SRC python :tangle format.py :eval no
+    domainNewEntries = []
+    awstatsNewEntries = []
+	
+    for line in labFile.readlines():
+        splitLine = line.split()
+	fqdn = splitLine[0] + ".virtual-labs.ac.in"
+	alias = splitLine[0] + ".vlabs.ac.in"
+	hostnameAndIP = '  - {domain: "%s", alias: "%s" }\n' %(fqdn, alias)
+	awstats = '  - %s\n' %(fqdn)
+
+	domainNewEntries.append(hostnameAndIP)
+	awstatsNewEntries.append(awstats)
+#+END_SRC
+
+**** Combine existing and new entries in a variable
+#+BEGIN_SRC python :tangle format.py :eval no
+    domainTotalEntries = domainExistingEntries + domainNewEntries
+    awstatsTotalEntries = awstatsExistingEntries + awstatsNewEntries
+#+END_SRC
+
+**** Remove duplicate entries
+Remove duplicates by converting list into set first and then again into list.
+#+BEGIN_SRC python :tangle format.py :eval no
+    domainTotalEntries = list(set(domainTotalEntries))
+    awstatsTotalEntries = list(set(awstatsTotalEntries))
+#+END_SRC
+
+**** Complete file content
+#+BEGIN_SRC python :tangle format.py :eval no
+    delimeter = list("#DOMAIN_END\n#AWSTATS_START\nawstats_domains:\n")
+    newYmlData = ymlData[0:domainStartIndex + 1] + domainTotalEntries + delimeter + awstatsTotalEntries + ymlData[awstatsEndIndex:-1]
+#+END_SRC
+
+**** Close file pointers
+#+BEGIN_SRC python :tangle format.py :eval no
+    labFile.close()
+    ymlFile.close()
+#+END_SRC
+
+**** Write complete data to a file
+Data is written to a file line by line.
+#+BEGIN_SRC python :tangle format.py :eval no
+    newYmlFile = open(outputFile, "w")
+
+    for lines in newYmlData:
+        newYmlFile.write(lines)
+#+END_SRC
+
+**** Close file pointers
+#+BEGIN_SRC python :tangle format.py :eval no
+    newYmlFile.close()
+#+END_SRC
+
+**** Return function call
+#+BEGIN_SRC python :tangle format.py :eval no
+    return
+#+END_SRC
+
+*** Main Function
+#+BEGIN_SRC python :tangle format.py :eval no
+def main():
+
+    option = raw_input("Which role you wish to modify (pubdns, privdns, rp, nagios) ?\n")
+
+    if (option == "pubdns"):
+        dns("lab.txt", "private_dns.yaml")
+    elif (option == "privdns"):
+        dns("lab.txt", "public_dns.yaml")
+    elif (option == "rp"):
+        reverseproxy("lab.txt", "main.yaml")
+    elif (option == "nagios"):
+        nagios()
+
+if __name__ == "__main__":
+   main()
+#+END_SRC
+
 * Test Cases
 ** Test case ID :: SSH access using AWS KeyPair
 *** Objective
@@ -462,7 +708,7 @@ COMMIT
 ** First make the scripts. 
 ** Write a separate section with code and logic of registering labs in the  config-server.org.
 ** Write a tasks in playbook to place the code in proper directory, set PATH environment variable.
-** DONE Requirements of the hooks:: 
+** DONE Requirements of the hooks::
    - A SSH call from ads server to register.sh script.
    - register.sh then writes data into lab.txt
    - then invokes python program to convert lab.txt into a separate file.
@@ -478,6 +724,5 @@ COMMIT
    the implementation files. And playbook collate these entries from two files
    and set the node. 
 ** Put hooks diagram in the config-server.org
-** Create two section in the design one is services and another is
-   configuration.
+** Create two section in the design one is services and another is configuration.
 ** In the implementation section create two subsection one is for configuration and other for services.
