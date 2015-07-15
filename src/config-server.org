@@ -7,14 +7,14 @@
  
 * Introduction
   In this documentation, we call config-server as ansible server,
-  configuration server and also node. 
+  configuration server and also node.
   
-  This document describes the requirements, design and implementation of
-  the configuration server.
+  This document describes the requirements, design and implementation of the
+  configuration server.
   
   This configuration server plays a vital role in the cluster to complete the
   infrastructure.  Since configuration server configures all other nodes in the
-  cluster and configures itself as well, through multiple roles and tasks.  A
+  cluster and configures itself as well, through multiple roles and tasks. A
   role is a specific set of configurations.
 
   It contains all the ansible-scripts to bring up the other nodes. The purpose
@@ -23,13 +23,12 @@
  
   The configuration server will be able to ssh to other servers and lab
   instances/containers using *key based authentication only* since public key of
-  configuration server will be placed in all other
-  servers/nodes,instances/containers and itself also. Password based
-  authentication is not allowed to this node
+  configuration server will be placed in all other servers/nodes,
+  instances/containers and itself also. Password based authentication is not
+  allowed to this node
 
-  This document also describes the implementation of a python program which
-  takes a text file as input and writes the data in yml format into another
-  file.
+  The documentation also describes the requirements, design and implementation
+  of ads-hooks that are invoked by ads server to register and de-register labs.
 
 ** COMMENT Only from management ip machines, we will be able ssh to root account
 of configuration server. Password based authentication is not allowed
@@ -330,13 +329,14 @@ COMMIT
 
 ** Services
 *** Requirements of the hooks:: 
-   - A SSH call from ads server to register.sh script.
-   - register.sh then writes data into lab.txt
-   - then invokes python program to convert lab.txt into a separate file.
+   - A SSH call from ADS server to register.sh script.
+   - Shell script "register.sh" then writes data into lab.txt
+   - Then invokes python program to convert lab.txt into a separate file.
    - Collate entries from models and newly generated file and provide it to
      playbook.
    - Invoke the playbook of setting up server again with updated entries or
      directly call site.yml.
+
 *** Input Format
 Input format for the program is as follows.
 #+BEGIN_SRC txt :tangle lab.txt :eval no
@@ -360,7 +360,7 @@ Output format of the program is as follows.
 - { hostname: private-dns, ip: 10.100.1.5 }
 - { hostname: public-dns, ip: 10.100.1.6 }
 #+END_SRC
-*** Add author name
+*** Add Author name
 #+BEGIN_SRC python :tangle format.py :eval no
 #Author: Yogesh Agrawal
 #Date: 2015, June 26. Friday
@@ -389,7 +389,7 @@ Read yml file line by line and save data in a variable.
 #+END_SRC
 
 **** Find start and end index of markers
-Find the start and end index of the markers in the yml file.
+Find the start and the end index of the markers in the yml file.
 #+BEGIN_SRC python :tangle format.py :eval no
     startIndex = ymlData.index("#START\n")
     endIndex = ymlData.index("#END\n")
@@ -702,12 +702,21 @@ if __name__ == "__main__":
   Iptables are configured and applied appropriately. Configuration
   server is able accept ssh connections only from IIIT/management IPs
   and not from unknown ips.
-* TODO
-** DONE Add requirements of registering and de-registering labs in the config server.
-** Add section for this implementation of the above requirements in the config-server.org. 
-** First make the scripts. 
-** Write a separate section with code and logic of registering labs in the  config-server.org.
+* COMMENT TODO
 ** Write a tasks in playbook to place the code in proper directory, set PATH environment variable.
+** Separate out the lab entries from the node models. Because in future ads
+   will be registering new labs and making changes directly to implementation
+   files and those entries could not be updated in the model. So it is better
+   to separate out lab entries. Instead we can have only system services
+   entries in the model and lab entries could be directly added by ads hooks in
+   the implementation files. And playbook collate these entries from two files
+   and set the node. 
+** DONE Put hooks diagram in the config-server.org
+** DONE Create two section in the design one is services and another is configuration.
+** DONE Add section for this implementation of the above requirements in the config-server.org. 
+** DONE Add requirements of registering and de-registering labs in the config server.
+** DONE First make the scripts. 
+** DONE Write a separate section with code and logic of registering labs in the  config-server.org.
 ** DONE Requirements of the hooks::
    - A SSH call from ads server to register.sh script.
    - register.sh then writes data into lab.txt
@@ -716,13 +725,3 @@ if __name__ == "__main__":
      playbook.
    - then invoke the playbook of setting up server again with updated entries
      or directly call site.yml.
-** Separate out the lab entries from the node models. Because in future ads
-   will be registering new labs and making changes directly to implementation
-   files and those entries could not be updated in the model. So it is better
-   to separate out lab entries. Instead we can have only system services
-   entries in the model and lab entries could be directly added by ads hooks in
-   the implementation files. And playbook collate these entries from two files
-   and set the node. 
-** Put hooks diagram in the config-server.org
-** Create two section in the design one is services and another is configuration.
-** In the implementation section create two subsection one is for configuration and other for services.
