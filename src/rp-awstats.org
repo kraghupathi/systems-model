@@ -2137,7 +2137,7 @@ ScriptAlias /awstats/ "/usr/share/awstats/wwwroot/cgi-bin/"
  3) =common_vars=
  4) =rsyslog-client=
  5) =nagios-client=
-#+BEGIN_SRC yaml :tangle reverseproxy-server.yaml
+#+BEGIN_SRC yaml :tangle reverseproxy_server.yaml
 ---
   - name: This file configures reverseproxy server
     hosts: reverseproxy_server 

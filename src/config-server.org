@@ -293,7 +293,7 @@ COMMIT
    implementation is done in terms of defining suitable scripts for
    each role.  The top level script is =build/code/config_server.yml=
 
-#+BEGIN_SRC yaml :tangle config_server.yml
+#+BEGIN_SRC yaml :tangle config_server.yaml
 ---
 - name: This file configures ansible server
   hosts: ansible_server

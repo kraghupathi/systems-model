@@ -648,7 +648,7 @@ nagios_commands:
    3) =rsyslog_client=
    4) =nagios_server=
 
-#+BEGIN_SRC yml :tangle nagios_server.yml
+#+BEGIN_SRC yaml :tangle nagios_server.yaml
 ---
 - name: This yml script configures nagios server
   hosts: nagios_server
