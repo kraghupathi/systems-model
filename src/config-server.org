@@ -212,6 +212,7 @@ configuration files. Other configuration files are updated in common role.
 
 #Allow server to send emails.  Required for sending logwatch emails
 -A OUTPUT -p tcp -m tcp --dport 25 -j ACCEPT
+-A OUTPUT -p tcp -m tcp --dport 22 -j ACCEPT
 
 # 80 and 443 OUTPUT is needed for yum update and to install packages
 -A OUTPUT -p tcp -m tcp --dport 80 -j ACCEPT
@@ -219,16 +220,6 @@ configuration files. Other configuration files are updated in common role.
 
 #Allow outgoing ping requests
 -A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT
-
-#Allow outgoing SSH connections from management IPs.  Hopefully fail2ban will take care of bruteforce attacks from management IPs
-{% for item in management_ips  %}
--A OUTPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
-{% endfor %}
-#Allow outgoing SSH connections from ansible_server IPs.  Hopefully
-#fail2ban will take care of bruteforce attacks from ansible server IPs
-{% for item in ansible_server_ips  %}
--A OUTPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
-{% endfor %}
 
 #Allow outgoing connections to rsyslog server
 -A OUTPUT -p udp -m udp --dport 514 -j ACCEPT
