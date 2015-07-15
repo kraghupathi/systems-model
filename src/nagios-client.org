@@ -189,6 +189,7 @@ includedir /etc/xinetd.d
    2) =nagios-plugins-all=
    3) =nagios-plugins-nrpe=
    4) =nrpe=
+   5) =xinetd=
 
 #+BEGIN_SRC yml :tangle roles/nagios_client/tasks/main.yml :eval no
 - name: Installing nagios
@@ -205,6 +206,10 @@ includedir /etc/xinetd.d
 
 - name: Installing nrpe nagios plugins
   yum: name=nagios-plugins-nrpe state=installed
+#  environment: proxy_env
+
+- name: Installing xinetd
+  yum: name=xinetd state=installed
 #  environment: proxy_env
 #+END_SRC 
 
