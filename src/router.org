@@ -1,4 +1,4 @@
-#+TITLE:     Router - Design Model and Implementation
+ #+TITLE:     Router - Design Model and Implementation
 #+DATE:      2015-03-25 Wed
 #+PROPERTY: session *scratch*
 #+PROPERTY: results output
@@ -191,7 +191,6 @@ COMMIT
 #Reply with proper ICMP error message and reject the connection
 -A OUTPUT -j REJECT --reject-with icmp-host-prohibited
 COMMIT
-#
 #+END_SRC
 
 *** Enforce filter rules
