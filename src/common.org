@@ -521,6 +521,24 @@ export HISTTIMEFORMAT HISTSIZE HISTFILESIZE
   lineinfile: dest=/etc/hosts regexp="{{ansible_default_ipv4.address}} {{ansible_fqdn}} {{ansible_hostname}}" insertbefore="BOF" line="{{ansible_default_ipv4.address}} {{ansible_fqdn}} {{ansible_hostname}}"
 #+END_SRC
 
+*** setup aliases
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+#Setup /etc/aliases
+- name: Configure aliases in /etc/aliases
+#Necessary for containers so that they can send emails to alerts@vlabs.ac.in
+  lineinfile: dest=/etc/aliases regexp="^#root:" line="root: alerts@vlabs.ac.in"
+- name: update aliases database by running newaliases
+  shell: newaliases
+#+END_SRC
+
+*** Install vim
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+#Necessary for containers as a editor
+- name: installing vim
+  yum: name=vim state=present
+#+END_SRC
+
 *** Summary of Log files
    Servers and applications create "log files" to keep track of the
    events happening inside the system at any given time. These log
