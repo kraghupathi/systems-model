@@ -89,7 +89,7 @@ ip machines.
 ** Services
   #+CAPTION:  Configuration Server Services Design Diagram
   #+LABEL:  fig-config-services-diagram
-  [[./diagrams/hooks.png]]
+  [[./diagrams/hooks2.png]]
 ** System Configuration files Summary
 
 The following table gives the information about services and their
