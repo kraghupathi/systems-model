@@ -268,13 +268,14 @@ zone "{{item}}" IN {
    file "{{item}}forward";
 };
 {% else %}
-zone "vlabs.ac.in." IN {
+
+zone "{{item}}" IN {
    type forward;
    forwarders {{forwarders}}
 };
 {% endif %}
-{% endfor %}
 
+{% endfor %}
 
 zone "." IN {
         type hint;
@@ -391,6 +392,7 @@ $TTL 3600
     zone_names:
       - "{{prefix}}virtual-labs.ac.in."
       - "{{prefix}}vlabs.ac.in."
+      - "vlabs.ac.in."
     zone_address: "{{public_zone_address}}"
     allow_query_from: "any; "
     name_server: public-dns
