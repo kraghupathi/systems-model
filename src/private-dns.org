@@ -279,12 +279,17 @@ logging {
         };
 };
 {% for item in zone_names %}
-
+{% if item != "vlabs.ac.in" %}
 zone "{{item}}" IN {
    type master;
    file "{{item}}forward";
 };
-
+{% else %}
+zone "vlabs.ac.in." IN {
+   type forward;
+   forwarders {{forwarders}}
+};
+{% endif %}
 {% endfor %}
 
 
@@ -292,6 +297,7 @@ zone "." IN {
         type hint;
         file "named.ca";
 };
+
 
 include "/etc/named.rfc1912.zones";
 include "/etc/named.root.key";
