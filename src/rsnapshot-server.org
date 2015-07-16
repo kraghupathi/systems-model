@@ -746,7 +746,7 @@ rsnapshot_crontab:
    1) =common=
    2) =rsnapshot_server=
 
-#+BEGIN_SRC yml :tangle rsnapshot_server.yml :eval no
+#+BEGIN_SRC yaml :tangle rsnapshot_server.yaml :eval no
 ---
 - name: This yml script configures rsnapshot server
   hosts: rsnapshot_server

@@ -363,7 +363,7 @@ To know further about these please refer [[Appendix][Appendix]].
 #One yaml file for each server is included here
 #Server yaml file matches server FQDN
 
-- include: ansible_server.yaml
+- include: config_server.yaml
 
 - include: ossec_server.yaml
 
