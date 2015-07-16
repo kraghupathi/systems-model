@@ -304,6 +304,25 @@ private_dns_zone: virtual-labs.ac.in vlabs.ac.in
 rsyslog_server_ips:
   - 10.100.1.4
 
+#IPs where router will forward web or DNS requests.
+#Multiple IPs or list of IPs wont work as request can be forwarded to only one machine
+ads_ip: 10.100.1.9
+reverseproxy_ip: 10.100.1.7
+public_dns_ip: 10.100.1.6
+local_subnet: 10.100.0.0/22
+router_interface_ip: 10.100.1.1
+router_external_interface: eth0
+#Used by bandwidthd, similar to base1 nomenclature 
+router_internal_ip: 10.100.1.1
+
+#Configure IP address of nagios server.  This is used by iptables firewall templates
+nagios_server_ips:
+  - 10.100.1.8
+
+#Used by private-dns ans public dns to set their zone file names
+prefix: ""
+
+public_zone_address: 54.85.93.7
 
 #List of domains to pass through reverseproxy
 proxy_domains:
@@ -424,23 +443,74 @@ awstats_domains:
   - ce-iitb.virtual-labs.ac.in
   - ee-iitb.virtual-labs.ac.in
   - vc-dei.virtual-labs.ac.in
-#IPs where router will forward web or DNS requests.
-#Multiple IPs or list of IPs wont work as request can be forwarded to only one machine
-ads_ip: 10.100.1.9
-reverseproxy_ip: 10.100.1.7
-public_dns_ip: 10.100.1.6
-local_subnet: 10.100.0.0/22
-router_interface_ip: 10.100.1.1
-router_external_interface: eth0
-#Used by bandwidthd, similar to base1 nomenclature 
-router_internal_ip: 10.100.1.1
-
-#Configure IP address of nagios server.  This is used by iptables firewall templates
-nagios_server_ips:
-  - 10.100.1.8
-
-#Used by private-dns ans public dns to set their zone file names
-prefix: ""
+public_dns_entries:
+  - { hostname: router, ip: 54.85.93.7 }
+  - { hostname: bandwidthd, ip: 54.85.93.7 }
+  - { hostname: ansible, ip: 52.4.150.142 }
+  - { hostname: ossec-server, ip: 54.85.93.7 }
+  - { hostname: rsyslog-server, ip: 54.85.93.7 }
+  - { hostname: private-dns, ip: 54.85.93.7 }
+  - { hostname: public-dns, ip: 54.85.93.7 }
+  - { hostname: reverseproxy, ip: 54.85.93.7 }
+  - { hostname: nagios, ip: 54.85.93.7 }
+  - { hostname: ads, ip: 54.85.93.7 }
+  - { hostname: rsnapshot-server, ip: 54.85.93.7 }
+  - { hostname: cse01-iiith, ip: 54.85.93.7 }
+  - { hostname: cse02-iiith, ip: 54.85.93.7 }
+  - { hostname: cse15-iiith, ip: 54.85.93.7 }
+  - { hostname: cse18-iiith, ip: 54.85.93.7 }
+  - { hostname: cse19-iiith, ip: 54.85.93.7 }
+  - { hostname: cse20-iiith, ip: 54.85.93.7 }
+  - { hostname: emt-iiith, ip: 54.85.93.7 }
+  - { hostname: cse29-iiith, ip: 54.85.93.7 }
+  - { hostname: cse22-iiith, ip: 54.85.93.7 }
+  - { hostname: cse11-iiith, ip: 54.85.93.7 }
+  - { hostname: cse14-iiith, ip: 54.85.93.7 }
+  - { hostname: eerc03-iiith, ip: 54.85.93.7 }
+  - { hostname: phy14-iiith, ip: 54.85.93.7 }
+  - { hostname: ccnsb06-iiith, ip: 54.85.93.7 }
+  - { hostname: eerc01-iiith, ip: 54.85.93.7 }
+  - { hostname: csc-iiith, ip: 54.85.93.7 }
+  - { hostname: bmi-iitr, ip: 54.85.93.7 }
+  - { hostname: bmsip-iitr, ip: 54.85.93.7 }
+  - { hostname: em-iitr, ip: 54.85.93.7 }
+  - { hostname: sl-iitr, ip: 54.85.93.7 }
+  - { hostname: mrmsmtbs-iitk, ip: 54.85.93.7 }
+  - { hostname: va-iitk, ip: 54.85.93.7 }
+  - { hostname: ufls-iitk, ip: 54.85.93.7 }
+  - { hostname: vlae-iitk, ip: 54.85.93.7 }
+  - { hostname: vcal-iitk, ip: 54.85.93.7 }
+  - { hostname: pev-au, ip: 54.85.93.7 }
+  - { hostname: pevii-au, ip: 54.85.93.7 }
+  - { hostname: anthropology-iitg, ip: 54.85.93.7 }
+  - { hostname: ergonomics-iitg, ip: 54.85.93.7 }
+  - { hostname: vem-iitg, ip: 54.85.93.7 }
+  - { hostname: ve-iitg, ip: 54.85.93.7 }
+  - { hostname: sl-coep, ip: 54.85.93.7 }
+  - { hostname: plc-coep, ip: 54.85.93.7 }
+  - { hostname: em-coep, ip: 54.85.93.7 }
+  - { hostname: va-coep, ip: 54.85.93.7 }
+  - { hostname: mm-coep, ip: 54.85.93.7 }
+  - { hostname: fab-coep, ip: 54.85.93.7 }
+  - { hostname: bmsp-coep, ip: 54.85.93.7 }
+  - { hostname: ial-coep, ip: 54.85.93.7 }
+  - { hostname: ied-nitk, ip: 54.85.93.7 }
+  - { hostname: sa-nitk, ip: 54.85.93.7 }
+  - { hostname: fm-nitk, ip: 54.85.93.7 }
+  - { hostname: sm-nitk, ip: 54.85.93.7 }
+  - { hostname: mm-nitk, ip: 54.85.93.7 }
+  - { hostname: mdmv-nitk, ip: 54.85.93.7 }
+  - { hostname: uorepc-nitk, ip: 54.85.93.7 }
+  - { hostname: vssd-iitd, ip: 54.85.93.7 }
+  - { hostname: qnm-iitd, ip: 54.85.93.7 }
+  - { hostname: msvs-dei, ip: 54.85.93.7 }
+  - { hostname: vp-dei, ip: 54.85.93.7 }
+  - { hostname: he-coep, ip: 54.85.93.7 }
+  - { hostname: eem-iitd, ip: 54.85.93.7 }
+  - { hostname: pe-iitb, ip: 54.85.93.7 }
+  - { hostname: ee-iitb, ip: 54.85.93.7 }
+  - { hostname: ce-iitb, ip: 54.85.93.7 }    
+  - { hostname: vc-dei, ip: 54.85.93.7 }
 #+END_SRC
 
 *** Variables for Base1 Cluster
@@ -471,8 +541,8 @@ management_ips:
   - 196.12.53.130
   - 10.2.56.0/22
 #rsnapshot to take backups
+rsnapshot_server_ips:
   - 10.100.1.10
-
 #OSSEC server IP.  Only one
 ossec_server_ip: 10.100.1.3
 
@@ -508,11 +578,29 @@ private_dns_ips:
   - 10.100.1.5
 private_dns_zone: base1.virtual-labs.ac.in base1.vlabs.ac.in
 
-
 #Rsyslog server IPs.  Set to none if there is no rsyslog server
 rsyslog_server_ips:
   - 10.100.1.4
 
+#IPs where router will forward web or DNS requests.
+#Multiple IPs or list of IPs wont work as request can be forwarded to only one machine
+ads_ip: 10.100.1.9
+reverseproxy_ip: 10.100.1.7
+public_dns_ip: 10.100.1.6
+local_subnet: 10.100.0.0/22
+router_interface_ip: 10.4.14.150
+router_external_interface: eth1
+#Needed for setting default gateway in common role
+router_internal_ip: 10.100.1.1
+
+#Configure IP address of nagios server.  This is used by iptables firewall templates
+nagios_server_ips:
+  - 10.100.1.8
+analytics_server_ip: 10.100.1.12
+
+public_zone_address: 10.4.12.21
+
+prefix: "base1."
 
 #List of domains to pass through reverseproxy
 proxy_domains:
@@ -621,22 +709,68 @@ awstats_domains:
   - msvs-dei.base1.virtual-labs.ac.in
   - vp-dei.base1.virtual-labs.ac.in
 
-#IPs where router will forward web or DNS requests.
-#Multiple IPs or list of IPs wont work as request can be forwarded to only one machine
-ads_ip: 10.100.1.9
-reverseproxy_ip: 10.100.1.7
-public_dns_ip: 10.100.1.6
-local_subnet: 10.100.0.0/22
-router_interface_ip: 10.4.14.150
-router_external_interface: eth1
-#Needed for setting default gateway in common role
-router_internal_ip: 10.100.1.1
+public_dns_entries:
+ - { hostname: router, ip: 10.4.14.150 }
+ - { hostname: bandwidthd, ip: 10.4.14.150 }
+ - { hostname: ansible, ip: 10.4.14.151 }
+ - { hostname: ossec-server, ip: 10.4.14.150 }
+ - { hostname: rsyslog-server, ip: 10.4.14.150 }
+ - { hostname: private-dns, ip: 10.4.14.150 }
+ - { hostname: public-dns, ip: 10.4.14.150 }
+ - { hostname: reverseproxy, ip: 10.4.14.150 }
+ - { hostname: nagios, ip: 10.4.14.150 }
+ - { hostname: ads, ip: 10.4.14.150 }
+ - { hostname: rsnapshot-server, ip: 10.4.14.150 }
+ - { hostname: cse01-iiith, ip: 10.4.14.150 }
+ - { hostname: cse02-iiith, ip: 10.4.14.150 }
+ - { hostname: cse15-iiith, ip: 10.4.14.150 }
+ - { hostname: cse19-iiith, ip: 10.4.14.150 }
+ - { hostname: cse18-iiith, ip: 10.4.14.150 }
+ - { hostname: cse20-iiith, ip: 10.4.14.150 }
+ - { hostname: emt-iiith, ip: 10.4.14.150 }
+ - { hostname: cse29-iiith, ip: 10.4.14.150 }
+ - { hostname: cse22-iiith, ip: 10.4.14.150 }
+ - { hostname: cse11-iiith, ip: 10.4.14.150 }
+ - { hostname: cse14-iiith, ip: 10.4.14.150 }
+ - { hostname: eerc03-iiith, ip: 10.4.14.150 }
+ - { hostname: phy14-iiith, ip: 10.4.14.150 }
+ - { hostname: ccnsb06-iiith, ip: 10.4.14.150 }
+ - { hostname: eerc01-iiith, ip: 10.4.14.150 }
+ - { hostname: bmi-iitr, ip: 10.4.14.150 }
+ - { hostname: bmsip-iitr, ip: 10.4.14.150 }
+ - { hostname: em-iitr, ip: 10.4.14.150 }
+ - { hostname: sl-iitr, ip: 10.4.14.150 }
+ - { hostname: mrmsmtbs-iitk, ip: 10.4.14.150 }
+ - { hostname: va-iitk, ip: 10.4.14.150 }
+ - { hostname: ufls-iitk, ip: 10.4.14.150 }
+ - { hostname: vlae-iitk, ip: 10.4.14.150 }
+ - { hostname: vcal-iitk, ip: 10.4.14.150 }
+ - { hostname: pev-au, ip: 10.4.14.150 }
+ - { hostname: anthropology-iitg, ip: 10.4.14.150 }
+ - { hostname: ergonomics-iitg, ip: 10.4.14.150 }
+ - { hostname: vem-iitg, ip: 10.4.14.150 }
+ - { hostname: ve-iitg, ip: 10.4.14.150 }
+ - { hostname: ial-coep, ip: 10.4.14.150 }
+ - { hostname: sl-coep, ip: 10.4.14.150 }
+ - { hostname: plc-coep, ip: 10.4.14.150 }
+ - { hostname: em-coep, ip: 10.4.14.150 }
+ - { hostname: va-coep, ip: 10.4.14.150 }
+ - { hostname: mm-coep, ip: 10.4.14.150 }
+ - { hostname: fab-coep, ip: 10.4.14.150 }
+ - { hostname: bmsp-coep, ip: 10.4.14.150 }
+ - { hostname: ied-nitk, ip: 10.4.14.150 }
+ - { hostname: sa-nitk, ip: 10.4.14.150 }
+ - { hostname: fm-nitk, ip: 10.4.14.150 }
+ - { hostname: sm-nitk, ip: 10.4.14.150 }
+ - { hostname: mm-nitk, ip: 10.4.14.150 }
+ - { hostname: mdmv-nitk, ip: 10.4.14.150 }
+ - { hostname: uorepc-nitk, ip: 10.4.14.150 }
+ - { hostname: vssd-iitd, ip: 10.4.14.150 }
+ - { hostname: qnm-iitd, ip: 10.4.14.150 }
+ - { hostname: msvs-dei, ip: 10.4.14.150 }
+ - { hostname: vp-dei, ip: 10.4.14.150 }
 
-#Configure IP address of nagios server.  This is used by iptables firewall templates
-nagios_server_ips:
-  - 10.100.1.8
 
-prefix: base1.
 #+END_SRC
 
 *** Variables for Base4 Cluster
@@ -699,15 +833,31 @@ private_dns_ips:
   - 10.100.1.5
 private_dns_zone: base4.virtual-labs.ac.in base4.vlabs.ac.in
 
-
 #Rsyslog server IPs.  Set to none if there is no rsyslog server
 rsyslog_server_ips:
   - 10.100.1.4
-rsnapshot_server_ip:
+rsnapshot_server_ips:
   - 10.100.1.10
 #Release number used in common task to add it to the target
 release_no:
   - 00
+#IPs where router will forward web or DNS requests.
+#Multiple IPs or list of IPs wont work as request can be forwarded to only one machine
+ads_ip: 10.100.1.9
+reverseproxy_ip: 10.100.1.7
+public_dns_ip: 10.100.1.6
+local_subnet: 10.100.0.0/22
+router_interface_ip: 10.4.14.200
+router_external_interface: eth0
+#Needed for setting default gateway in common role
+router_internal_ip: 10.100.1.1
+
+#Configure IP address of nagios server.  This is used by iptables firewall templates
+nagios_server_ips:
+  - 10.100.1.8
+
+public_zone_address: 10.4.12.24
+prefix: "base4."
 
 #List of domains to pass through reverseproxy
 proxy_domains:
@@ -760,22 +910,17 @@ awstats_domains:
 #  - ads.base1.vlabs.ac.in
 #  - ads.base1.virtual-labs.ac.in
 
-#IPs where router will forward web or DNS requests.
-#Multiple IPs or list of IPs wont work as request can be forwarded to only one machine
-ads_ip: 10.100.1.9
-reverseproxy_ip: 10.100.1.7
-public_dns_ip: 10.100.1.6
-local_subnet: 10.100.0.0/22
-router_interface_ip: 10.4.14.200
-router_external_interface: eth0
-#Needed for setting default gateway in common role
-router_internal_ip: 10.100.1.1
 
-#Configure IP address of nagios server.  This is used by iptables firewall templates
-nagios_server_ips:
-  - 10.100.1.8
+public_dns_entries:
+ - { hostname: router, ip: 10.4.14.200 }
+ - { hostname: ansible, ip: 10.4.14.201 }
+ - { hostname: ossec-server, ip: 10.4.14.200 }
+ - { hostname: rsyslog-server, ip: 10.4.14.200 }
+ - { hostname: private-dns, ip: 10.4.14.200 }
+ - { hostname: public-dns, ip: 10.4.14.200 }
+ - { hostname: reverseproxy, ip: 10.4.14.200 }
+ - { hostname: nagios, ip: 10.4.14.200 }
 
-prefix: "base4."
 #+END_SRC
 
 

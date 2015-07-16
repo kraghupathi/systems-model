@@ -278,7 +278,7 @@ logging {
                 severity dynamic;
         };
 };
-% for item in zone_names  %}
+{% for item in zone_names %}
 
 zone "{{item}}" IN {
    type master;

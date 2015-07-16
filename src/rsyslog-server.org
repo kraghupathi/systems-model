@@ -434,7 +434,7 @@ authpriv.*      ?TmplAuth
    Rsyslog server is configured using =common= and =rsyslog_server=
    role.
 
-#+BEGIN_SRC yml -n :tangle rsyslog_server.yml
+#+BEGIN_SRC yaml -n :tangle rsyslog_server.yaml
 ---
 - name: Configure rsyslog server
   hosts: rsyslog_server

@@ -253,7 +253,7 @@ $ActionQueueSaveOnShutdown on # save in-memory data if rsyslog shuts down
    Rsyslog server is configured using common and =rsyslog_client=
    role.
 
-#+BEGIN_SRC yml :tangle rsyslog_client.yml
+#+BEGIN_SRC 
 ---
 - name: Configure rsyslog 
   hosts: rsyslog_client

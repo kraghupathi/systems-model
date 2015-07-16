@@ -1,4 +1,4 @@
-#+TITLE:     Router - Design Model and Implementation
+ #+TITLE:     Router - Design Model and Implementation
 #+DATE:      2015-03-25 Wed
 #+PROPERTY: session *scratch*
 #+PROPERTY: results output
@@ -191,7 +191,6 @@ COMMIT
 #Reply with proper ICMP error message and reject the connection
 -A OUTPUT -j REJECT --reject-with icmp-host-prohibited
 COMMIT
-#
 #+END_SRC
 
 *** Enforce filter rules
@@ -331,7 +330,7 @@ dependencies:
 
 ** Router Installation Script
 - Router is configured by using common,ossec_client,rsyslog_client,nagios_client and router roles.
-#+BEGIN_SRC yml :tangle router.yml
+#+BEGIN_SRC yaml :tangle router.yaml
 ---
 - name: This file configures machine as router  
   hosts: router

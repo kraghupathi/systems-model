@@ -118,13 +118,13 @@ CRITICAL - Plugin timed out while executing system call
    organized as follows:
 
 #+BEGIN_EXAMPLE
-|-- nagios_server.yaml
+|-- nagios_server.yml
 |-- roles
 |   |   |-- nagios_server
 |   |   |   |-- handlers
-|   |   |   |   `-- main.yaml
+|   |   |   |   `-- main.yml
 |   |   |   |-- tasks
-|   |   |   |   |-- configure_servers.yaml
+|   |   |   |   |-- configure_servers.yml
 |   |   |   |   `-- main.yaml
 |   |   |   |-- templates
 |   |   |   |   |-- commands.cfg
@@ -132,22 +132,22 @@ CRITICAL - Plugin timed out while executing system call
 |   |   |   |   |-- nagios_server_iptables
 |   |   |   |   `-- servers.cfg
 |   |   |   `-- vars
-|   |   |       `-- main.yaml
+|   |   |       `-- main.yml
 #+END_EXAMPLE
 
-   Here =nagios_server.yaml= file configures the nagios server with
+   Here =nagios_server.yml= file configures the nagios server with
    the "nagios_server", "common", "ossec_client", "rsyslog_client" and
    "nagios_server" roles as described in the [[Nagios server
    configuration script]] section.  
    
-   The =roles/nagios_server/handlers/main.yaml= file defines various
+   The =roles/nagios_server/handlers/main.yml= file defines various
    handlers which are only executed in case a task notifies them.
    These handlers are described in detail in the [[Handlers]] section.
 
    The handlers are called when the tasks described in the [[Tasks][Tasks]]
    section notify them. Various tasks of [[Tasks][Tasks]] section are
-   concatenated into =roles/nagios_server/tasks/main.yaml= file. File
-   =roles/nagios_server/tasks/configure_servers.yaml= is included
+   concatenated into =roles/nagios_server/tasks/main.yml= file. File
+   =roles/nagios_server/tasks/configure_servers.yml= is included
    inside main.yaml file.
 
    The =roles/nagios_server/templates/= folder contains four jinja2
@@ -156,7 +156,7 @@ CRITICAL - Plugin timed out while executing system call
    variables at various places, these variables are defined in =vars/=
    folder with appropriate values.
 
-   =roles/nagios_server/vars/main.yaml= file defines the variable as
+   =roles/nagios_server/vars/main.yml= file defines the variable as
    described in the [[Define variables and services groups]] section.
 
 ** Firewall rules for Nagios Server
@@ -470,19 +470,17 @@ check_command           {{ s.command }}
   yum: name=nrpe state=installed
   environment: proxy_env
 #+END_SRC 
-*** COMMENT Set firewall rules
+*** Set firewall rules
    Firewall rules are set by following steps:
 
    1) Copy iptables jinja2 template from ansible node to the server.
    2) Restart iptables service to enforce the configuration.
-#+BEGIN_EXAMPLE
 #+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
- - name: Copy iptables configuration file
-   template: src=nagios_server_iptables dest=/etc/sysconfig/iptables owner=root group=root mode=600
-   notify:
-     - restart iptables
+- name: Copy iptables configuration file
+  template: src=nagios_server_iptables dest=/etc/sysconfig/iptables owner=root group=root mode=600
+  notify:
+    - restart iptables
 #+END_SRC
-#+END_EXAMPLE
 *** Create Nagios admin user for web interface
    A user is created on the nagios server node for web
    interface. Value of =nagios_user= and =nagios_password= variables
@@ -521,7 +519,7 @@ check_command           {{ s.command }}
 
 #+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
 - tasks:
-  include: configure_servers.yaml
+  include: configure_servers.yml
 #+END_SRc
 
 *** Copy servers.cfg and commands.cfg configuration file
@@ -556,7 +554,6 @@ check_command           {{ s.command }}
    nagios service.
 #+BEGIN_SRC yml :tangle roles/nagios_server/handlers/main.yml
 - name: restart nagios
-  sudo: true
   service: name=nagios state=restarted
 #+END_SRC
 
@@ -566,21 +563,16 @@ check_command           {{ s.command }}
 
 #+BEGIN_SRC yml :tangle roles/nagios_server/handlers/main.yml
 - name: restart apache
-  sudo: true
   service: name=httpd state=restarted
 #+END_SRC
 
-*** COMMENT Start firewall service
+*** Start firewall service
    Any changes in iptables configuration file, to update the firewall
    is enforced by restarting the iptables service.
-#+BEGIN_EXAMPLE
 #+BEGIN_SRC yml :tangle roles/nagios_server/handlers/main.yml
 - name: restart iptables
-  sudo: true
   service: name=iptables state=restarted
 #+END_SRC
-#+END_EXAMPLE
-
 ** Define variables and services groups
    Various variables used by the ansible playbook are defined
    here. Following table represents the variables name and their
@@ -656,12 +648,14 @@ nagios_commands:
    3) =rsyslog_client=
    4) =nagios_server=
 
-#+BEGIN_SRC yml :tangle nagios_server.yml
+#+BEGIN_SRC yaml :tangle nagios_server.yaml
 ---
 - name: This yml script configures nagios server
   hosts: nagios_server
   remote_user: root
-
+  
+  vars:
+   host_name: nagios-server
   roles:
     - common
     - ossec_client
