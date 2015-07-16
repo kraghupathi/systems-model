@@ -192,12 +192,6 @@ COMMIT
 -A OUTPUT -j REJECT --reject-with icmp-host-prohibited
 COMMIT
 #+END_SRC
-
-*** Enforce filter rules
-#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
-COMMIT
-#+END_SRC
-
 ** Enabling IP forwarding
 - IP forwarding has to be enabled when we have to configure our machines as router.If we are setting up a
   Linux router/gateway or maybe a VPN server or just a plain dial-in server then we will need to enable IP forwarding.
