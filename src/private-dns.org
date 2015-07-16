@@ -279,7 +279,7 @@ logging {
         };
 };
 {% for item in zone_names %}
-{% if item != "vlabs.ac.in" %}
+{% if item != "vlabs.ac.in." %}
 zone "{{item}}" IN {
    type master;
    file "{{item}}forward";
