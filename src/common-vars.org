@@ -320,7 +320,7 @@ nagios_server_ips:
   - 10.100.1.8
 
 #Forwarders to be updated in Zone files
-forwarders: none
+forwarders: "{ }"
 
 #Used by private-dns ans public dns to set their zone file names
 prefix: ""
@@ -603,7 +603,7 @@ nagios_server_ips:
 analytics_server_ip: 10.100.1.12
 
 #Forwarders to be updated in Zone files
-forwarders: "{10.4.20.204; 10.4.3.222; };"
+forwarders: "{10.4.20.204; 10.4.3.222; }"
 
 public_zone_address: 10.4.12.21
 
@@ -861,7 +861,7 @@ router_internal_ip: 10.100.1.1
 
 
 #Forwarders to be updated in Zone files
-forwarders: "{10.4.20.204; 10.4.3.222; };"
+forwarders: "{10.4.20.204; 10.4.3.222; }"
 
 #Configure IP address of nagios server.  This is used by iptables firewall templates
 nagios_server_ips:

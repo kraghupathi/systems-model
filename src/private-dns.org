@@ -288,7 +288,7 @@ zone "{{item}}" IN {
 
 zone "{{item}}" IN {
    type forward;
-   forwarders {{forwarders}}
+   forwarders {{forwarders}};
 };
 {% endif %}
 
