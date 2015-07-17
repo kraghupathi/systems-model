@@ -515,6 +515,77 @@ public_dns_entries:
   - { hostname: ee-iitb, ip: 54.85.93.7 }
   - { hostname: ce-iitb, ip: 54.85.93.7 }    
   - { hostname: vc-dei, ip: 54.85.93.7 }
+
+private_dns_entries:
+  - { hostname: router, ip: 10.100.1.1 }
+  - { hostname: bandwidthd, ip: 10.100.1.1 }
+  - { hostname: ansible, ip: 10.100.1.2 }
+  - { hostname: ossec-server, ip: 10.100.1.3 }
+  - { hostname: rsyslog-server, ip: 10.100.1.4 }
+  - { hostname: private-dns, ip: 10.100.1.5 }
+  - { hostname: public-dns, ip: 10.100.1.6 }
+  - { hostname: reverseproxy, ip: 10.100.1.7 }
+  - { hostname: nagios, ip: 10.100.1.8 }
+  - { hostname: ads, ip: 10.100.1.9 }
+  - { hostname: rsnapshot-server, ip: 10.100.1.10 }
+  - { hostname: cse01-iiith, ip: 10.100.1.248 }
+  - { hostname: cse02-iiith, ip: 10.100.2.13 }
+  - { hostname: cse15-iiith, ip: 10.100.0.83 }
+  - { hostname: cse18-iiith, ip: 10.100.0.202 }
+  - { hostname: cse19-iiith, ip: 10.100.3.233 }
+  - { hostname: cse20-iiith, ip: 10.100.0.61 }
+  - { hostname: emt-iiith, ip: 10.100.0.157 }
+  - { hostname: cse29-iiith, ip: 10.100.0.238 }
+  - { hostname: cse22-iiith, ip: 10.100.2.142 }
+  - { hostname: cse11-iiith, ip: 10.100.2.184 }
+  - { hostname: cse14-iiith, ip: 10.100.2.152 }
+  - { hostname: eerc03-iiith, ip: 10.100.0.84 }
+  - { hostname: phy14-iiith, ip: 10.100.3.212 }
+  - { hostname: ccnsb06-iiith, ip: 10.100.3.24 }
+  - { hostname: eerc01-iiith, ip: 10.100.3.93 }
+  - { hostname: csc-iiith, ip: 10.100.2.94 }
+  - { hostname: git-server, ip: 10.4.12.185 }
+  - { hostname: bmi-iitr, ip: 10.100.3.244 }
+  - { hostname: bmsip-iitr, ip: 10.100.1.236 }
+  - { hostname: em-iitr, ip: 10.100.2.133 }
+  - { hostname: sl-iitr, ip: 10.100.1.36 }
+  - { hostname: mrmsmtbs-iitk, ip: 10.100.3.14 }
+  - { hostname: va-iitk, ip: 10.100.0.111 }
+  - { hostname: ufls-iitk, ip: 10.100.0.205 }
+  - { hostname: vlae-iitk, ip: 10.100.1.171 }
+  - { hostname: vcal-iitk, ip: 10.100.2.55 }
+  - { hostname: pev-au, ip: 10.100.0.218 }
+  - { hostname: pevii-au, ip: 10.100.3.177 }
+  - { hostname: anthropology-iitg, ip: 10.100.1.66 }
+  - { hostname: ergonomics-iitg, ip: 10.100.1.54 }
+  - { hostname: vem-iitg, ip: 10.100.0.174 }
+  - { hostname: ve-iitg, ip: 10.100.1.112 }
+  - { hostname: sl-coep, ip: 10.100.0.168 }
+  - { hostname: plc-coep, ip: 10.100.0.142 }
+  - { hostname: em-coep, ip: 10.100.0.203 }
+  - { hostname: va-coep, ip: 10.100.1.20 }
+  - { hostname: mm-coep, ip: 10.100.3.250 }
+  - { hostname: fab-coep, ip: 10.100.0.25 }
+  - { hostname: bmsp-coep, ip: 10.100.2.18 }
+  - { hostname: ial-coep, ip: 10.100.2.140 }
+  - { hostname: ied-nitk, ip: 10.100.2.98 }
+  - { hostname: sa-nitk, ip: 10.100.2.78 }
+  - { hostname: fm-nitk, ip: 10.100.2.107 }
+  - { hostname: sm-nitk, ip: 10.100.2.146 }
+  - { hostname: mm-nitk, ip: 10.100.2.190 }
+  - { hostname: mdmv-nitk, ip: 10.100.1.254 }
+  - { hostname: uorepc-nitk, ip: 10.100.2.176 }
+  - { hostname: vssd-iitd, ip: 10.100.1.126 }
+  - { hostname: qnm-iitd, ip: 10.100.3.88 }
+  - { hostname: msvs-dei, ip: 10.100.0.18 }
+  - { hostname: vp-dei, ip: 10.100.3.12 }
+  - { hostname: he-coep, ip: 10.100.3.55 }
+  - { hostname: eem-iitd, ip: 10.100.3.37}
+  - { hostname: pe-iitb, ip: 10.100.3.158}
+  - { hostname: ee-iitb, ip: 10.100.3.141}
+  - { hostname: ce-iitb, ip: 10.100.1.133}
+  - { hostname: vc-dei, ip: 10.100.0.163}
+
 #+END_SRC
 
 *** Variables for Base1 Cluster
@@ -717,66 +788,127 @@ awstats_domains:
   - vp-dei.base1.virtual-labs.ac.in
 
 public_dns_entries:
- - { hostname: router, ip: 10.4.14.150 }
- - { hostname: bandwidthd, ip: 10.4.14.150 }
- - { hostname: ansible, ip: 10.4.14.151 }
- - { hostname: ossec-server, ip: 10.4.14.150 }
- - { hostname: rsyslog-server, ip: 10.4.14.150 }
- - { hostname: private-dns, ip: 10.4.14.150 }
- - { hostname: public-dns, ip: 10.4.14.150 }
- - { hostname: reverseproxy, ip: 10.4.14.150 }
- - { hostname: nagios, ip: 10.4.14.150 }
- - { hostname: ads, ip: 10.4.14.150 }
- - { hostname: rsnapshot-server, ip: 10.4.14.150 }
- - { hostname: cse01-iiith, ip: 10.4.14.150 }
- - { hostname: cse02-iiith, ip: 10.4.14.150 }
- - { hostname: cse15-iiith, ip: 10.4.14.150 }
- - { hostname: cse19-iiith, ip: 10.4.14.150 }
- - { hostname: cse18-iiith, ip: 10.4.14.150 }
- - { hostname: cse20-iiith, ip: 10.4.14.150 }
- - { hostname: emt-iiith, ip: 10.4.14.150 }
- - { hostname: cse29-iiith, ip: 10.4.14.150 }
- - { hostname: cse22-iiith, ip: 10.4.14.150 }
- - { hostname: cse11-iiith, ip: 10.4.14.150 }
- - { hostname: cse14-iiith, ip: 10.4.14.150 }
- - { hostname: eerc03-iiith, ip: 10.4.14.150 }
- - { hostname: phy14-iiith, ip: 10.4.14.150 }
- - { hostname: ccnsb06-iiith, ip: 10.4.14.150 }
- - { hostname: eerc01-iiith, ip: 10.4.14.150 }
- - { hostname: bmi-iitr, ip: 10.4.14.150 }
- - { hostname: bmsip-iitr, ip: 10.4.14.150 }
- - { hostname: em-iitr, ip: 10.4.14.150 }
- - { hostname: sl-iitr, ip: 10.4.14.150 }
- - { hostname: mrmsmtbs-iitk, ip: 10.4.14.150 }
- - { hostname: va-iitk, ip: 10.4.14.150 }
- - { hostname: ufls-iitk, ip: 10.4.14.150 }
- - { hostname: vlae-iitk, ip: 10.4.14.150 }
- - { hostname: vcal-iitk, ip: 10.4.14.150 }
- - { hostname: pev-au, ip: 10.4.14.150 }
- - { hostname: anthropology-iitg, ip: 10.4.14.150 }
- - { hostname: ergonomics-iitg, ip: 10.4.14.150 }
- - { hostname: vem-iitg, ip: 10.4.14.150 }
- - { hostname: ve-iitg, ip: 10.4.14.150 }
- - { hostname: ial-coep, ip: 10.4.14.150 }
- - { hostname: sl-coep, ip: 10.4.14.150 }
- - { hostname: plc-coep, ip: 10.4.14.150 }
- - { hostname: em-coep, ip: 10.4.14.150 }
- - { hostname: va-coep, ip: 10.4.14.150 }
- - { hostname: mm-coep, ip: 10.4.14.150 }
- - { hostname: fab-coep, ip: 10.4.14.150 }
- - { hostname: bmsp-coep, ip: 10.4.14.150 }
- - { hostname: ied-nitk, ip: 10.4.14.150 }
- - { hostname: sa-nitk, ip: 10.4.14.150 }
- - { hostname: fm-nitk, ip: 10.4.14.150 }
- - { hostname: sm-nitk, ip: 10.4.14.150 }
- - { hostname: mm-nitk, ip: 10.4.14.150 }
- - { hostname: mdmv-nitk, ip: 10.4.14.150 }
- - { hostname: uorepc-nitk, ip: 10.4.14.150 }
- - { hostname: vssd-iitd, ip: 10.4.14.150 }
- - { hostname: qnm-iitd, ip: 10.4.14.150 }
- - { hostname: msvs-dei, ip: 10.4.14.150 }
- - { hostname: vp-dei, ip: 10.4.14.150 }
+  - { hostname: router, ip: 10.4.14.150 }
+  - { hostname: bandwidthd, ip: 10.4.14.150 }
+  - { hostname: ansible, ip: 10.4.14.151 }
+  - { hostname: ossec-server, ip: 10.4.14.150 }
+  - { hostname: rsyslog-server, ip: 10.4.14.150 }
+  - { hostname: private-dns, ip: 10.4.14.150 }
+  - { hostname: public-dns, ip: 10.4.14.150 }
+  - { hostname: reverseproxy, ip: 10.4.14.150 }
+  - { hostname: nagios, ip: 10.4.14.150 }
+  -  { hostname: ads, ip: 10.4.14.150 }
+  - { hostname: rsnapshot-server, ip: 10.4.14.150 }
+  - { hostname: cse01-iiith, ip: 10.4.14.150 }
+  - { hostname: cse02-iiith, ip: 10.4.14.150 }
+  - { hostname: cse15-iiith, ip: 10.4.14.150 }
+  - { hostname: cse19-iiith, ip: 10.4.14.150 }
+  - { hostname: cse18-iiith, ip: 10.4.14.150 }
+  - { hostname: cse20-iiith, ip: 10.4.14.150 }
+  - { hostname: emt-iiith, ip: 10.4.14.150 }
+  - { hostname: cse29-iiith, ip: 10.4.14.150 }
+  - { hostname: cse22-iiith, ip: 10.4.14.150 }
+  - { hostname: cse11-iiith, ip: 10.4.14.150 }
+  - { hostname: cse14-iiith, ip: 10.4.14.150 }
+  - { hostname: eerc03-iiith, ip: 10.4.14.150 }
+  - { hostname: phy14-iiith, ip: 10.4.14.150 }
+  - { hostname: ccnsb06-iiith, ip: 10.4.14.150 }
+  - { hostname: eerc01-iiith, ip: 10.4.14.150 }
+  - { hostname: bmi-iitr, ip: 10.4.14.150 }
+  - { hostname: bmsip-iitr, ip: 10.4.14.150 }
+  - { hostname: em-iitr, ip: 10.4.14.150 }
+  - { hostname: sl-iitr, ip: 10.4.14.150 }
+  - { hostname: mrmsmtbs-iitk, ip: 10.4.14.150 }
+  - { hostname: va-iitk, ip: 10.4.14.150 }
+  - { hostname: ufls-iitk, ip: 10.4.14.150 }
+  - { hostname: vlae-iitk, ip: 10.4.14.150 }
+  - { hostname: vcal-iitk, ip: 10.4.14.150 }
+  - { hostname: pev-au, ip: 10.4.14.150 }
+  - { hostname: anthropology-iitg, ip: 10.4.14.150 }
+  - { hostname: ergonomics-iitg, ip: 10.4.14.150 }
+  - { hostname: vem-iitg, ip: 10.4.14.150 }
+  - { hostname: ve-iitg, ip: 10.4.14.150 }
+  - { hostname: ial-coep, ip: 10.4.14.150 }
+  - { hostname: sl-coep, ip: 10.4.14.150 }
+  - { hostname: plc-coep, ip: 10.4.14.150 }
+  - { hostname: em-coep, ip: 10.4.14.150 }
+  - { hostname: va-coep, ip: 10.4.14.150 }
+  - { hostname: mm-coep, ip: 10.4.14.150 }
+  - { hostname: fab-coep, ip: 10.4.14.150 }
+  - { hostname: bmsp-coep, ip: 10.4.14.150 }
+  - { hostname: ied-nitk, ip: 10.4.14.150 }
+  - { hostname: sa-nitk, ip: 10.4.14.150 }
+  - { hostname: fm-nitk, ip: 10.4.14.150 }
+  - { hostname: sm-nitk, ip: 10.4.14.150 } 
+  - { hostname: mm-nitk, ip: 10.4.14.150 } 
+  - { hostname: mdmv-nitk, ip: 10.4.14.150 }
+  - { hostname: uorepc-nitk, ip: 10.4.14.150 }
+  - { hostname: vssd-iitd, ip: 10.4.14.150 }
+  - { hostname: qnm-iitd, ip: 10.4.14.150 }
+  - { hostname: msvs-dei, ip: 10.4.14.150 }
+  - { hostname: vp-dei, ip: 10.4.14.150 }
 
+private_dns_entries:
+  - { hostname: router, ip: 10.100.1.1 }
+  - { hostname: bandwidthd, ip: 10.100.1.1 }
+  - { hostname: ansible, ip: 10.100.1.2 }
+  - { hostname: ossec-server, ip: 10.100.1.3 }
+  - { hostname: rsyslog-server, ip: 10.100.1.4 }
+  - { hostname: private-dns, ip: 10.100.1.5 }
+  - { hostname: public-dns, ip: 10.100.1.6 }
+  - { hostname: reverseproxy, ip: 10.100.1.7 }
+  - { hostname: nagios, ip: 10.100.1.8 }
+  - { hostname: ads, ip: 10.100.1.9 }
+  - { hostname: rsnapshot-server, ip: 10.100.1.10 }
+  - { hostname: git-server, ip: 10.4.12.185 }
+  - { hostname: cse01-iiith, ip: 10.100.0.1}
+  - { hostname: cse02-iiith, ip: 10.100.0.2}
+  - { hostname: cse15-iiith, ip: 10.100.0.3}
+  - { hostname: cse19-iiith, ip: 10.100.0.4}
+  - { hostname: cse18-iiith, ip: 10.100.0.5}
+  - { hostname: cse20-iiith, ip: 10.100.0.6}
+  - { hostname: emt-iiith, ip: 10.100.0.7}
+  - { hostname: cse29-iiith, ip: 10.100.0.8}
+  - { hostname: cse22-iiith, ip: 10.100.0.9}
+  - { hostname: cse11-iiith, ip: 10.100.0.10}
+  - { hostname: cse14-iiith, ip: 10.100.0.11}
+  - { hostname: eerc03-iiith, ip: 10.100.0.12}
+  - { hostname: phy14-iiith, ip: 10.100.0.16}
+  - { hostname: ccnsb06-iiith, ip: 10.100.0.14}
+  - { hostname: eerc01-iiith, ip: 10.100.0.15}
+  - { hostname: bmi-iitr, ip: 10.100.0.17}
+  - { hostname: bmsip-iitr, ip: 10.100.0.18 }
+  - { hostname: em-iitr, ip: 10.100.0.19 }
+  - { hostname: sl-iitr, ip: 10.100.0.20 }
+  - { hostname: mrmsmtbs-iitk, ip: 10.100.0.21 }
+  - { hostname: va-iitk, ip: 10.100.0.22 }
+  - { hostname: ufls-iitk, ip: 10.100.0.23 }
+  - { hostname: vlae-iitk, ip: 10.100.0.24 }
+  - { hostname: vcal-iitk, ip: 10.100.0.26 }
+  - { hostname: pev-au, ip: 10.100.0.25 }
+  - { hostname: anthropology-iitg, ip: 10.100.0.27 }
+  - { hostname: ergonomics-iitg, ip: 10.100.0.28 }
+  - { hostname: vem-iitg, ip: 10.100.0.29 }
+  - { hostname: ve-iitg, ip: 10.100.0.30 }
+  - { hostname: ial-coep, ip: 10.100.0.31 }
+  - { hostname: sl-coep, ip: 10.100.0.32 }
+  - { hostname: plc-coep, ip: 10.100.0.33 }
+  - { hostname: em-coep, ip: 10.100.0.34 }
+  - { hostname: va-coep, ip: 10.100.0.35 }
+  - { hostname: mm-coep, ip: 10.100.0.36 }
+  - { hostname: fab-coep, ip: 10.100.0.37 }
+  - { hostname: bmsp-coep, ip: 10.100.0.38 }
+  - { hostname: ied-nitk, ip: 10.100.0.39 }
+  - { hostname: sa-nitk, ip: 10.100.0.40 }
+  - { hostname: fm-nitk, ip: 10.100.0.41 }
+  - { hostname: sm-nitk, ip: 10.100.0.42 }
+  - { hostname: mm-nitk, ip: 10.100.0.43 }
+  - { hostname: mdmv-nitk, ip: 10.100.0.44 }
+  - { hostname: uorepc-nitk, ip: 10.100.0.45 }
+  - { hostname: vssd-iitd, ip: 10.100.0.46 }
+  - { hostname: qnm-iitd, ip: 10.100.0.47 }
+  - { hostname: msvs-dei, ip: 10.100.0.48 }
+  - { hostname: vp-dei, ip: 10.100.0.49 }
 
 #+END_SRC
 
@@ -875,53 +1007,23 @@ proxy_domains:
   - {domain: "reverseproxy.base4.virtual-labs.ac.in", alias: "reverseproxy.base4.vlabs.ac.in", alias2: "rp.base4.virtual-labs.ac.in"}
   - {domain: "nagios.base4.virtual-labs.ac.in", alias: "nagios.base4.vlabs.ac.in"}
   - {domain: "ossec-server.base4.virtual-labs.ac.in", alias: "ossec-server.base4.vlabs.ac.in"}
-# - {domain: "cse01-iiith.base1.virtual-labs.ac.in", alias: "cse01-iiith.base1.vlabs.ac.in"}
-# - {domain: "cse02-iiith.base1.virtual-labs.ac.in", alias: "cse02-iiith.base1.vlabs.ac.in"}
-# - {domain: "cse15-iiith.base1.virtual-labs.ac.in", alias: "cse15-iiith.base1.vlabs.ac.in"}
-# - {domain: "cse19-iiith.base1.virtual-labs.ac.in", alias: "cse19-iiith.base1.vlabs.ac.in"}
-# - {domain: "cse18-iiith.base1.virtual-labs.ac.in", alias: "cse18-iiith.base1.vlabs.ac.in"}
-# - {domain: "cse20-iiith.base1.virtual-labs.ac.in", alias: "cse20-iiith.base1.vlabs.ac.in"}
-# - {domain: "emt-iiith.base1.virtual-labs.ac.in", alias: "emt-iiith.base1.vlabs.ac.in"}
-# - {domain: "cse29-iiith.base1.virtual-labs.ac.in", alias: "cse29-iiith.base1.vlabs.ac.in"}
-# - {domain: "cse22-iiith.base1.virtual-labs.ac.in", alias: "cse22-iiith.base1.vlabs.ac.in"}
-# - {domain: "cse11-iiith.base1.virtual-labs.ac.in", alias: "cse11-iiith.base1.vlabs.ac.in"}
-# - {domain: "cse14-iiith.base1.virtual-labs.ac.in", alias: "cse14-iiith.base1.vlabs.ac.in"}
-# - {domain: "eerc03-iiith.base1.virtual-labs.ac.in", alias: "eerc03-iiith.base1.vlabs.ac.in"}
-# - {domain: "phy14-iiith.base1.virtual-labs.ac.in", alias: "phy14-iiith.base1.vlabs.ac.in"}
-# - {domain: "ccnsb06-iiith.base1.virtual-labs.ac.in", alias: "ccnsb06-iiith.base1.vlabs.ac.in"}
-# - {domain: "eerc01-iiith.base1.virtual-labs.ac.in", alias: "eerc01-iiith.base1.vlabs.ac.in"}
-
 
 awstats_domains:
   - reverseproxy.base4.virtual-labs.ac.in
-#  - cse01-iiith.base1.virtual-labs.ac.in
-#  - cse02-iiith.base1.virtual-labs.ac.in
-#   - cse15-iiith.base1.virtual-labs.ac.in
-#   - cse19-iiith.base1.virtual-labs.ac.in
-#   - cse18-iiith.base1.virtual-labs.ac.in
-#   - cse20-iiith.base1.virtual-labs.ac.in
-#   - emt-iiith.base1.virtual-labs.ac.in
-#   - cse29-iiith.base1.virtual-labs.ac.in
-#   - cse22-iiith.base1.virtual-labs.ac.in
-#   - cse11-iiith.base1.virtual-labs.ac.in
-#   - cse14-iiith.base1.virtual-labs.ac.in
-#   - eerc03-iiith.base1.virtual-labs.ac.in
-#   - phy14-iiith.base1.virtual-labs.ac.in
-#   - ccnsb06-iiith.base1.virtual-labs.ac.in
-#   - eerc01-iiith.base1.virtual-labs.ac.in
 
-#  - lab1.base1.virtual-labs.ac.in
-#  - lab1.base1.vlabs.ac.in
-#  - lab2.base1.virtual-labs.ac.in
-#  - lab2.base1.vlabs.ac.in
-#  - nagios.base1.vlabs.ac.in
-#  - nagios.base1.virtual-labs.ac.in
-#  - ossec-server.base1.vlabs.ac.in
-#  - ossec-server.base1.virtual-labs.ac.in 
-#  - ads.base1.vlabs.ac.in
-#  - ads.base1.virtual-labs.ac.in
-
-
+private_dns_entries:
+  - { hostname: router, ip: 10.100.1.1 }
+  - { hostname: bandwidthd, ip: 10.100.1.1 }
+  - { hostname: ansible, ip: 10.100.1.2 }
+  - { hostname: ossec-server, ip: 10.100.1.3 }
+  - { hostname: rsyslog-server, ip: 10.100.1.4 }
+  - { hostname: private-dns, ip: 10.100.1.5 }
+  - { hostname: public-dns, ip: 10.100.1.6 }
+  - { hostname: reverseproxy, ip: 10.100.1.7 }
+  - { hostname: nagios, ip: 10.100.1.8 }
+  - { hostname: ads, ip: 10.100.1.9 }
+  - { hostname: rsnapshot-server, ip: 10.100.1.10 }
+ 
 public_dns_entries:
  - { hostname: router, ip: 10.4.14.200 }
  - { hostname: ansible, ip: 10.4.14.201 }
