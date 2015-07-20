@@ -644,69 +644,69 @@ rsnapshot_config_backup:
     - name: router.vlabs.ac.in
       points:
           - [backup_script, /bin/date "+ backup of router started at %c" > start.txt, router/router_start]
-          - [backup, "root@router.vlabs.ac.in:/etc/sysconfig/", router/]
+          - [backup, "root@router.{{prefix}}vlabs.ac.in:/etc/sysconfig/", router/]
           - [backup_script, /bin/date "+ backup of router completed at %c" > end.txt, router/router_end]
 
     - name: ansible.vlabs.ac.in
       points:
           - [backup_script, /bin/date "+ backup of ansible started at %c" > start.txt, ansible/ansible_start]
-          - [backup, "root@ansible.vlabs.ac.in:/root/.ssh/", ansible/]
+          - [backup, "root@ansible.{{prefix}}vlabs.ac.in:/root/.ssh/", ansible/]
           - [backup_script, /bin/date "+ backup of ansible completed at %c" > end.txt, ansible/ansible_end]
   
     - name: ossec-server.vlabs.ac.in
       points:
           - [backup_script, /bin/date "+ backup of ossec-server started at %c" > start.txt, ossec-server/ossec-server_start]
-          - [backup, "root@ossec-server.vlabs.ac.in:/etc/sysconfig/", ossec-server/]
-          - [backup, "root@ossec-server.vlabs.ac.in:/root/", ossec-server/]
-          - [backup, "root@ossec-server.vlabs.ac.in:/var/ossec/etc/", ossec-server/]
+          - [backup, "root@ossec-server.{{prefix}}vlabs.ac.in:/etc/sysconfig/", ossec-server/]
+          - [backup, "root@ossec-server.{{prefix}}vlabs.ac.in:/root/", ossec-server/]
+          - [backup, "root@ossec-server.{{prefix}}vlabs.ac.in:/var/ossec/etc/", ossec-server/]
           - [backup_script, /bin/date "+ backup of ossec-server completed at %c" > end.txt, ossec-server/ossec-server_end]
 
     - name: rsyslog-server.vlabs.ac.in
       points:
           - [backup_script, /bin/date "+ backup of rsyslog-server started at %c" > start.txt, rsyslog-server/rsyslog-server_start]
-          - [backup, "root@rsyslog-server.vlabs.ac.in:/etc/rsyslog.conf", rsyslog-server/]
-          - [backup, "root@rsyslog-server.vlabs.ac.in:/etc/sysconfig/iptables", rsyslog-server/]
+          - [backup, "root@rsyslog-server.{{prefix}}vlabs.ac.in:/etc/rsyslog.conf", rsyslog-server/]
+          - [backup, "root@rsyslog-server.{{prefix}}vlabs.ac.in:/etc/sysconfig/iptables", rsyslog-server/]
           - [backup_script, /bin/date "+ backup of rsyslog-server completed at %c" > end.txt, rsyslog-server/rsyslog-server_end]
 
     - name: private-dns.vlabs.ac.in
       points:
           - [backup_script, /bin/date "+ backup of private-dns started at %c" > start.txt, private-dns/private-dns_start]
-          - [backup, "root@private-dns.vlabs.ac.in:/etc/named.conf", private-dns/]
-          - [backup, "root@private-dns.vlabs.ac.in:/var/named/", private-dns/]
-          - [backup, "root@private-dns.vlabs.ac.in:/etc/sysconfig/named", private-dns/]
-          - [backup, "root@private-dns.vlabs.ac.in:/etc/sysconfig/iptables", private-dns/]
+          - [backup, "root@private-dns.{{prefix}}vlabs.ac.in:/etc/named.conf", private-dns/]
+          - [backup, "root@private-dns.{{prefix}}vlabs.ac.in:/var/named/", private-dns/]
+          - [backup, "root@private-dns.{{prefix}}vlabs.ac.in:/etc/sysconfig/named", private-dns/]
+          - [backup, "root@private-dns.{{prefix}}vlabs.ac.in:/etc/sysconfig/iptables", private-dns/]
           - [backup_script, /bin/date "+ backup of private-dns completed at %c" > end.txt, private-dns/private-dns_end]
 
     - name: public-dns.vlabs.ac.in
       points:
           - [backup_script, /bin/date "+ backup of public-dns started at %c" > start.txt, public-dns/public-dns_start]
-          - [backup, "root@public-dns.vlabs.ac.in:/etc/named.conf", pubic-dns/]
-          - [backup, "root@public-dns.vlabs.ac.in:/var/named/", public-dns/]
-          - [backup, "root@public-dns.vlabs.ac.in:/etc/sysconfig/named", public-dns/]
-          - [backup, "root@public-dns.vlabs.ac.in:/etc/sysconfig/iptables", public-dns/]
+          - [backup, "root@public-dns.{{prefix}}vlabs.ac.in:/etc/named.conf", pubic-dns/]
+          - [backup, "root@public-dns.{{prefix}}vlabs.ac.in:/var/named/", public-dns/]
+          - [backup, "root@public-dns.{{prefix}}vlabs.ac.in:/etc/sysconfig/named", public-dns/]
+          - [backup, "root@public-dns.{{prefix}}vlabs.ac.in:/etc/sysconfig/iptables", public-dns/]
           - [backup_script, /bin/date "+ backup of public-dns completed at %c" > end.txt, public-dns/public-dns_end]
 
     - name: reverseproxy.vlabs.ac.in
       points:
           - [backup_script, /bin/date "+ backup of reverseproxy started at %c" > start.txt, reverseproxy/reverseproxy_start]
-          - [backup, "root@reverseproxy.vlabs.ac.in:/etc/httpd/conf/", reverseproxy/]
-          - [backup, "root@reverseproxy.vlabs.ac.in:/etc/httpd/conf.d/", reverseproxy/]
-          - [backup, "root@reverseproxy.vlabs.ac.in:/etc/awstats/", reverseproxy/]
-          - [backup, "root@reverseproxy.vlabs.ac.in:/etc/sysconfig/", reverseproxy/]
-          - [backup, "root@reverseproxy.vlabs.ac.in:/var/log/httpd/", reverseproxy/]
+          - [backup, "root@reverseproxy.{{prefix}}vlabs.ac.in:/etc/httpd/conf/", reverseproxy/]
+          - [backup, "root@reverseproxy.{{prefix}}vlabs.ac.in:/etc/httpd/conf.d/", reverseproxy/]
+          - [backup, "root@reverseproxy.{{prefix}}vlabs.ac.in:/etc/awstats/", reverseproxy/]
+          - [backup, "root@reverseproxy.{{prefix}}vlabs.ac.in:/etc/sysconfig/", reverseproxy/]
+          - [backup, "root@reverseproxy.{{prefix}}vlabs.ac.in:/var/log/httpd/", reverseproxy/]
           - [backup_script, /bin/date "+ backup of reverseproxy completed at %c" > end.txt, reverseproxy/reverseproxy_end]
 
     - name: nagios.vlabs.ac.in
       points:
           - [backup_script, /bin/date "+ backup of nagios started at %c" > start.txt, nagios/nagios_start]
-          - [backup, "root@nagios.vlabs.ac.in:/etc/nagios/", nagios/]
+          - [backup, "root@nagios.{{prefix}}vlabs.ac.in:/etc/nagios/", nagios/]
           - [backup_script, /bin/date "+ backup of nagios completed at %c" > end.txt, nagios/nagios_end]
 
     - name: ads.vlabs.ac.in
       points:
           - [backup_script, /bin/date "+ backup of ads started at %c" > start.txt, ads/ads_start]
-          - [backup, "root@ads.vlabs.ac.in:/root/", ads/]
-          - [backup, "root@ads.vlabs.ac.in:/var/log", ads/]
+          - [backup, "root@ads.{{prefix}}vlabs.ac.in:/root/", ads/]
+          - [backup, "root@ads.{{prefix}}vlabs.ac.in:/var/log", ads/]
           - [backup_script, /bin/date "+ backup of ads completed at %c" > end.txt, ads/ads_end]
 
 
