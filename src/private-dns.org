@@ -278,28 +278,32 @@ logging {
                 severity dynamic;
         };
 };
+{% if is_amazon == "yes" %}
 {% for item in zone_names %}
-{% if item != "vlabs.ac.in." %}
 zone "{{item}}" IN {
    type master;
    file "{{item}}forward";
 };
+{% endfor %}
 {% else %}
 
+{% for item in zone_names %}
 zone "{{item}}" IN {
-   type forward;
-   forwarders {{forwarders}};
+   type master;
+   file "{{item}}forward";
 };
-{% endif %}
-
 {% endfor %}
+zone "vlabs.ac.in." IN {
+      type forward;
+      forwarders {{forwarders}};
+};
 
+{% endif %}
 
 zone "." IN {
         type hint;
         file "named.ca";
 };
-
 
 include "/etc/named.rfc1912.zones";
 include "/etc/named.root.key";

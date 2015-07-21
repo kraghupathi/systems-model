@@ -299,6 +299,10 @@ private_dns_ips:
   - 10.100.1.5
 private_dns_zone: virtual-labs.ac.in vlabs.ac.in
 
+#This variables is set to "yes" if the cluster is on AWS and "no" if
+#cluster is on base machines so that it can be used in setting zones
+#in named.conf of both DNS(public and private) roles
+is_amazon: "yes"
 
 #Rsyslog server IPs.  Set to none if there is no rsyslog server
 rsyslog_server_ips:
@@ -678,6 +682,11 @@ forwarders: "{10.4.20.204; 10.4.3.222; }"
 
 public_zone_address: 10.4.12.21
 
+#This variables is set to "yes" if the cluster is on AWS and "no" if
+#cluster is on base machines so that it can be used in setting zones
+#in named.conf of both DNS(public and private) roles
+is_amazon: "no"
+
 prefix: "base1."
 
 #List of domains to pass through reverseproxy
@@ -971,6 +980,11 @@ smtp_smart_host: smtp.admin.iiit.ac.in
 private_dns_ips:
   - 10.100.1.5
 private_dns_zone: base4.virtual-labs.ac.in base4.vlabs.ac.in
+
+#This variables is set to "yes" if the cluster is on AWS and "no" if
+#cluster is on base machines so that it can be used in setting zones
+#in named.conf of both DNS(public and private) roles
+is_amazon: "no"
 
 #Rsyslog server IPs.  Set to none if there is no rsyslog server
 rsyslog_server_ips:
