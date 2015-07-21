@@ -421,7 +421,6 @@ $TTL 3600
     zone_names:
       - "{{prefix}}virtual-labs.ac.in."
       - "{{prefix}}vlabs.ac.in."
-      - "vlabs.ac.in."
     zone_address: 10.100.1.7
     allow_query_from: "10.0.0.0/8; 172.16.0.0/12; 192.168.0.0/16;"
     name_server: private-dns
