@@ -19,6 +19,7 @@
     - common
     - rsyslog_client
     - nagios_client
+    - rsnapshot_client
     - ossec_server
 #+END_SRC
 * tasks/main.yaml

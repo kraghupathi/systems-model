@@ -446,6 +446,7 @@ authpriv.*      ?TmplAuth
     - common
     - ossec_client
     - nagios_client
+    - rsnapshot_client
     - rsyslog_server
 #+END_SRC
 

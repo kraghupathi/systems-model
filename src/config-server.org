@@ -308,6 +308,7 @@ COMMIT
     - rsyslog_client
     - ossec_client
     - nagios_client
+    - rsnapshot_client
     - config_server
 #+END_SRC
 

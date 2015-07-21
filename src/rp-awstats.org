@@ -2150,6 +2150,7 @@ ScriptAlias /awstats/ "/usr/share/awstats/wwwroot/cgi-bin/"
       - ossec_client
       - rsyslog_client
       - nagios_client
+      - rsnapshot_client
       - reverseproxy_server
 #+END_SRC
 * Test Cases
