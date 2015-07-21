@@ -225,6 +225,10 @@ CRITICAL - Plugin timed out while executing system call
 {% for item in ansible_server_ips  %}
 -A OUTPUT -d {{item}} -p tcp -m tcp --sport 22 -j ACCEPT
 {% endfor %}
+#Allow incoming SSH connections from rsnapshot server IPs.  Hopefully fail2ban will take care of bruteforce attack$
+{% for item in rsnapshot_server_ips  %}
+-A INPUT -m state --state NEW -s {{rsnapshot_server_ips[0]}} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
 
 #Allow to continue already related and established connections
 -A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
