@@ -660,7 +660,7 @@ nagios_commands:
   remote_user: root
   
   vars:
-   host_name: nagios-server
+   host_name: {{prefix}}nagios-server
   roles:
     - common
     - ossec_client

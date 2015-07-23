@@ -393,7 +393,7 @@ $TTL 3600
   remote_user: root
 
   vars:
-    host_name: public-dns
+    host_name: {{prefix}}public-dns
     zone_file_prefix: public.
     zone_names:
       - "{{prefix}}virtual-labs.ac.in."

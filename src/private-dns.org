@@ -416,7 +416,7 @@ $TTL 3600
   remote_user: root
 
   vars:
-    host_name: private-dns
+    host_name: {{prefix}}private-dns
     zone_file_prefix: private.
     zone_names:
       - "{{prefix}}virtual-labs.ac.in."

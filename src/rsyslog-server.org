@@ -444,8 +444,8 @@ authpriv.*      ?TmplAuth
   hosts: rsyslog_server
   remote_user: root
   vars:
-   - iam_router: false
-
+   iam_router: false
+   host_name: {{prefix}}rsyslog-server  
   roles:
     - common
     - ossec_client
