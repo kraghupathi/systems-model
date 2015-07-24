@@ -630,7 +630,7 @@ link_dest	1
 
 #+BEGIN_SRC yml :tangle roles/rsnapshot_server/vars/main.yml :eval no
 ---
-#rsnapshot_ssh_key: id_rsa
+rsnapshot_ssh_key: id_rsa
 
 rsnapshot_config_backup:
     - name: LOCALHOST
@@ -753,7 +753,7 @@ rsnapshot_crontab:
   remote_user: root
 
   vars:
-   host_name:{{prefix}}rsnapshot-server
+   host_name: "{{prefix}}rsnapshot-server"
   roles:
     - common
     - rsnapshot_server

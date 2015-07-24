@@ -1,0 +1,130 @@
+#    -*- mode: org -*-
+
+
+Archived entries from file /home/shankar/VLEAD/systems-model/src/router.org
+
+
+* Building the Firewall rules
+  :PROPERTIES:
+  :ARCHIVE_TIME: 2015-07-21 Tue 16:31
+  :ARCHIVE_FILE: ~/VLEAD/systems-model/src/router.org
+  :ARCHIVE_OLPATH: Implementation
+  :ARCHIVE_CATEGORY: router
+  :END:
+The description of NAT (Network Address Translation) rules are as follows:\\
+Default policy for prerouting, postrouting and output is set to be as ACCEPT. If the packet
+does not match any rule then the default action is applied to the packet.
+Packet counters are set to [0:0].First counter represents the number of
+packets that matched the rule for the chain, and second counter represents the
+total size of the packets that matched the rule.\\
+In NAT rules, the forwarding rules and SNAT (Source Network Address Translation) rules are described as:\\
+The nat rule forwards the incoming DNS requests via UDP port 53
+to public dns.This is done in the PREROUTING chain, just as the packet comes in;
+this means that anything else on the routing will see the packet going to its `real' destination.
+Here the `-i' (incoming interface) option can be used. Destination NAT is specified using `-j DNAT', 
+and the `--to-destination' option specifies an IP address, a range of IP addresses, and an optional 
+port or range of ports (for UDP and TCP protocols only).\\
+The SNAT rule will route all packets going outside to router public IP. 
+Source NAT (SNAT) changes the source address in IP header of a packet. It may also change 
+the source port in the TCP/UDP headers. The typical usage is to change the private 
+address/port into a public address/port for packets leaving your network.This is done in the 
+POSTROUTING chain, just before it is finally sent out. It also means that the `-o' (outgoing interface)
+option can be used.\\
+
+The common firewall rules are the ones which are described in common.
+#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
+*nat
+:PREROUTING ACCEPT [0:0]
+:POSTROUTING ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+#Note that request can be forwarded only to one machine and not to multiple machines
+#Forward incoming DNS requests to public dns at {{public_dns_ip}} 
+-A PREROUTING -d {{router_interface_ip}} -p udp -m udp --dport 53 -j DNAT --to-destination {{public_dns_ip}}:53
+#Forward incoming HTTP,HTTPS requests to reverseproxy at {{reverseproxy_ip}}
+-A PREROUTING -d {{router_interface_ip}} -p tcp -m tcp --dport 80 -j DNAT --to-destination {{reverseproxy_ip}}:80
+-A PREROUTING -d {{router_interface_ip}} -p tcp -m tcp --dport 443 -j DNAT --to-destination {{reverseproxy_ip}}:443
+#Forward incoming http request on tcp port 8080 to ADS server
+-A PREROUTING -d {{router_interface_ip}} -p tcp -m tcp --dport 8080 -j DNAT --to-destination {{ads_ip}}:8080
+#Forward incoming SSH connection on TCP port 2222 to Analytics server
+-A PREROUTING -d {{router_interface_ip}} -p tcp -m tcp --dport 2222 -j DNAT --to-destination {{analytics_server_ip}}:22
+#
+#SNAT all packets going outside to router public IP 
+-A POSTROUTING -o {{router_external_interface}} ! -d {{local_subnet}} -j SNAT --to-source {{router_interface_ip}}
+#
+COMMIT
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+#Accept loopback connections
+-A INPUT -i lo -d 127.0.0.0/8 -j ACCEPT
+#Accept http/tcp request from internal network for displaying bandwidthd
+-A INPUT -s {{local_subnet}} -p tcp -m tcp --dport 8000 -j ACCEPT
+#Rate limit new connections to 20 new connections per 30 seconds
+-A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --set
+-A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --rcheck --seconds 30 --hitcount 20 -m limit --limit 2/min -j LOG --log-prefix "new_limit_"
+-A INPUT ! -p udp -m state --state NEW -m recent --name ssh_limit --rcheck --seconds 30 --hitcount 20 -j DROP
+#Accept ICMP ping requests at limited rate
+-A INPUT -p icmp --icmp-type echo-request -m limit --limit 60/minute --limit-burst 120 -j ACCEPT
+-A INPUT -p icmp --icmp-type echo-request -m limit --limit 1/minute --limit-burst 2 -j LOG
+-A INPUT -p icmp --icmp-type echo-request -j DROP
+#Allow ongoing connections
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+#Allow incoming SSH connections from management IPs.  Hopefully fail2ban will take care of bruteforce attacks from management IPs
+{% for item in management_ips  %}
+-A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
+#Allow incoming SSH connections from ansible server IPs.  Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
+{% for item in ansible_server_ips  %}
+-A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
+#Allow incoming SSH connections from nagios server IPs.  Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
+{% for item in nagios_server_ips  %}
+-A INPUT -m state --state NEW -s {{nagios_server_ips[0]}} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
+#Allow incoming SSH connections from rsnapshot server IPs.  Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
+{% for item in rsnapshot_server_ips  %}
+-A INPUT -m state --state NEW -s {{rsnapshot_server_ips[0]}} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
+
+#Allow incoming NRPE queries for nagios from nagios servers
+{% for ip in nagios_server_ips %}
+-A INPUT -m state --state NEW -s {{ip}} -p tcp -m tcp --dport 5666 -j ACCEPT
+{% endfor %}
+#Allow SNMP queries from cacti servers
+#-A INPUT -p udp -m udp --dport 161 -j ACCEPT
+#-A INPUT -p udp -m udp --dport 162 -j ACCEPT
+#Log all other "blocked_input_" attempts with rate limiting
+-A INPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_input_"
+#Reply with proper ICMP error message and reject the connection
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+#Enable packet forwarding through
+-A FORWARD -j ACCEPT 
+#
+#
+##Output rules
+#Allow outgoing connections to localhost
+-A OUTPUT -s 127.0.0.0/8 -o lo -j ACCEPT
+#Allow ongoing connections
+-A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+#Allow DNS queries
+-A OUTPUT -p udp -m udp --dport 53 -j ACCEPT
+#Allow server to send emails.  Required for sending logwatch emails
+-A OUTPUT -p tcp -m tcp --dport 25 -j ACCEPT
+#Allow server to contact web-servers.  This is must for router to be able to forward requests to reverseproxy server. 
+-A OUTPUT -p tcp -m tcp --dport 80 -j ACCEPT
+-A OUTPUT -p tcp -m tcp --dport 443 -j ACCEPT
+#Allow outgoing tcp 22 to analytics server, port forwarding
+-A OUTPUT -p tcp -m tcp -d {{analytics_server_ip}} --dport 22 -j ACCEPT
+#Allow outgoing ping requests
+-A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT
+#Allow outgoing connections to rsyslog server
+-A OUTPUT -p udp -m udp --dport 514 -j ACCEPT
+#Allow outgoing connections to OSSEC server
+-A OUTPUT -p udp -m udp --dport 1514 -j ACCEPT
+#Log all other "blocked_output_" attempts
+-A OUTPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_output_"
+#Reply with proper ICMP error message and reject the connection
+-A OUTPUT -j REJECT --reject-with icmp-host-prohibited
+COMMIT
+#+END_SRC

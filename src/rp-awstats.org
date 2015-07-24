@@ -2144,7 +2144,7 @@ ScriptAlias /awstats/ "/usr/share/awstats/wwwroot/cgi-bin/"
     remote_user: root
     
     vars:
-     host_name: {{prefix}}reverseproxy
+     host_name: "{{prefix}}reverseproxy"
     roles:
       - common
       - ossec_client

@@ -108,10 +108,17 @@
 
 #+BEGIN_SRC yml :tangle roles/rsnapshot_client/tasks/main.yml :eval no
 - name: copying public key of rsnapshot-server to authorized_keys of client
-  shell: echo {{ rsnaphot_server_pub_key }} >> /root/.ssh/authorized_keys
+  copy: src=rsnapshot_server_pubic_key/10.100.1.10/root/.ssh/id_rsa.pub dest=/root/.ssh/keys
+
+- name: copying public key of rsnapshot-server to client machine
+  copy: src=rsnapshot_server_pubic_key/10.100.1.10/root/.ssh/id_rsa.pub dest=/root/.ssh/keys
+
+- name: Check whether the key already exist or not. If not, echo newly created public-key to destination
+  shell: 'grep -ir ansible-generated\ on\ {{prefix}}.rsnapshot* /root/.ssh/authorized_keys; if [ $? == 0 ]; then echo "Key already exist"; else echo "$(cat /root/.ssh/keys)" >> /root/.ssh/authorized_keys; fi'
+
 #+END_SRC
     
-** Variables Definition
+** COMMENT Variables Definition
    Rsnapshost server's ssh-public keys are to be placed in the
    rsnapshot client node as authorized keys. System administrator has
    to assign the value of =rsnaphot_server_pub_key= variable as
