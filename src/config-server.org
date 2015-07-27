@@ -6,14 +6,14 @@
 #+options: ^:nil
  
 * Introduction
-  In this documentation, we call config-server as ansible server,
-  configuration server and also node.
+  In this documentation, we call config-server as ansible server, configuration
+  server and also node.
   
   This document describes the requirements, design and implementation of the
   configuration server.
   
   This configuration server plays a vital role in the cluster to complete the
-  infrastructure.  Since configuration server configures all other nodes in the
+  infrastructure. Since configuration server configures all other nodes in the
   cluster and configures itself as well, through multiple roles and tasks. A
   role is a specific set of configurations.
 
@@ -27,8 +27,8 @@
   instances/containers and itself also. Password based authentication is not
   allowed to this node
 
-  The documentation also describes the requirements, design and implementation
-  of ads-hooks that are invoked by ads server to register and de-register labs.
+  The services to register and de-register labs provided by the configuration
+  server are also captured in the document.
 
 ** COMMENT Only from management ip machines, we will be able ssh to root account
 of configuration server. Password based authentication is not allowed
@@ -90,10 +90,40 @@ ip machines.
   #+CAPTION:  Configuration Server Services Design Diagram
   #+LABEL:  fig-config-services-diagram
   [[./diagrams/hooks2.png]]
+
+*** Description
+- Hosting of a Lab ::
+Hosting a lab means instantiating a new node in the cluster, then deploying a
+lab on it. Once the lab is being deployed the entries for DNS, reverseproxy,
+nagios and awstats are made. Once the entries are done the lab becomes
+accessible from the internet.
+
+- Registration ::
+A lab is said to be registered by the service when the necessary configuration
+changes are done and lab is accessible from external world.
+
+- De registration ::
+A lab is said to be de-registered by the service when the various entries are
+removed from the servers and lab is no longer accessible.
+
+- Work Flow of the Service ::
+ADS invokes the services provided by the configuration server over SSH to
+register or de register a lab. Service program first writes the input arguments
+passed by the ADS into a data file (.txt). Then the data is appended in the yaml
+file. Ansible playbook is then run to reconfigure the whole cluster again.
+
+**** DONE What is Hosting and deployment of labs
+**** DONE Explain how service is invoked, makes the necessary configuration changes in the cluster.
+**** DONE Register: Lab is available from the external world, similarly deregister.
+**** DONE Describe the arguments taken by the program as input.
+**** DONE Run Ansible playbook to reconfigure the whole cluster again.
+**** TODO Link to ads server how it is configured to call service.
+**** TODO Failure condition
+
 ** System Configuration files Summary
 
-The following table gives the information about services and their
-configuration files. Other configuration files are updated in common role.
+The following table gives the information about services and their configuration
+files. Other configuration files are updated in common role.
 |-----------+-----------------------------------+---------------------------|
 | *Service* | *Configuration file*              | *Description*             |
 |-----------+-----------------------------------+---------------------------|
@@ -157,8 +187,7 @@ configuration files. Other configuration files are updated in common role.
    each firewall.
 
 *** Tasks
-
-*** Firewall rules
+**** Firewall rules
     Rules which are specific to configuration server are described [[Firewall rules specific to config_server][below]].
     Description of each firewall rule of this configuration server and
     which are common across all the systems are described in [[.common.org][common role]].
@@ -240,9 +269,9 @@ configuration files. Other configuration files are updated in common role.
 -A OUTPUT -j REJECT --reject-with icmp-host-prohibited
 COMMIT
 #+END_SRC
-*** Firewall rules specific to config_server
+**** Firewall rules specific to config_server
 
-**** SSH access from management ips
+***** SSH access from management ips
      The following firewall rule accepts incoming connections on tcp
      port 22 only from management ips
 
@@ -252,7 +281,7 @@ COMMIT
 {% endfor %}
 #+END_SRC
 
-**** SSH access from ansible server ips
+***** SSH access from ansible server ips
      The following firewall rule accepts incoming connections on tcp
      port 22 only from ansible server ips
 
@@ -262,7 +291,7 @@ COMMIT
 {% endfor %}
 #+END_SRC
 
-*** Installing ansible 
+**** Installing ansible 
     Install latest ansible package to setup the configuration server
     itself and to run the ansible scripts to configure the other nodes
     in the cluster.
@@ -272,7 +301,7 @@ COMMIT
 - name: installing ansible
   yum: name=ansible state=present
 #+END_SRC
-*** Apply firewall rules to Configuration server
+**** Apply firewall rules to Configuration server
     Firewall rules are applied by following steps:
     1) Copy the =iptables= template to the configuration server.
     2) Restart iptables service if the configuration file is modified
@@ -284,7 +313,7 @@ COMMIT
   notify: restart iptables
 #+END_SRC
 
-*** Handlers
+**** Handlers
    Restart the iptables service if configuration file of iptables is
    modified. These handlers are called only when tasks notifies to
    start service.
@@ -295,7 +324,7 @@ COMMIT
   service: name=iptables state=restarted
 #+END_SRC
 
-*** Main configuration file
+**** Main configuration file
    The configuration server is managed with all other roles. The
    implementation is done in terms of defining suitable scripts for
    each role.  The top level script is =build/code/config_server.yml=
@@ -319,18 +348,22 @@ COMMIT
 #+END_SRC
 
 ** Services
-*** Requirements of the hooks:: 
-   - A SSH call from ADS server to register.sh script.
-   - Shell script "register.sh" then writes data into lab.txt
-   - Then invokes python program to convert lab.txt into a separate file.
-   - Collate entries from models and newly generated file and provide it to
-     playbook.
-   - Invoke the playbook of setting up server again with updated entries or
-     directly call site.yml.
+ADS invokes multiple services exposed by the configuration server as follows:
+#+BEGIN_EXAMPLE
+python config-services <service name> arguments
+#+END_EXAMPLE
 
-*** Input Format
-Input format for the program is as follows.
-#+BEGIN_SRC txt :tangle lab.txt :eval no
+- Program Design ::
+The program takes the following three arguments as input:
+1. A keyword - (register or de register)
+2. IP Address - ipaddress of the lab
+3. FQDN - Frequently Qualified Domain Name of the lab
+
+*** Format of the data file
+The arguments passed to the service are saved in the following format in a data
+file.
+
+#+BEGIN_EXAMPLE
 router 10.100.1.1
 bandwidthd 10.100.1.1
 ansible 10.100.1.2
@@ -338,11 +371,12 @@ ossec-server 10.100.1.3
 rsyslog-server 10.100.1.4
 private-dns 10.100.1.5
 public-dns 10.100.1.6
-#+END_SRC
+#+END_EXAMPLE
 
-*** Output format
-Output format of the program is as follows.
-#+BEGIN_SRC yml :tangle output.yml :eval no
+*** Format of the "yaml" file
+Program then converts the data into a proper "yaml" format.
+
+#+BEGIN_EXAMPLE
 - { hostname: router, ip: 10.100.1.1 }
 - { hostname: bandwidthd, ip: 10.100.1.1 }
 - { hostname: ansible, ip: 10.100.1.2 }
@@ -350,15 +384,53 @@ Output format of the program is as follows.
 - { hostname: rsyslog-server, ip: 10.100.1.4 }
 - { hostname: private-dns, ip: 10.100.1.5 }
 - { hostname: public-dns, ip: 10.100.1.6 }
+#+END_EXAMPLE
+
+*** Service Program
+#+BEGIN_SRC python :tangle service.py :eval no
+import sys 
+
+from format import *
+
+def register(hostname, ip):
+
+    labFile = open("lab.txt", "a")
+    
+    labFile.write("%s %s\n" %(hostname, ip))
+
+    labFile.close()
+
+    reverseproxy("lab.txt", "main.yml")
+
+    dns("lab.txt", "main.yml")
+
+    return
+
+#def deregister():
+
+def main(argv):
+#    print argv
+    print argv[0], argv[1], argv[2]
+    if (str(argv[0]) == "register"):
+        register(argv[1], argv[2])
+
+    return
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
 #+END_SRC
-*** Add Author name
+
+*** Author Name
 #+BEGIN_SRC python :tangle format.py :eval no
 #Author: Yogesh Agrawal
 #Date: 2015, June 26. Friday
 #Email: yogesh@vlabs.ac.in
 #+END_SRC
 
-*** Function for modifying DNS files
+*** Registering DNS Entries
+DNS entries of the labs are to be made in order for the labs to be accessible by
+its FQDN. FQDN and ipaddresses are read from the data file and appended to DNS
+"yaml" file.
 **** Function definition
 #+BEGIN_SRC python :tangle format.py :eval no
 def dns(inputFile, outputFile):
@@ -375,52 +447,53 @@ Open input file - "lab.txt" to read the content. Also open output file -
 
 **** Read yml file
 Read yml file line by line and save data in a variable.
-#+BEGIN_SRC python :tangle format.py :eval no	
+#+BEGIN_SRC python :tangle format.py :eval no		
     ymlData = ymlFile.readlines()
 #+END_SRC
 
 **** Find start and end index of markers
 Find the start and the end index of the markers in the yml file.
-#+BEGIN_SRC python :tangle format.py :eval no
-    startIndex = ymlData.index("#START\n")
-    endIndex = ymlData.index("#END\n")
-#+END_SRC	
+#+BEGIN_SRC python :tangle format.py :eval no	
+    dnsStartIndex = ymlData.index("#DNS_START\n")
+    dnsEndIndex = ymlData.index("#DNS_END\n")
+#+END_SRC
 
 **** Save existing entries in a variable
 Data is in between the markers, so entries are fetched from file and saved in a
 variable.
 #+BEGIN_SRC python :tangle format.py :eval no
-    existingEntries = []
+    dnsExistingEntries = []
 
-    for index in range(startIndex + 2, endIndex):
-        existingEntries.append(ymlData[index])
+    for index in range(dnsStartIndex + 2, dnsEndIndex):
+        dnsExistingEntries.append(ymlData[index])
 #+END_SRC
 
 **** Save new entries in the variable
 New entries are appended in the same variable with proper format.
 #+BEGIN_SRC python :tangle format.py :eval no
-    newEntries = []
-	
+    dnsNewEntries = []
+
     for line in labFile.readlines():
         splitLine = line.split()
-	hostnameAndIP = "      - { hostname: %s, ip: %s }\n" %(splitLine[0], splitLine[1])
-	newEntries.append(hostnameAndIP)
+	hostnameAndIP = " - { hostname: %s, ip: %s }\n" %(splitLine[0], splitLine[1])
+	dnsNewEntries.append(hostnameAndIP)
 #+END_SRC
 
 **** Combine existing and new entries in a variable
 #+BEGIN_SRC python :tangle format.py :eval no
-    totalEntries = existingEntries + newEntries
+    dnsTotalEntries = dnsExistingEntries + dnsNewEntries
 #+END_SRC
 
 **** Remove duplicate entries
 Remove duplicates by converting list into set first and then again into list.
 #+BEGIN_SRC python :tangle format.py :eval no
-    totalEntries = list(set(totalEntries))
+    dnsTotalEntries = list(set(dnsTotalEntries))
 #+END_SRC
 
 **** Complete file content
 #+BEGIN_SRC python :tangle format.py :eval no
-    newYmlData = ymlData[0:startIndex + 1] + totalEntries + ymlData[endIndex:-1]
+    delimeter = list("#DNS_END\n")
+    newYmlData = ymlData[0:dnsStartIndex + 2] + dnsTotalEntries + delimeter
 #+END_SRC
 
 **** Close file pointers
@@ -447,8 +520,11 @@ Data is written to a file line by line.
 #+BEGIN_SRC python :tangle format.py :eval no
     return
 #+END_SRC
+*** Registering reverseproxy and awstats Entries
+Reverseproxy entries of the labs are to be made in order for the labs to be
+accessible from external world. Domain values are read from the data file and
+appended to reverseproxy "yaml" file.
 
-*** Function for modifying reverseproxy files
 **** Function definition
 #+BEGIN_SRC python :tangle format.py :eval no
 def reverseproxy(inputFile, outputFile):
@@ -476,7 +552,7 @@ Find the start and end index of the markers in the yml file.
 
     awstatsStartIndex = ymlData.index("#AWSTATS_START\n")
     awstatsEndIndex = ymlData.index("#AWSTATS_END\n")
-#+END_SRC
+#+END_SRC	
 
 **** Save existing entries in a variable
 Data is in between the markers, so entries are fetched from file and saved in a
@@ -490,7 +566,7 @@ variable.
     
     for index in range(awstatsStartIndex + 2, awstatsEndIndex):
         awstatsExistingEntries.append(ymlData[index])
-#+END_SRC
+#+END_SRC		
 
 **** Save new entries in the variable
 New entries are appended in the same variable with proper format.
@@ -512,7 +588,7 @@ New entries are appended in the same variable with proper format.
 
 **** Combine existing and new entries in a variable
 #+BEGIN_SRC python :tangle format.py :eval no
-    domainTotalEntries = domainExistingEntries + domainNewEntries
+    domainTotalEntries = domainExistingEntries + domainNewEntries    
     awstatsTotalEntries = awstatsExistingEntries + awstatsNewEntries
 #+END_SRC
 
@@ -525,7 +601,7 @@ Remove duplicates by converting list into set first and then again into list.
 
 **** Complete file content
 #+BEGIN_SRC python :tangle format.py :eval no
-    delimeter = list("#DOMAIN_END\n#AWSTATS_START\nawstats_domains:\n")
+    delimeter = list("#DOMAIN_END\n\n#AWSTATS_START\nawstats_domains:\n")
     newYmlData = ymlData[0:domainStartIndex + 1] + domainTotalEntries + delimeter + awstatsTotalEntries + ymlData[awstatsEndIndex:-1]
 #+END_SRC
 
@@ -553,21 +629,21 @@ Data is written to a file line by line.
 #+BEGIN_SRC python :tangle format.py :eval no
     return
 #+END_SRC
-
 *** Main Function
 #+BEGIN_SRC python :tangle format.py :eval no
 def main():
 
-    option = raw_input("Which role you wish to modify (pubdns, privdns, rp, nagios) ?\n")
+    option = raw_input("Which role you wish to modify (pubdns, privdns, rp, nagios) ?")
 
     if (option == "pubdns"):
-        dns("lab.txt", "private_dns.yaml")
+        dns("lab.txt", "main.yml")
     elif (option == "privdns"):
-        dns("lab.txt", "public_dns.yaml")
+        dns("lab.txt", "main.yml")
     elif (option == "rp"):
-        reverseproxy("lab.txt", "main.yaml")
+        reverseproxy("lab.txt", "main.yml")
     elif (option == "nagios"):
         nagios()
+
 
 if __name__ == "__main__":
    main()
@@ -716,3 +792,8 @@ if __name__ == "__main__":
      playbook.
    - then invoke the playbook of setting up server again with updated entries
      or directly call site.yml.
+* COMMENT QA Review
+1. DR process provided by amazon.
+2. Code for the recovering the problems.
+3. Test cases from tester and integration engineer. 
+4. What is the load on the server.
