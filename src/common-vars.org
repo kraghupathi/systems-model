@@ -394,6 +394,19 @@ proxy_domains:
   - {domain: "ce-iitb.virtual-labs.ac.in", alias: "ce-iitb.vlabs.ac.in"}
   - {domain: "ee-iitb.virtual-labs.ac.in", alias: "ee-iitb.vlabs.ac.in"}
   - {domain: "vc-dei.virtual-labs.ac.in", alias: "vc-dei.vlabs.ac.in"}
+  - {domain: "stats.virtual-labs.ac.in", alias: "stats.vlabs.ac.in"}
+  - {domain: "bsa-iiith.virtual-labs.ac.in", alias: "bsa-iiith.vlabs.ac.in"}
+  - {domain: "cds-iiith.virtual-labs.ac.in", alias: "cds-iiith.vlabs.ac.in"}
+  - {domain: "smfe-iiith.virtual-labs.ac.in", alias: "smfe-iiith.vlabs.ac.in"}
+  - {domain: "ssp-iiith.virtual-labs.ac.in", alias: "ssp-iiith.vlabs.ac.in"}
+  - {domain: "sd-iiith.virtual-labs.ac.in", alias: "sd-iiith.vlabs.ac.in"}
+  - {domain: "cl-iiith.virtual-labs.ac.in", alias: "cl-iiith.vlabs.ac.in"}
+  - {domain: "ge-iiith.virtual-labs.ac.in", alias: "ge-iiith.vlabs.ac.in"}
+  - {domain: "mi-iiith.virtual-labs.ac.in", alias: "mi-iiith.vlabs.ac.in"}
+  - {domain: "mas-iiith.virtual-labs.ac.in", alias: "mas-iiith.vlabs.ac.in"}
+  - {domain: "mfs-iiith.virtual-labs.ac.in", alias: "mfs-iiith.vlabs.ac.in"}
+  - {domain: "nlp-iiith.virtual-labs.ac.in", alias: "nlp-iiith.vlabs.ac.in"}
+
 awstats_domains:
   - cse01-iiith.virtual-labs.ac.in
   - cse02-iiith.virtual-labs.ac.in
@@ -451,6 +464,19 @@ awstats_domains:
   - ce-iitb.virtual-labs.ac.in
   - ee-iitb.virtual-labs.ac.in
   - vc-dei.virtual-labs.ac.in
+  - stats.virtual-labs.ac.in
+  - bsa-iiith.virtual-labs.ac.in
+  - cds-iiith.virtual-labs.ac.in
+  - smfe-iiith.virtual-labs.ac.in
+  - ssp-iiith.virtual-labs.ac.in
+  - sd-iiith.virtual-labs.ac.in
+  - cl-iiith.virtual-labs.ac.in
+  - ge-iiith.virtual-labs.ac.in
+  - mi-iiith.virtual-labs.ac.in
+  - mas-iiith.virtual-labs.ac.in
+  - mfs-iiith.virtual-labs.ac.in
+  - nlp-iiith.virtual-labs.ac.in
+
 public_dns_entries:
   - { hostname: router, ip: 54.85.93.7 }
   - { hostname: bandwidthd, ip: 54.85.93.7 }
@@ -519,6 +545,18 @@ public_dns_entries:
   - { hostname: ee-iitb, ip: 54.85.93.7 }
   - { hostname: ce-iitb, ip: 54.85.93.7 }    
   - { hostname: vc-dei, ip: 54.85.93.7 }
+  - { hostname: stats, ip: 54.85.93.7 }
+  - { hostname: bsa-iiith, ip: 54.85.93.7}
+  - { hostname: cds-iiith, ip: 54.85.93.7}
+  - { hostname: smfe-iiith, ip: 54.85.93.7}
+  - { hostname: ssp-iiith, ip: 54.85.93.7}
+  - { hostname: sd-iiith, ip: 54.85.93.7}
+  - { hostname: cl-iiith, ip: 54.85.93.7}
+  - { hostname: ge-iiith, ip: 54.85.93.7}
+  - { hostname: mi-iiith, ip: 54.85.93.7}
+  - { hostname: mas-iiith, ip: 54.85.93.7}
+  - { hostname: mfs-iiith, ip: 54.85.93.7}
+  - { hostname: nlp-iiith, ip: 54.85.93.7}
 
 private_dns_entries:
   - { hostname: router, ip: 10.100.1.1 }
@@ -589,6 +627,19 @@ private_dns_entries:
   - { hostname: ee-iitb, ip: 10.100.3.141}
   - { hostname: ce-iitb, ip: 10.100.1.133}
   - { hostname: vc-dei, ip: 10.100.0.163}
+  - { hostname: stats, ip: 10.100.1.12}
+  - { hostname: bsa-iiith, ip: 10.100.2.27}
+  - { hostname: cds-iiith, ip: 10.100.0.216}
+  - { hostname: smfe-iiith, ip: 10.100.3.182}
+  - { hostname: ssp-iiith, ip: 10.100.0.210}
+  - { hostname: sd-iiith, ip: 10.100.0.180}
+  - { hostname: cl-iiith, ip: 10.100.1.24}
+  - { hostname: ge-iiith, ip: 10.100.0.86}
+  - { hostname: mi-iiith, ip: 10.100.1.118}
+  - { hostname: mas-iiith, ip: 10.100.1.187}
+  - { hostname: mfs-iiith, ip: 10.100.1.149}
+  - { hostname: nlp-iiith, ip: 10.100.3.184}
+
 
 #+END_SRC
 
@@ -744,6 +795,18 @@ proxy_domains:
   - {domain: "qnm-iitd.base1.virtual-labs.ac.in", alias: "qnm-iitd.base1.vlabs.ac.in"}
   - {domain: "msvs-dei.base1.virtual-labs.ac.in", alias: "msvs-dei.base1.vlabs.ac.in"}
   - {domain: "vp-dei.base1.virtual-labs.ac.in", alias: "vp-dei.base1.vlabs.ac.in"}
+  - {domain: "bsa-iiith.base1.virtual-labs.ac.in", alias: "bsa-iiith.base1.vlabs.ac.in"}
+  - {domain: "cds-iiith.base1.virtual-labs.ac.in", alias: "cds-iiith.base1.vlabs.ac.in"}
+  - {domain: "smfe-iiith.base1.virtual-labs.ac.in", alias: "smfe-iiith.base1.vlabs.ac.in"}
+  - {domain: "ssp-iiith.base1.virtual-labs.ac.in", alias: "ssp-iiith.base1.vlabs.ac.in"}
+  - {domain: "sd-iiith.base1.virtual-labs.ac.in", alias: "sd-iiith.base1.vlabs.ac.in"}
+  - {domain: "cl-iiith.base1.virtual-labs.ac.in", alias: "cl-iiith.base1.vlabs.ac.in"}
+  - {domain: "ge-iiith.base1.virtual-labs.ac.in", alias: "ge-iiith.base1.vlabs.ac.in"}
+  - {domain: "mi-iiith.base1.virtual-labs.ac.in", alias: "mi-iiith.base1.vlabs.ac.in"}
+  - {domain: "mas-iiith.base1.virtual-labs.ac.in", alias: "mas-iiith.base1.vlabs.ac.in"}
+  - {domain: "mfs-iiith.base1.virtual-labs.ac.in", alias: "mfs-iiith.base1.vlabs.ac.in"}
+  - {domain: "nlp-iiith.base1.virtual-labs.ac.in", alias: "nlp-iiith.base1.vlabs.ac.in"}
+
 
 awstats_domains:
   - reverseproxy.base1.virtual-labs.ac.in
@@ -762,6 +825,17 @@ awstats_domains:
   - phy14-iiith.base1.virtual-labs.ac.in
   - ccnsb06-iiith.base1.virtual-labs.ac.in
   - eerc01-iiith.base1.virtual-labs.ac.in
+  - bsa-iiith.base1.virtual-labs.ac.in
+  - cds-iiith.base1.virtual-labs.ac.in
+  - smfe-iiith.base1.virtual-labs.ac.in
+  - ssp-iiith.base1.virtual-labs.ac.in
+  - sd-iiith.base1.virtual-labs.ac.in
+  - cl-iiith.base1.virtual-labs.ac.in
+  - ge-iiith.base1.virtual-labs.ac.in
+  - mi-iiith.base1.virtual-labs.ac.in
+  - mas-iiith.base1.virtual-labs.ac.in
+  - mfs-iiith.base1.virtual-labs.ac.in
+  - nlp-iiith.base1.virtual-labs.ac.in
   - bmi-iitr.base1.virtual-labs.ac.in
   - bmsip-iitr.base1.virtual-labs.ac.in
   - em-iitr.base1.virtual-labs.ac.in
@@ -823,6 +897,17 @@ public_dns_entries:
   - { hostname: phy14-iiith, ip: 10.4.14.150 }
   - { hostname: ccnsb06-iiith, ip: 10.4.14.150 }
   - { hostname: eerc01-iiith, ip: 10.4.14.150 }
+  - { hostname: bsa-iiith, ip: 10.4.14.150}
+  - { hostname: cds-iiith, ip: 10.4.14.150}
+  - { hostname: smfe-iiith, ip: 10.4.14.150}
+  - { hostname: ssp-iiith, ip: 10.4.14.150}
+  - { hostname: sd-iiith, ip: 10.4.14.150}
+  - { hostname: cl-iiith, ip: 10.4.14.150}
+  - { hostname: ge-iiith, ip: 10.4.14.150}
+  - { hostname: mi-iiith, ip: 10.4.14.150}
+  - { hostname: mas-iiith, ip: 10.4.14.150}
+  - { hostname: mfs-iiith, ip: 10.4.14.150}
+  - { hostname: nlp-iiith, ip: 10.4.14.150}
   - { hostname: bmi-iitr, ip: 10.4.14.150 }
   - { hostname: bmsip-iitr, ip: 10.4.14.150 }
   - { hostname: em-iitr, ip: 10.4.14.150 }
@@ -885,6 +970,17 @@ private_dns_entries:
   - { hostname: phy14-iiith, ip: 10.100.0.16}
   - { hostname: ccnsb06-iiith, ip: 10.100.0.14}
   - { hostname: eerc01-iiith, ip: 10.100.0.15}
+  - { hostname: bsa-iiith, ip: 10.100.0.50}
+  - { hostname: cds-iiith, ip: 10.100.0.51}
+  - { hostname: smfe-iiith, ip: 10.100.0.52}
+  - { hostname: ssp-iiith, ip: 10.100.0.53}
+  - { hostname: sd-iiith, ip: 10.100.0.54}
+  - { hostname: cl-iiith, ip: 10.100.0.55}
+  - { hostname: ge-iiith, ip: 10.100.0.56}
+  - { hostname: mi-iiith, ip: 10.100.0.57}
+  - { hostname: mas-iiith, ip: 10.100.0.58}
+  - { hostname: mfs-iiith, ip: 10.100.0.59}
+  - { hostname: nlp-iiith, ip: 10.100.0.60}
   - { hostname: bmi-iitr, ip: 10.100.0.17}
   - { hostname: bmsip-iitr, ip: 10.100.0.18 }
   - { hostname: em-iitr, ip: 10.100.0.19 }
