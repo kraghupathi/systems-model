@@ -112,14 +112,6 @@ register or de register a lab. Service program first writes the input arguments
 passed by the ADS into a data file (.txt). Then the data is appended in the yaml
 file. Ansible playbook is then run to reconfigure the whole cluster again.
 
-**** DONE What is Hosting and deployment of labs
-**** DONE Explain how service is invoked, makes the necessary configuration changes in the cluster.
-**** DONE Register: Lab is available from the external world, similarly deregister.
-**** DONE Describe the arguments taken by the program as input.
-**** DONE Run Ansible playbook to reconfigure the whole cluster again.
-**** TODO Link to ads server how it is configured to call service.
-**** TODO Failure condition
-
 ** System Configuration files Summary
 
 The following table gives the information about services and their configuration
@@ -353,12 +345,6 @@ ADS invokes multiple services exposed by the configuration server as follows:
 python config-services <service name> arguments
 #+END_EXAMPLE
 
-- Program Design ::
-The program takes the following three arguments as input:
-1. A keyword - (register or de register)
-2. IP Address - ipaddress of the lab
-3. FQDN - Frequently Qualified Domain Name of the lab
-
 *** Format of the data file
 The arguments passed to the service are saved in the following format in a data
 file.
@@ -386,40 +372,6 @@ Program then converts the data into a proper "yaml" format.
 - { hostname: public-dns, ip: 10.100.1.6 }
 #+END_EXAMPLE
 
-*** Service Program
-#+BEGIN_SRC python :tangle service.py :eval no
-import sys 
-
-from format import *
-
-def register(hostname, ip):
-
-    labFile = open("lab.txt", "a")
-    
-    labFile.write("%s %s\n" %(hostname, ip))
-
-    labFile.close()
-
-    reverseproxy("lab.txt", "main.yml")
-
-    dns("lab.txt", "main.yml")
-
-    return
-
-#def deregister():
-
-def main(argv):
-#    print argv
-    print argv[0], argv[1], argv[2]
-    if (str(argv[0]) == "register"):
-        register(argv[1], argv[2])
-
-    return
-
-if __name__ == "__main__":
-    main(sys.argv[1:])
-#+END_SRC
-
 *** Author Name
 #+BEGIN_SRC python :tangle format.py :eval no
 #Author: Yogesh Agrawal
@@ -439,7 +391,6 @@ def dns(inputFile, outputFile):
 **** Open Input File and Output File
 Open input file - "lab.txt" to read the content. Also open output file -
 "private_dns.yaml" to write data.
-
 #+BEGIN_SRC python :tangle format.py :eval no
     labFile = open(inputFile, "r")
     ymlFile = open(outputFile, "r")
@@ -602,7 +553,7 @@ Remove duplicates by converting list into set first and then again into list.
 **** Complete file content
 #+BEGIN_SRC python :tangle format.py :eval no
     delimeter = list("#DOMAIN_END\n\n#AWSTATS_START\nawstats_domains:\n")
-    newYmlData = ymlData[0:domainStartIndex + 1] + domainTotalEntries + delimeter + awstatsTotalEntries + ymlData[awstatsEndIndex:-1]
+    newYmlData = ymlData[0:domainStartIndex + 1] + domainTotalEntries + delimeter + awstatsTotalEntries + ymlData[awstatsEndIndex:]
 #+END_SRC
 
 **** Close file pointers
@@ -629,6 +580,168 @@ Data is written to a file line by line.
 #+BEGIN_SRC python :tangle format.py :eval no
     return
 #+END_SRC
+*** De-registering DNS Entries
+DNS entries of the labs are removed from the configuration files of the DNS
+server. FQDN and ipaddresses are read from the data file.
+**** Function definition
+#+BEGIN_SRC 
+def dns_dereg(inputFile, outputFile):
+#+END_SRC
+**** Open Input File and Output File
+Open input file - "lab.txt" to read the content. Also open output file -
+"private_dns.yaml" to write data.
+#+BEGIN_SRC python :tangle format.py :eval no 
+    labFile = open(inputFile, "r")
+    ymlFile = open(outputFile, "r")
+#+END_SRC
+**** Read yml file
+Read yml file line by line and save data in a variable.
+#+BEGIN_SRC python :tangle format.py :eval no		
+    ymlData = ymlFile.readlines()
+#+END_SRC
+**** Find start and end index of markers
+Find the start and the end index of the markers in the yml file.
+#+BEGIN_SRC python :tangle format.py :eval no
+    dnsStartIndex = ymlData.index("#DNS_START\n")
+    dnsEndIndex = ymlData.index("#DNS_END\n")
+#+END_SRC
+**** Save existing entries in a variable
+Data is in between the markers, so entries are fetched from file and saved in a
+variable.
+#+BEGIN_SRC python :tangle format.py :eval no
+    dnsExistingEntries = []
+
+    for index in range(dnsStartIndex + 2, dnsEndIndex):
+        dnsExistingEntries.append(ymlData[index])
+#+END_SRC
+**** Remove entries from the variable
+New entries are appended in the same variable with proper format.
+#+BEGIN_SRC python :tangle format.py :eval no
+    for line in labFile.readlines():
+        splitLine = line.split()
+	hostnameAndIP = " - { hostname: %s, ip: %s }\n" %(splitLine[0], splitLine[1])
+	try:
+            print dnsExistingEntries
+            print dnsExistingEntries[6]
+            print hostnameAndIP
+            indexDelete = dnsExistingEntries.index(hostnameAndIP)
+            del dnsExistingEntries[indexDelete]
+            print "Entry deleted"
+	except:
+	    print "Entry not deleted"
+	    pass
+#+END_SRC
+**** Complete file content
+#+BEGIN_SRC python :tangle format.py :eval no	
+    delimeter = list("#DNS_END\n")
+    newYmlData = ymlData[0:dnsStartIndex + 2] + dnsExistingEntries + delimeter
+#+END_SRC
+**** Close file pointers
+#+BEGIN_SRC python :tangle format.py :eval no
+    labFile.close()
+    ymlFile.close()
+#+END_SRC
+**** Write complete data to a file
+Data is written to a file line by line.
+#+BEGIN_SRC python :tangle format.py :eval no
+    newYmlFile = open(outputFile, "w")
+
+    for lines in newYmlData:
+        newYmlFile.write(lines)
+#+END_SRC
+**** Close file pointers
+#+BEGIN_SRC python :tangle format.py :eval no
+    newYmlFile.close()
+#+END_SRC
+**** Return function call
+#+BEGIN_SRC python :tangle format.py :eval no
+    return
+#+END_SRC
+*** De-registering Reverseproxy Entries
+Reverseproxy entries of the labs are removed from the configuration files which
+labs are to be de registered. Once the entries are removed lab wont be
+accessible from external world.
+**** Function definition
+#+BEGIN_SRC python :tangle format.py :eval no
+def reverseproxy_dereg(inputFile, outputFile):
+#+END_SRC
+**** Open Input File and Output File
+Open input file - "lab.txt" to read the content. Also open output file -
+"private_dns.yaml" to write data.
+#+BEGIN_SRC python :tangle format.py :eval no 
+    labFile = open(inputFile, "r")
+    ymlFile = open(outputFile, "r")
+#+END_SRC
+**** Read yml file
+Read yml file line by line and save data in a variable.
+#+BEGIN_SRC python :tangle format.py :eval no
+    ymlData = ymlFile.readlines()
+#+END_SRC
+**** Find start and end index of markers
+Find the start and the end index of the markers in the yml file.
+#+BEGIN_SRC python :tangle format.py :eval no
+    domainStartIndex = ymlData.index("#DOMAIN_START\n")
+    domainEndIndex = ymlData.index("#DOMAIN_END\n")
+
+    awstatsStartIndex = ymlData.index("#AWSTATS_START\n")
+    awstatsEndIndex = ymlData.index("#AWSTATS_END\n")
+#+END_SRC
+**** Save existing entries in a variable
+Data is in between the markers, so entries are fetched from file and saved in a
+variable.
+#+BEGIN_SRC python :tangle format.py :eval no
+    domainExistingEntries = []
+    awstatsExistingEntries = []
+
+    for index in range(domainStartIndex + 2, domainEndIndex):
+        domainExistingEntries.append(ymlData[index])
+    
+    for index in range(awstatsStartIndex + 2, awstatsEndIndex):
+        awstatsExistingEntries.append(ymlData[index])
+#+END_SRC
+**** Remove entries from the variable
+New entries are appended in the same variable with proper format.
+#+BEGIN_SRC python :tangle format.py :eval no
+    for line in labFile.readlines():
+        splitLine = line.split()
+	fqdn = splitLine[0] + ".virtual-labs.ac.in"
+	alias = splitLine[0] + ".vlabs.ac.in"
+	hostnameAndIP = '  - {domain: "%s", alias: "%s"}\n' %(fqdn, alias)
+	awstats = '  - %s\n' %(fqdn)
+        try:
+            indexDelete = domainExistingEntries.index(hostnameAndIP)
+            del domainExistingEntries[indexDelete]
+            indexDelete = awstatsExistingEntries.index(awstats)
+            del awstatsExistingEntries[indexDelete]
+	except:
+	    pass
+#+END_SRC
+**** Complete file content
+#+BEGIN_SRC python :tangle format.py :eval no	
+    delimeter = list("#DOMAIN_END\n\n#AWSTATS_START\nawstats_domains:\n")
+    newYmlData = ymlData[0:domainStartIndex + 2] + domainExistingEntries + delimeter + awstatsExistingEntries + ymlData[awstatsEndIndex:]
+#+END_SRC
+**** Close file pointers
+#+BEGIN_SRC python :tangle format.py :eval no
+    labFile.close()
+    ymlFile.close()
+#+END_SRC
+**** Write complete data to a file
+Data is written to a file line by line.
+#+BEGIN_SRC python :tangle format.py :eval no
+    newYmlFile = open(outputFile, "w")
+
+    for lines in newYmlData:
+        newYmlFile.write(lines)
+#+END_SRC
+**** Close file pointers
+#+BEGIN_SRC python :tangle format.py :eval no
+    newYmlFile.close()
+#+END_SRC
+**** Return function call
+#+BEGIN_SRC python :tangle format.py :eval no
+    return
+#+END_SRC
 *** Main Function
 #+BEGIN_SRC python :tangle format.py :eval no
 def main():
@@ -647,6 +760,53 @@ def main():
 
 if __name__ == "__main__":
    main()
+#+END_SRC
+
+*** Service Program
+This service is invoked by the ADS server. Service registers or de-registers the
+lab.
+
+- Program Design ::
+The program takes the following three arguments as input:
+1. A keyword - (register or de register)
+2. IP Address - ipaddress of the lab
+3. FQDN - Frequently Qualified Domain Name of the lab
+
+#+BEGIN_SRC python :tangle service.py :eval no
+import sys
+from format import *
+
+def register(hostname, ip):
+
+    labFile = open("reg-lab.txt", "a")    
+    labFile.write("%s %s\n" %(hostname, ip))
+    labFile.close()
+    reverseproxy_reg("reg-lab.txt", "main.yml")
+    dns_reg("reg-lab.txt", "main.yml")
+    return
+
+def deregister(hostname, ip):
+
+    labFile = open("dereg-lab.txt", "a")
+    labFile.write("%s %s\n" %(hostname, ip))
+    labFile.close()
+    reverseproxy_dereg("dereg-lab.txt", "main.yml")
+    dns_dereg("dereg-lab.txt", "main.yml") 
+    return
+
+
+def main(argv):
+    print argv[0], argv[1], argv[2]
+    if (str(argv[0]) == "register"):
+	print "register"
+        register(argv[1], argv[2])
+    elif (str(argv[0] == "deregister")):
+	print "deregister"
+	deregister(argv[1], argv[2])
+    return
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
 #+END_SRC
 
 * Test Cases
@@ -769,20 +929,31 @@ if __name__ == "__main__":
   Iptables are configured and applied appropriately. Configuration
   server is able accept ssh connections only from IIIT/management IPs
   and not from unknown ips.
-* COMMENT TODO
-** Write a tasks in playbook to place the code in proper directory, set PATH environment variable.
-** Separate out the lab entries from the node models. Because in future ads
+* Release
+Next release will consist of ads hooks. ADS hooks impose services that can be
+invoked by ADS to register a lab in the cluster. 
+* COMMENT Work Plan
+** TODO Link to ads server how it is configured to call service.
+** TODO Write test cases
+** TODO Write a tasks in playbook to place the code in proper directory, set PATH environment variable.
+** TODO Separate out the lab entries from the node models. Because in future ads
    will be registering new labs and making changes directly to implementation
    files and those entries could not be updated in the model. So it is better
    to separate out lab entries. Instead we can have only system services
    entries in the model and lab entries could be directly added by ads hooks in
    the implementation files. And playbook collate these entries from two files
    and set the node. 
+** TODO Failure condition
+** DONE Write python program to convert data saved in lab.txt to proper yml file for DNS, reverseproxy
+** DONE Add requirement section of ADS hooks in config-server.org model file
+** DONE Add description for implementation section in ads hooks
+** DONE Add description for design section in ads hooks
+** DONE Modify Make file to tangle out the code
+** DONE Write python program to deregister the lab
 ** DONE Put hooks diagram in the config-server.org
 ** DONE Create two section in the design one is services and another is configuration.
 ** DONE Add section for this implementation of the above requirements in the config-server.org. 
 ** DONE Add requirements of registering and de-registering labs in the config server.
-** DONE First make the scripts. 
 ** DONE Write a separate section with code and logic of registering labs in the  config-server.org.
 ** DONE Requirements of the hooks::
    - A SSH call from ads server to register.sh script.
@@ -792,6 +963,12 @@ if __name__ == "__main__":
      playbook.
    - then invoke the playbook of setting up server again with updated entries
      or directly call site.yml.
+** DONE What is Hosting and deployment of labs
+** DONE Explain how service is invoked, makes the necessary configuration changes in the cluster.
+** DONE Register: Lab is available from the external world, similarly deregister.
+** DONE Describe the arguments taken by the program as input.
+** DONE Run Ansible playbook to reconfigure the whole cluster again.
+
 * COMMENT QA Review
 1. DR process provided by amazon.
 2. Code for the recovering the problems.
