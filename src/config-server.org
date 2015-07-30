@@ -301,7 +301,7 @@ COMMIT
 
   vars:
     i_ans: yes
-    host_name: "{{prefix}}ansible"
+    host_name: "ansible.{{prefix}}vlabs.ac.in"
 
   roles:
     - common
