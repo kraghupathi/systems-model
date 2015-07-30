@@ -334,7 +334,7 @@ COMMIT
   lineinfile: line="Listen 80" regexp="^Listen .*80" dest=/etc/httpd/conf/httpd.conf state=present
 
 - name: Configure apache ssl.conf to listen on 443
-  lineinfile: line="Listen *:443 http" regexp="^Listen 443" dest=/etc/httpd/conf.d/ssl.conf state=present
+  lineinfile: line="Listen *:443 http" regexp="^Listen*" dest=/etc/httpd/conf.d/ssl.conf state=present
   tags: 
    - https
 
@@ -367,7 +367,7 @@ COMMIT
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/templates/virtualhosts.conf
 
 {% for domain in proxy_domains %}
-{% if domain.domain == "reverseproxy.virtual-labs.ac.in" %}
+{% if domain.domain == "reverseproxy.{{prefix}}virtual-labs.ac.in" %}
 <Virtualhost *:80>
 ServerAdmin engg@vlabs.ac.in
 ServerName {{domain.domain}} 
@@ -383,7 +383,7 @@ ServerAlias {{domain.alias}}
 ErrorLog logs/{{domain.domain}}-error_log
 </Virtualhost>
 
-{% elif domain.domain == "bandwidthd.virtual-labs.ac.in" %}
+{% elif domain.domain == "bandwidthd.{{prefix}}virtual-labs.ac.in" %}
 <Virtualhost *:80>
 ServerAdmin engg@vlabs.ac.in
 ServerName {{domain.domain}}
@@ -2128,7 +2128,7 @@ ScriptAlias /awstats/ "/usr/share/awstats/wwwroot/cgi-bin/"
 - name: restart iptables
   service: name=iptables state=restarted
 #+END_SRC
-** Main Configuration file
+** Reverse proxy Configuration script
    The main script which includes other tasks/roles mentioned below
    which runs on the reverse proxy server as follows.
 
@@ -2144,7 +2144,7 @@ ScriptAlias /awstats/ "/usr/share/awstats/wwwroot/cgi-bin/"
     remote_user: root
     
     vars:
-     host_name: "{{prefix}}reverseproxy"
+     host_name: "reverseproxy.{{prefix}}vlabs.ac.in"
     roles:
       - common
       - ossec_client
