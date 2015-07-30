@@ -808,6 +808,9 @@ def main(argv):
 if __name__ == "__main__":
     main(sys.argv[1:])
 #+END_SRC
+* Release
+Next release will consist of ads hooks. ADS hooks impose services that can be
+invoked by ADS to register a lab in the cluster. 
 
 * Test Cases
 ** Test case ID :: SSH access using AWS KeyPair
@@ -929,9 +932,6 @@ if __name__ == "__main__":
   Iptables are configured and applied appropriately. Configuration
   server is able accept ssh connections only from IIIT/management IPs
   and not from unknown ips.
-* Release
-Next release will consist of ads hooks. ADS hooks impose services that can be
-invoked by ADS to register a lab in the cluster. 
 * COMMENT Work Plan
 ** TODO Link to ads server how it is configured to call service.
 ** TODO Write test cases
