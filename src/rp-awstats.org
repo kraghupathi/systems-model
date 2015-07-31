@@ -367,7 +367,6 @@ COMMIT
 ServerAdmin engg@vlabs.ac.in
 ServerName {{domain.domain}} 
 ServerAlias {{domain.alias}}
-ServerAlias {{domain.alias1}}
 ErrorLog logs/{{domain.domain}}-error_log
 </Virtualhost>
 
