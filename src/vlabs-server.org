@@ -85,6 +85,7 @@ COMMIT
     - git
     - vim
 #+END_SRC
+
 *** Configuring firewall rules
     The following task Copies =iptables= template created at [[Firewall rules]] to
     the server and notifies to restart the iptables service if there are any
@@ -96,6 +97,7 @@ COMMIT
   notify:
    - restart iptables
 #+END_SRC
+
 *** Clone the source code
 #+BEGIN_SRC yaml :tangle roles/vlabs_server/tasks/main.yaml
 - name: Clone the git repository
