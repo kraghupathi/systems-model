@@ -214,7 +214,7 @@ interval        monthly 3
         hour={{ item.hour}}
         minute={{ item.minute}}
         job="{{ item.job}}"
-  with_items: rsnapshot_crontab
+  with_items: lab_rsnapshot_crontab
 
 
 #+END_SRC
@@ -226,6 +226,39 @@ interval        monthly 3
 #+END_SRC
 
 ** Variables definition
+
+#+BEGIN_SRC yml :tangle roles/lab_rsnapshot_server/vars/main.yml :eval no
+---
+lab_rsnapshot_crontab:
+     - name: hourly                                                               
+       month: '*'                                                                 
+       weekday: '*'                                                               
+       day: '*'                                                                   
+       hour: '*/4'                                                                
+       minute: 0
+       job: "/usr/bin/rsnapshot hourly"
+     - name: daily                                                                
+       month: '*'                                                                 
+       weekday: '*'                                                               
+       day: '*'                                                                   
+       hour: 3                                                                    
+       minute: 30                                                                 
+       job: "/usr/bin/rsnapshot daily"                                            
+     - name: weekly                                                               
+       month: '*'                                                                 
+       weekday: 1                                                                 
+       day: '*'                                                                   
+       hour: 3                                                                    
+       minute: 0                                                                  
+       job: "/usr/bin/rsnapshot weekly"                                           
+     - name: monthly                                                              
+       month: '*'                                                                 
+       weekday: '*'                                                               
+       day: 1                                                                     
+       hour: 2                                                                    
+       minute: 30                                                                 
+       job: "/usr/bin/rsnapshot monthly"
+#+END_SRC
 ** Rsnapshot server configuration script
 #+BEGIN_SRC yml :tangle lab_rsnapshot_server.yaml :eval no
 ---
