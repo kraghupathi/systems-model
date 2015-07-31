@@ -445,7 +445,7 @@ authpriv.*      ?TmplAuth
   remote_user: root
   vars:
    iam_router: false
-   host_name: {{prefix}}rsyslog-server  
+   host_name: "rsyslog-server.{{prefix}}vlabs.ac.in"
   roles:
     - common
     - ossec_client

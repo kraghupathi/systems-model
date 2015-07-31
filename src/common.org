@@ -371,7 +371,6 @@ the variables used by the ansible playbooks.
 *** Configure Hostname
    Hostname is set inside each node in the cluster. Hostname represent
    the name of the main server that is installed in the node.
-
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 ---
 
@@ -527,9 +526,11 @@ export HISTTIMEFORMAT HISTSIZE HISTFILESIZE
 #Setup /etc/aliases
 - name: Configure aliases in /etc/aliases
 #Necessary for containers so that they can send emails to alerts@vlabs.ac.in
-  lineinfile: dest=/etc/aliases regexp="^root.*" line="root":" alerts@vlabs.ac.in"
+  lineinfile: dest=/etc/aliases regexp="^root:*" line="root":" alerts@vlabs.ac.in"
 - name: update aliases database by running newaliases
   shell: newaliases
+  notify:
+   - restart sendmail
 #+END_SRC
 
 *** Install vim

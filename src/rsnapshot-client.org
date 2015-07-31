@@ -118,17 +118,6 @@
 
 #+END_SRC
     
-** COMMENT Variables Definition
-   Rsnapshost server's ssh-public keys are to be placed in the
-   rsnapshot client node as authorized keys. System administrator has
-   to assign the value of =rsnaphot_server_pub_key= variable as
-   ssh-public key.
-
-#+BEGIN_SRC yml :tangle roles/rsnapshot_client/vars/main.yml :eval no
-#Public key fetched from rsnapshot server to ansible server( present in rsnapshot_public_key/<rsnapshot_server_name>/root/.ssh/id_rsa.pub)
-rsnaphot_server_pub_key: "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6LPC+WU+OfFQtIqRZe2pZ5+gyg+orCk4m8sLpQL25TU95pr/Z7inwS+0gScqBxV7n7tRuW+cojDOe0tE5hb7OuNob49hFHUMXZWPobEIRIBizvSqjp6XklEsRTfkalSXCE2vIYZRHqZ/RG3jY4ME+xyA82AV0UwsmvIAxgWW8rkQdyG34Jdo7h3iyEs8AHGwPsSWT0ckoA0H/39ZaAOIgvdsCjRVvUTwFfwwcuvbGgO6cyhwEcC077eRzshNAnagHOhD4kZ5aheFP4fZJMXkJMO9w0prT+SyoDdloPlvdqbFUjM6YC6JpuEuqs6+cY+qapGZZQnV13YZxbU2+XEEUQ== ansible-generated on rsnapshot.vlabs.ac.in"
-#+END_SRC
-
 * Test Cases
 ** Test Case-1
 *** Objective

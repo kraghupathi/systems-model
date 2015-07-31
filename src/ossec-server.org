@@ -13,7 +13,7 @@
   remote_user: root
 
   vars:
-   host_name: "{{prefix}}ossec"
+   host_name: "ossec-server.{{prefix}}vlabs.ac.in"
 
   roles:
     - common

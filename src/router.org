@@ -338,7 +338,7 @@ dependencies:
   vars:
    #Avoids changing the default route
    i_router: yes 
-   host_name: "{{prefix}}router"
+   host_name: "router.{{prefix}}vlabs.ac.in"
 
   roles:
    - common

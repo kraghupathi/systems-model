@@ -493,7 +493,7 @@ check_command           {{ s.command }}
 
 #+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
 - name: creating nagiosadmin user for web interface
-  command: "htpasswd -b /etc/nagios/passwd {{nagios_user}} {{nagios_password}}"
+  command: "htpasswd -cb /etc/nagios/passwd {{nagios_user}} {{nagios_password}}"
   notify: restart apache
 #+END_SRC
 
@@ -608,9 +608,9 @@ check_command           {{ s.command }}
 |------+--------------------+--------------------------------------------------------|
 
 #+BEGIN_SRC yml :tangle roles/nagios_server/vars/main.yml
-nagios_host: nagios.virtual-labs.ac.in
+nagios_host: nagios.{{prefix}}virtual-labs.ac.in
 nagios_user: nagiosadmin
-nagios_password: xxxxxxx
+nagios_password: Hief8ogfi
 nagios_admin_name: 'Nagios Admin'
 nagios_admin_email: alerts@vlabs.ac.in
 nagios_cfg_path: /etc/nagios/nagios.cfg
@@ -619,13 +619,13 @@ nagios_cfg_path: /etc/nagios/nagios.cfg
 ## vars used by configure_servers.yml ##
 ########################################
 nagios_hosts:
-     router: { hostname: "router.vlabs.ac.in", group: basic_services }
-     ansible: { hostname: "ansible.vlabs.ac.in", group: basic_services }  
-#     ossec_server: { hostname: "ossec-server.vlabs.ac.in", group: web }
-     rsyslog_server: { hostname: "rsyslog-server.vlabs.ac.in", group: basic_services }
-     private_dns: { hostname: "private-dns.vlabs.ac.in", group: basic_services }
-#     public_dns: { hostname: "public-dns.vlabs.ac.in", group: basic_services }
-     reverseproxy: { hostname: "reverseproxy.vlabs.ac.in", group: web }
+     router: { hostname: "router.{{prefix}}vlabs.ac.in", group: basic_services }
+     ansible: { hostname: "ansible.{{prefix}}vlabs.ac.in", group: basic_services }  
+#     ossec_server: { hostname: "ossec-server.{{prefix}}vlabs.ac.in", group: web }
+     rsyslog_server: { hostname: "rsyslog-server.{{prefix}}vlabs.ac.in", group: basic_services }
+     private_dns: { hostname: "private-dns.{{prefix}}vlabs.ac.in", group: basic_services }
+#     public_dns: { hostname: "public-dns.{{prefix}}vlabs.ac.in", group: basic_services }
+     reverseproxy: { hostname: "reverseproxy.{{prefix}}vlabs.ac.in", group: web }
   
 nagios_host_groups:
      basic_services:
@@ -660,7 +660,7 @@ nagios_commands:
   remote_user: root
   
   vars:
-   host_name: "{{prefix}}nagios-server"
+   host_name: "nagios-server.{{prefix}}vlabs.ac.in"
   roles:
     - common
     - ossec_client
