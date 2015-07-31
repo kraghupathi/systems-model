@@ -1,0 +1,242 @@
+#+TITLE:     Lab Rsnapshot Server Role                                                
+#+DATE:      2015-07-30 Thursday                                                 
+#+PROPERTY: session *scratch*
+#+PROPERTY: results output
+#+PROPERTY: exports code
+#+SETUPFILE: org-templates/level-0.org
+#+DESCRIPTION: Lab Rsnapshot Server Design Model Documentation
+#+OPTIONS: ^:nil
+
+* Introduction
+* Requirements
+
+** Functional Requirements
+** Security Requirements
+
+* Design
+** Assumptions
+ It is assumed that a container/instance running lab will,
+
+ 1) Only have sources from a single lab and,
+ 2) This lab has corresponding backup scripts as defined [[https://github.com/Virtual-Labs/summer-2015-iitg-workshop/blob/master/lifecycle/lifecycle.org][in lifecycle
+    management]].
+
+If it has two lab sources then backups taken are not reliable, the
+restoration of a lab with such backed up sources/dumps cannot be
+guaranteed.  This is due to the current limitation in the
+implementation, we are assuming that under the home directory of the
+=root= account there are sources of a single lab.
+
+** System Design Diagram
+** System Files
+* Implementation
+** Structure of Scripts
+** Firewall Rules
+
+#+BEGIN_SRC yml -n :tangle roles/lab_rsnapshot_server/templates/rsnapshot_server_iptables :eval no
+*filter                                                                                                                                                               
+:INPUT ACCEPT [0:0]                                                                                                                                                   
+:FORWARD ACCEPT [0:0]                                                                                                                                                 
+:OUTPUT ACCEPT [0:0]                                                                                                                                                  
+                                                                                                                                                                      
+#Accept loopback connections                                                                                                                                          
+-A INPUT -i lo -d 127.0.0.0/8 -j ACCEPT                                                                                                                               
+                                                                                                                                                                      
+#Rate limit new connections to 20 new connections per 30 seconds                                                                                                      
+-A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --set                                                                                               
+-A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --rcheck --seconds 30 --hitcount 20 -m limit --limit 2/min -j LOG --log-prefix "new_limit_"         
+-A INPUT ! -p udp -m state --state NEW -m recent --name ssh_limit --rcheck --seconds 30 --hitcount 20 -j DROP                                                         
+                                                                                                                                                                      
+#Accept ICMP ping requests at limited rate                                                                                                                            
+-A INPUT -p icmp --icmp-type echo-request -m limit --limit 60/minute --limit-burst 120 -j ACCEPT                                                                      
+-A INPUT -p icmp --icmp-type echo-request -m limit --limit 1/minute --limit-burst 2 -j LOG                                                                            
+-A INPUT -p icmp --icmp-type echo-request -j DROP                                                                                                                     
+                                                                                                                                                                      
+#Allow ongoing connections                                                                                                                                            
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT                          
+
+#Allow incoming SSH connections from ansible server IPs.
+{% for item in ansible_server_ips  %}                                                                                                                                 
+-A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT                                                                                          
+{% endfor %}                                                                                                                                                          
+                                                                                                                                                                      
+#Allow incoming NRPE queries for nagios from nagios servers                                                                                                           
+-A INPUT -m state --state NEW -p tcp -m tcp --dport 5666 -j ACCEPT                                                                                                    
+                                                                                                                                                                      
+#Allow SNMP queries from cacti servers                                                                                                                                
+-A INPUT -p udp -m udp --dport 161 -j ACCEPT                                                                                                                          
+-A INPUT -p udp -m udp --dport 162 -j ACCEPT                                                                                                                          
+                                                                                                                                                                      
+#Log all other "blocked_input_" attempts with rate limiting                                                                                                           
+-A INPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_input_"
+
+#Drop all other input packets                                                                                                                                         
+-A INPUT -j DROP                                                                                                                                                      
+                                                                                                                                                                      
+#Disable packet forwarding                                                                                                                                            
+-A FORWARD -j DROP                                                                                                                                                    
+                                                                                                                                                                      
+##Output rules                                                                                                                                                        
+#Allow outgoing connections to localhost                                                                                                                              
+-A OUTPUT -s 127.0.0.0/8 -o lo -j ACCEPT                                                                                                                              
+                                                                                                                                                                      
+#Allow outgoing connections to ansible server on port22                                                                                                               
+{% for item in ansible_server_ips  %}                                                                                                                                 
+-A OUTPUT -d {{item}} -p tcp -m tcp --sport 22 -j ACCEPT                                                                                                              
+{% endfor %}                                                                                                                                                          
+                                                                                                                                                                      
+#Allow ongoing connections                                                                                                                                            
+-A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT                                                                                                              
+                                                                                                                                                                      
+#Allow SSH                                                                                                                                                            
+-A OUTPUT -p tcp -m tcp --dport 22 -j ACCEPT                                                                                                                          
+                                                                                                                                                                      
+#Allow server to send emails.  Required for sending logwatch emails                                                                                                   
+-A OUTPUT -p tcp -m tcp --dport 25 -j ACCEPT
+
+#Allow https to contact yum                                                                                                                                           
+-A OUTPUT -p tcp -m tcp --dport 443 -j ACCEPT                                                                                                                         
+-A OUTPUT -p tcp -m tcp --dport 80 -j ACCEPT                                                                                                                          
+                                                                                                                                                                      
+#Allow to make DNS queries                                                                                                                                            
+-A OUTPUT -p udp -m udp --dport 53 -j ACCEPT                                                                                                                          
+                                                                                                                                                                      
+#Allow outgoing ping requests                                                                                                                                         
+-A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT                                                                                                                  
+                                                                                                                                                                      
+#Allow outgoing connections to rsyslog server                                                                                                                         
+-A OUTPUT -p udp -m udp --dport 514 -j ACCEPT                                                                                                                         
+                                                                                                                                                                      
+#Allow outgoing connections to OSSEC server                                                                                                                           
+-A OUTPUT -p udp -m udp --dport 1514 -j ACCEPT                                                                                                                        
+                                                                                                                                                                      
+#Log all other "blocked_output_" attempts                                                                                                                             
+-A OUTPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_output_"                                                                           
+                                                                                                                                                                      
+#Reply with proper ICMP error message and reject the connection                                                                                                       
+-A OUTPUT -j REJECT --reject-with icmp-host-prohibited
+
+COMMIT                                                                                                                                                                
+#                                                                                                                                                                     
+#+END_SRC
+
+** Configure =rsnapshot=
+   Rsnapshot uses =/etc/rsnapshot.conf= file for configuration. Two
+   very important points about configuration file are:
+   - All paths must end with "/" and all backup destination should be
+     relative
+   - Various fields in file are separated using Tab, space does not
+     separates fields
+
+   Following actions are performed in =/etc/rsnapshot.conf= file to
+   configure rsnapshot service.
+
+*** Configure absolute path of backup location
+    Absolute path on current system where backup data will be stored is
+    configured via 'snapshot_root' directive. In case of remote
+    backups, rsnapshot always run on backup server and not on client to
+    be backed up.
+
+#+BEGIN_EXAMPLE                                                                   
+snapshot_root   /.snapshots/                                                      
+#+END_EXAMPLE 
+
+*** Configure =cmd_ssh=
+    In order to enable remote backup, we need to configure =rsnapshot=
+    to use =ssh=, this is achieved by uncommenting the =cmd_ssh=
+    directive. Without this the remote backup will fail.
+
+#+BEGIN_EXAMPLE
+cmd_ssh /usr/bin/ssh
+#+END_EXAMPLE
+
+*** Backup intervals
+    Rsnapshot retains a set of backups, this can be defined. Here we
+    are using the default interval settings which come with stock
+    configuration. In the following the second column can be any
+    arbitary name which signifies the backup, for example, for the
+    =hourly= backup it stores the six recent backup copies, when a new
+    backup is taken it replaces the last recent one, like in first in
+    and last out fashion and so on.
+    
+    Here we are using the default choice which comes with stock
+    =rsnapshot= configuration.
+
+#+BEGIN_EXAMPLE
+interval        hourly  6
+interval        daily   7
+interval        weekly  4
+interval        monthly 3
+#+END_EXAMPLE
+
+*** SSH keys
+    While creating an image for the lab containers, we copied two
+    public keys, we can use one of the key for connecting over =ssh=
+    or place another key using Ansible.  This is in order to simply
+    the implementation, as placing a public key is one time task.
+    
+*** Configure rsnapshot for remote backup
+    The lab rsnapshot server is designed for taking backup of remote
+    servers over =ssh=, as the lab backup server itself does not have
+    anything other than the lab backups, we can disable localhost
+    backup of this server. In short it is configured to backup only
+    the labs.  We then disable the localhost backups accordingly.
+
+** Tasks
+
+#+BEGIN_SRC yaml :tangle roles/lab_rsnapshot_server/tasks/main.yaml :eval no
+---
+- name: Installing rsnapshot
+  yum: name=rsnapshot state=installed
+  environment: proxy_env
+
+- name: Applying iptables for rsnapshot
+  template: src=rsnapshot_server_iptables dest=/etc/sysconfig/iptables owner=root group=root
+  notify: restart iptables
+
+#- name: Create a SSH key for 'root'
+#  user: name=root generate_ssh_key=yes ssh_key_file=.ssh/id_rsa
+
+#- name: Get public key from RSNAPSHOT server to ansible server
+#  fetch: src=/root/.ssh/id_rsa.pub dest=./lab_rsnapshot_server_pubic_key
+
+#updating rsnapshot.conf also includes configuring backup of remote machines
+- name: updating rsnapshot.conf
+  template: src=rsnapshot.conf.j2 dest=/etc/rsnapshot.conf owner=root group=root mode=644 backup=yes
+
+- name: Configure cron
+  cron: name="{{ item.name }}"
+        user=root
+        cron_file=ansible_rsnapshot
+        month={{ item.month}}
+        weekday={{ item.weekday}}
+        day={{ item.day}}
+        hour={{ item.hour}}
+        minute={{ item.minute}}
+        job="{{ item.job}}"
+  with_items: rsnapshot_crontab
+
+
+#+END_SRC
+** Handlers
+
+#+BEGIN_SRC yml :tangle roles/lab_rsnapshot_server/handlers/main.yml :eval no
+- name: restart iptables
+  service: name=iptables state=restarted
+#+END_SRC
+
+** Variables definition
+** Rsnapshot server configuration script
+#+BEGIN_SRC yml :tangle lab_rsnapshot_server.yaml :eval no
+---
+- name: This yaml script configures lab rsnapshot server
+  hosts: lab_rsnapshot_server
+  remote_user: root
+
+  vars:
+   host_name: "lab_rsnapshot_server.{{prefix}}vlabs.ac.in"
+  roles:
+    - common
+    - lab_rsnapshot_server
+#+END_SRC
+* Test cases
