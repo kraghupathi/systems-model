@@ -359,15 +359,10 @@ COMMIT
     virtual host entry is added as reverse proxy server, to access the
     awstats from browser.
 
-- Note :: If you are working on BASE1/BASE4, Please change *if
-          condition* of the following template according to your
-          domain name of reverse proxy which is defined in [[./common_vars.org][common_vars
-          role]]. if not, you will not be able to view the awstats from
-          browser.
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/templates/virtualhosts.conf
 
 {% for domain in proxy_domains %}
-{% if domain.domain == "reverseproxy.{{prefix}}virtual-labs.ac.in" %}
+{% if domain.domain == "reverseproxy."+prefix+"virtual-labs.ac.in" %}
 <Virtualhost *:80>
 ServerAdmin engg@vlabs.ac.in
 ServerName {{domain.domain}} 
@@ -383,7 +378,7 @@ ServerAlias {{domain.alias}}
 ErrorLog logs/{{domain.domain}}-error_log
 </Virtualhost>
 
-{% elif domain.domain == "bandwidthd.{{prefix}}virtual-labs.ac.in" %}
+{% elif domain.domain == "bandwidthd."+prefix+"virtual-labs.ac.in" %}
 <Virtualhost *:80>
 ServerAdmin engg@vlabs.ac.in
 ServerName {{domain.domain}}
