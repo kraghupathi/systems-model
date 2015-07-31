@@ -1,0 +1,147 @@
+#+Title: Vlabs Server Design model and implementation
+#+PROPERTY: session *scratch*
+#+PROPERTY: results output
+#+PROPERTY: exports code
+#+OPTIONS: ^:nil
+#+SETUPFILE: org-templates/level-0.org
+#+DESCRIPTION: Vlabs server Model - Design, Implementation and Documentation
+
+* Introduction
+This document describes the requirements, design and implementation of the
+*vlabs server* configured using ansible scripts/playbooks.
+
+Our cluster consist of many nodes. Vlabs server is one of the node in the
+cluster. The node serves the landing page for all the labs hosted in the
+cluster.
+
+* Requirements
+  Requirements which are specific to vlabs server are defined below.
+
+** Functional Requirements
+ 1) Host vlabs landing page.
+
+** Security Requirements
+  1) common security measured defined in common role are applied. Requirements
+     are defined in the [[common.org][common role]].
+ 
+* Design
+ Node serves the html pages, via httpd server.
+
+* Implementation
+** Directory structure of the scripts
+   The implementation of this system is in terms of a collection of
+   Ansible scripts that configures the machine. Scripts are organized as
+   follows:
+
+   #+BEGIN_EXAMPLE
+|-- roles
+|   `-- vlabs_server
+|       |-- files
+|       |   `-- copy.sh
+|       |-- handlers
+|       |   `-- main.yaml
+|       |-- tasks
+|       |   `-- main.yaml
+|       `-- templates
+|           `-- iptables
+   #+END_EXAMPLE
+
+   Here =roles/vlabs_server/tasks/main.yaml= file consist of various tasks which
+   are needed for setting up vlabs server.
+   
+** Tasks
+*** Firewall rules
+- Firewall rules applied on the node are described here.
+
+#+BEGIN_SRC yaml :tangle roles/vlabs_server/templates/iptables
+# Firewall configuration written by system-config-firewall
+# Manual customization of this file is not recommended.
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+-A INPUT -p icmp -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 80 -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+-A FORWARD -j REJECT --reject-with icmp-host-prohibited
+COMMIT
+#+END_SRC
+
+*** Install required packages
+    Following packages are installed on the server.
+    =httpd=
+    =git=
+    =vim=
+
+#+BEGIN_SRC yaml :tangle roles/vlabs_server/tasks/main.yaml
+---
+- name: Install httpd, git, vim
+  yum: name="{{item}}" state=present
+  with_items:
+    - httpd
+    - git
+    - vim
+#+END_SRC
+*** Configuring firewall rules
+    The following task Copies =iptables= template created at [[Firewall rules]] to
+    the server and notifies to restart the iptables service if there are any
+    modifications in the configuration.
+
+#+BEGIN_SRC yaml :tangle roles/vlabs_server/tasks/main.yaml
+- name: Configure iptables firewall
+  template: src=iptables dest=/etc/sysconfig/iptables owner=root group=root mode=600
+  notify:
+   - restart iptables
+#+END_SRC
+*** Clone the source code
+#+BEGIN_SRC yaml :tangle roles/vlabs_server/tasks/main.yaml
+- name: Clone the git repository
+  git: clone=yes
+       repo=https://github.com/vlead/vlab-web-pages.git
+       dest=/root
+#+END_SRC
+*** Copy sources to /var/www/ directory
+#+BEGIN_SRC yaml :tangle roles/vlabs_server/files/copy.sh
+#!/bin/bash
+
+rsync -vtrp --delete /root/vlab-web-pages/src/ /var/www/html/
+
+exit 0
+#+END_SRC
+#+BEGIN_SRC yaml :tangle roles/vlabs_server/tasks/main.yaml
+- name: Run copy.sh to copy sources to /var/www folder
+  shell: copy.sh
+#+END_SRC
+
+** Handlers
+*** Restart the services
+    Restart iptables if there are any changes in the configuration. These
+    handlers are called when associated tasks in =tasks/main.yaml= notifies to
+    restart the services.
+
+#+BEGIN_SRC yaml :tangle roles/vlabs_server/handlers/main.yaml 
+---
+- name: restart iptables
+  service: name=iptables state=restarted
+#+END_SRC
+** Main Configuration file
+   The main script which includes other tasks/roles mentioned below
+   which runs on the reverse proxy server as follows.
+
+ 1) =common=
+
+#+BEGIN_SRC yaml :tangle vlabs_server.yaml
+---
+  - name: This file configures vlabs server
+    hosts: vlabs 
+    remote_user: root
+    
+    vars:
+     host_name: "vlabs"
+    roles:
+      - common
+#+END_SRC
+
