@@ -99,13 +99,16 @@ COMMIT
 #+END_SRC
 
 *** Clone the source code
+
 #+BEGIN_SRC yaml :tangle roles/vlabs_server/tasks/main.yaml
-- name: Clone the git repository
+- name: clone the git repository
   git: clone=yes
        repo=https://github.com/vlead/vlab-web-pages.git
        dest=/root
 #+END_SRC
-*** Copy sources to /var/www/ directory
+
+*** Copy sources to =/var/www/= directory
+
 #+BEGIN_SRC yaml :tangle roles/vlabs_server/files/copy.sh
 #!/bin/bash
 
@@ -134,6 +137,7 @@ exit 0
    which runs on the reverse proxy server as follows.
 
  1) =common=
+ 2) =vlabs_server=
 
 #+BEGIN_SRC yaml :tangle vlabs_server.yaml
 ---
@@ -145,5 +149,6 @@ exit 0
      host_name: "vlabs"
     roles:
       - common
+      - vlabs_server
 #+END_SRC
 
