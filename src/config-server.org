@@ -266,14 +266,6 @@ COMMIT
 - name: installing ansible
   yum: name=ansible state=present
 #+END_SRC
-*** Set the hostname 
-    The following task sets the hostname of the node
-  #+BEGIN_SRC yaml :tangle roles/config_server/tasks/main.yml
-  ---
-- name: setting the hostname 
-  hostname: config-server.vlabs.ac.in
-  #+END_SRC
-
 *** Apply firewall rules to Configuration server
     Firewall rules are applied by following steps:
     1) Copy the =iptables= template to the configuration server.
