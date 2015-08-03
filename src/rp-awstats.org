@@ -198,16 +198,21 @@ etc. Analytics can be viewed on terminal and also in the browser.
 -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
 
 #Allow incoming SSH connections from management IPs.  Hopefully fail2ban will take care of bruteforce attacks from management IPs
-{% for item in management_ips  %}
+{% for item in management_ips %}
 -A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
 
 #Allow incoming SSH connections from configuration server IPs.  Hopefully fail2ban will take care of brute force attacks from ansible server IPs
-{% for item in ansible_server_ips  %}
+{% for item in ansible_server_ips %}
+-A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
+{% for item in nagios_server_ips %}
+-A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
+{% for item in rsnapshot_server_ips %}
 -A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
 
--A INPUT -p tcp -m tcp -s {{nagios_server_ip}} --dport 22 -j ACCEPT
 ####### Begin Specific to reverseproxy #######
 <<<<<<< HEAD
 # Allow incoming http packets from internal network
@@ -217,9 +222,11 @@ etc. Analytics can be viewed on terminal and also in the browser.
 #-A INPUT -s {{local_subnet}} -p tcp -m tcp --dport 443 -j ACCEPT
 =======
 # Allow incoming http packets from local subnet via the router
+-A INPUT -m state --state NEW -p tcp -m tcp --dport 80 -j ACCEPT  
 -A INPUT -s {{local_subnet}} -p tcp -m tcp --dport 80 -j ACCEPT
 
 #Allow incoming https packets from local subnet via the router
+-A INPUT -m state --state NEW -p tcp -m tcp --dport 443 -j ACCEPT
 -A INPUT -s {{local_subnet}} -p tcp -m tcp --dport 443 -j ACCEPT
 >>>>>>> develop
 ###### END specific reverseproxy #######
@@ -231,7 +238,7 @@ etc. Analytics can be viewed on terminal and also in the browser.
 #Reply with proper ICMP error message and reject the connection
 -A INPUT -j REJECT --reject-with icmp-host-prohibited
 #Do not allow any packet to be forwarded
--A FORWARD -j REJECT --reject-with icmp-host-prohibited
+-A FORWARD -j REJECT 
 ##Output rules
 #Allow outgoing connections to localhost
 -A OUTPUT -s 127.0.0.0/8 -o lo -j ACCEPT
@@ -252,7 +259,7 @@ etc. Analytics can be viewed on terminal and also in the browser.
 -A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT
 #Allow incoming SSH connections from configuration server IPs.
 {% for item in ansible_server_ips  %}
--A OUTPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
+-A OUTPUT -s {{item}} -p tcp -m tcp --sport 22 -j ACCEPT
 {% endfor %}
 
 #Allow outgoing connections to rsyslog server
@@ -263,8 +270,13 @@ etc. Analytics can be viewed on terminal and also in the browser.
 #Log all other "blocked_output_" attempts
 -A OUTPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_output_"
 
+#Allow outgoing connections on tcp port 8000 to router, this is for bandwidthd on router
+-A OUTPUT -p tcp -m tcp -d {{router_internal_ip}} --dport 8000 -j ACCEPT
+
 #Reply with proper ICMP error message and reject the connection
 -A OUTPUT -j REJECT --reject-with icmp-host-prohibited
+
+COMMIT
 #+END_SRC
 <<<<<<< HEAD
 *** Allow HTTP(80) and HTTPS(443) packets
@@ -303,7 +315,6 @@ from the [[.router.org][router]].
     =httpd=
     =awstats=
     =mod_ssl=
-    
 - Note :: Install "mod_ssl" for HTTPS access. Enable it if it has a
           valid certificate and test the implementation using
 >>>>>>> develop
@@ -316,15 +327,6 @@ from the [[.router.org][router]].
     - httpd
     - awstats
     - mod_ssl
-#   environment: proxy_env
-#+END_SRC
-*** Set the hostname 
-    The following task sets the hostname of the instance.
-
-#+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml
----
-- name: Setting the hostname
-  hostname: name=reverseproxy.virtual-vlabs.ac.in
 #+END_SRC
 *** Configuring firewall rules 
     The following task Copies =iptables= template created at [[Firewall
@@ -351,9 +353,43 @@ from the [[.router.org][router]].
      To support multiple https virtual-hosts *NameVirtualHost *:443* in
      =/etc/httpd/conf/httpd.conf= is enabled with the following task.
 
+     *NOTE* : Following playbook is having tags for https. These tags
+     are added because it is causing ssl certificate issue while
+     starting httpd server on reverse proxy server. Since ssl
+     certificates are not available on all the clusters, httpd server
+     will not start. We can run this playbook as it is without
+     skipping tags on AWS. 
+
+     When you want to run this playbook on base1 and base4 clusters,
+     run the following command.
+     #+BEGIN_EXAMPLE
+     ansible-playbook -i hosts reverseproxy-server.yaml  --skip-tags "https"
+     #+END_EXAMPLE 
+
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml
 - name: Configure apache to support multiple https virtualhosts
   lineinfile: line="NameVirtualHost *:443" regexp="^NameVirtualHost .*:443" dest=/etc/httpd/conf/httpd.conf
+- name: Configure apache httpd.conf to listen on 80
+  lineinfile: line="Listen 80" regexp="^Listen .*80" dest=/etc/httpd/conf/httpd.conf state=present
+
+- name: Configure apache ssl.conf to listen on 443
+  lineinfile: line="Listen *:443 http" regexp="^Listen*" dest=/etc/httpd/conf.d/ssl.conf state=present
+  tags: 
+   - https
+
+- name: Disable SSLv3 on ssl.conf
+#SSLv3 will be disabled in recent version of Debian/Ubuntu, have to check for CentOS
+  lineinfile: line="SSLProtocol all -SSLv2 -SSLv3" regexp="^SSLProtocol all -SSLv2" dest=/etc/httpd/conf.d/ssl.conf state=present
+  tags:
+   - https
+- name: Enable PFS
+  lineinfile: line="SSLCipherSuite AES256+EECDH:AES256+EDH" regexp="^SSLCipherSuite " dest=/etc/httpd/conf.d/ssl.conf state=present
+  tags:
+   - https
+- name: Enforce SSL cipher order
+  lineinfile: line="SSLHonorCipherOrder On" regexp="^SSLHonorCipherOrder " dest=/etc/httpd/conf.d/ssl.conf state=present
+  tags:
+   - https
 #+END_SRC
 *** Create a template for virtualhosts
     Following =virtualhosts.conf= template defines http and https
@@ -362,22 +398,49 @@ from the [[.router.org][router]].
     virtual host entry is added as reverse proxy server, to access the
     awstats from browser.
 
-- Note :: If you are working on BASE1/BASE4, Please change *if
-          condition* of the following template according to your
-          domain name of reverse proxy which is defined in [[./common_vars.org][common_vars
-          role]]. if not, you will not be able to view the awstats from
-          browser.
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/templates/virtualhosts.conf
 
 {% for domain in proxy_domains %}
-{% if domain.domain == "reverseproxy.virtual-labs.ac.in" %}
+{% if domain.domain == "reverseproxy."+prefix+"virtual-labs.ac.in" %}
 <Virtualhost *:80>
 ServerAdmin engg@vlabs.ac.in
 ServerName {{domain.domain}} 
 ServerAlias {{domain.alias}}
-ServerAlias {{domain.alias1}}
 ErrorLog logs/{{domain.domain}}-error_log
 </Virtualhost>
+
+<Virtualhost *:443>
+ServerAdmin engg@vlabs.ac.in
+ServerName {{domain.domain}}
+ServerAlias {{domain.alias}}
+ErrorLog logs/{{domain.domain}}-error_log
+</Virtualhost>
+
+{% elif domain.domain == "bandwidthd."+prefix+"virtual-labs.ac.in" %}
+<Virtualhost *:80>
+ServerAdmin engg@vlabs.ac.in
+ServerName {{domain.domain}}
+ServerAlias {{domain.alias}}
+ErrorLog logs/{{domain.domain}}--error_log
+CustomLog logs/{{domain.domain}}--access_log combined
+<Location />
+ProxyPass http://{{domain.domain}}:8000/bandwidthd/
+ProxyPassReverse  http://{{domain.domain}}:8000/bandwidthd/
+</Location>
+</Virtualhost>
+
+<Virtualhost *:443>
+ServerAdmin engg@vlabs.ac.in
+ServerName {{domain.domain}}
+ServerAlias {{domain.alias}}
+ErrorLog logs/{{domain.domain}}--error_log
+CustomLog logs/{{domain.domain}}--access_log combined
+<Location />
+ProxyPass http://{{domain.domain}}:8000/bandwidthd/
+ProxyPassReverse  http://{{domain.domain}}:8000/bandwidthd/
+</Location>
+</Virtualhost>
+
 {% else %}
 
 <VirtualHost *:80>
@@ -403,10 +466,12 @@ CustomLog logs/{{domain.domain}}-access_log combined
 ProxyPass http://{{domain.domain}}/
 </Location>
 </VirtualHost>
+
+
 {% endif %}
 
-{% endfor %
-#+END_SRC   
+{% endfor %}
+#+END_SRC  
 *** Configuring virualhosts
     Copy =virtualhosts.conf= template to reverse proxy server's apache
     configuration file.
@@ -1977,10 +2042,10 @@ ExtraTrackedRowsLimit=500
 
 #+END_SRC
 **** Configure AWStats for each lab
-     The following task does:
      1) Copy default [[AWStats configuration][awstats.reverseproxy.conf]] template to reverse proxy.
      2) creates separate awstats configuration file for each
         domain-name.
+     The following task does:
      (NOTE:: This task uses awstats_domains variable and this is
      defined in common-vars role. This task)
 
@@ -1990,12 +2055,46 @@ ExtraTrackedRowsLimit=500
 - name: Create one awstats file for each proxy domain
   template: src=awstats.reverseproxy.conf dest="/etc/awstats/awstats.{{item}}.conf"
   with_items: awstats_domains
+  notify: restart httpd
+
+- name: register configtest                                                                        
+  command: apachectl configtest                                                                    
+  register: op_configtest                                                                          
+  notify:                                                                                          
+    - restart httpd            
+
 #+END_SRC
+**** Generating and copying ssh keypair for rsyncing logs, stats to analytics server
+#+BEGIN_SRC  yaml :tangle roles/reverseproxy_server/tasks/main.yaml
+#Generating and copying ssh keypair for rsyncing logs, stats to analytics server
+  
+- name: Generate key pair under user root.
+  user: name=root generate_ssh_key=yes ssh_key_file=.ssh/id_rsa ssh_key_type=rsa
+    
+  #Get the .pub key generated in previous step to Ansible machine, which
+  # will then be used by analytics role and placed in analytics server
+    
+- name: Fetch the public key from RP to Ansible
+  fetch: src=/root/.ssh/id_rsa.pub dest=rp_pub_key fail_on_missing=yes flat=yes validate_checksum=yes
+
+  #Set hourly cronjobs to rsync the AWstats statistics files to
+  #Analytics server the "name= " parameter should not be changed and
+  #must be unique
+    
+- name: Rsync the AWstats stats file to analytics server
+  cron:
+        name=rsync_stats
+        user=root
+        hour=01
+        state=present
+        job="rsync -arR /var/lib/awstats root@10.100.1.12:/root/aws/"
+#+END_SRC                                                                           
+
 
 **** Allow access to awstats from management ips
-To access awstats from management ips , configure apache server
-configuration file =/etc/httpd/conf.d/awstats.conf= by adding "allow
-from management ips" and proper apache syntax.
+     To access awstats from management ips , configure apache server
+     configuration file =/etc/httpd/conf.d/awstats.conf= by adding
+     "allow from management ips" and proper apache syntax.
 
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/files/httpd_awstats.conf
 #
@@ -2025,21 +2124,21 @@ ScriptAlias /awstats/ "/usr/share/awstats/wwwroot/cgi-bin/"
     Options None
     AllowOverride None
     Order allow,deny
-    Allow from 127.0.0.1 
-{% for item in management_ips %}
-    Allow from {{item}}
-{% endfor %}
+    Allow from 127.0.0.1  
+    Allow from all
 </Directory>
 # Additional Perl modules
 <IfModule mod_env.c>
     SetEnv PERL5LIB /usr/share/awstats/lib:/usr/share/awstats/plugins
 </IfModule>
 #+END_SRC
+
 **** Apply allow access to awstats from management ips
-Copy [[Allow access to awstats from everywhere][httpd_awstats.conf]] configuration file to reverseproxy and with
-proper ownership, group and mode permissions for accessing awstats
-from specific ips. The following task is notified to restart apache
-web server if there are any changes in the apache configuration.
+     Copy [[Allow access to awstats from everywhere][httpd_awstats.conf]] configuration file to reverseproxy and
+     with proper ownership, group and mode permissions for accessing
+     awstats from specific ips. The following task is notified to
+     restart apache web server if there are any changes in the apache
+     configuration.
 
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml
 - name: Allow access to awstats from specific ips
@@ -2057,12 +2156,12 @@ web server if there are any changes in the apache configuration.
 ---
 - name: restart httpd
   service: name=httpd state=restarted
+  when: op_configtest.stderr.find('Syntax OK') != -1
 
 - name: restart iptables
   service: name=iptables state=restarted
-
 #+END_SRC
-** Main Configuration file
+** Reverse proxy Configuration script
    The main script which includes other tasks/roles mentioned below
    which runs on the reverse proxy server as follows.
 
@@ -2071,20 +2170,21 @@ web server if there are any changes in the apache configuration.
  3) =common_vars=
  4) =rsyslog-client=
  5) =nagios-client=
-
-#+BEGIN_SRC yaml :tangle reverseproxy-server.yaml
+#+BEGIN_SRC yaml :tangle reverseproxy_server.yaml
 ---
-- name: This file configures reverseproxy server
-  hosts: reverseproxy_server
-  remote_user: root
-
-  roles:
-    - common
-    - ossec_client
-    - rsyslog_client
-    - nagios_client 
-    - reverseproxy_server
-
+  - name: This file configures reverseproxy server
+    hosts: reverseproxy_server 
+    remote_user: root
+    
+    vars:
+     host_name: "reverseproxy.{{prefix}}vlabs.ac.in"
+    roles:
+      - common
+      - ossec_client
+      - rsyslog_client
+      - nagios_client
+      - rsnapshot_client
+      - reverseproxy_server
 #+END_SRC
 * Test Cases
 ** Test Case ID: Reverseproxy test Without internal(Private) DNS  

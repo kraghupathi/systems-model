@@ -123,14 +123,13 @@ configuration files. Other configuration files are updated in common role.
 
 #+END_EXAMPLE
 
-<<<<<<< HEAD
 ** Firewall rules
 Rules which are specific to configuration server are described [[Firewall rules specific to config_server][below]].
 Description of each firewall rule of this configuration server and
 which are common across all the systems are described in [[.common.org][common role]].
-=======
-   Here =config_server.yml= file configures the configuration server
-   with the config_server and all other roles. The other roles are:
+
+Here =config_server.yml= file configures the configuration server with
+the config_server and all other roles. The other roles are:
     - [[./common.org][common]]
     - rsyslog_client
     - ossec_client
@@ -162,7 +161,6 @@ which are common across all the systems are described in [[.common.org][common r
     Description of each firewall rule of this configuration server and
     which are common across all the systems are described in [[.common.org][common role]].
 
->>>>>>> develop
 #+BEGIN_SRC yaml :tangle roles/config_server/templates/iptables
 *filter
 :INPUT ACCEPT [0:0]
@@ -182,16 +180,21 @@ which are common across all the systems are described in [[.common.org][common r
 
 #Allow ongoing connections
 -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
--A INPUT -p tcp -m tcp -s {{nagios_server_ip}} --dport 22 -j ACCEPT
+{% for ip in nagios_server_ips %}
+-A INPUT -p tcp -m tcp -s {{ip}} --dport 22 -j ACCEPT
+{% endfor %}
 #Allow incoming SSH connections from management IPs.  Hopefully fail2ban will take care of bruteforce attacks from management IPs
 {% for item in management_ips  %}
 -A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
 #Allow incoming SSH connections from ansible_server IPs.  Hopefully fail2ban will take care of bruteforce attacks from management IPs
-{% for item in ansible_server_ips_ips  %}
+{% for item in ansible_server_ips  %}
 -A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
-
+#Allow incoming SSH connections from rsnapshot_server IPs.  Hopefully fail2ban will take care of bruteforce attacks from management IPs
+{% for item in rsnapshot_server_ips  %}
+-A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
 #Allow incoming NRPE queries for nagios from nagios servers
 -A INPUT -m state --state NEW -p tcp -m tcp --dport 5666 -j ACCEPT
 #Log all other "blocked_input_" attempts with rate limiting
@@ -214,6 +217,7 @@ which are common across all the systems are described in [[.common.org][common r
 
 #Allow server to send emails.  Required for sending logwatch emails
 -A OUTPUT -p tcp -m tcp --dport 25 -j ACCEPT
+-A OUTPUT -p tcp -m tcp --dport 22 -j ACCEPT
 
 # 80 and 443 OUTPUT is needed for yum update and to install packages
 -A OUTPUT -p tcp -m tcp --dport 80 -j ACCEPT
@@ -221,16 +225,6 @@ which are common across all the systems are described in [[.common.org][common r
 
 #Allow outgoing ping requests
 -A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT
-
-#Allow outgoing SSH connections from management IPs.  Hopefully fail2ban will take care of bruteforce attacks from management IPs
-{% for item in management_ips  %}
--A OUTPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
-{% endfor %}
-#Allow outgoing SSH connections from ansible_server IPs.  Hopefully
-#fail2ban will take care of bruteforce attacks from ansible server IPs
-{% for item in ansible_server_ips_ips  %}
--A OUTPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
-{% endfor %}
 
 #Allow outgoing connections to rsyslog server
 -A OUTPUT -p udp -m udp --dport 514 -j ACCEPT
@@ -242,70 +236,44 @@ which are common across all the systems are described in [[.common.org][common r
 
 #Reply with proper ICMP error message and reject the connection
 -A OUTPUT -j REJECT --reject-with icmp-host-prohibited
+COMMIT
 #+END_SRC
 *** Firewall rules specific to config_server
-<<<<<<< HEAD
-**** SSH access from management ips
-The following firewall rule accepts incoming connections on tcp port
-22 only from management ips
-=======
-
 **** SSH access from management ips
      The following firewall rule accepts incoming connections on tcp
      port 22 only from management ips
 
->>>>>>> develop
 #+BEGIN_SRC example
 {% for item in management_ips  %}
 -A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
 #+END_SRC
-<<<<<<< HEAD
-**** SSH access from ansible server ips
-The following firewall rule accepts incoming connections on tcp port
-22 only from ansible server ips
-=======
-
 **** SSH access from ansible server ips
      The following firewall rule accepts incoming connections on tcp
      port 22 only from ansible server ips
 
->>>>>>> develop
 #+BEGIN_SRC example
-{% for item in ansible_server_ips_ips  %}
+{% for item in ansible_server_ips %}
 -A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
 #+END_SRC
-
-<<<<<<< HEAD
-** Installing ansible 
-Install latest ansible package to setup the configuration server
-itself and to run the ansible scripts.
-=======
 *** Installing ansible 
     Install latest ansible package to setup the configuration server
     itself and to run the ansible scripts to configure the other nodes
     in the cluster.
-
->>>>>>> develop
 #+BEGIN_SRC yaml :tangle roles/config_server/tasks/main.yml
 ---
 - name: installing ansible
   yum: name=ansible state=present
-#  environment: proxy_env
 #+END_SRC
-<<<<<<< HEAD
-** Change hostname 
-  The following task changes the hostname of the container/VM
-=======
 *** Set the hostname 
     The following task sets the hostname of the node
->>>>>>> develop
   #+BEGIN_SRC yaml :tangle roles/config_server/tasks/main.yml
   ---
 - name: setting the hostname 
   hostname: config-server.vlabs.ac.in
   #+END_SRC
+
 *** Apply firewall rules to Configuration server
     Firewall rules are applied by following steps:
     1) Copy the =iptables= template to the configuration server.
@@ -313,17 +281,17 @@ itself and to run the ansible scripts.
        and apply the configuration.
 
 #+BEGIN_SRC yaml :tangle roles/config_server/tasks/main.yml
----
 - name: Copy iptables configuration file for configuration server
   template: src=iptables dest=/etc/sysconfig/iptables mode=600 owner=root group=root
   notify: restart iptables
 #+END_SRC
+    
 ** Handlers
    Restart the iptables service if configuration file of iptables is
    modified. These handlers are called only when tasks notifies to
    start service.
 
-#+BEGIN_SRC yaml :tangle roles/reverseproxy_server/handlers/main.yaml 
+#+BEGIN_SRC yaml :tangle roles/config_server/handlers/main.yaml 
 ---
 - name: restart iptables
   service: name=iptables state=restarted
@@ -334,17 +302,22 @@ itself and to run the ansible scripts.
    implementation is done in terms of defining suitable scripts for
    each role.  The top level script is =build/code/config_server.yml=
 
-#+BEGIN_SRC yaml :tangle config_server.yml
+#+BEGIN_SRC yaml :tangle config_server.yaml
 ---
 - name: This file configures ansible server
   hosts: ansible_server
   remote_user: root
+
+  vars:
+    i_ans: yes
+    host_name: "ansible.{{prefix}}vlabs.ac.in"
 
   roles:
     - common
     - rsyslog_client
     - ossec_client
     - nagios_client
+    - rsnapshot_client
     - config_server
 #+END_SRC
 

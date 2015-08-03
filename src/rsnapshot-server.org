@@ -46,23 +46,6 @@
 [[https://docs.google.com/drawings/d/1HQtQ_UsjmNYmeTcqh6e9l4_Fd6TfRhBh70NI43DuyDY/edit][Link to google drawing board]]
 
 ** System Files
-<<<<<<< HEAD:src/rsnapshot_server.org
-|------+-----------+-------------------------+--------------------|
-| S.no | Service   | File                    | Description        |
-|------+-----------+-------------------------+--------------------|
-|   1. | Iptables  | /etc/sysconfig/iptables | Configuration File |
-|------+-----------+-------------------------+--------------------|
-|   2. | Rsnapshot | /etc/rsnapshot.conf     | Configuration File |
-|------+-----------+-------------------------+--------------------|
-|   3. | SSH       | /root/.ssh/id_rsa.pub   | SSH public keys    |
-|------+-----------+-------------------------+--------------------|
-
-** Configuration Design
-Rsnapshot uses =/etc/rsnapshot.conf= file for configuration. Two very important
-points about configuration file are:
-- All paths must end with / and all backup destination should be relative
-- Various fields in file are separated using Tab. Space does not separates fields
-=======
    The following table gives the information about the configuration
    files which are modified to setup a Rsnapshot server.
 
@@ -75,7 +58,6 @@ points about configuration file are:
 |------+-----------+-------------------------+----------------------------------------------|
 |   3. | SSH       | /root/.ssh/id_rsa.pub   | SSH public keys                              |
 |------+-----------+-------------------------+----------------------------------------------|
->>>>>>> develop:src/rsnapshot-server.org
 
 * Implementation
 ** Structure of Scripts
@@ -102,7 +84,7 @@ points about configuration file are:
    with the "common" and "rsnapshot_server" roles as described in the
    [[Rsnapshot server configuration script]] section.
 
-   The =roles/rsnapshot_server/handlers/main.yaml= file defines
+   The =roles/rsnapshot_server/handlers/main.yml= file defines
    various handlers which are only executed in case a task notifies
    them. These handlers are described in detail in the [[Handlers]]
    section.
@@ -117,7 +99,7 @@ points about configuration file are:
    at various places to configure the Rsnapshot server with
    appropriate values.
 
-   =roles/nagios_server/vars/main.yaml= file defines the variable as
+   =roles/nagios_server/vars/main.yml= file defines the variable as
    described in the [[Variables Definition]] section.
 
 ** Firewall Rules
@@ -190,15 +172,12 @@ points about configuration file are:
 
 #Allow https to contact yum
 -A OUTPUT -p tcp -m tcp --dport 443 -j ACCEPT
-<<<<<<< HEAD:src/rsnapshot_server.org
-#Allow to make DNS queries
--A OUTPUT -p udp -m udp --dport 53 -j ACCEPT
-=======
+#Allow http to contact yum
+-A OUTPUT -p tcp -m tcp --dport 80 -j ACCEPT
 
 #Allow to make DNS queries
 -A OUTPUT -p udp -m udp --dport 53 -j ACCEPT
 
->>>>>>> develop:src/rsnapshot-server.org
 #Allow outgoing ping requests
 -A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT
 
@@ -217,12 +196,6 @@ points about configuration file are:
 COMMIT
 #
 #+END_SRC
-
-<<<<<<< HEAD:src/rsnapshot_server.org
-** Configuring rsnapshot
-Following actions are performed in =/etc/rsnapshot.conf= file to configure
-rsnapshot service.
-=======
 ** Configure rsnapshot
    Rsnapshot uses =/etc/rsnapshot.conf= file for configuration. Two
    very important points about configuration file are:
@@ -233,7 +206,6 @@ rsnapshot service.
 
    Following actions are performed in =/etc/rsnapshot.conf= file to
    configure rsnapshot service.
->>>>>>> develop:src/rsnapshot-server.org
 
 *** Configure absolute path of backup location
     Absolute path on current system where backup data will be stored is
@@ -262,15 +234,10 @@ interval        monthly 3
 #+END_EXAMPLE
 
 *** Set log level
-<<<<<<< HEAD:src/rsnapshot_server.org
-The amount of information to print out when the program is run. Allowed values
-are 1 through 5. The default is 2.
-=======
     Log level is set for the amount of information to print out when
     the program is run. Allowed values are 1 through 5. The default
     is 2.
 
->>>>>>> develop:src/rsnapshot-server.org
 #+BEGIN_EXAMPLE
 Verbose level, 1 through 5.
 1     Quiet           Print fatal errors only
@@ -589,24 +556,15 @@ link_dest	1
   notify: restart_iptables
 #+END_SRC
 
-<<<<<<< HEAD:src/rsnapshot_server.org
-** Generating SSH keys on the rsnapshot server and getting it to ansible server
-Rsnapshot server connects to rsnapshot clients over ssh to take backup. For this
-SSH key is generated on the Rsnapshot server. The ssh public key is to be placed
-inside the rsnaphost client machine authorized_keys, for this keys are copied to
-ansible server and from there it will be placed inside rsnapshot client.
-=======
 *** Generate SSH keys on the rsnapshot server and get it to ansible server
     Rsnapshot server connects to rsnapshot clients over ssh to take
     backup. For this SSH key is generated on the Rsnapshot server. The
     ssh public key is to be placed inside the rsnapshost client node's
     authorized_keys, for this keys are copied to ansible server and
     from there it will be placed inside rsnapshot client.
->>>>>>> develop:src/rsnapshot-server.org
-
 #+BEGIN_SRC yml :tangle roles/rsnapshot_server/tasks/main.yml :eval no
 - name: Create a SSH key for 'root'
-  user: name=root generate_ssh_key=yes ssh_key_file=.ssh/{{ rsnapshot_ssh_key }}
+  user: name=root generate_ssh_key=yes ssh_key_file=.ssh/id_rsa
   when: rsnapshot_ssh_key != False
 
 - name: Get public key from RSNAPSHOT server to ansible server
@@ -650,7 +608,6 @@ ansible server and from there it will be placed inside rsnapshot client.
 
 #+BEGIN_SRC yml :tangle roles/rsnapshot_server/handlers/main.yml :eval no
 - name: restart_iptables
-  sudo: true
   service: name=iptables state=restarted
 #+END_SRC
 
@@ -686,69 +643,69 @@ rsnapshot_config_backup:
     - name: router.vlabs.ac.in
       points:
           - [backup_script, /bin/date "+ backup of router started at %c" > start.txt, router/router_start]
-          - [backup, "root@router.vlabs.ac.in:/etc/sysconfig/", router/]
+          - [backup, "root@router.{{prefix}}vlabs.ac.in:/etc/sysconfig/", router/]
           - [backup_script, /bin/date "+ backup of router completed at %c" > end.txt, router/router_end]
 
     - name: ansible.vlabs.ac.in
       points:
           - [backup_script, /bin/date "+ backup of ansible started at %c" > start.txt, ansible/ansible_start]
-          - [backup, "root@ansible.vlabs.ac.in:/root/.ssh/", ansible/]
+          - [backup, "root@ansible.{{prefix}}vlabs.ac.in:/root/.ssh/", ansible/]
           - [backup_script, /bin/date "+ backup of ansible completed at %c" > end.txt, ansible/ansible_end]
   
     - name: ossec-server.vlabs.ac.in
       points:
           - [backup_script, /bin/date "+ backup of ossec-server started at %c" > start.txt, ossec-server/ossec-server_start]
-          - [backup, "root@ossec-server.vlabs.ac.in:/etc/sysconfig/", ossec-server/]
-          - [backup, "root@ossec-server.vlabs.ac.in:/root/", ossec-server/]
-          - [backup, "root@ossec-server.vlabs.ac.in:/var/ossec/etc/", ossec-server/]
+          - [backup, "root@ossec-server.{{prefix}}vlabs.ac.in:/etc/sysconfig/", ossec-server/]
+          - [backup, "root@ossec-server.{{prefix}}vlabs.ac.in:/root/", ossec-server/]
+          - [backup, "root@ossec-server.{{prefix}}vlabs.ac.in:/var/ossec/etc/", ossec-server/]
           - [backup_script, /bin/date "+ backup of ossec-server completed at %c" > end.txt, ossec-server/ossec-server_end]
 
     - name: rsyslog-server.vlabs.ac.in
       points:
           - [backup_script, /bin/date "+ backup of rsyslog-server started at %c" > start.txt, rsyslog-server/rsyslog-server_start]
-          - [backup, "root@rsyslog-server.vlabs.ac.in:/etc/rsyslog.conf", rsyslog-server/]
-          - [backup, "root@rsyslog-server.vlabs.ac.in:/etc/sysconfig/iptables", rsyslog-server/]
+          - [backup, "root@rsyslog-server.{{prefix}}vlabs.ac.in:/etc/rsyslog.conf", rsyslog-server/]
+          - [backup, "root@rsyslog-server.{{prefix}}vlabs.ac.in:/etc/sysconfig/iptables", rsyslog-server/]
           - [backup_script, /bin/date "+ backup of rsyslog-server completed at %c" > end.txt, rsyslog-server/rsyslog-server_end]
 
     - name: private-dns.vlabs.ac.in
       points:
           - [backup_script, /bin/date "+ backup of private-dns started at %c" > start.txt, private-dns/private-dns_start]
-          - [backup, "root@private-dns.vlabs.ac.in:/etc/named.conf", private-dns/]
-          - [backup, "root@private-dns.vlabs.ac.in:/var/named/", private-dns/]
-          - [backup, "root@private-dns.vlabs.ac.in:/etc/sysconfig/named", private-dns/]
-          - [backup, "root@private-dns.vlabs.ac.in:/etc/sysconfig/iptables", private-dns/]
+          - [backup, "root@private-dns.{{prefix}}vlabs.ac.in:/etc/named.conf", private-dns/]
+          - [backup, "root@private-dns.{{prefix}}vlabs.ac.in:/var/named/", private-dns/]
+          - [backup, "root@private-dns.{{prefix}}vlabs.ac.in:/etc/sysconfig/named", private-dns/]
+          - [backup, "root@private-dns.{{prefix}}vlabs.ac.in:/etc/sysconfig/iptables", private-dns/]
           - [backup_script, /bin/date "+ backup of private-dns completed at %c" > end.txt, private-dns/private-dns_end]
 
     - name: public-dns.vlabs.ac.in
       points:
           - [backup_script, /bin/date "+ backup of public-dns started at %c" > start.txt, public-dns/public-dns_start]
-          - [backup, "root@public-dns.vlabs.ac.in:/etc/named.conf", pubic-dns/]
-          - [backup, "root@public-dns.vlabs.ac.in:/var/named/", public-dns/]
-          - [backup, "root@public-dns.vlabs.ac.in:/etc/sysconfig/named", public-dns/]
-          - [backup, "root@public-dns.vlabs.ac.in:/etc/sysconfig/iptables", public-dns/]
+          - [backup, "root@public-dns.{{prefix}}vlabs.ac.in:/etc/named.conf", pubic-dns/]
+          - [backup, "root@public-dns.{{prefix}}vlabs.ac.in:/var/named/", public-dns/]
+          - [backup, "root@public-dns.{{prefix}}vlabs.ac.in:/etc/sysconfig/named", public-dns/]
+          - [backup, "root@public-dns.{{prefix}}vlabs.ac.in:/etc/sysconfig/iptables", public-dns/]
           - [backup_script, /bin/date "+ backup of public-dns completed at %c" > end.txt, public-dns/public-dns_end]
 
     - name: reverseproxy.vlabs.ac.in
       points:
           - [backup_script, /bin/date "+ backup of reverseproxy started at %c" > start.txt, reverseproxy/reverseproxy_start]
-          - [backup, "root@reverseproxy.vlabs.ac.in:/etc/httpd/conf/", reverseproxy/]
-          - [backup, "root@reverseproxy.vlabs.ac.in:/etc/httpd/conf.d/", reverseproxy/]
-          - [backup, "root@reverseproxy.vlabs.ac.in:/etc/awstats/", reverseproxy/]
-          - [backup, "root@reverseproxy.vlabs.ac.in:/etc/sysconfig/", reverseproxy/]
-          - [backup, "root@reverseproxy.vlabs.ac.in:/var/log/httpd/", reverseproxy/]
+          - [backup, "root@reverseproxy.{{prefix}}vlabs.ac.in:/etc/httpd/conf/", reverseproxy/]
+          - [backup, "root@reverseproxy.{{prefix}}vlabs.ac.in:/etc/httpd/conf.d/", reverseproxy/]
+          - [backup, "root@reverseproxy.{{prefix}}vlabs.ac.in:/etc/awstats/", reverseproxy/]
+          - [backup, "root@reverseproxy.{{prefix}}vlabs.ac.in:/etc/sysconfig/", reverseproxy/]
+          - [backup, "root@reverseproxy.{{prefix}}vlabs.ac.in:/var/log/httpd/", reverseproxy/]
           - [backup_script, /bin/date "+ backup of reverseproxy completed at %c" > end.txt, reverseproxy/reverseproxy_end]
 
     - name: nagios.vlabs.ac.in
       points:
           - [backup_script, /bin/date "+ backup of nagios started at %c" > start.txt, nagios/nagios_start]
-          - [backup, "root@nagios.vlabs.ac.in:/etc/nagios/", nagios/]
+          - [backup, "root@nagios.{{prefix}}vlabs.ac.in:/etc/nagios/", nagios/]
           - [backup_script, /bin/date "+ backup of nagios completed at %c" > end.txt, nagios/nagios_end]
 
     - name: ads.vlabs.ac.in
       points:
           - [backup_script, /bin/date "+ backup of ads started at %c" > start.txt, ads/ads_start]
-          - [backup, "root@ads.vlabs.ac.in:/root/", ads/]
-          - [backup, "root@ads.vlabs.ac.in:/var/log", ads/]
+          - [backup, "root@ads.{{prefix}}vlabs.ac.in:/root/", ads/]
+          - [backup, "root@ads.{{prefix}}vlabs.ac.in:/var/log", ads/]
           - [backup_script, /bin/date "+ backup of ads completed at %c" > end.txt, ads/ads_end]
 
 
@@ -788,14 +745,14 @@ rsnapshot_crontab:
    1) =common=
    2) =rsnapshot_server=
 
-#+BEGIN_SRC 
+#+BEGIN_SRC yaml :tangle rsnapshot_server.yaml :eval no
 ---
 - name: This yml script configures rsnapshot server
   hosts: rsnapshot_server
   remote_user: root
 
   vars:
-   host_name: rsnapshot-server
+   host_name: "rsnapshot-server.{{prefix}}vlabs.ac.in"
   roles:
     - common
     - rsnapshot_server

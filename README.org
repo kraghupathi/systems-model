@@ -1,0 +1,14 @@
+
+* How to build
+- To build/extract the code run =make=, this works with BSD make and
+GNU make.
+- It would now have created a =build= directory.
+- To build it requires the following:
+ - GNU emacs 24.x+
+ - Org-mode version 8.2.10
+ - BSD make or GNU make
+
+* How to remove/reset the build
+- To clean/remove the changes from the build run
+=make clean=, which just removes the build directory, which can also
+be done by =rm -rf build=.

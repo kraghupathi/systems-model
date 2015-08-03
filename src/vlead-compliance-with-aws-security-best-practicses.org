@@ -1,0 +1,743 @@
+#+Title: AWS Security Best Practices
+#+Author: Yogesh Agrawal
+#+Date: April 27, 2015. Monday
+
+* Introduction
+This document provides security best practices of aws, and its compliance with
+vlead aws infrastructure.
+
+* Topics
+1. Security resposiblities from AWS.
+2. User access to data using privileged accounts and groups.
+3. Best practices for securing data, operating systems, and network.
+4. Monitoring and Alerting to achieve security objectives.
+
+* Security provided by AWS
+To ensure secure services, AWS offers shared responsibility models for each of
+the different type of service
+1. Facilities
+2. Physical security of hardware
+3. Network infrastructure
+4. Virtualization infrastructure
+
+* VLEAD is responsible for the security of following assets
+1. Amazon Machine Images (AMIs)
+2. Operating systems
+3. Applications
+4. Data in transit
+5. Data at rest
+6. Data stores
+7. Credentials
+8. Policies and configuration
+
+* Regions, Availability Zones, and Endpoints
+Availability zones are designed for fault tolerance. They are connected to
+multiple Internet Service Providers(ISPs) and different power grids. Systems can
+span multiple Availibility zones.
+
+- VLEAD :: We chose "N. Virginia" region and "us-east-1c" zone which is
+           available in the best price for us.
+
+* Accessing the Instances
+After launching the instances we can access that instance using secure remote
+system access protocols, such as Secure Shell (SSH) or Windows Remote Desktop
+Protocol (RDP).
+
+- VLEAD :: We use asymmetric key pairs, known as Amazon EC2 key pairs to enable
+           access authentication to the EC2 instances.
+
+* Managing OS-level Access to Amazon EC2 Instances
+|-------------------------------------------------------------+------------------------------------------+------------|
+| Standard Measures                                           | Measures taken by VLEAD                  | Compliance |
+|-------------------------------------------------------------+------------------------------------------+------------|
+| To enable authentication to the EC2 instance, AWS           | We use the key pairs provided            | Yes        |
+| provides asymmetric key pairs, known as Amazon EC2 key      | to login to the VM's via ssh.            |            |
+| pairs. These are industry-standard RSA key pairs.           |                                          |            |
+|-------------------------------------------------------------+------------------------------------------+------------|
+| If you have higher security requirements, you can implement | We are not using any LDAP authentication | NA         |
+| alternative authentication mechanisms, including LDAP or    |                                          |            |
+| Active Directory authentication, and disable Amazon EC2 key |                                          |            |
+| pair authentication.                                        |                                          |            |
+|-------------------------------------------------------------+------------------------------------------+------------|
+
+* Recommended Security Measures by Advisor tools
+|-------------------------------------------------------------+---------------------------------------+------------|
+| Security Recommendations                                    | Measures taken by VLEAD               | Compliance |
+|-------------------------------------------------------------+---------------------------------------+------------|
+| Limited access to common administrative ports               | Firewall rules are configured         | Yes        |
+| to only a small subset of addresses. This                   | to limit connection to port 22        |            |
+| includes ports 22 (SSH),23 (Telnet) 3389 (RDP),             | SSH (all VMs are Linux) only from     |            |
+| and 5500 (VNC).                                             | our static public IP given by ISP     |            |
+|-------------------------------------------------------------+---------------------------------------+------------|
+| Limited access to common database ports. This               | Firewall rules are configured on      | Yes        |
+| includes ports 1433 (MSSQL Server), 1434 (MSSQL Monitor),   | the labs machine which uses databases |            |
+| 3306 (MySQL), Oracle (1521) and 5432 (PostgreSQL).          | to ensure only localhost can connect  |            |
+|                                                             | to such ports.                        |            |
+|-------------------------------------------------------------+---------------------------------------+------------|
+| IAM is configured to help ensure secure access control      | IAM is configured.                    | Yes        |
+| of AWS resources.                                           |                                       |            |
+|-------------------------------------------------------------+---------------------------------------+------------|
+| Multi-factor authentication (MFA) token is enabled to       | No MFA is used                        | *No*       |
+| provide two-factor authentication for the root AWS account. |                                       |            |
+|-------------------------------------------------------------+---------------------------------------+------------|
+
+* Define and Categorize Assets on AWS
+Before you design your ISMS (Information Security Management System),
+identify all the information assets that you need to protect and then
+devise a technically and financially viable solution for protecting
+them.  It can be difficult to quantify every asset in financial terms,
+so you might find that using qualitative metrics (such as
+negligible/low/medium/high/very high) is a better option
+
+- VLEAD :: We have *not* categorized our assets into various categories. Our
+           cluster in the AWS is responsible for hosting virtual-labs accessed
+           by lab users.  
+
+           Most of our resources lab VMs and infrastructure VMs are of
+           high importance.  rsnapshot backup of lab VM and analytics
+           on reverseproxy are of very high importance.  We need to
+           discuss this in all hands team meeting.
+
+* Manage AWS Accounts, IAM Users, Groups, and Roles Standard Measures
+|--------------------------------------------------------------+----------------------------------------------+------------|
+| Security Recommendations                                     | Measures Taken by VLEAD                      | Compliance |
+|--------------------------------------------------------------+----------------------------------------------+------------|
+| Do not use root account                                      | Administrators login to AWS using IAM roles  | *No*       |
+| credentials for day-to-day                                   |                                              |            |
+| interactions with AWS                                        | We need to educate everyone to use IAM       |            |
+|                                                              | credentails unless root access is really     |            |
+|                                                              | required                                     |            |
+|--------------------------------------------------------------+----------------------------------------------+------------|
+| Best practice is to create                                   | We have created IAM user for each            | *No*       |
+| individual IAM users for each                                | member in the systems team.                  |            |
+| individual that needs to access                              |                                              |            |
+| services and resources in your AWS account                   | Access given to each user needs review       |            |
+|--------------------------------------------------------------+----------------------------------------------+------------|
+| *User names* for AWS accounts are always                     | We have set the usernames as our email id's. | *No*       |
+| email addresses. IAM user names allow for                    | We did not define any policy for a password. |            |
+| more flexibility. Your AWS account password                  |                                              |            |
+| can be anything you define. IAM user                         | A strong IAM password policy is required     |            |
+| passwords can be forced to comply with a                     |                                              |            |
+| policy you define (that is, you can require                  |                                              |            |
+| minimum password length or the use of                        |                                              |            |
+| non-alphanumeric characters).                                |                                              |            |
+|--------------------------------------------------------------+----------------------------------------------+------------|
+| *Multi-factor authentication (MFA)*                          | No such authentication system is in place    | *No*       |
+| AWS Multi-factor authentication (MFA)                        | in VLEAD                                     |            |
+| provides an extra level of security for                      |                                              |            |
+| sign-in credentials. With MFA enabled, when                  | MFA for IAM users who own smartphones        |            |
+| users signs in to an AWS website, they will                  | should be enabled                            |            |
+| be prompted for their user name and password                 |                                              |            |
+| (the first factor - what they know), as well as              |                                              |            |
+| for an authentication code from their MFA                    |                                              |            |
+| device (the second factor - what they have).                 |                                              |            |
+|--------------------------------------------------------------+----------------------------------------------+------------|
+| *Access keys*                                                | We need to first educate users about keys.   | *No*       |
+| Access keys are used to digitally sign API calls             | Then revoke all unnecessary keys.  Apart     |            |
+| made to AWS services. Each access key credential             | from ADS no one should need keys.  Later on  |            |
+| is comprised of an access key ID and a secret key.           | even for ADS we should use roles and avoid   |            |
+| The secret key portion must be secured by the AWS            | complete dependence on AWS keys.             |            |
+| account holder or the IAM user to whom they are              |                                              |            |
+| assigned.                                                    |                                              |            |
+|--------------------------------------------------------------+----------------------------------------------+------------|
+| *MFA for API calls*                                          | By ensuring that ADS uses IAM role we can    | NA         |
+| Multi-factor authentication (MFA)-protected API access       | avoid needing this completely.               |            |
+| requires IAM users to enter a valid MFA code before          |                                              |            |
+| they can use certain functions, which are APIs.              |                                              |            |
+| Policies you create in IAM will determine which APIs         |                                              |            |
+| require MFA. Because the AWS Management Console calls        |                                              |            |
+| access is through the console or via APIs.                   |                                              |            |
+| AWS service APIs, you can enforce MFA on APIs whether        |                                              |            |
+|--------------------------------------------------------------+----------------------------------------------+------------|
+| Applications that run on an Amazon EC2 instance and          | We are not using any S3 buckets or any such  | NA         |
+| that need access to AWS resources such as Amazon S3          | amazon services.                             |            |
+| buckets or an Amazon DynamoDB table must have security       |                                              |            |
+| credentials in order to make programmatic requests to AWS.   |                                              |            |
+|--------------------------------------------------------------+----------------------------------------------+------------|
+| *Identity Federation*                                        | There is LDAP but not all LDAP users need    | NA         |
+| Users might already have identities outside of AWS, such as  | AWS credentials.  IAM takes care of this     |            |
+| in your corporate directory. However, those users might need | to large extent.                             |            |
+| to work with AWS resources (or work with applications that   |                                              |            |
+| access those resources). If so, these users also need AWS    |                                              |            |
+| security credentials in order to make requests to AWS.       |                                              |            |
+|--------------------------------------------------------------+----------------------------------------------+------------|
+
+* Securing O.S and Applications
+Sources of industry- accepted system hardening standards are: 
+1. Center for Internet Security (CIS)
+2. International Organization for Standardization (ISO)
+3. SysAdmin Audit Network Security (SANS) Institute
+4. National Institute of Standards Technology (NIST)
+
+
+|-----------------------------------------------+----------------------------------------------------------------+------------|
+| Standard Measures                             | Measures taken by VLEAD                                        | Compliance |
+|-----------------------------------------------+----------------------------------------------------------------+------------|
+| Amazon recommends to develop configuration    | VLEAD has defined roles in form of ansible playbooks           | Mostly     |
+| standards that address all known security     | which runs on all the server timely to ensure the              |            |
+| vulnerabilities and are consistent with       | consistency.                                                   |            |
+| industry-accepted system hardening standards. |                                                                |            |
+|                                               | As part of this playbooks we ensure iptables rules are very    |            |
+|                                               | tight and always enabled, OSSEC, nagios, logwatch, etc. are    |            |
+|                                               | also enabled.  SSH is disabled with password using sshd_config |            |
+|                                               | and root account is also locked (passwd -l) so                 |            |
+|                                               | that password based ssh does not works.  All this is           |            |
+|                                               | planned to be enforced at least once every 24 hours.           |            |
+|-----------------------------------------------+----------------------------------------------------------------+------------|
+| *HTTPS*                                       |                                                                |            |
+| By default, HTTP traffic is unprotected.      | No HTTPS is in place right now. But we plan to                 | *No*       |
+| SSL/TLS protection for HTTP traffic, also     | purchase ssl certificate.                                      |            |
+| known as HTTPS, is industry standard and      |                                                                |            |
+| widely supported by web servers and           | This should be resolved by creating HTTPS certificates         |            |
+| browsers.                                     |                                                                |            |
+|-----------------------------------------------+----------------------------------------------------------------+------------|
+| *HTTPS offload*                               | We are not doing any Offload HTTPS processing                  | *No*       |
+| While using HTTPS is often recommended,       | on Elastic Load Balancing to minimize impact on web servers    |            |
+| especially for sensitive data, SSL/TLS        | while still protecting data in transit.                        |            |
+| processing requires additional CPU and        |                                                                |            |
+| memory resources from both the web server     | We should explore this going forward.  But dependence on       |            |
+| and the client. This can put a considerable   | this would create issues when we migrate to Baadal in future.  |            |
+| load on web servers handling thousands of     |                                                                |            |
+| SSL/TLS sessions. There is less impact on the |                                                                |            |
+| client, where only a limited number of        |                                                                |            |
+| SSL/TLS connections are terminated.           |                                                                |            |
+|-----------------------------------------------+----------------------------------------------------------------+------------|
+
+* Creating Custom AMIs
+|--------------------------------------------------------------+------------------------------------------------+------------|
+| standard measures                                            | Measures taken by VLEAD                        | Compliance |
+|--------------------------------------------------------------+------------------------------------------------+------------|
+| Disable services and protocols that                          | SSH is secured in AMI and also firewall is     | *No*       |
+| authenticate users in clear text over                        | configured.  But ADS lab VM agent does not     |            |
+| the network, or otherwise insecurely.                        | includes authentication as of now.  So if      |            |
+|                                                              | a remote machine can connect to ADS lab VM     |            |
+|                                                              | on ADS port then entire machine would get      |            |
+|                                                              | compromised.  Further same problem may lead    |            |
+|                                                              | to all VMs being compromised at same time.     |            |
+|--------------------------------------------------------------+------------------------------------------------+------------|
+| Disable non-essential network services on startup.           | Apart from SSH and HTTP nothing else is left   | Yes        |
+| Only administrative services (SSH/RDP) and the               | running on AMIs                                |            |
+| services required for essential applications should be       |                                                |            |
+| started.                                                     |                                                |            |
+|--------------------------------------------------------------+------------------------------------------------+------------|
+| Securely delete all AWS credentials                          | Everyone has access to SSH tunnel.  We need    | *No*       |
+| from disk and configuration files.                           | better way of having audit trace to machine    |            |
+|                                                              | access without depending upon shared keys.     |            |
+|                                                              |                                                |            |
+|--------------------------------------------------------------+------------------------------------------------+------------|
+| Securely delete any third-party credentials                  | AMI creation involves setting up from a plain  | *No*       |
+| from disk and configuration files.                           | vanilla O.S(Ubuntu or CentOS). No third party  |            |
+|                                                              | keys will be present in AMI.                   |            |
+|                                                              |                                                |            |
+|                                                              | We cant assume that no third-party keys are    |            |
+|                                                              | present.  This has to be verified.             |            |
+|--------------------------------------------------------------+------------------------------------------------+------------|
+| Securely delete all additional certificates or               | Steps for figuring out which certs are default | *No*       |
+| key material from the system.                                | and which were added manually later should be  |            |
+|                                                              | determined and we should reset the CAs to      |            |
+|                                                              | default set                                    |            |
+|--------------------------------------------------------------+------------------------------------------------+------------|
+| Ensure that software installed does not use default internal | Need to verify software installed against      | *No*       |
+| accounts and passwords.                                      | what is present in basic ubuntu installation   |            |
+|                                                              | or on an Ubuntu openvz template.  Extra ones   |            |
+|                                                              | which are not needed should be removed.        |            |
+|--------------------------------------------------------------+------------------------------------------------+------------|
+| Ensure that the system does not violate the Amazon Web       | This is taken care of by both iptables         | Yes        |
+| Services Acceptable Use Policy. Examples of violations       | and security group as they do not allow        |            |
+| include open SMTP relays or proxy servers.                   | access to port 25 on any VM.                   |            |
+|--------------------------------------------------------------+------------------------------------------------+------------|
+
+* Checklist for creation of Linux AMI
+|-----------------------------------------------------+-----------------------------------------------+------------|
+| standard measures                                   | measures taken by VLEAD                       | Compliance |
+|-----------------------------------------------------+-----------------------------------------------+------------|
+| Configure sshd to allow only public                 | sshd is configured to allow only key based    | Yes        |
+| key authentication. Set PubkeyAuthentication to Yes | access.                                       |            |
+| and PasswordAuthentication to No in sshd_config.    |                                               |            |
+|-----------------------------------------------------+-----------------------------------------------+------------|
+| Generate a unique SSH host key on instance          | I am not sure if AMI uses cloud-init.  We     | *No*       |
+| creation. If the AMI uses cloud-init, it will       | should ensure new host key generation as      |            |
+| handle this automatically.                          | part of each new VM                           |            |
+|                                                     |                                               |            |
+|-----------------------------------------------------+-----------------------------------------------+------------|
+| Remove and disable passwords for all user accounts  | Need to verify whether there are other        | *No*       |
+| so that they cannot be used to log in and do not    | accounts other than root.                     |            |
+| have a default password.                            |                                               |            |
+| Run passwd -l <USERNAME> for each account.          |                                               |            |
+|-----------------------------------------------------+-----------------------------------------------+------------|
+| Securely delete all user SSH public                 | At present we are using simple rm command.    | *No*       |
+| and private key pairs.                              | If necessary we should shift to shred for     |            |
+|                                                     | deleting sensitive files.                     |            |
+|-----------------------------------------------------+-----------------------------------------------+------------|
+| Securely delete all shell history and system log    | Not sure from where this data should be       |            |
+| files containing sensitive data.                    | deleted.  This data is important.             |            |
+|                                                     |                                               |            |
+|                                                     | @Yogesh please read the AWS guidelines        |            |
+|                                                     | again and update this point with more details |            |
+|-----------------------------------------------------+-----------------------------------------------+------------|
+
+* Bootstrapping
+Bootstrapping is achieved by running common roles created using Ansible
+configuration management server on the cluster. Which sets up basic security
+requirements and prepare the base for other servers.
+|----------------------------------------------------------------+-------------------------------------+------------|
+| Bootstrap Actions                                              | Measures taken by VLEAD             | Compliance |
+|----------------------------------------------------------------+-------------------------------------+------------|
+| Security software updates install the latest patches,          | Bootstrap process installs          | *No*       |
+| service packs, and critical updates beyond the patch level of  | latest packages.                    |            |
+| the AMI.                                                       |                                     |            |
+|                                                                | Need to verify this in common role. |            |
+|                                                                | I do not think we do this for other |            |
+|                                                                | good reasons.                       |            |
+|----------------------------------------------------------------+-------------------------------------+------------|
+| Initial application patches install application level updates, | Bootstrap process installs          | *NA*       |
+| beyond the current application level build as                  | application level updates           |            |
+| captured in the AMI.                                           |                                     |            |
+|----------------------------------------------------------------+-------------------------------------+------------|
+| Contextual data and configuration enables instances to apply   | Irrelevant for our Production       | *NA*       |
+| configurations specific to the environment in                  | servers.                            |            |
+| which they are being launched–production, test, or             |                                     |            |
+| DMZ/internal, for example.                                     |                                     |            |
+|----------------------------------------------------------------+-------------------------------------+------------|
+| Register instances with remote security monitoring             | Machines are added to OSSEC         | Yes        |
+| and management systems.                                        | and nagios during bootstrapping     |            |
+|                                                                |                                     |            |
+|                                                                |                                     |            |
+|----------------------------------------------------------------+-------------------------------------+------------|
+
+* Managing Patches
+  You are responsible for patch management for your AMIs and live instances. We
+  recommend that you institutionalize patch management and maintain a written
+  procedure.
+  
+  While you can use third-party patch management systems for operating systems and
+  major applications, it is a good practice to keep an inventory of all software
+  and system components, and to compare the list of security patches installed on
+  each system to the most recent vendor security patch list, to verify that
+  current vendor patches are installed.
+  
+  Implement processes to identify new security vulnerabilities and assign risk
+  rankings to such vulnerabilities. At a minimum, rank the most critical, highest
+  risk vulnerabilities as “High.”  
+  
+- VLEAD :: *No* procedure is followed for patch management of AMI and live
+           instances at VLEAD.
+
+* Protecting System from Malware
+OSSEC server is installed in the cluster. OSSEC monitors for any malwares and
+detects any intrusion attacks on the servers.
+
+|---------------------------------------------------------------------+-------------------------------+------------|
+| Common Approaches                                                   | Measures taken by VLEAD       | Compliance |
+|---------------------------------------------------------------------+-------------------------------+------------|
+| Launch instances from trusted AMIs only.                            | We are using AWS AMIS.        | *No*       |
+| Trusted AMIs include the standard                                   | No third party AMIs are       |            |
+| Windows and Linux AMIs provided by AWS                              | used.                         |            |
+| and AMIs from trusted third parties.                                |                               |            |
+| If you derive your own custom AMIs                                  | This must be validated        |            |
+| from the standard and trusted AMIs,                                 |                               |            |
+| all the additional software and                                     |                               |            |
+| settings you apply to it must be                                    |                               |            |
+| trusted as well. Launching an untrusted                             |                               |            |
+| third-party AMI can compromise and                                  |                               |            |
+| infect your entire cloud environment.                               |                               |            |
+|---------------------------------------------------------------------+-------------------------------+------------|
+| Only install and run trusted software                               |                               |            |
+| from a trusted software provider. A trusted                         | This factor is not            | No         |
+| software provider is one who is well regarded                       | considered at all.            |            |
+| in the industry, and develops software in a                         |                               |            |
+| secure and responsible fashion, not allowing                        |                               |            |
+| malicious code into its software packages.                          |                               |            |
+| Open source software can also be trusted                            |                               |            |
+| software, and you should be able to compile your                    |                               |            |
+| own executables. We strongly recommend that                         |                               |            |
+| you perform careful code reviews to ensure that                     |                               |            |
+| source code is non-malicious. Trusted software                      |                               |            |
+| providers often sign their software using                           |                               |            |
+| code-signing certificates or provide MD5                            |                               |            |
+| or SHA-1 signatures of their products so that you                   |                               |            |
+| can verify the integrity of the software you download.              |                               |            |
+|---------------------------------------------------------------------+-------------------------------+------------|
+| set up your own internal software depots                            | Most software is either       | *Yes*      |
+| of trusted software for your users to install                       | through verified yum/apt      |            |
+| and use. Strongly discourage users from the dangerous               | or through git-hub repos      |            |
+| practice of downloading and installing software                     | that we control.              |            |
+| from random sources on the Internet.                                |                               |            |
+|---------------------------------------------------------------------+-------------------------------+------------|
+| Patch external-facing and internal                                  | No process is defined         | *No*       |
+| systems to the latest security level.                               | for regular update            |            |
+| Worms often spread through unpatched                                | of security patches           |            |
+| systems on the network.                                             |                               |            |
+|---------------------------------------------------------------------+-------------------------------+------------|
+| Infected systems can be used by attackers to send large amounts of  | iptables and security groups  | *No*       |
+| unsolicited mail (spam). AWS provides special controls to limit how | ensure that outsiders cannot  |            |
+| much email an Amazon EC2 instance can send, but you are still       | use our SMTP servers.         |            |
+| responsible for preventing infection in the first place. Avoid SMTP |                               |            |
+| open relay, which can be used to spread spam, and which might also  | We do not have mechanism to   |            |
+| represent a breach of the AWS Acceptable Use Policy.                | limit number of emails sent   |            |
+|                                                                     | by a lab.  We need to work on |            |
+|                                                                     | that                          |            |
+|---------------------------------------------------------------------+-------------------------------+------------|
+| Be sure to use a reputable and up-to-date antivirus and             | We should explore various     | *No*       |
+| antispam solution on your system.                                   | anti-virus (clamav) and       |            |
+|                                                                     | anti-spam solutions (DNSBL)   |            |
+|                                                                     | and implement them            |            |
+|---------------------------------------------------------------------+-------------------------------+------------|
+
+* Mitigating Compromise and Abuse
+  AWS uses the following mechanisms to detect abuse activities from
+  customer resources:
+  1. AWS internal event monitoring
+  2. External security intelligence against AWS network space
+  3. Internet abuse complaints against AWS resources
+
+|--------------------------------------------------------------------+-----------------------------------------+------------|
+| Best Practices                                                     | Measures taken by VLEAD                 | Compliance |
+|--------------------------------------------------------------------+-----------------------------------------+------------|
+| When an abuse case is filed, AWS immediately sends an email        | No process is defined to handle abuse   | *No*       |
+| notification to the customer’s registered email address.           | report from AWS.                        |            |
+| You can simply reply to the abuse warning email to exchange        |                                         |            |
+| information with the AWS abuse response team.                      |                                         |            |
+| All communications are saved in the AWS abuse tracking             |                                         |            |
+| system for future reference.                                       |                                         |            |
+|--------------------------------------------------------------------+-----------------------------------------+------------|
+| Consider any known compromised Amazon EC2 instance or AWS          | We need to define incident and          | *No*       |
+| resource unsafe. If your Amazon EC2 instance is generating         | emergency responses                     |            |
+| traffic that cannot be explained by your application usage,        |                                         |            |
+| your instance has probably been compromised or infected            |                                         |            |
+| with malicious software.  Shut down and rebuild that instance      |                                         |            |
+| completely to get back to a safe state. While a fresh re-launch    |                                         |            |
+| can be challenging in the physical world, in the cloud environment |                                         |            |
+| it is the first mitigation approach.                               |                                         |            |
+|--------------------------------------------------------------------+-----------------------------------------+------------|
+| You might need to carry out forensic analysis on a compromised     | We need to define / study investigation | *No*       |
+| instance to detect the root cause. Only well-trained security      | techniques from well known published    |            |
+| experts should perform such an investigation, and you should       | material                                |            |
+| isolate the infected instance to prevent further damage and        |                                         |            |
+| infection during the investigation.                                |                                         |            |
+|--------------------------------------------------------------------+-----------------------------------------+------------|
+
+* Amazon Virtual Private Cloud (VPC)
+  With AWS VPC services we can create private clouds within the AWS
+  public cloud.  AWS recommends using private ip addresses schemes as
+  recommended by RFC 1918 for private VPCs. Also suggest to not to
+  make associated private instances not to directly routable to the
+  internet.
+|--------------------+--------------------------------------------------------+--------------------------------------+------------|
+| Concern            | Description                                            | Measures taken by VLEAD              | Compliance |
+|--------------------+--------------------------------------------------------+--------------------------------------+------------|
+| Internet-only      | If We need to accept connections from Internet users,  | VPC is created where only router and | Yes        |
+|                    | we can provide inbound access by allocating elastic IP | ansible machine have direct internet |            |
+|                    | addresses (EIPs) to only those Amazon VPC instances    | access. All other servers in the     |            |
+|                    | that need them. We can further limit inbound           | cluster communicate via router.      |            |
+|                    | connections by using security groups or NACLs for only |                                      |            |
+|                    | specific ports and source IP address ranges.           |                                      |            |
+|--------------------+--------------------------------------------------------+--------------------------------------+------------|
+|                    | If we can balance the load of traffic inbound from the | No load balancing is done. All the   | NA         |
+|                    | Internet, we don’t need EIPs. We can place instances   | traffics are directed to dedicated   |            |
+|                    | behind Elastic Load Balancing.                         | machines.                            |            |
+|--------------------+--------------------------------------------------------+--------------------------------------+------------|
+|                    | For outbound (to the Internet) access, for example to  | Natting is done in the router. All   | Yes        |
+|                    | fetch software updates or to access data on AWS        | the private servers in the cluster   |            |
+|                    | public services, such as Amazon S3, we can use a NAT   | communicates to the internet via     |            |
+|                    | instance to provide masquerading for outgoing          | router.                              |            |
+|                    | connections. No EIPs are required.                     |                                      |            |
+|--------------------+--------------------------------------------------------+--------------------------------------+------------|
+| IPSec Over         | IPSec tunnels are established between AWS and your     | We do not need communication         | NA         |
+| the Internet       | infrastructure endpoints. Applications running in the  | between cloud environment            |            |
+|                    | cloud or on premises don’t require any modification    | and VLEAD environment.  Cloud        |            |
+|                    | and can benefit from IPSec data protection in transit  | environment is protected even from   |            |
+|                    | immediately.                                           | our work environment.                |            |
+|--------------------+--------------------------------------------------------+--------------------------------------+------------|
+| AWS Direct Connect | With AWS Direct Connect, you can establish a           | No AWS Direct Connect is used        | NA         |
+| without IPSec      | connection to your Amazon VPC using private peering    |                                      |            |
+|                    | with AWS over dedicated links, without using the       |                                      |            |
+|                    | Internet. You can opt to not use IPSec in this case,   |                                      |            |
+|                    | subject to your data protection requirements.          |                                      |            |
+|--------------------+--------------------------------------------------------+--------------------------------------+------------|
+
+* Security Zoning and Network Segmentation
+|------------------------------------------------------------------+-----------------------------------------+------------|
+| IDEA                                                             | Measures taken by VLEAD                 | Compliance |
+|------------------------------------------------------------------+-----------------------------------------+------------|
+| Different security requirements mandate different                | We need to learn about this and if      | *No*       |
+| security controls. It is a security best practice                | necessary segment lab VMs into a        |            |
+| to segment infrastructure into zones that impose                 | different zone in comparison to         |            |
+| similar security controls                                        | infrastructure VMs                      |            |
+|------------------------------------------------------------------+-----------------------------------------+------------|
+| Using Amazon VPC to define an isolated network                   | We can create VPC for each              | *No*       |
+| for each workload or organizational entity                       | participating institute                 |            |
+|                                                                  |                                         |            |
+|------------------------------------------------------------------+-----------------------------------------+------------|
+| Using security groups to manage access to instances              | Security groups are configured for each | Yes        |
+| security groups are stateful firewalls that enable               | server in the cluster.                  |            |
+| firewall rules in both directions for every allowed              |                                         |            |
+| and established TCP session or UDP communications channel.       |                                         |            |
+|------------------------------------------------------------------+-----------------------------------------+------------|
+| Using host-based firewalls to control access to each             | Done using iptables                     | Yes        |
+| instance.                                                        |                                         |            |
+|------------------------------------------------------------------+-----------------------------------------+------------|
+| Using Network Access Control Lists (NACLs) that allow stateless  | iptables takes care of this             | Yes        |
+| management of IP traffic. NACLs are agnostic of TCP and UDP      |                                         |            |
+| sessions, but they allow granular control over IP protocols      |                                         |            |
+| (for example GRE, IPSec ESP, ICMP), as well as control on a      |                                         |            |
+| per-source/destination IP address and port for TCP and UDP.      |                                         |            |
+| NACLs work in conjunction with security groups, and can allow or |                                         |            |
+| deny traffic even before it reaches the security group.          |                                         |            |
+|------------------------------------------------------------------+-----------------------------------------+------------|
+| Applying access control at other                                 | Need to look at security ACLs for       | *No*       |
+| layers (e.g. applications and services)                          | apache etc.  For example we have        |            |
+|                                                                  | probably not secured awstats yet        |            |
+|------------------------------------------------------------------+-----------------------------------------+------------|
+| Shared Audit Logging                                             | Systems logs are stored at the central  | *No*       |
+|                                                                  | server, called rsyslog server.          |            |
+|                                                                  |                                         |            |
+|                                                                  | We need to configuring auditing for     |            |
+|                                                                  | generation of better audit trace        |            |
+|------------------------------------------------------------------+-----------------------------------------+------------|
+
+* Securing Periphary Systems: User Repositories, DNS, NTP
+|------------------+------------------------------------------+-----------------------------------+------------|
+| Common Control   | Description                              | Measures taken by VLEAD           | Compliance |
+|------------------+------------------------------------------+-----------------------------------+------------|
+| Separate         | Implement role separation                | No periphary systems are being    | NA         |
+| administrative   | and access controls to limit             | used.  All systems are part       |            |
+| level access     | access to such services, often           | of AWS environment directly.      |            |
+|                  | separate from access control             |                                   |            |
+|                  | required for application access, or      |                                   |            |
+|                  | access to other parts of                 |                                   |            |
+|                  | the infrastructure. level access         |                                   |            |
+|------------------+------------------------------------------+-----------------------------------+------------|
+| Monitoring,      | Log and monitor authorized               | Logwatch sends daily logs and     | Yes        |
+| alerting         | and unauthorized activity.               | OSSEC send individual event logs  |            |
+| audit trail      |                                          |                                   |            |
+|                  |                                          |                                   |            |
+|------------------+------------------------------------------+-----------------------------------+------------|
+| Latest stable    | Ensure that the software is              | Need to verify this and ensure    | *No*       |
+| software with    | patched and not subject to any           | this is maintained as part of     |            |
+| security patches | known vulnerabilities or other risks.    | update process                    |            |
+|------------------+------------------------------------------+-----------------------------------+------------|
+| Continuous       | Ensure that the infrastructure           | We test the infrastructure at the | *No*       |
+| security testing | is tested regularly.                     | starting, no regular testing      |            |
+| (assessments)    |                                          | is in place.                      |            |
+|------------------+------------------------------------------+-----------------------------------+------------|
+| Time Servers     | Time servers are also critical custom    | Time servers are not setup        | *No*       |
+|                  | services. They are essential in many     |                                   |            |
+|                  | security-related transactions, including |                                   |            |
+|                  | log time-stamping and certificate        |                                   |            |
+|                  | validation. It is important to           |                                   |            |
+|                  | use a centralized time server and        |                                   |            |
+|                  | synchronize all systems with the         |                                   |            |
+|                  | same time server.                        |                                   |            |
+|------------------+------------------------------------------+-----------------------------------+------------|
+
+* Mitigating and Protecting Against DoS & DDoS Attacks
+|-----------------------------------------------------+----------------------------------------+------------|
+| Protection from DOS/DDOS Attacks                    | Measures taken by VLEAD                | Compliance |
+|-----------------------------------------------------+----------------------------------------+------------|
+| Manage the list of allowed                          | Destination servers are not listed.    | *No*       |
+| destination servers and services (IP                | We assume replies can go to any        |            |
+| addresses & TCP/UDP ports)                          | machine in the internet.               |            |
+|                                                     |                                        |            |
+|                                                     | We can limit outgoing new              |            |
+|                                                     | connections to Gmail, yum updates      |            |
+|                                                     | and ubuntu updates                     |            |
+|-----------------------------------------------------+----------------------------------------+------------|
+| Manage the list of allowed sources                  | Firewall rules are configured          | Yes        |
+| of traffic                                          | to allow access only from limited      |            |
+|                                                     | sources.                               |            |
+|-----------------------------------------------------+----------------------------------------+------------|
+| Manage the list of allowed protocols                | Firewall is configured to take care    | Yes        |
+|                                                     | of this.                               |            |
+|-----------------------------------------------------+----------------------------------------+------------|
+| Explicitly deny access temporarily                  | fail2ban takes care of this to         | Yes        |
+| or permanently from specific IP                     | good extent                            |            |
+| addresses                                           |                                        |            |
+|-----------------------------------------------------+----------------------------------------+------------|
+| Web application firewalls                           | apache is used as reverseproxy.        | No         |
+|                                                     |                                        |            |
+|                                                     | We can explore adding mod_security     |            |
+|                                                     | etc. plugins to apache on reverseproxy |            |
+|                                                     |                                        |            |
+|-----------------------------------------------------+----------------------------------------+------------|
+| IDS/IPS systems can use statistical/behavioral or   | OSSEC server is installed to achieve   | *No*       |
+| signature-based algorithms to detect and contain    | similar goal.  We can consider setting |            |
+| network attacks and Trojans.                        | up snort on router at later state      |            |
+|-----------------------------------------------------+----------------------------------------+------------|
+| Rate-limiting is a good technique                   | Firewall is configured                 | *No*       |
+| for protecting scarce resources from                | on each server to                      |            |
+| overconsumption.                                    | take care of this to some extent.      |            |
+|                                                     |                                        |            |
+|                                                     | We need to thoroughly validate this    |            |
+|                                                     | for every possible service             |            |
+|-----------------------------------------------------+----------------------------------------+------------|
+| TCP SYN flooding attacks can take place in both     | Most OS take care of this.  Snort      | *No*       |
+| simple and distributed form. In either case, if you | and OSSEC with active response can     |            |
+| have a baseline of the system, you can detect       | also help with this.  Needs more       |            |
+| considerable deviations from the norm in the        | exploration.                           |            |
+| number of half-open (embryonic) TCP sessions, and   |                                        |            |
+| drop any further TCP SYN packets from the specific  |                                        |            |
+| sources.                                            |                                        |            |
+|-----------------------------------------------------+----------------------------------------+------------|
+| Using AWS technologies like Elastic                 | We are not using any Elastic Load      | NA         |
+| Load Balancing and Auto Scaling, you                | Balancer to handle DOS attacks.        |            |
+| can configure the web servers to scale              | This requires considerable             |            |
+| out when under attack (based on load),              | architecture change which is not       |            |
+| and shrink back when the attack stops.              | targeted for near future.              |            |
+| Even under heavy attack, the web servers            |                                        |            |
+| could scale to perform and provide                  |                                        |            |
+| optimal user experience by leveraging               |                                        |            |
+| cloud elasticity.  By absorbing the attack,         |                                        |            |
+| you might incur additional AWS service              |                                        |            |
+| costs; but sustaining such an attack is             |                                        |            |
+| so financially challenging for the                  |                                        |            |
+| attacker that absorbed attacks are                  |                                        |            |
+| unlikely to persist.                                |                                        |            |
+|-----------------------------------------------------+----------------------------------------+------------|
+| You could also use Amazon CloudFront                | We are not using Amazon CloudFront     | NA         |
+| to absorb DoS/DDoS flooding attacks.                | service to absorb DOS attacks.         |            |
+| A potential attacker trying to attack               | Assuming we wont get DOS attacked      |            |
+| content behind CloudFront is likely to send         | as we are not that prestigious yet.    |            |
+| most or all requests to CloudFront edge             |                                        |            |
+| locations, where the AWS infrastructure would       |                                        |            |
+| absorb the extra requests with minimal to           |                                        |            |
+| no impact on the back-end customer web              |                                        |            |
+| servers. Again, there would be additional           |                                        |            |
+| AWS service charges for absorbing the attack, but   |                                        |            |
+| you should weigh this against the costs the         |                                        |            |
+| attacker would incur in order to continue           |                                        |            |
+| the attack as well.                                 |                                        |            |
+|-----------------------------------------------------+----------------------------------------+------------|
+
+* Alerting, Audit Trail, and Incident Response
+Security monitoring starts with answering the following questions:
+1. What parameters should we measure?
+2. How should we measure them?
+3. What are the thresholds for these parameters?
+4. How will escalation processes work?
+5. Where will data be kept?
+
+** Designing Log files
+AWS recommend configuring the following areas for logging and analysis:
+1. Actions taken by any individual with root or administrative privileges
+2. Access to all audit trails
+3. Invalid logical access attempts
+4. Use of identification and authentication mechanisms
+5. Initialization of audit logs
+6. Creation and deletion of system level objects
+
+|------------------------------------------------------------------+---------------------------------------------+------------|
+| Idea                                                             | Measures taken by VLEAD                     | Compliance |
+|------------------------------------------------------------------+---------------------------------------------+------------|
+| *Log collection*                                                 | Most applications log through standard      | Yes        |
+| Note how log files are collected. Often operating system,        | syslog to various log files in /var/log.    |            |
+| application, or third-party/middleware agents collect            | A copy of logs is sent to rsyslog server.   |            |
+| log file information.                                            |                                             |            |
+|------------------------------------------------------------------+---------------------------------------------+------------|
+| *Log Transport*                                                  | A copy of logs is sent to rsyslog server    | Yes        |
+| When log files are centralized, transfer them to the central     | over UDP 514 port on internal network       |            |
+| location in a secure, reliable, and timely fashion.              | in real-time.                               |            |
+|                                                                  |                                             |            |
+|                                                                  | We can consider shifting logs to TCP        |            |
+|                                                                  | for reliability or security at cost of      |            |
+|                                                                  | more network bandwidth                      |            |
+|------------------------------------------------------------------+---------------------------------------------+------------|
+| *Log Storage*                                                    | Logs are stored both on the server          | Yes        |
+| Centralize log files from multiple instances to facilitate       | locally and at a central location.          |            |
+| retention policies, as well as analysis and                      | Further multiple backups of logs from       |            |
+| correlation.                                                     | central location are taken.                 |            |
+|------------------------------------------------------------------+---------------------------------------------+------------|
+| *Log Taxonomy*                                                   | Log analysis is done using logwatch,        | Yes        |
+| Present different categories of log files in a format            | swatch etc. which are already comfortable   |            |
+| suitable for analysis                                            | with current log storage format.            |            |
+|------------------------------------------------------------------+---------------------------------------------+------------|
+| *Log Analysis and correlation*                                   | OSSEC and logwatch analyse logs in realtime | Yes        |
+| Log files provide security intelligence after you analyze them   | as well as on regular intervals (daily)     |            |
+| and correlate events in them. You can analyze logs in real time, |                                             |            |
+| or at scheduled intervals.                                       |                                             |            |
+|------------------------------------------------------------------+---------------------------------------------+------------|
+| *Log Protection and Security*                                    | Access to rsyslog server is tightly         | Yes        |
+| Log files are sensitive. Protect them through network control,   | guarded.  Only as part of incident response |            |
+| identity and access management, encryption, data integrity       | when logs on server seem to be compromised  |            |
+| authentication, and tamper-proof time-stamping.                  | an administrator can connect to central     |            |
+|                                                                  | log server for further analysis.           |            |
+|------------------------------------------------------------------+---------------------------------------------+------------|
+
+** Proxy Systems
+Proxy systems that act as trusted intermediaries to the infrastructure are
+required to provide or do the following
+
+|---------------------------------------------------------------+--------------------------------------------+------------|
+| Idea                                                          | Measures taken by VLEAD                    | Compliance |
+|---------------------------------------------------------------+--------------------------------------------+------------|
+| Manage commands that can be used during sessions.             | Ansible is used as trusted intermediatory  | Yes        |
+| For interactive sessions like SSH or appliance management,    | for accessing all other systems.  Access   |            |
+| or AWS CLI, such solutions can enforce policies by limiting   | to ansible is guarded with firewalls,      |            |
+| the range of available commands and actions.                  | keys and as part of policies.              |            |
+|---------------------------------------------------------------+--------------------------------------------+------------|
+| Different sign-on credentials for shared accounts: Sometimes  | No shared accounts is there. System admins | *No*       |
+| multiple users need to share the same password. A privilege   | login to the server using ssh keys. No     |            |
+| escalation gateway can allow remote access without disclosing | password access is permitted.              |            |
+| the shared account.                                           |                                            |            |
+|                                                               | We do have shared keys which we need to    |            |
+|                                                               | avoid in long run.                         |            |
+|---------------------------------------------------------------+--------------------------------------------+------------|
+
+** Managing Logs for Critical Transactions
+For critical applications, all Add, Change/Modify, and Delete activities or
+transactions must generate a log entry. Each log entry should contain the
+following information:
+1. User identification information
+2. Type of event
+3. Date and time stamp
+4. Success or failure indication
+5. Origination of event
+6. Identity or name of affected data, system component, or resource
+
+- VLEAD :: Various services automatically generate reasonably detailed
+           logs.  We do not need to do anything extra for log generation.
+
+** Protecting Log Information
+   Logging facilities and log information must be protected against tampering and
+   unauthorized access. Administrator and operator logs are often targets for
+   erasing trails of activities.
+
+|--------------------------------------------------------------+--------------------------------------------+------------|
+| Common Controls                                              | Measures taken by VLEAD                    | Compliance |
+|--------------------------------------------------------------+--------------------------------------------+------------|
+| Verifying that audit trails are enabled and                  | We need to enable auditing and also        | *No*       |
+| active for system components                                 | backups of logs files and history files.   |            |
+|--------------------------------------------------------------+--------------------------------------------+------------|
+| Ensuring that only individuals who have a job-related        | Policies for access of central log server  | *No*       |
+| need can view audit trail files                              | need to be defined                         |            |
+|--------------------------------------------------------------+--------------------------------------------+------------|
+| Confirming that current audit trail files are protected      | Log files are not protected                | *No*       |
+| from unauthorized modifications via access control           |                                            |            |
+| mechanisms, physical segregation, and/or network segregation |                                            |            |
+|--------------------------------------------------------------+--------------------------------------------+------------|
+| Ensuring that current audit trail files are promptly backed  | Log files are stored at the central server | *No*       |
+| up to a centralized log server or media that is difficult    | but access to this server needs to be      |            |
+| to alter                                                     | tightly controlled                         |            |
+|--------------------------------------------------------------+--------------------------------------------+------------|
+
+** Logging Faults
+   In addition to monitoring MACD events, monitor software or
+   component failure. Faults might be the result of hardware or
+   software failure, and while they might have service and data
+   availability implications, they might not be related to a security
+   incident. Or, a service failure might be the result of deliberate
+   malicious activity, such as a denial of service attack. In any
+   case, faults should generate alerts, and then you should use event
+   analysis and correlation techniques to determine the cause of the
+   fault, and whether it should trigger a security response.
+   
+- VLEAD :: There is no such measures in place right now.  We do not
+           need these as AWS or badaal administrators should take care
+           of hardware issues
+	  
+
+
+
+
+
+

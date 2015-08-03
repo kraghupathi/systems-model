@@ -118,13 +118,13 @@ CRITICAL - Plugin timed out while executing system call
    organized as follows:
 
 #+BEGIN_EXAMPLE
-|-- nagios_server.yaml
+|-- nagios_server.yml
 |-- roles
 |   |   |-- nagios_server
 |   |   |   |-- handlers
-|   |   |   |   `-- main.yaml
+|   |   |   |   `-- main.yml
 |   |   |   |-- tasks
-|   |   |   |   |-- configure_servers.yaml
+|   |   |   |   |-- configure_servers.yml
 |   |   |   |   `-- main.yaml
 |   |   |   |-- templates
 |   |   |   |   |-- commands.cfg
@@ -132,22 +132,22 @@ CRITICAL - Plugin timed out while executing system call
 |   |   |   |   |-- nagios_server_iptables
 |   |   |   |   `-- servers.cfg
 |   |   |   `-- vars
-|   |   |       `-- main.yaml
+|   |   |       `-- main.yml
 #+END_EXAMPLE
 
-   Here =nagios_server.yaml= file configures the nagios server with
+   Here =nagios_server.yml= file configures the nagios server with
    the "nagios_server", "common", "ossec_client", "rsyslog_client" and
    "nagios_server" roles as described in the [[Nagios server
    configuration script]] section.  
    
-   The =roles/nagios_server/handlers/main.yaml= file defines various
+   The =roles/nagios_server/handlers/main.yml= file defines various
    handlers which are only executed in case a task notifies them.
    These handlers are described in detail in the [[Handlers]] section.
 
    The handlers are called when the tasks described in the [[Tasks][Tasks]]
    section notify them. Various tasks of [[Tasks][Tasks]] section are
-   concatenated into =roles/nagios_server/tasks/main.yaml= file. File
-   =roles/nagios_server/tasks/configure_servers.yaml= is included
+   concatenated into =roles/nagios_server/tasks/main.yml= file. File
+   =roles/nagios_server/tasks/configure_servers.yml= is included
    inside main.yaml file.
 
    The =roles/nagios_server/templates/= folder contains four jinja2
@@ -156,7 +156,7 @@ CRITICAL - Plugin timed out while executing system call
    variables at various places, these variables are defined in =vars/=
    folder with appropriate values.
 
-   =roles/nagios_server/vars/main.yaml= file defines the variable as
+   =roles/nagios_server/vars/main.yml= file defines the variable as
    described in the [[Define variables and services groups]] section.
 
 ** Firewall rules for Nagios Server
@@ -211,6 +211,11 @@ CRITICAL - Plugin timed out while executing system call
 
 #Log all other "blocked_input_" attempts with rate limiting
 -A INPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_input_"
+
+#Allow incoming SSH connections from rsnapshot server IPs.  Hopefully fail2ban will take care of bruteforce attack$
+{% for item in rsnapshot_server_ips  %}
+-A INPUT -m state --state NEW -s {{rsnapshot_server_ips[0]}} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
 
 #Drop all the INPUT packets which does not match any of the rules
 -A INPUT -j DROP
@@ -475,12 +480,11 @@ check_command           {{ s.command }}
 
    1) Copy iptables jinja2 template from ansible node to the server.
    2) Restart iptables service to enforce the configuration.
-
 #+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
- - name: Copy iptables configuration file
-   template: src=nagios_server_iptables dest=/etc/sysconfig/iptables owner=root group=root mode=600
-   notify:
-     - restart iptables
+- name: Copy iptables configuration file
+  template: src=nagios_server_iptables dest=/etc/sysconfig/iptables owner=root group=root mode=600
+  notify:
+    - restart iptables
 #+END_SRC
 *** Create Nagios admin user for web interface
    A user is created on the nagios server node for web
@@ -489,7 +493,7 @@ check_command           {{ s.command }}
 
 #+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
 - name: creating nagiosadmin user for web interface
-  command: "htpasswd -b /etc/nagios/passwd {{nagios_user}} {{nagios_password}}"
+  command: "htpasswd -cb /etc/nagios/passwd {{nagios_user}} {{nagios_password}}"
   notify: restart apache
 #+END_SRC
 
@@ -520,7 +524,7 @@ check_command           {{ s.command }}
 
 #+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
 - tasks:
-  include: configure_servers.yaml
+  include: configure_servers.yml
 #+END_SRc
 
 *** Copy servers.cfg and commands.cfg configuration file
@@ -555,7 +559,6 @@ check_command           {{ s.command }}
    nagios service.
 #+BEGIN_SRC yml :tangle roles/nagios_server/handlers/main.yml
 - name: restart nagios
-  sudo: true
   service: name=nagios state=restarted
 #+END_SRC
 
@@ -565,20 +568,16 @@ check_command           {{ s.command }}
 
 #+BEGIN_SRC yml :tangle roles/nagios_server/handlers/main.yml
 - name: restart apache
-  sudo: true
   service: name=httpd state=restarted
 #+END_SRC
 
 *** Start firewall service
    Any changes in iptables configuration file, to update the firewall
    is enforced by restarting the iptables service.
-
 #+BEGIN_SRC yml :tangle roles/nagios_server/handlers/main.yml
 - name: restart iptables
-  sudo: true
   service: name=iptables state=restarted
 #+END_SRC
-
 ** Define variables and services groups
    Various variables used by the ansible playbook are defined
    here. Following table represents the variables name and their
@@ -609,9 +608,9 @@ check_command           {{ s.command }}
 |------+--------------------+--------------------------------------------------------|
 
 #+BEGIN_SRC yml :tangle roles/nagios_server/vars/main.yml
-nagios_host: nagios.virtual-labs.ac.in
+nagios_host: nagios.{{prefix}}virtual-labs.ac.in
 nagios_user: nagiosadmin
-nagios_password: xxxxxxx
+nagios_password: Hief8ogfi
 nagios_admin_name: 'Nagios Admin'
 nagios_admin_email: alerts@vlabs.ac.in
 nagios_cfg_path: /etc/nagios/nagios.cfg
@@ -620,13 +619,13 @@ nagios_cfg_path: /etc/nagios/nagios.cfg
 ## vars used by configure_servers.yml ##
 ########################################
 nagios_hosts:
-     router: { hostname: "router.vlabs.ac.in", group: basic_services }
-     ansible: { hostname: "ansible.vlabs.ac.in", group: basic_services }  
-#     ossec_server: { hostname: "ossec-server.vlabs.ac.in", group: web }
-     rsyslog_server: { hostname: "rsyslog-server.vlabs.ac.in", group: basic_services }
-     private_dns: { hostname: "private-dns.vlabs.ac.in", group: basic_services }
-#     public_dns: { hostname: "public-dns.vlabs.ac.in", group: basic_services }
-     reverseproxy: { hostname: "reverseproxy.vlabs.ac.in", group: web }
+     router: { hostname: "router.{{prefix}}vlabs.ac.in", group: basic_services }
+     ansible: { hostname: "ansible.{{prefix}}vlabs.ac.in", group: basic_services }  
+#     ossec_server: { hostname: "ossec-server.{{prefix}}vlabs.ac.in", group: web }
+     rsyslog_server: { hostname: "rsyslog-server.{{prefix}}vlabs.ac.in", group: basic_services }
+     private_dns: { hostname: "private-dns.{{prefix}}vlabs.ac.in", group: basic_services }
+#     public_dns: { hostname: "public-dns.{{prefix}}vlabs.ac.in", group: basic_services }
+     reverseproxy: { hostname: "reverseproxy.{{prefix}}vlabs.ac.in", group: web }
   
 nagios_host_groups:
      basic_services:
@@ -654,16 +653,19 @@ nagios_commands:
    3) =rsyslog_client=
    4) =nagios_server=
 
-#+BEGIN_SRC yml :tangle nagios_server.yml
+#+BEGIN_SRC yaml :tangle nagios_server.yaml
 ---
 - name: This yml script configures nagios server
   hosts: nagios_server
   remote_user: root
-
+  
+  vars:
+   host_name: "nagios-server.{{prefix}}vlabs.ac.in"
   roles:
     - common
     - ossec_client
     - rsyslog_client
+    - rsnapshot_client
     - nagios_server
 #+END_SRC
 

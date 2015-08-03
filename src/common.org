@@ -371,7 +371,6 @@ the variables used by the ansible playbooks.
 *** Configure Hostname
    Hostname is set inside each node in the cluster. Hostname represent
    the name of the main server that is installed in the node.
-
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 ---
 
@@ -519,6 +518,26 @@ export HISTTIMEFORMAT HISTSIZE HISTFILESIZE
 - name: Configure hostname and fqdn to resolve to local IP on first line of /etc/hosts
 #Necessary for containers so that they can send emails without 30 second delay
   lineinfile: dest=/etc/hosts regexp="{{ansible_default_ipv4.address}} {{ansible_fqdn}} {{ansible_hostname}}" insertbefore="BOF" line="{{ansible_default_ipv4.address}} {{ansible_fqdn}} {{ansible_hostname}}"
+#+END_SRC
+
+*** setup aliases
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+#Setup /etc/aliases
+- name: Configure aliases in /etc/aliases
+#Necessary for containers so that they can send emails to alerts@vlabs.ac.in
+  lineinfile: dest=/etc/aliases regexp="^root:*" line="root":" alerts@vlabs.ac.in"
+- name: update aliases database by running newaliases
+  shell: newaliases
+  notify:
+   - restart sendmail
+#+END_SRC
+
+*** Install vim
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+#Necessary for containers as a editor
+- name: installing vim
+  yum: name=vim state=present
 #+END_SRC
 
 *** Summary of Log files
@@ -741,6 +760,7 @@ sudo passwd -u root
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 - name: setting the implementation/model release
   lineinfile: dest=/etc/motd regexp="^Release" line="Release number {{ release_no }}" state=present create=yes
+  ignore_errors: yes
 #+END_SRC
 
 *** Common Variables

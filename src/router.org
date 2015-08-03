@@ -1,4 +1,4 @@
-#+TITLE:     Router - Design Model and Implementation
+ #+TITLE:     Router - Design Model and Implementation
 #+DATE:      2015-03-25 Wed
 #+PROPERTY: session *scratch*
 #+PROPERTY: results output
@@ -10,12 +10,12 @@
 * Introduction
 This document describes the requirements, design and implementation
 of the *Router Server*. This server is the only access interface between 
-the different nodes like DNS (private & public) and reverse-proxy in the network infrastructure designed by us
+the different nodes like DNS (private & public) and reverse-proxy in the network infrastructure
 with the external networks. A router is a networking device that forwards data packets between computer
 networks. It acts as a gateway to and for all other servers. The external requests from the different
-lab users would have to pass through this router server to reach the internal network nodes.The router could be
-seen as device which functions to lock the Internet away from your internal network infrastrucutre.
-This means that if your internal nodes need to ask for something from the Internet, they ask the router and vice versa.
+lab users would have to pass through the router server to reach the internal network nodes.The router could be
+seen as device which functions to lock the internet away from your internal network infrastrucutre.
+This means that if your internal nodes need to ask for something from the internet, they ask the router and vice versa.
 
 In the current architecture, we are using Ansible scripts to configure
 the router server.These scripts are executed directly from the configuration server(Ansible Server). 
@@ -52,7 +52,7 @@ TCP and UDP for the communication.
 |------+----------+------------------------------+------------------------|
 
 * Implementation
-**  Structure of Scripts
+** Structure of Scripts
 - The implementation of this system is in terms of a collection of ansible
   scripts which configures the node. These scripts are organized as follows:
 
@@ -80,13 +80,13 @@ TCP and UDP for the communication.
    during task execution for creating necessary configuration files.
   
 ** Building the Firewall rules
-The description of NAT rules are as follows:\\
-Default policy for prerouting, postrouting and output is set to be as ACCEPT. If packet
+The description of NAT (Network Address Translation) rules are as follows:\\
+Default policy for prerouting, postrouting and output is set to be as ACCEPT. If the packet
 does not match any rule then the default action is applied to the packet.
-Packet counters are set to [0:0].  First counter represents the number of
+Packet counters are set to [0:0].First counter represents the number of
 packets that matched the rule for the chain, and second counter represents the
 total size of the packets that matched the rule.\\
-In NAT rules, the forwarding rules and SNAT rules are described as:\\
+In NAT rules, the forwarding rules and SNAT (Source Network Address Translation) rules are described as:\\
 The nat rule forwards the incoming DNS requests via UDP port 53
 to public dns.This is done in the PREROUTING chain, just as the packet comes in;
 this means that anything else on the routing will see the packet going to its `real' destination.
@@ -102,123 +102,104 @@ option can be used.\\
 
 The common firewall rules are the ones which are described in common.
 #+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
-# Default policy for prerouting, postrouting and output is set to be as ACCEPT. If packet
-does not match any rule then the default action is applied to the packet.
-#Note that request can be forwarded only to one machine and not to multiple machines
 *nat
 :PREROUTING ACCEPT [0:0]
 :POSTROUTING ACCEPT [0:0]
 :OUTPUT ACCEPT [0:0]
-
-#The following nat rule forwards the incoming DNS requests via UDP port 53
-to public dns
+#Note that request can be forwarded only to one machine and not to multiple machines
+#Forward incoming DNS requests to public dns at {{public_dns_ip}} 
 -A PREROUTING -d {{router_interface_ip}} -p udp -m udp --dport 53 -j DNAT --to-destination {{public_dns_ip}}:53
-
-#The following nat rules forwards the incoming HTTP, HTTPS requests to reverse proxy.
+#Forward incoming HTTP,HTTPS requests to reverseproxy at {{reverseproxy_ip}}
 -A PREROUTING -d {{router_interface_ip}} -p tcp -m tcp --dport 80 -j DNAT --to-destination {{reverseproxy_ip}}:80
 -A PREROUTING -d {{router_interface_ip}} -p tcp -m tcp --dport 443 -j DNAT --to-destination {{reverseproxy_ip}}:443
-
-#The following nat rule forwards the incoming HTTP request on TCP port 8080 to the ADS server
+#Forward incoming http request on tcp port 8080 to ADS server
 -A PREROUTING -d {{router_interface_ip}} -p tcp -m tcp --dport 8080 -j DNAT --to-destination {{ads_ip}}:8080
-
-#The following SNAT rule will route all packets going outside to router public IP. 
+#Forward incoming SSH connection on TCP port 2222 to Analytics server
+-A PREROUTING -d {{router_interface_ip}} -p tcp -m tcp --dport 2222 -j DNAT --to-destination {{analytics_server_ip}}:22
+#
+#SNAT all packets going outside to router public IP 
 -A POSTROUTING -o {{router_external_interface}} ! -d {{local_subnet}} -j SNAT --to-source {{router_interface_ip}}
-
+#
+COMMIT
 *filter
 :INPUT ACCEPT [0:0]
 :FORWARD ACCEPT [0:0]
 :OUTPUT ACCEPT [0:0]
-
 #Accept loopback connections
 -A INPUT -i lo -d 127.0.0.0/8 -j ACCEPT
-
 #Accept http/tcp request from internal network for displaying bandwidthd
 -A INPUT -s {{local_subnet}} -p tcp -m tcp --dport 8000 -j ACCEPT
-
 #Rate limit new connections to 20 new connections per 30 seconds
 -A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --set
 -A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --rcheck --seconds 30 --hitcount 20 -m limit --limit 2/min -j LOG --log-prefix "new_limit_"
 -A INPUT ! -p udp -m state --state NEW -m recent --name ssh_limit --rcheck --seconds 30 --hitcount 20 -j DROP
-
 #Accept ICMP ping requests at limited rate
 -A INPUT -p icmp --icmp-type echo-request -m limit --limit 60/minute --limit-burst 120 -j ACCEPT
 -A INPUT -p icmp --icmp-type echo-request -m limit --limit 1/minute --limit-burst 2 -j LOG
 -A INPUT -p icmp --icmp-type echo-request -j DROP
-
 #Allow ongoing connections
 -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-
 #Allow incoming SSH connections from management IPs.  Hopefully fail2ban will take care of bruteforce attacks from management IPs
 {% for item in management_ips  %}
 -A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
-
 #Allow incoming SSH connections from ansible server IPs.  Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
 {% for item in ansible_server_ips  %}
 -A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
-
 #Allow incoming SSH connections from nagios server IPs.  Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
 {% for item in nagios_server_ips  %}
--A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
+-A INPUT -m state --state NEW -s {{nagios_server_ips[0]}} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
+#Allow incoming SSH connections from rsnapshot server IPs.  Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
+{% for item in rsnapshot_server_ips  %}
+-A INPUT -m state --state NEW -s {{rsnapshot_server_ips[0]}} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
 
 #Allow incoming NRPE queries for nagios from nagios servers
--A INPUT -m state --state NEW -p tcp -m tcp --dport 5666 -j ACCEPT
-
+{% for ip in nagios_server_ips %}
+-A INPUT -m state --state NEW -s {{ip}} -p tcp -m tcp --dport 5666 -j ACCEPT
+{% endfor %}
+#Allow SNMP queries from cacti servers
+#-A INPUT -p udp -m udp --dport 161 -j ACCEPT
+#-A INPUT -p udp -m udp --dport 162 -j ACCEPT
 #Log all other "blocked_input_" attempts with rate limiting
 -A INPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_input_"
-
 #Reply with proper ICMP error message and reject the connection
 -A INPUT -j REJECT --reject-with icmp-host-prohibited
-
 #Enable packet forwarding through
 -A FORWARD -j ACCEPT 
-
+#
+#
 ##Output rules
-
 #Allow outgoing connections to localhost
 -A OUTPUT -s 127.0.0.0/8 -o lo -j ACCEPT
-
 #Allow ongoing connections
 -A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
-
 #Allow DNS queries
 -A OUTPUT -p udp -m udp --dport 53 -j ACCEPT
-
 #Allow server to send emails.  Required for sending logwatch emails
 -A OUTPUT -p tcp -m tcp --dport 25 -j ACCEPT
-
 #Allow server to contact web-servers.  This is must for router to be able to forward requests to reverseproxy server. 
 -A OUTPUT -p tcp -m tcp --dport 80 -j ACCEPT
 -A OUTPUT -p tcp -m tcp --dport 443 -j ACCEPT
-
+#Allow outgoing tcp 22 to analytics server, port forwarding
+-A OUTPUT -p tcp -m tcp -d {{analytics_server_ip}} --dport 22 -j ACCEPT
 #Allow outgoing ping requests
 -A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT
-
 #Allow outgoing connections to rsyslog server
 -A OUTPUT -p udp -m udp --dport 514 -j ACCEPT
-
 #Allow outgoing connections to OSSEC server
 -A OUTPUT -p udp -m udp --dport 1514 -j ACCEPT
-
 #Log all other "blocked_output_" attempts
 -A OUTPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_output_"
-
 #Reply with proper ICMP error message and reject the connection
 -A OUTPUT -j REJECT --reject-with icmp-host-prohibited
 COMMIT
-#
 #+END_SRC
-
-*** Enforce filter rules
-#+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
-COMMIT
-#+END_SRC
-
 ** Enabling IP forwarding
-- IP forwarding has to be enabled when we have to cofigure our machines as router.If we are setting up a
-  Linux router/gateway or maybe a VPN server or just a plain dial-in server then we will need to enable forwarding.
+- IP forwarding has to be enabled when we have to configure our machines as router.If we are setting up a
+  Linux router/gateway or maybe a VPN server or just a plain dial-in server then we will need to enable IP forwarding.
 #+BEGIN_SRC yml :tangle roles/router/tasks/main.yml
 ---
 - name: Enable IP forwarding
@@ -233,15 +214,14 @@ COMMIT
       machine.
    2) Restart iptables service to enforce the configuration.
 #+BEGIN_SRC yml :tangle roles/router/tasks/main.yml
----
- - name: Copying iptables config files
-   template: src=iptables dest=/etc/sysconfig/iptables owner=root group=root mode=600
-   notify:
-     - restart iptables
+- name: Copying iptables config files
+  template: src=router_iptables dest=/etc/sysconfig/iptables owner=root group=root mode=600
+  notify:
+    - restart iptables
 #+END_SRC
    
 ** Applying Firewall rules 
-- Any changes in iptables configuration file to update the firewall is enforced
+- Any changes in the iptables configuration file to update the firewall is enforced
   by restarting the iptables service.
 #+BEGIN_SRC yml :tangle roles/router/handlers/main.yml
 ---
@@ -249,9 +229,96 @@ COMMIT
    service: name=iptables state=restarted
 #+END_SRC
 
+** Installing and configuring =bandwidthd=
+- =bandiwdthd= is an application to monitor bandwidth usage of
+  different hosts. It depends on =hhtp= server to display the
+  statistics.
+#+BEGIN_SRC yml :tangle roles/router/tasks/main.yml
+- name: install bandwidthd
+  yum: name=bandwidthd state=installed
+
+- name: configure bandwidthd to monitor proper interfaces, subnets by copying
+  template: src=bandwidthd.conf dest=/etc/bandwidthd.conf
+
+- name: ensure bandwidthd is enabled and restart it.
+  service: name=bandwidthd state=restarted enabled=yes
+
+- name: modify apache on router to listen on port 8000 on local_subnet
+  lineinfile: dest=/etc/httpd/conf/httpd.conf regexp="^Listen " line="Listen {{router_internal_ip}}:8000"
+
+- name: restart apache to start bandwidthd monitoring
+  service: name=httpd state=restarted enabled=yes
+#+END_SRC
+
+- =bandwidthd= is configured to listen on the internal ethernet device
+  =eth0= and monitor the internal/private subnet on which all other
+  machines are bound to communicate, except the config server.
+#+BEGIN_SRC yml :tangle roles/router/templates/bandwidthd.conf
+####################################################
+# Bandwidthd.conf
+# 
+# Commented out options are here to provide
+# documentation and represent defaults
+
+# Subnets to collect statistics on.  Traffic that 
+# matches none of these subnets will be ignored.
+# Syntax is either IP Subnet Mask or CIDR
+#subnet 10.0.0.0 255.0.0.0
+#subnet 192.168.0.0/16
+#subnet 172.16.0.0/12
+
+#Adding subnets from common_vars
+subnet {{local_subnet}}
+#subnet {{router_interface_ip}}/32
+
+# Device to listen on
+# Bandwidthd listens on the first device it detects
+# by default.  Run "bandwidthd -l" for a list of 
+# devices. 
+#dev "eth0"
+
+#Interface both internal and external of the router
+
+dev "eth0"
+#dev "eth1"
+
+###################################################
+# Options that don't usually get changed
+
+# An interval is 2.5 minutes, this is how many 
+# intervals to skip before doing a graphing run
+#skip_intervals 0
+
+# Graph cutoff is how many k must be transfered by an
+# ip before we bother to graph it
+#graph_cutoff 1024
+
+#Put interface in promiscuous mode to score to traffic
+#that may not be routing through the host machine.
+#promiscuous true
+
+#Log data to cdf file htdocs/log.cdf
+#output_cdf false
+
+#Read back the cdf file on startup
+#recover_cdf false
+
+#Libpcap format filter string used to control what bandwidthd see's
+#Please always include "ip" in the string to avoid strange problems
+#filter "ip"
+
+#Draw Graphs - This default to true to graph the traffic bandwidthd is recording
+#Usually set this to false if you only want cdf output or
+#you are using the database output option.  Bandwidthd will use very little
+#ram and cpu if this is set to false.
+#graph true
+
+#Set META REFRESH seconds (default 150, use 0 to disable).
+#meta_refresh 150
+#+END_SRC
 ** Variables Definition
 - Variables are used by the ansible scripts to configure router. Values of these
-  variables is fetched from the "common_vars" role.
+  variables are fetched from the "common_vars" role.
   1) Proxy environment
   2) Ansible server ip
 #+BEGIN_SRC yaml :tangle roles/common/meta/main.yml
@@ -262,33 +329,40 @@ dependencies:
 
 ** Router Installation Script
 - Router is configured by using common,ossec_client,rsyslog_client,nagios_client and router roles.
-#+BEGIN_SRC yml :tangle router.yml
+#+BEGIN_SRC yaml :tangle router.yaml
 ---
 - name: This file configures machine as router  
   hosts: router
   remote_user: root
+
+  vars:
+   #Avoids changing the default route
+   i_router: yes 
+   host_name: "router.{{prefix}}vlabs.ac.in"
+
   roles:
    - common
    - ossec_client
    - rsyslog_client
+   - rsnapshot_client
    - nagios_client
    - router
 #+END_SRC
 
 * Test Cases
-** Test case ID: TC01
-*** Objective
+** COMMENT Test case ID: TC01
+*** COMMENT Objective
 The objective is to test the working of the router to be able to forward the 
 request of an external user/lab user to the public DNS and also is able to 
 forward the incoming reply from the public DNS for the same request to the lab
 user with the name resolved.
-*** Apparatus
+*** COMMENT Apparatus
 - The router container/machine
 - 
-*** Theory
+*** COMMENT Theory
 
 
-** Test case ID :: TC02
+** Test case ID :: TC01
 *** Objective 
     The objective of this test case is to test whether the router is
     working and is able to forward the requests to the Public
@@ -303,7 +377,7 @@ user with the name resolved.
     our network of machines. So when a request for any URL belonging
     to our domain is made, the request first goes to the router. The
     router then forwards the request to the Public DNS via port 53.
-    Once the query is processed by the Public DNS, it repliesback to
+    Once the query is processed by the Public DNS, it replies back to
     the router again via port 53. The router then sends back the reply
     to the client that made the request via port 53.
 *** Procedure
@@ -389,15 +463,15 @@ user with the name resolved.
     #+END_EXAMPLE
 
 *** Observation
-    The response recieved form the command-line tools shows that the
+    The response received from the command-line tools shows that the
     requests were forwarded to the Public DNS from the router to
     process the requests.
 
 *** Conclusion
-    The router is forwarding any DNS queries to the Public DNS.
+    The router is forwarding DNS queries to the Public DNS.
 
 
-** Test case ID :: TC03
+** COMMENT Test case ID :: TC03
 *** Objective 
     The objective of this test case is to test the functionality of
     the router contacting the Reverse Proxy. This test is intended for
@@ -408,11 +482,11 @@ user with the name resolved.
     - One test squid proxy
     - A machine/laptop with browser. 
 *** Theory
-    The router on recieving the request on port 80 sends it to the
+    The router on receiving the request on port 80 sends it to the
     reverseproxy. The reverse proxy then forwards the request to the
-    required lab requested. To provide a testing environment specific
-    for testing the reverse proxy we create a test squid proxy. We
-    require a machine which has internet access which can contact the
+    required labs requested by the user. To provide a testing environment specific
+    for testing the reverse proxy we created a test squid proxy. We
+    require a machine which has internet access and can contact the
     router and get the lab. To see if the lab is accessed we need a
     browser. In order that all these be satified we setup a test
     proxy. This allows you to have a container/machine which has
@@ -430,7 +504,7 @@ user with the name resolved.
 *** Conclusion
     
 
-** Test case ID :: TC03
+** Test case ID :: TC02
 *** Objective
     The objective of this test case is to test if the router acts as a
     gateway to the other machines while trying to acces the internet.
