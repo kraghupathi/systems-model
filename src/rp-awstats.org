@@ -341,6 +341,10 @@ from the [[.router.org][router]].
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml
 - name: Configure apache to support multiple http virtualhosts
   lineinfile: line="NameVirtualHost *:80" regexp="^NameVirtualHost .*:80" dest=/etc/httpd/conf/httpd.conf
+
+- name: Configure apache httpd.conf to listen on 80
+  lineinfile: line="Listen 80" regexp="^Listen.*80" dest=/etc/httpd/conf/httpd.conf state=present
+
 #+END_SRC
 **** Enable https virtual-hosts
      To support multiple https virtual-hosts *NameVirtualHost *:443* in
@@ -362,11 +366,9 @@ from the [[.router.org][router]].
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml
 - name: Configure apache to support multiple https virtualhosts
   lineinfile: line="NameVirtualHost *:443" regexp="^NameVirtualHost .*:443" dest=/etc/httpd/conf/httpd.conf
-- name: Configure apache httpd.conf to listen on 80
-  lineinfile: line="Listen 80" regexp="^Listen .*80" dest=/etc/httpd/conf/httpd.conf state=present
 
 - name: Configure apache ssl.conf to listen on 443
-  lineinfile: line="Listen *:443 http" regexp="^Listen*" dest=/etc/httpd/conf.d/ssl.conf state=present
+  lineinfile: line="Listen *:443 http" regexp="^Listen.*" dest=/etc/httpd/conf.d/ssl.conf state=present
   tags: 
    - https
 
