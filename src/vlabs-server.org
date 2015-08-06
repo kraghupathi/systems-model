@@ -21,7 +21,7 @@ cluster.
  1) Host vlabs landing page.
 
 ** Security Requirements
-  1) common security measured defined in common role are applied. Requirements
+  1) Common security measured defined in common role are applied. Requirements
      are defined in the [[common.org][common role]].
  
 * Design
@@ -50,7 +50,7 @@ cluster.
    are needed for setting up vlabs server.
    
 ** Tasks
-*** Firewall rules
+*** Firewall Rules
 - Firewall rules applied on the node are described here.
 
 #+BEGIN_SRC yaml :tangle roles/vlabs_server/templates/iptables
@@ -71,7 +71,7 @@ COMMIT
 #+END_SRC
 
 *** Install required packages
-    Following packages are installed on the server.
+- Following packages are installed on the server.
     =httpd=
     =git=
     =vim=
@@ -87,9 +87,9 @@ COMMIT
 #+END_SRC
 
 *** Configuring firewall rules
-    The following task Copies =iptables= template created at [[Firewall rules]] to
-    the server and notifies to restart the iptables service if there are any
-    modifications in the configuration.
+- The following task copies =iptables= template created at [[Firewall rules]] to the
+  server and notifies to restart the iptables service if there are any
+  modifications in the configuration.
 
 #+BEGIN_SRC yaml :tangle roles/vlabs_server/tasks/main.yaml
 - name: Configure iptables firewall
@@ -102,9 +102,7 @@ COMMIT
 
 #+BEGIN_SRC yaml :tangle roles/vlabs_server/tasks/main.yaml
 - name: clone the git repository
-  git: clone=yes
-       repo=https://github.com/vlead/vlab-web-pages.git
-       dest=/root
+  git: repo=https://github.com/vlead/vlab-web-pages.git dest=/root
 #+END_SRC
 
 *** Copy sources to =/var/www/= directory
@@ -116,8 +114,9 @@ rsync -vtrp --delete /root/vlab-web-pages/src/ /var/www/html/
 
 exit 0
 #+END_SRC
+
 #+BEGIN_SRC yaml :tangle roles/vlabs_server/tasks/main.yaml
-- name: Run copy.sh to copy sources to /var/www folder
+- name: Run copy.sh to copy sources to /var/www/ folder
   shell: copy.sh
 #+END_SRC
 
