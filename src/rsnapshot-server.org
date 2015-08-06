@@ -29,10 +29,23 @@
       cluster.
    2) Take periodic backup of various files on local node in case the
       node is rsnapshot server itself.
+   3) Push weekly backups to an off site storage node, currently
+      =aws-backup.vlabs.ac.in= located at IIIT-H.
 
 ** Security Requirements
    All common security requirements as described in [[file:common.org::*Security Requirements][common role]] are
    applicable to rsnapshot server node.
+
+** Assumptions
+   To have a secondary backup node for better reliability we have
+   following assumptions
+
+   - A remote node with sufficient storage is available
+   - It accepts file transfer over SSH with =rsync=
+   - It has the public key of this node as authorized key to let this
+     node connect without password
+   - The secondary backup node is reachable over SSH from this node
+
 * Design
 ** System Design Diagram
    The following network diagram represents the interaction between
@@ -42,8 +55,15 @@
 #+LABEL:  fig-rsnapshot-server-design-diagram
 [[./diagrams/rsnapshot-server-design-diagram.png]]
 
-** COMMENT Editable Link
-[[https://docs.google.com/drawings/d/1HQtQ_UsjmNYmeTcqh6e9l4_Fd6TfRhBh70NI43DuyDY/edit][Link to google drawing board]]
+** System design after functional requirement 3)
+   Following is the functional diagram. 
+
+#+CAPTION: Backup setup
+[[file:diagrams/rsnapshot-diagram.png][Backup setup.]]
+
+** Source of the diagram
+   Created using LibreOffice and VRT extensions
+   [[./diagrams/rsnapshot-diagram.odg][Download source .odg file]]
 
 ** System Files
    The following table gives the information about the configuration
@@ -105,9 +125,11 @@
 ** Firewall Rules
    Firewall rules applied to rsnapshot server are mentioned
    here. Description of firewall rules which are common across all the
-   nodes are defined in the [[file:common.org::*Common Firewall Rules][common role]]. There are no specific
-   firewall rule for rsnapshot node, only the common rules are
-   applied.
+   nodes are defined in the [[file:common.org::*Common Firewall Rules][common role]]. 
+
+   There is a specific firewall rule to allow outgoing TCP connections
+   on port 2222 to =aws-backup.vlabs.ac.in=, these connections are
+   forwarded by the router of this cluster.
 
 #+BEGIN_SRC yml -n :tangle roles/rsnapshot_server/templates/rsnapshot_server_iptables :eval no
 *filter
@@ -166,6 +188,9 @@
 
 #Allow SSH
 -A OUTPUT -p tcp -m tcp --dport 22 -j ACCEPT
+
+#Allow rsync over ssh port 22 to aws-backups.vlabs.ac.in
+-A OUTPUT -d {{aws-backup.vlabs.ac.in}} -p tcp -m tcp --dport 2222 -j ACCEPT
 
 #Allow server to send emails.  Required for sending logwatch emails
 -A OUTPUT -p tcp -m tcp --dport 25 -j ACCEPT
