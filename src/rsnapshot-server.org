@@ -329,6 +329,56 @@ backup               "root@nagios.vlabs.ac.in:/usr/local/"                      
 backup_script        /bin/date "+ backup of nagios completed at %c" > end.txt        nagios/nagios_end
 #+END_EXAMPLE
 
+*** *NEW* =rsync= to a remote server
+    For having redundant backup in case of diaster, we are having a
+    backup node at IIIT-H which will be receiving backups on weekly
+    basis from the AWS =rsnapshot= node. Refer the network diagram
+    which represents the proposed setup.
+
+    As the number of publicly available IP addresses are limited, we
+    resort to sharing a single IP address for various services, by
+    means of NAT.  As an example, a single IP address can be shared by
+    both a web server and a SSH server, with the services listening on
+    different ports.
+    
+    Here we have used the router at IIIT-H to NAT incoming connections
+    on TCP port 2222 to =aws-backup.vlabs.ac.in= on TCP port 22. The
+    =rsanpshot.vlabs.ac.in= server along with usual backup of systems
+    servers also undertakes the task of pushing copies of backup using
+    =rsync=.
+
+    As we are backing up what was earlier backed up from other nodes,
+    we need to ensure some special consideration while using =rsync=,
+    which is achieved using following options.
+
+#+BEGIN_EXAMPLE
+rsync -azH --delete /path/to/source /path/to/destination
+#+END_EXAMPLE
+
+    + -a, which equals to =-rlptgoD=
+    + -z, which is for compression
+    + -H, this tells =rynsc= to look for hard link at source and
+      ensure they are hard linked at the destination, this is very
+      important that it is used here.
+    + --delete, to remove the files at destination which have been
+      removed at the source
+
+    We then add a =cron= job to automate the push of the backup files
+    every week.
+
+#+BEGIN_EXAMPLE
+0 18 * * 7 rsync -azH --delete -e "ssh -p 2222" /.snapshot/* root@aws-backup.vlabs.ac.in:/destination/
+#+END_EXAMPLE
+
+ Example of job definition:
+ .---------------- minute (0 - 59)
+ |  .------------- hour (0 - 23)
+ |  |  .---------- day of month (1 - 31)
+ |  |  |  .------- month (1 - 12) OR jan,feb,mar,apr ...
+ |  |  |  |  .---- day of week (0 - 6) (Sunday=0 or 7) OR sun,mon,tue,wed,thu,fri,sat
+ |  |  |  |  |
+ *  *  *  *  * user-name command to be executed
+
 *** Complete configuration file
     The complete configuration file is shown below.
 
