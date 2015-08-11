@@ -678,18 +678,6 @@ link_dest	1
   with_items: rsnapshot_crontab
 #+END_SRC
 
-#+BEGIN_SRC yml :tangle roles/rsnapshot_server/tasks/main.yml :eval no
-
-- name: Configure cron for rsync to aws-backup.vlabs.ac.in
-  cron: cron_file=remote_backup
-        minute=30
-        hour=20
-        day=*
-        month=*
-        weekday=6
-        job="rsync -azH --delete -e "ssh -p 2222" /.snapshot root@196.12.53.133:/srv"
-
-#+END_SRC
 ** Handlers
 *** Start iptables
     Any changes in iptables configuration file is enforced by
@@ -828,6 +816,13 @@ rsnapshot_crontab:
        hour: 2
        minute: 30
        job: "/usr/bin/rsnapshot monthly"
+     - name: rsync_job
+       minute: 30
+       hour:20 day:'*'
+       month:'*'
+       weekday: 6
+       job: "rsync -azH --delete -e "ssh -p 2222" /.snapshot {{remote_user}}@{{aws-backup.vlabs.ac.in}}:/srv"
+
 #+END_SRC
 
 ** Rsnapshot server configuration script
