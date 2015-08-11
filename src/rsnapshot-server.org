@@ -818,7 +818,8 @@ rsnapshot_crontab:
        job: "/usr/bin/rsnapshot monthly"
      - name: rsync_job
        minute: 30
-       hour:20 day:'*'
+       hour:20
+       day:'*'
        month:'*'
        weekday: 6
        job: "rsync -azH --delete -e "ssh -p 2222" /.snapshot {{remote_user}}@{{aws-backup.vlabs.ac.in}}:/srv"
