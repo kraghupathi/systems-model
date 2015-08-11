@@ -258,8 +258,7 @@ rsnapshot_server_ips:
   - 10.100.1.10
 
 #AWS remote/secondary backup used by rsnapshot role
-aws-backup.vlabs.ac.in:
-  - 196.12.53.133
+aws_backup: 196.12.53.133
 
 #List of management stations.  Multiple is ok
 management_ips:
@@ -679,8 +678,7 @@ rsnapshot_server_ips:
   - 10.100.1.10
 
 #AWS remote/secondary backup used by rsnapshot role
-aws-backup.vlabs.ac.in:
-  - 196.12.53.133
+aws_backup: 196.12.53.133
 
 #OSSEC server IP.  Only one
 ossec_server_ip: 10.100.1.3
@@ -1044,8 +1042,7 @@ rsnapshot_server_ips:
   - 10.100.1.10
 
 #AWS remote/secondary backup used by rsnapshot role
-aws-backup.vlabs.ac.in:
-  - 196.12.53.133
+aws_backup: 196.12.53.133
 
 #Anlytics IP used by RP role to rsync logs,awstats
 analytics_server_ip: 10.100.1.12
