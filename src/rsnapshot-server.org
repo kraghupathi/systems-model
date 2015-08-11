@@ -687,7 +687,7 @@ link_dest	1
         day=*
         month=*
         weekday=6
-        job="rsync -azH --delete -e "ssh -p 2222" /.snapshot {{remote_user}}@{{aws-backups.vlabs.ac.in}}:/srv"
+        job="rsync -azH --delete -e "ssh -p 2222" /.snapshot root@196.12.53.133:/srv"
 
 #+END_SRC
 ** Handlers
