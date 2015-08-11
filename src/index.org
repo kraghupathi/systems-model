@@ -199,19 +199,18 @@ To know further about these please refer [[Appendix][Appendix]].
     public IP except ansible for which there is a dedicated public IP.
     
 ** Bootstrapping the Base1/Base4 cluster
-
- - Host machine should have updated CentOS-6.6
+   - Host machine should have updated CentOS-6.6
    - Host machine should have centos template ready to create
      containers on host machine
    - Note ::  Private ips of the nodes on AWS and base{1,4} clusters
               are same except public IPs of router and ansible nodes.
 
 *** Setup bridged network 
-   - Host machine should have updated CentOS-6.6 with vzkernel
-     installed and configured properly.
-   - Do the steps mentioned in the following link after installing
-     required vzkernel
-     https://www.sbarjatiya.com/notes_wiki/index.php/Installing_openVZ_on_Cent_OS
+    - Host machine should have updated CentOS-6.6 with vzkernel
+      installed and configured properly.
+    - Do the steps mentioned in the following link after installing
+      required vzkernel
+      https://www.sbarjatiya.com/notes_wiki/index.php/Installing_openVZ_on_Cent_OS
 **** Connect LAN interface to Bridge (br0) 
      Check your interfaces by running the command
 #+BEGIN_EXAMPLE 
@@ -233,25 +232,25 @@ To know further about these please refer [[Appendix][Appendix]].
 	  =/etc/sysconfig/network-scripts/= and add the following fileds
 #+BEGIN_EXAMPLE 
       DEVICE=eth0
-       HWADDR=<<Hardware Address of eth0 interface>>
-        TYPE=Ethernet
-	 ONBOOT=yes
-	  NM_CONTROLLED=no
-	   BOOTPROTO=none
-	    BRIDGE=br0
+      HWADDR=<<Hardware Address of eth0 interface>>
+      TYPE=Ethernet
+      ONBOOT=yes
+      NM_CONTROLLED=no
+      BOOTPROTO=none
+      BRIDGE=br0
 #+END_EXAMPLE
 
-      paste the copied MAC address of the interface in HWADDR field
-       - Restart the network using
+     Paste the copied MAC address of the interface in HWADDR field
+     - Restart the network using
 
 #+BEGIN_EXAMPLE 
        service network restart
 #+END_EXAMPLE
 
-- Now you can see ip assigned to br0 and you will be able to get
-  internet
+     - Now you can see ip assigned to br0 and you will be able to get
+       internet
 **** Create bridge(br1) for private Network
-    - Create *ifcfg-br1* file in =/etc/sysconfig/network-scripts/= and add
+     - Create *ifcfg-br1* file in =/etc/sysconfig/network-scripts/= and add
        the following fields
 #+BEGIN_EXAMPLE 
        DEVICE=br1
@@ -260,17 +259,18 @@ To know further about these please refer [[Appendix][Appendix]].
        NM_CONTROLLED=no
        BOOTPROTO=none
 #+END_EXAMPLE
-       - Restart network again to see the created bridge(br1)
+     - Restart network again to see the created bridge(br1)
 
 #+BEGIN_EXAMPLE 
       service network restart
 #+END_EXAMPLE
 
-      - Now you can see the bridges on your machine using *brctl show*
-        command. That will you the connections between interfaces.
-      - We need to set proxy for all the containers if network uses any proxy
+     - Now you can see the bridges on your machine using *brctl show*
+       command. That will you the connections between interfaces.
+     - We need to set proxy for all the containers if network uses any
+       proxy.
 
-	For more information go through the following links
+     For more information go through the following links
     https://www.sbarjatiya.com/notes_wiki/index.php/Installing_openVZ_on_Cent_OS
     https://github.com/vlead/ovpl/blob/master/docs/bridge-setup.org
 
@@ -281,11 +281,6 @@ To know further about these please refer [[Appendix][Appendix]].
       nodes and lab containers.
     - Enable ssh access from ansible server to router using key based
       authentication
-    - Update public DNS entries such that all requests resolve to
-      router public IP except ansible for which there is a dedicated
-      public IP.
-    - Add its public IP to ossec_client_ips in =common_vars/vars/main.yaml=
-    
     - Create router node and configure the network as follows on host
       machine
   
@@ -345,8 +340,7 @@ NM_CONTROLLED=no
 IPADDR=10.100.1.1
 NETMASK=255.255.252.0
 #+END_EXAMPLE
-- Restart the router container
-- Set proxy 
+    - Restart the router container
 
 **** Add  NAT rule and Edit =/etc/sysctl.conf= file
      Write a NATing rule to get internet for all the containers
@@ -365,42 +359,37 @@ https://openvz.org/Using_NAT_for_container_with_private_IPs
      over ssh and another is for private network ip. Private ip is for
      configuring other nodes as well as itself and internal
      connections.
-   - Create a machine and configure network with two ips. Do the same
-     steps as router node except IPADDR and MAC addresses of the
-     interfaces.
-   - Add its public ip to ossec_client_ips in
-     =common_vars/c=vars/main.yaml=
-   
-   - Enable ssh access from ansible machine using key-based
-     authentication
-
+   - Create a machine and configure the network with two IPs. Do the
+     same steps as followed for router node except IPADDR and MAC
+     addresses of the interfaces.
+   - Enable ssh access from localhost using key-based authentication
    - Setup rpmfusion-free, rpmfusion-nonfree, rpmforge and epel repos
      on the system. Use the following command to install ansible
 #+BEGIN_EXAMPLE 
      yum -y install ansible
 #+END_EXAMPLE
 **** Version control setup
-    Setup version control on ansible machine using:
+     Setup version control on ansible machine using:
 #+BEGIN_EXAMPLE
      yum -y install git
 #+END_EXAMPLE
-    In this node, git command is to pull the updates from master
-    branch of the systems model. From this node we do not push the
-    updated files/folders to systems-model repository. 
+     In this node, git command is to pull the updates from master
+     branch of the systems model. From this node we do not push the
+     updated files/folders to systems-model repository.
 
-    Clone the systems-model repository. For this we have to add
-    public key to repository since we do cloning over ssh by issuing
-    the following command.     
+     Clone the systems-model repository. For this we have to add
+     public key to repository since we do cloning over ssh by issuing
+     the following command.     
 #+BEGIN_EXAMPLE 
     git clone git@bitbucket.org:vlead/systems-model.git
 #+END_EXAMPLE
 **** Share public key to all the nodes     
-    In this node we need to generate ssh-keys. We need to copy
-    generated ssh-key to all the nodes so that we can run anisble
-    play books to configure nodes.
+     In this node we need to generate ssh-keys. We need to copy
+     generated ssh-key to all the nodes so that we can run anisble
+     play books to configure nodes.
      
-    Setup emacs and org-mode-8. Use the link [[https://vlead.virtual-labs.ac.in/wiki/index.php/How_to_setup_emacs_and_org_8][How to setup emacs and
-    org 8]].
+     Setup emacs and org-mode-8. Use the link [[https://vlead.virtual-labs.ac.in/wiki/index.php/How_to_setup_emacs_and_org_8][How to setup emacs and
+     org 8]].
 
      Edit or create hosts file to point to correct ansible server.
      Run makefile. It creates build folder with code based on cluster.
@@ -412,19 +401,6 @@ https://openvz.org/Using_NAT_for_container_with_private_IPs
       + private DNS
     - For each of the above servers do the following:
       + Enable ssh access from ansible using key-based authentication
-      + Add server IP in ossec_client_ips in
-        roles/common_vars/vars/main.yaml
-      + Add server IPs in hosts file 
-      + Add DNS entries of all the nodes including lab containers (if
-        there are any) in both the DNS servers in
-        =common_vars/vars/main.yaml= file where =private_dns_entries=
-        and =public_dns_entries= variables are declared.
-
-    - Configure private dns server with roles common, ossec_client,
-     rsyslog_client, rsnapshot_client, nagios_client and private_dns server.
-    - Configure public dns server with roles common, ossec_client,
-      rsyslog_client, rsnapshot_client, nagios_client and public_dns
-      server.
 
     Specifically for DNS servers look at variables in respective DNS
     server files.  Also ensure that roles/named_server/files has
@@ -433,19 +409,10 @@ https://openvz.org/Using_NAT_for_container_with_private_IPs
 *** Setup ossec server
    - Create ossec server and setup trust based SSH to it. 
    - Edit hosts file to reflect correct IP of ossec-server.
-   - Ensure that =roles/common_vars/vars/main.yaml= has correct
-     ossec_server_ip and ossec_client_ips. 
    - Enable ssh access from ansible using key-based authentication
-   - Configure ossec server with roles common, ossec_client,
-     rsyslog_client, rsnapshot_client, nagios_client and
-     rsnapshot_server.
 
 *** Enable ossec_client role on all the nodes
-    Enable ossec_client role on all the servers and other additional
-    servers that have been configured earlier.  Ensure that
-    =roles/common_vars/vars/main.yaml= clearly includes all other
-    servers ips under ossec_client_ips.
-
+    Enable ossec_client role on all the servers. 
 
 *** Configure machines to use private DNS
     Edit roles/common_vars/vars/main.yaml and set private_dns_ips and
@@ -455,12 +422,7 @@ https://openvz.org/Using_NAT_for_container_with_private_IPs
     - Create a machine to setup rsyslog server.  
     - Enable ssh access from ansible machine using key-based
       authentication  
-
-    - Add the machine IP to hosts file appropriately.  Add server IP
-      to ossec_client_ips list.
-    - Configure rsyslog server with roles common, ossec_client,
-      rsnapshot_client, nagios_client and rsyslog_server.
-    
+    - Add the machine IP to hosts file appropriately.
 
 *** Configure machines to send logs to rsyslog server
     Add or uncomment role rsyslog_client on all servers except rsyslog_servers
@@ -476,13 +438,6 @@ https://openvz.org/Using_NAT_for_container_with_private_IPs
     - We need to add ssl certificate to reverseproxy server manually
       before running reverseproxy_server.yaml play book from ansible
       machine
-    - Add its IP to private DNS. 
-    - Add its IP to ossec_client_IPs in =common_vars/vars/main.yaml= file..  
-    - Configure reverseproxy with roles common, ossec_client,
-      rsyslog_client, rsnapshot_client, nagios_client and
-      reverseproxy_server.
-    - Ensure that proxy_domains and awstats_domains are set
-      appropriately in =common_vars/vars/main.yaml= file.
     - Private DNS must be setup completely before reverseproxy is
       created.
 
@@ -490,30 +445,15 @@ https://openvz.org/Using_NAT_for_container_with_private_IPs
     - Rnsapshot server is for taking backup of necessary files and
       folders from required nodes of the cluster.
     - Create a container for rsnapshot server.
-    - Add its ip to rsnapshot_server_ips list in =common_vars/vars/main.yaml=
-    - Add its ip to ossec_client_ips in =common_vars/vars/main.yaml=
     - Enable ssh access from ansible node using key-based
       authentication.
-    - Configure rsnapshot server with roles common, ossec_client,
-      rsyslog_client, rsnapshot_client, nagios_client and
-      rsnapshot_server.
-
-    - We need to generate ssh-key in this node to perform backup
-      operations.  And this generated public key has to be placed in
-      all other nodes(nodes which we want to take backup). This tasks
-      will be taken care by ansible playbooks of rsanpshot-server and
-      rsnapshot-client role.
 *** Configure machines to be backed up using rsnapshot server
     Add or uncomment rsnapshot_client role in all the nodes
 *** Monitoring Server (Nagios)
     - Create nagios server to monitor services from all the nodes in
       the cluster
     - Enable SSH access from ansible machine 
-    - Add its ip to ossec_client_ips list in =common_vars/vars/main.yaml=
-    - Configure nagios server with roles common, ossec_client,
-      rsyslog_client, rsnapshot_client, nagios_client and
-      nagios_server.
-    
+     
 *** Configure machines to be monitored by Nagios serer
     Add or uncomment nagios_client role in all the nodes
 
