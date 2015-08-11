@@ -37,8 +37,8 @@
    applicable to rsnapshot server node.
 
 ** Assumptions
-   To have a secondary backup node for better reliability we have
-   following assumptions
+   To have reliable secondary backup copy of this node, for better
+   reliability in case of a disaster we have following assumptions
 
    - A remote node with sufficient storage is available
    - It accepts file transfer over SSH with =rsync=
@@ -113,8 +113,8 @@
    section notify them. Various tasks of [[Tasks][Tasks]] section are
    concatenated into =roles/rsnapshot_server/tasks/main.yml= file.
 
-   The =roles/rsnapshot_server/templates/= folder contains two jinja2
-   configuration templates - =rsnapshot.conf.j2= and
+   The =roles/rsnapshot_server/templates/= directory contains two
+   jinja2 configuration templates - =rsnapshot.conf.j2= and
    =rsnapshot_server_iptables=. These templates use variables defined
    at various places to configure the Rsnapshot server with
    appropriate values.
@@ -123,13 +123,18 @@
    described in the [[Variables Definition]] section.
 
 ** Firewall Rules
-   Firewall rules applied to rsnapshot server are mentioned
+   Firewall rules applied to =rsnapshot= server are mentioned
    here. Description of firewall rules which are common across all the
-   nodes are defined in the [[file:common.org::*Common Firewall Rules][common role]]. 
+   nodes are defined in the [[file:common.org::*Common Firewall Rules][common role]].
 
    There is a specific firewall rule to allow outgoing TCP connections
    on port 2222 to =aws-backup.vlabs.ac.in=, these connections are
    forwarded by the router of this cluster.
+
+#+BEGIN_EXAMPLE
+#Allow rsync over ssh port 22 to aws-backups.vlabs.ac.in
+-A OUTPUT -d {{aws_backup}} -p tcp -m tcp --dport 2222 -j ACCEPT
+#+END_EXAMPLE
 
 #+BEGIN_SRC yml -n :tangle roles/rsnapshot_server/templates/rsnapshot_server_iptables :eval no
 *filter
@@ -329,7 +334,7 @@ backup               "root@nagios.vlabs.ac.in:/usr/local/"                      
 backup_script        /bin/date "+ backup of nagios completed at %c" > end.txt        nagios/nagios_end
 #+END_EXAMPLE
 
-*** *NEW* =rsync= to a remote server
+*** =rsync= to a remote server
     For having redundant backup in case of diaster, we are having a
     backup node at IIIT-H which will be receiving backups on weekly
     basis from the AWS =rsnapshot= node. Refer the network diagram
@@ -355,12 +360,12 @@ backup_script        /bin/date "+ backup of nagios completed at %c" > end.txt   
 rsync -azH --delete /path/to/source /path/to/destination
 #+END_EXAMPLE
 
-    + -a, which equals to =-rlptgoD=
-    + -z, which is for compression
-    + -H, this tells =rynsc= to look for hard link at source and
+    + =-a=, which equals to =-rlptgoD=
+    + =-z=, which compresses the data before transmission
+    + =-H=, this tells =rynsc= to look for hard link at source and
       ensure they are hard linked at the destination, this is very
       important that it is used here.
-    + --delete, to remove the files at destination which have been
+    + =--delete=, to remove the files at destination which have been
       removed at the source
 
     We then add a =cron= job to automate the push of the backup files
@@ -370,6 +375,7 @@ rsync -azH --delete /path/to/source /path/to/destination
 0 18 * * 7 rsync -azH --delete -e "ssh -p 2222" /.snapshot/* root@aws-backup.vlabs.ac.in:/destination/
 #+END_EXAMPLE
 
+The various fields of =cron= are described below.
 #+BEGIN_EXAMPLE
  Example of job definition:
  .---------------- minute (0 - 59)
@@ -625,7 +631,7 @@ link_dest	1
 #+END_SRC
 
 *** Set firewall rules
-    Firewall rules are applied and iptables service is restarted.
+    Firewall rules are applied and =iptables= service is restarted.
 
 #+BEGIN_SRC yml :tangle roles/rsnapshot_server/tasks/main.yml :eval no
 - name: Applying iptables for rsnapshot
@@ -633,12 +639,12 @@ link_dest	1
   notify: restart_iptables
 #+END_SRC
 
-*** Generate SSH keys on the rsnapshot server and get it to ansible server
-    Rsnapshot server connects to rsnapshot clients over ssh to take
+*** Generate SSH keys on the =rsnapshot= server and get it to ansible server
+    Rsnapshot server connects to =rsnapshot= clients over SSH to take
     backup. For this SSH key is generated on the Rsnapshot server. The
-    ssh public key is to be placed inside the rsnapshost client node's
+    SSH public key is placed inside the =rsnapshost= client node's
     authorized_keys, for this keys are copied to ansible server and
-    from there it will be placed inside rsnapshot client.
+    from there it will be placed inside =rsnapshot= client.
 
 #+BEGIN_SRC yml :tangle roles/rsnapshot_server/tasks/main.yml :eval no
 - name: Create a SSH key for 'root'
@@ -650,8 +656,8 @@ link_dest	1
 #+END_SRC
 
 *** Copy configuration file to rsnapshot server
-    Copy "rsnapshot.conf" jinja2 template from the ansible server to
-    rsnapshot server at =/etc/rsnapshot.conf=.
+    Copy "=rsnapshot.conf=" jinja2 template from the ansible server to
+    =rsnapshot= server at =/etc/rsnapshot.conf=.
 
 #+BEGIN_SRC yml :tangle roles/rsnapshot_server/tasks/main.yml :eval no
 #updating rsnapshot.conf also includes configuring backup of remote nodes
@@ -660,7 +666,7 @@ link_dest	1
 #+END_SRC
    
 *** Configure cron for backup
-    Cronjobs are configured on the rsnapshot server to take backup of
+    Cron jobs are configured on the =rsnapshot= server to take backup of
     the files on the various server automatically at specified
     interval - hourly, daily, weekly and monthly.
 
@@ -680,9 +686,9 @@ link_dest	1
 
 ** Handlers
 *** Start iptables
-    Any changes in iptables configuration file is enforced by
-    restarting the iptables. To restart iptables, handlers (ansible
-    terms) are defined here.
+    Any changes in =iptables= configuration file is enforced by
+    restarting the =iptables=. To restart =iptables=, handlers
+    (ansible terms) are defined here.
 
 #+BEGIN_SRC yml :tangle roles/rsnapshot_server/handlers/main.yml :eval no
 - name: restart_iptables
@@ -903,3 +909,30 @@ rsnapshot
 
 *** Conclusion
     Rsnapshot server is able to rsync from rsnapshot client.
+
+** Test Case-3
+*** Objective
+    Test/confirm whether backup node is able to push backups to
+    secondary backup node.
+*** Required
+    1. A remote node accessible over SSH, as described in [[Assumptions]]
+    2. This node configured to allow SSH connection to the secondary
+       node.
+
+*** Steps to test
+    1. Log on to the =rsnapshot= node in the cluster.
+    2. Run =telnet <aws-backup.vlabs.ac.in-IP> 2222= and check whether
+       it connects
+    3. Try transferring some file, run =rsync -aZ --progress -e 'ssh
+       -p 2222' <some_file> root@aws-backup.vlabs.ac.in:.=
+    4. Check whether the =rsync= job is listed in the =cron= schedule,
+       open =/etc/cron.d/ansible_rsnapshot= this will list the
+       scheduled job.
+
+*** Observation
+    - If step 2. passes then it means, the node can see other node
+      over network
+    - If step 3, shows that the file was transferred then it means
+      =rsync= copy is supported on the remote node
+    - If step 4, shows a scheduled job, then a copy of the backup
+      directory can be expected on the secondary backup node.
