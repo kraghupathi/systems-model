@@ -190,7 +190,7 @@
 -A OUTPUT -p tcp -m tcp --dport 22 -j ACCEPT
 
 #Allow rsync over ssh port 22 to aws-backups.vlabs.ac.in
--A OUTPUT -d {{aws-backup.vlabs.ac.in}} -p tcp -m tcp --dport 2222 -j ACCEPT
+-A OUTPUT -d {{aws_backup}} -p tcp -m tcp --dport 2222 -j ACCEPT
 
 #Allow server to send emails.  Required for sending logwatch emails
 -A OUTPUT -p tcp -m tcp --dport 25 -j ACCEPT
@@ -822,7 +822,7 @@ rsnapshot_crontab:
        day: '*'
        month: '*'
        weekday: 6
-       job: 'rsync -azH --delete -e "ssh -p 2222" /.snapshot {{remote_user}}@{{aws-backup.vlabs.ac.in}}:/srv'
+       job: "rsync -azH --delete -e 'ssh -p 2222' /.snapshot root@{{aws_backup}}:/srv"
 
 #+END_SRC
 
