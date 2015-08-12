@@ -202,9 +202,20 @@ To know further about these please refer [[Appendix][Appendix]].
    - Host machine should have updated CentOS-6.6
    - Host machine should have centos template ready to create
      containers on host machine
+   - Set proxy for all the nodes and labs if network uses any proxy
    - Note ::  Private ips of the nodes on AWS and base{1,4} clusters
               are same except public IPs of router and ansible nodes.
-
+*** Create VM 
+    - To create VM, we need to install 
+    #+BEGIN_SRC 
+    yum install virt-manager libvirt libvirt-python libvirt-client qemu-kvm virt-viewer
+    #+END_SRC
+    - We can Create VM in two ways
+      1. Using *virt-manager* GUI (Applications-->System Tools-->Virtual Machine Manager)
+      2. Using *virsh-install* command http://wiki.centos.org/HowTos/KVM
+         #+BEGIN_SRC 
+         virt-install --os-variant=rhel6 --network bridge=br0 --disk /var/lib/libvirt/images/test-delet.img,size=20 --cdrom=~/iso/CentOS-6.5-x86_64-bin-DVD1.iso --vcpu=1 --ram=2048 --name=test-delete
+         #+END_SRC
 *** Setup bridged network 
     - Host machine should have updated CentOS-6.6 with vzkernel
       installed and configured properly.
@@ -363,15 +374,26 @@ https://openvz.org/Using_NAT_for_container_with_private_IPs
      same steps as followed for router node except IPADDR and MAC
      addresses of the interfaces.
    - Enable ssh access from localhost using key-based authentication
-   - Setup rpmfusion-free, rpmfusion-nonfree, rpmforge and epel repos
-     on the system. Use the following command to install ansible
+   - Setup rpmfusion-free, rpmfusion-nonfree, rpmforge and
+     epel-release repos on the system. Use the following command to
+     install ansible
 #+BEGIN_EXAMPLE 
-     yum -y install ansible
+     yum -y install epel-release  ansible -y
 #+END_EXAMPLE
+**** Install openssh if not installed
+     Some distro comes with openssh by default. If the package is not
+     installed, install it using
+#+BEGIN_EXAMPLE 
+     yum install openssh -y
+#+END_EXAMPLE
+     and restart the ssh service 
+#+BEGIN_SRC 
+     service sshd start
+#+END_SRC
 **** Version control setup
      Setup version control on ansible machine using:
 #+BEGIN_EXAMPLE
-     yum -y install git
+     yum install git -y
 #+END_EXAMPLE
      In this node, git command is to pull the updates from master
      branch of the systems model. From this node we do not push the
@@ -383,6 +405,7 @@ https://openvz.org/Using_NAT_for_container_with_private_IPs
 #+BEGIN_EXAMPLE 
     git clone git@bitbucket.org:vlead/systems-model.git
 #+END_EXAMPLE
+
 **** Share public key to all the nodes     
      In this node we need to generate ssh-keys. We need to copy
      generated ssh-key to all the nodes so that we can run anisble
@@ -457,6 +480,37 @@ https://openvz.org/Using_NAT_for_container_with_private_IPs
 *** Configure machines to be monitored by Nagios serer
     Add or uncomment nagios_client role in all the nodes
 
+*** Create ADS server
+    - Create a container for ADS server
+    - Install git
+      #+BEGIN_SRC 
+      yum install epel-release git -y
+      #+END_SRC
+    - Setup ADS server with the following steps
+      + Clone the repository from GitHub
+	#+BEGIN_SRC 
+	git clone https://github.com/vlead/setup-ovpl-centos.git
+	#+END_SRC
+      + Change directory to =setup-ovpl-centos/scripts/=
+	#+BEGIN_SRC 
+	cd setup-ovpl-centos/scripts/
+	#+END_SRC
+      + Run =centos_prepare_ovpl.sh=.  
+	#+BEGIN_SRC 
+	sh centos_prepare_ovpl.sh
+	#+END_SRC
+        It will install dependencies for openvz and for ADS server setup.
+      + Clone *ovpl* 
+	#+BEGIN_SRC 
+	git clone https://github.com/vlead/ovpl.git
+	#+END_SRC
+      + change directory to ovpl and run manage_services.sh file:
+	#+BEGIN_SRC 
+         cd ovpl
+         ./manage_services.sh start LOGGER
+	#+END_SRC
+    - Enable ssh access from ansible server
+    
 * Design of the cluster model
   The diagram below depicts the architecture of the nodes in the
   cluster model.  This architecture is same for all the three
