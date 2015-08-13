@@ -327,14 +327,13 @@ COMMIT
 
   vars:
     i_ans: yes
-    host_name: "ansible.{{prefix}}vlabs.ac.in"
+    host_name: ansible
 
   roles:
     - common
     - rsyslog_client
     - ossec_client
     - nagios_client
-    - rsnapshot_client
     - config_server
 #+END_SRC
 
@@ -409,8 +408,6 @@ def register(hostname, ip):
         writeLabFile.write(item)
 
     writeLabFile.close()
-    reverseproxy("lab.txt", "main.yml")
-    dns("lab.txt", "main.yml")
 
     return
 
@@ -452,9 +449,6 @@ def deregister(hostname, ip):
 
     writeLabFile.close()
 
-    reverseproxy("lab.txt", "main.yml")
-    dns("lab.txt", "main.yml")
-
     return
 #+END_SRC
 
@@ -471,6 +465,25 @@ def main(argv):
         register(argv[1], argv[2])
     elif (str(argv[0] == "deregister")):
         deregister(argv[1], argv[2])
+
+    pathFile = open("path.txt", "r")
+
+    for line in pathFile.readlines():
+        splitLine = line.split()
+        if splitLine[0] == "reverseproxy":
+               revpath = splitLine[1]
+        elif splitLine[0] == "dns":
+               dnspath = splitLine[1]
+        elif splitLine[0] == "nagios":
+               nagiospath = splitLine[1]
+        elif splitLine[0] == "rsnapshot":
+               rsnapshotpath = splitLine[1]
+
+    reverseproxy("lab.txt", revpath)
+    dns("lab.txt", dnspath)
+    rsnapshot("lab.txt", rsnapshotpath)
+    nagios("lab.txt", nagiospath)
+
     return
 
 if __name__ == "__main__":
@@ -490,7 +503,7 @@ Flow of the function is as follows:
 - 5 :: Combine existing data and new entries
 - 6 :: Write all the entries in the yml file
 
-#+BEGIN_SRC python :tangle format.py :eval no
+#+BEGIN_SRC python :tangle program.py :eval no
 def dns(inputFile, outputFile):
     labFile = open(inputFile, "r")
     ymlFile = open(outputFile, "r")
@@ -498,6 +511,7 @@ def dns(inputFile, outputFile):
     ymlData = ymlFile.readlines()
 
     dnsStartIndex = ymlData.index("#DNS_START\n")
+    dnsEndIndex = ymlData.index("#DNS_END\n")
     dnsNewEntries = []
 
     for line in labFile.readlines():
@@ -506,7 +520,7 @@ def dns(inputFile, outputFile):
         dnsNewEntries.append(hostnameAndIP)
 
     delimeter = list("#DNS_END\n")
-    newYmlData = ymlData[0:dnsStartIndex + 1] + dnsNewEntries + delimeter
+    newYmlData = ymlData[0:dnsStartIndex + 1] + dnsNewEntries + delimeter + ymlData[dnsEndIndex+1:]
 
     labFile.close()
     ymlFile.close()
@@ -517,6 +531,7 @@ def dns(inputFile, outputFile):
         newYmlFile.write(lines)
 
     newYmlFile.close()
+
     return
 #+END_SRC
 
@@ -530,7 +545,7 @@ Flow of the function is as follows:
 - 5 :: Combine existing data and new entries
 - 6 :: Write all the entries in the yml file
 
-#+BEGIN_SRC python :tangle format.py :eval no
+#+BEGIN_SRC python :tangle program.py :eval no
 def reverseproxy(inputFile, outputFile):
 
     labFile = open(inputFile, "r")
@@ -571,6 +586,63 @@ def reverseproxy(inputFile, outputFile):
     newYmlFile.close()
 
     return
+#+END_SRC
+
+**** Nagios entry
+Flow of the function is as follows:
+
+- 1 :: Read data from the yml file
+- 2 :: Find start and end of the "Nagios" entry section
+- 3 :: Read values from input data file
+- 4 :: Save all the new entries in a variable
+- 5 :: Combine existing data and new entries
+- 6 :: Write all the entries in the yml file
+
+#+BEGIN_SRC python :tangle program.py :eval no
+def nagios(inputFile, outputFile):
+    labFile = open(inputFile, "r")
+    ymlFile = open(outputFile, "r")
+
+    ymlData = ymlFile.readlines()
+
+    nagiosStartIndex = ymlData.index("#Nagios_START\n")
+    nagiosEndIndex = ymlData.index("#Nagios_END\n")
+    nagiosNewEntries = []
+
+    for line in labFile.readlines():
+        splitLine = line.split()
+        labidHostname = '    %s: { hostname: "%s.{{prefix}}vlabs.ac.in", group: lab }\n' %(splitLine[0], splitLine[0])
+        nagiosNewEntries.append(labidHostname)
+
+    delimeter = list("#Nagios_END\n")
+    newYmlData = ymlData[0:nagiosStartIndex + 2] + nagiosNewEntries + delimeter + ymlData[nagiosEndIndex+1:]
+
+    labFile.close()
+    ymlFile.close()
+
+    newYmlFile = open(outputFile, "w")
+
+    for lines in newYmlData:
+        newYmlFile.write(lines)
+
+    newYmlFile.close()
+
+    return
+
+#+END_SRC
+
+**** Rsnapshot entry
+Rsnapshot yml files reads data from "awstats_domain" variable. There is no
+separate entries for rsnapshot.
+#+BEGIN_SRC python :tangle program.py :eval no
+def rsnapshot(inputFile, outputFile):
+    ''' 
+            There is no need to do anything explicit for the lab rsnapshot-server.
+            It reads entries from awstats-domains variables
+    '''
+
+    return
+
 #+END_SRC
 
 * Release
