@@ -477,8 +477,62 @@ awstats_domains:
   - mfs-iiith.virtual-labs.ac.in
   - nlp-iiith.virtual-labs.ac.in
 
+#AWS public DNS is also listing other public records of vlabs
 public_dns_entries:
-  - { hostname: router, ip: 54.85.93.7 }
+  - { hostname: portable-media, ip: 196.12.53.130 }
+  - { hostname: lik, ip: 196.12.53.130 }
+  - { hostname: music, ip: 196.12.53.130 }
+  - { hostname: staging.music, ip: 196.12.53.130 }
+  - { hostname: iiith-outreach, ip: 196.12.53.130 }
+  - { hostname: vlead, ip: 196.12.53.130 }
+  - { hostname: sage, ip: 196.12.53.130 }
+  - { hostname: community, ip: 196.12.53.130 }
+  - { hostname: civil11, ip: 196.12.53.130 }
+  - { hostname: nitk, ip: 196.12.53.130 }
+  - { hostname: gateone.cse05, ip: 14.139.82.11 }
+  - { hostname: gateone.cse09, ip: 14.139.82.11 }
+  - { hostname: ssh-tunnel, ip: 196.12.53.133 }
+  - { hostname: aws-backup, ip: 196.12.53.133 }
+  - { hostname: labs-info, ip: 196.12.53.130 }
+  - { hostname: analytics, ip: 196.12.53.130 }
+  - { hostname: ads-test, ip: 196.12.53.130 }
+  - { hostname: outreach-portal, ip: 196.12.53.130 }
+  - { hostname: mech26, ip: 196.12.53.130 }
+  - { hostname: eee06, ip: 196.12.53.130 }
+  - { hostname: mech08, ip: 196.12.53.130 }
+  - { hostname: phy01, ip: 196.12.53.130 }
+  - { hostname: chs13, ip: 196.12.53.130 }
+  - { hostname: aerospaceengg, ip: 196.12.53.130 }
+  - { hostname: combustion, ip: 196.12.53.130 }
+  - { hostname: t4e2015 , ip: 196.12.53.130 }
+  - { hostname: renarration, ip: 196.12.53.130 }
+  - { hostname: cse04-iiith, ip: 196.12.53.130 }
+  - { hostname: cse06-iiith, ip: 196.12.53.130 }
+  - { hostname: cse07-iiith, ip: 196.12.53.130 }
+  - { hostname: cse09-iiith, ip: 196.12.53.130 }
+  - { hostname: cse05-iiith, ip: 196.12.53.130 }
+  - { hostname: cse13-iiith, ip: 196.12.53.130 }
+  - { hostname: cse16-iiith, ip: 196.12.53.130 }
+  - { hostname: cse17-iiith, ip: 196.12.53.130 }
+  - { hostname: cse21-iiith, ip: 196.12.53.130 }
+  - { hostname: cse24-iiith, ip: 196.12.53.130 }
+  - { hostname: cse30-iiith, ip: 196.12.53.130 }
+  - { hostname: eerc04-iiith, ip: 196.12.53.130 }
+  - { hostname: eerc02-iiith, ip: 196.12.53.130 }
+  - { hostname: eerc05-iiith, ip: 196.12.53.130 }
+  - { hostname: cse23-iiith, ip: 196.12.53.130 }
+  - { hostname: cse10-iitkgp, ip: 196.12.53.130 }
+  - { hostname: civil13-iitb, ip: 196.12.53.130 }
+  - { hostname: ccnsb01-iiith, ip: 196.12.53.130 }
+  - { hostname: ccnsb02-iiith, ip: 196.12.53.130 }
+  - { hostname: ccnsb03-iiith, ip: 196.12.53.130 }
+  - { hostname: ccnsb04-iiith, ip: 196.12.53.130 }
+  - { hostname: ccnsb05-iiith, ip: 196.12.53.130 }
+  - { hostname: ccnsb07-iiith, ip: 196.12.53.130 }
+  - { hostname: mech01-iitg, ip: 196.12.53.130 }
+  - { hostname: eee06-dei, ip: 196.12.53.130 }
+  - { hostname: vlabs-dependencies, ip: 196.12.53.130 }
+  - { hostname: router, ip: 54.85.93.7 }  ###AWS-cluster IPs start here###
   - { hostname: bandwidthd, ip: 54.85.93.7 }
   - { hostname: ansible, ip: 52.4.150.142 }
   - { hostname: ossec-server, ip: 54.85.93.7 }
