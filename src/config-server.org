@@ -327,7 +327,7 @@ COMMIT
 
   vars:
     i_ans: yes
-    host_name: ansible
+    host_name: "ansible.{{prefix}}vlabs.ac.in"
 
   roles:
     - common
@@ -457,6 +457,16 @@ Flow of the function is as follows:
 
 - 1 :: Call register service if argument passed is register
 - 2 :: Call deregister service if argument passed is deregister
+- 3 :: Read path values of files from "path.txt" file
+
+#+BEGIN_SRC txt :tangle path.txt :eval no
+dns main.yml
+nagios main.yml
+reverseproxy main.yml
+rsnapshot main.yml
+#+END_SRC
+
+- 4 :: Invoke functions to make entries in various servers
 
 #+BEGIN_SRC python :tangle service.py :eval no
 def main(argv):
