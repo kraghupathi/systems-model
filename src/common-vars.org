@@ -253,6 +253,9 @@ ansible_server_ips:
 #Anlytics IP used by RP role to rsync logs,awstats
 analytics_server_ip: 10.100.1.12
 
+#Ads Ip used by lab role
+ads_ip: 10.100.1.9
+
 #List of rsnapshot servers.
 rsnapshot_server_ips: 
   - 10.100.1.10
@@ -719,6 +722,9 @@ ansible_server_ips:
 #Anlytics IP used by RP role to rsync logs,awstats
 analytics_server_ip: 10.100.1.12
 
+#Ads Ip used by lab role
+ads_ip: 10.100.1.9
+
 #List of management stations.  Multiple is ok
 management_ips:
   - 10.2.56.3
@@ -1087,6 +1093,10 @@ ansible_server_ips:
   - 10.100.1.2
 rsnapshot_server_ips:
   - 10.100.1.10
+
+#Ads Ip used by lab role
+ads_ip: 10.100.1.9
+
 #Anlytics IP used by RP role to rsync logs,awstats
 analytics_server_ip: 10.100.1.12
 
