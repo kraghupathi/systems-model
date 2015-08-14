@@ -554,6 +554,7 @@ https://openvz.org/Using_NAT_for_container_with_private_IPs
   - [[./router.org][Router]]
   - [[./rsnapshot-server.org][Backup server]]
   - [[./ossec-server.org][OSSEC server]] 
+  - [[./lab-role.org][Lab node]]
 
   After the bootstrapping process the nodes in the cluster can be
   brought up using the script below. It is an ansible script which

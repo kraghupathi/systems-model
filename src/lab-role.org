@@ -22,10 +22,9 @@
 
 *** Requirements applied by lab role
    1) Save history of executed command with time stamp
-   2) Start iptables service
+   2) Apply firewall rules
    3) Permit root login without password
-   4) Install bind utilities
-   5) Remove sudoers package
+   4) Remove sudoers package
 
 *** Security Requirements
    1) Secure server from various attacks such as brute-force
@@ -208,7 +207,7 @@ export HISTTIMEFORMAT HISTSIZE HISTFILESIZE
 #+BEGIN_SRC yml :tangle roles/lab_role/tasks/main.yml
 
 - name: Copy iptables template
-  template: src= lab_iptables dest=/etc/iptables.ruleset owner=root group=root
+  template: src=lab_iptables dest=/etc/iptables.ruleset owner=root group=root
 
 - name: apply iptables rules
   shell: iptables-restore << /etc/iptables.ruleset
@@ -274,7 +273,7 @@ nameserver {{private_dns}}
 #+END_SRC
 
 
-*** COMMENT SSH Hardening
+*** SSH Hardening
    All the servers in the cluster are made secure by hardening *ssh*
    service. SSH configuration file =/etc/ssh/sshd_config= is
    customized as per the requirement.
@@ -282,45 +281,42 @@ nameserver {{private_dns}}
 **** Permit Root Login without password
    Only system administrators with ssh private key can login as Root.
 
-#+BEGIN_EXAMPLE
 #+BEGIN_SRC yml :tangle roles/lab_role/tasks/main.yml
 - name: Permit root login without-password(key based)
   lineinfile: dest=/etc/ssh/sshd_config regexp='PermitRootLogin ' line='PermitRootLogin without-password' state=present
 #+END_SRC
-#+END_EXAMPLE
 
 **** Disable Password based access
    Password based access is disabled.
-#+BEGIN_EXAMPLE
+
 #+BEGIN_SRC yml :tangle roles/lab_role/tasks/main.yml
 - name: Disable Password authentication
   lineinfile: dest=/etc/ssh/sshd_config regexp='PasswordAuthentication ' line='PasswordAuthentication no'
 #+END_SRC
-#+END_EXAMPLE
+
 
 **** Enable Key based authentication
    Only key based access is enabled.
-#+BEGIN_EXAMPLE
+
 #+BEGIN_SRC yml :tangle roles/lab_role/tasks/main.yml
 - name: Enable Public key authentication
   lineinfile: dest=/etc/ssh/sshd_config regexp='PubkeyAuthentication ' line='PubkeyAuthentication yes'
 #+END_SRC
-#+END_EXAMPLE
+
 
 **** Do not permit empty passwords
    Users are not allowed to set empty-password.
-#+BEGIN_EXAMPLE
+
 #+BEGIN_SRC yml :tangle roles/lab_role/tasks/main.yml
 - name: Do not permit empty password, also ensure proper owner, group and permissions
   lineinfile: dest=/etc/ssh/sshd_config regexp='PermitEmptyPasswords ' line='PermitEmptyPasswords no' mode=0600 owner=root group=root
-
 #Call handler to restart sshd
   notify:
       - restart ssh
 #+END_SRC
-#+END_EXAMPLE
 
-*** COMMENT Disable Root Login
+
+***  Disable Root Login
    Root login is disabled on all the servers in the cluster. Password
    for the root account is set to a value which matches no possible
    encrypted value, therefore nobody can login as root with
@@ -336,12 +332,11 @@ nameserver {{private_dns}}
 root:!:12345::::::
 #+END_EXAMPLE
 
-#+BEGIN_EXAMPLE
 #+BEGIN_SRC yml :tangle roles/lab_role/tasks/main.yml
 - name: lock root account
   shell: passwd -l root
 #+END_SRC
-#+END_EXAMPLE
+
 
 **** Enable root login
    Root login can be enabled by setting the root password using
@@ -379,7 +374,6 @@ dependencies:
   - role: common_vars
 #+END_SRC
 
-
 ** Handlers
    When any changes are made in the configuration file of any service, the
    service needs to be restarted. For example, if modifications are made in
@@ -391,6 +385,22 @@ dependencies:
 ---
 - name: restart SSH
   service: name=ssh state=restarted
+#+END_SRC
+
+** Lab node meta script
+   This script unifies and calls the all other tasks listed above.
+   This calls the lab_role role, as other roles are not applicable to
+   a lab node.
+
+#+BEGIN_SRC yml :tangle lab_role.yaml :eval no
+---
+
+- name: This script configures a lab node
+  hosts: lab_node
+  remote_user: root
+
+  roles: lab_role
+
 #+END_SRC
 
 * Test Cases
