@@ -437,11 +437,6 @@ dependencies:
    2) A configruation node
    3) ADS node
 
-*** Experiment
-   Servers in which common firewall rules are applied accept ssh
-   connection on TCP port 22 only from the ansible, nagios and
-   management ips.
-
 *** Procedure
     Use a tool like =netcat= or =telnet= to check whether the ports
     are open,
@@ -450,65 +445,19 @@ dependencies:
 telnet <lad_node_ip> <tcp_port_to_test>
 
 telnet 10.100.0.1 22
-#+END_EXAMPLE
 
-**** SSH from configuration server to a common server
-#+BEGIN_EXAMPLE
-ssh root@<common-server-ip>
+telnet 10.100.0.1 9089
 #+END_EXAMPLE
-
-**** SSH from management server to a common server
-#+BEGIN_EXAMPLE
-ssh root@<common-server-ip>
-#+END_EXAMPLE
-
-**** SSH from nagios server to a common server
-#+BEGIN_EXAMPLE
-ssh root@<common-server-ip>
-#+END_EXAMPLE
-
-**** SSH from any other machine to a common server
-#+BEGIN_EXAMPLE
-ssh root@<common-server-ip>
-#+END_EXAMPLE
-*** Result
-**** Output of step-1 of experiment
-#+BEGIN_EXAMPLE
-Last login: Thu Apr  2 ... other details.....
-root@common-server:~#
-#+END_EXAMPLE
-**** Output of step-2 of experiment
-#+BEGIN_EXAMPLE
-Last login: Thu Apr  2 ... other details.....
-root@common-server:~#
-#+END_EXAMPLE
-
-**** Output of step-3 of experiment
-#+BEGIN_EXAMPLE
-Last login: Thu Apr  2 ... other details.....
-root@common-server:~#
-#+END_EXAMPLE
-
-**** Output of step-4 of experiment
-#+BEGIN_EXAMPLE
-Permission Denied ....
-#+END_EXAMPLE
-
 *** Observation
-   A common server accepts incoming ssh connections from
-   configuration, nagios and management server.
-
+    The lab node which is being tested should accept connections only
+    from Ansible, ADS nodes.
 *** Conclusion
    Firewall rules are set properly to allow ssh connection only from
    ansible, nagios and management server.
 
 ** Test Case: Root account is locked
 *** Objective
-   Test root account is locked in a common server.
-*** Apparatus
-   1) Configuration server
-   2) An instance of common role - a common server
-
+   =root= account is locked in a lab node.
 *** Experiment
    Execute following command on the server.
 
@@ -534,7 +483,7 @@ root LK 2012-10-07 0 99999 7 -1 (Password locked.)
    To check whether the commands executed on the server are getting
    logged with proper time stamp.
 *** Apparatus
-   1) An instance of common role - a common server
+   1) A Lab node on which you want to check history
 
 *** Experiment
 **** Execute following example sequence of commands on the server
@@ -574,7 +523,7 @@ ssh: connect to host router.vlabs.ac.in port 22: Connection refused
    To check nameserver is set on the server for name resolution.
 
 *** Apparatus
-   1) An instance of common role - a common server
+   1)  A Lab node on which you want to test DNS
 
 *** Experiment
 **** Check content of =/etc/resolv.conf= file.
