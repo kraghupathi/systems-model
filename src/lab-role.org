@@ -14,6 +14,9 @@
 
 ** Assumptions
    - It is assumed that lab nodes are running Debian/Ubuntu
+   - This role is intended to harden the node, things like firewall,
+     SSH, and hence will not add or remove any packages or services,
+     this is because ADS will configure the node.
 
 ** Functional Requirements
 
@@ -34,12 +37,26 @@
    6) Lock root account
    7) Restrict TCP port 9089 on lab to ADS IP address
 
+* Design
+** Network Digram
+   The following diagram represents lab node in the network, please
+   note some monitoring services like Nagios, Cacti, are not shown.
+   
+   #+CAPTION: Lab node in the cluster
+   #+LABEL: Lab node
+   [[./diagrams/lab-role.png][Lab node]]
+
+** Source of network diagram
+   Following is the downloadable source file used to create the above
+   diagram, needs Libreoffice and VRT extensions.
+
+   [[./diagrams/lab-role.odg][Lab_role]]
 * Implementation
 ** Layout of scripts
 ** Firewall rules
-   This node has the same firewall rules as explained in [[file://common.org::*Common%20Firewall%20Rules][Common
-   firewall rules]]. The exception for Security Requirement 7, which
-   restricts access to TCP port 9089 to ADS node.
+   This node has the same firewall rules as explained in [[file:common.org::*Common%20Firewall%20Rules][Common
+   firewall rules]]. The exception is for Security Requirement 7, which
+   restricts access to TCP port 9089 allowing only ADS node.
    
 #+BEGIN_EXAMPLE
 iptables -I INPUT -s <ADS_IP_here> -m tcp -p tcp --dport 9089 -j ACCEPT
@@ -68,12 +85,15 @@ iptables -I INPUT -s <ADS_IP_here> -m tcp -p tcp --dport 9089 -j ACCEPT
 -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
 
 #Allow incoming connection from ADS on TCP port 9098
--A INPUT -s {{ads_ip}} -m tcp -p tcp --dport 9098
+-A INPUT -s {{ads_ip}} -m tcp -p tcp --dport 9098 -j ACCEPT
 
 #Allow incoming SSH connections from ansible server IPs.  Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
 {% for item in ansible_server_ips  %}
 -A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
+
+#Allow incoming SSH connections from ADS node
+-A INPUT -m state --state NEW -s {{ads_ip}} -p tcp -m tcp --dport 22 -j ACCEPT
 
 #Allow incoming NRPE queries for nagios from nagios servers
 -A INPUT -m state --state NEW -p tcp -m tcp --dport 5666 -j ACCEPT
@@ -81,6 +101,10 @@ iptables -I INPUT -s <ADS_IP_here> -m tcp -p tcp --dport 9089 -j ACCEPT
 #Allow SNMP queries from cacti servers
 -A INPUT -p udp -m udp --dport 161 -j ACCEPT
 -A INPUT -p udp -m udp --dport 162 -j ACCEPT
+
+#Allow TCP 80, 443 access from anywhere
+-A INPUT -m tcp -p tcp --dport 80 -j ACCEPT
+-A INPUT -m tcp -p tcp --dport 443 -j ACCEPT
 
 #Log all other "blocked_input_" attempts with rate limiting
 -A INPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_input_"
@@ -135,29 +159,6 @@ COMMIT
 #
 #+END_SRC
 ** Tasks
-*** Block brute force attempts
-   Nodes in the cluster are protected against Brute-force attacks. For
-   this *Fail2ban* service is configured on all the nodes. It bans an
-   offensive host by adding rule in firewall and also sends an email
-   alerts to the system administrator. When the firewall rule for
-   offensive host is added, the attacker can not connect to the
-   cluster for a limited period of time.
-
-   To configure Fail2ban following actions are performed:
-   1) Install epel repo
-   2) Install fail2ban
-   3) Start fail2ban service
-
-#+BEGIN_SRC yml :tangle roles/lab_role/tasks/main.yml
----
-
-#Install fail2ban and enable it on startup
-- name: Install fail2ban
-  apt: name=fail2ban state=present
-
-- name: Start and enable fail2ban service
-  service: name=fail2ban state=started enabled=yes
-#+END_SRC
 
 *** Save History of Executed Commands
    Commands executed on the servers are logged with the time
@@ -210,9 +211,34 @@ export HISTTIMEFORMAT HISTSIZE HISTFILESIZE
   template: src=lab_iptables dest=/etc/iptables.ruleset owner=root group=root
 
 - name: apply iptables rules
-  shell: iptables-restore << /etc/iptables.ruleset
+  shell: iptables-restore < /etc/iptables.ruleset
 
 #+END_SRC
+*** COMMENT Block brute force attempts
+   Nodes in the cluster are protected against Brute-force attacks. For
+   this *Fail2ban* service is configured on all the nodes. It bans an
+   offensive host by adding rule in firewall and also sends an email
+   alerts to the system administrator. When the firewall rule for
+   offensive host is added, the attacker can not connect to the
+   cluster for a limited period of time.
+
+   To configure Fail2ban following actions are performed:
+   1) Install fail2ban
+   2) Start fail2ban service
+
+#+BEGIN_EXAMPLE
+#+BEGIN_SRC yml :tangle roles/lab_role/tasks/main.yml
+---
+
+#Install fail2ban and enable it on startup
+- name: Install fail2ban
+  apt: name=fail2ban state=present
+
+- name: Start and enable fail2ban service
+  service: name=fail2ban state=started enabled=yes
+#+END_SRC
+#+END_EXAMPLE
+
 
 *** Setup /etc/hosts file
    Sendmail tries to lookup hostname and IP mapping through
@@ -305,14 +331,14 @@ nameserver {{private_dns}}
 
 
 **** Do not permit empty passwords
-   Users are not allowed to set empty-password.
+   Users are not allowed to login with empty passwords.
 
 #+BEGIN_SRC yml :tangle roles/lab_role/tasks/main.yml
 - name: Do not permit empty password, also ensure proper owner, group and permissions
   lineinfile: dest=/etc/ssh/sshd_config regexp='PermitEmptyPasswords ' line='PermitEmptyPasswords no' mode=0600 owner=root group=root
 #Call handler to restart sshd
   notify:
-      - restart ssh
+      - restart SSH
 #+END_SRC
 
 
@@ -323,14 +349,8 @@ nameserver {{private_dns}}
    password. Only system administrators with ssh private keys can
    login to root account.
 
-**** Lock root login
    Root account is locked using =passwd= command command in the
-   terminal.  Another way to lock account is to replace the root's
-   encrypted password with '!' in =/etc/shadow= file as follows.
-
-#+BEGIN_EXAMPLE
-root:!:12345::::::
-#+END_EXAMPLE
+   terminal.  
 
 #+BEGIN_SRC yml :tangle roles/lab_role/tasks/main.yml
 - name: lock root account
@@ -399,8 +419,225 @@ dependencies:
   hosts: lab_node
   remote_user: root
 
-  roles: lab_role
+  roles: 
+    - lab_role
 
 #+END_SRC
 
 * Test Cases
+** Test Case: Port  access
+*** Objective
+    Check whether SSH and lab control port (TCP 9089) are accessible
+    from any lab node to a particular lab and it should not connect.
+    ADS will need to have access to SSH, TCP port 9089, configuration
+    node to SSH.
+
+*** Requirements
+   1) At least two lab nodes
+   2) A configruation node
+   3) ADS node
+
+*** Experiment
+   Servers in which common firewall rules are applied accept ssh
+   connection on TCP port 22 only from the ansible, nagios and
+   management ips.
+
+*** Procedure
+    Use a tool like =netcat= or =telnet= to check whether the ports
+    are open,
+
+#+BEGIN_EXAMPLE
+telnet <lad_node_ip> <tcp_port_to_test>
+
+telnet 10.100.0.1 22
+#+END_EXAMPLE
+
+**** SSH from configuration server to a common server
+#+BEGIN_EXAMPLE
+ssh root@<common-server-ip>
+#+END_EXAMPLE
+
+**** SSH from management server to a common server
+#+BEGIN_EXAMPLE
+ssh root@<common-server-ip>
+#+END_EXAMPLE
+
+**** SSH from nagios server to a common server
+#+BEGIN_EXAMPLE
+ssh root@<common-server-ip>
+#+END_EXAMPLE
+
+**** SSH from any other machine to a common server
+#+BEGIN_EXAMPLE
+ssh root@<common-server-ip>
+#+END_EXAMPLE
+*** Result
+**** Output of step-1 of experiment
+#+BEGIN_EXAMPLE
+Last login: Thu Apr  2 ... other details.....
+root@common-server:~#
+#+END_EXAMPLE
+**** Output of step-2 of experiment
+#+BEGIN_EXAMPLE
+Last login: Thu Apr  2 ... other details.....
+root@common-server:~#
+#+END_EXAMPLE
+
+**** Output of step-3 of experiment
+#+BEGIN_EXAMPLE
+Last login: Thu Apr  2 ... other details.....
+root@common-server:~#
+#+END_EXAMPLE
+
+**** Output of step-4 of experiment
+#+BEGIN_EXAMPLE
+Permission Denied ....
+#+END_EXAMPLE
+
+*** Observation
+   A common server accepts incoming ssh connections from
+   configuration, nagios and management server.
+
+*** Conclusion
+   Firewall rules are set properly to allow ssh connection only from
+   ansible, nagios and management server.
+
+** Test Case: Root account is locked
+*** Objective
+   Test root account is locked in a common server.
+*** Apparatus
+   1) Configuration server
+   2) An instance of common role - a common server
+
+*** Experiment
+   Execute following command on the server.
+
+#+BEGIN_EXAMPLE
+sudo passwd -S root
+#+END_EXAMPLE
+
+*** Result
+   Output of step-1 signifies the root account is locked.
+
+#+BEGIN_EXAMPLE
+root LK 2012-10-07 0 99999 7 -1 (Password locked.)
+#+END_EXAMPLE
+
+*** Observation
+   Root account is disabled.
+
+*** Conclusion
+   Users can not login to the server as 'root' username with password.
+
+** Test Case: Check Command History is getting saved
+*** Objective
+   To check whether the commands executed on the server are getting
+   logged with proper time stamp.
+*** Apparatus
+   1) An instance of common role - a common server
+
+*** Experiment
+**** Execute following example sequence of commands on the server
+#+BEGIN_EXAMPLE
+[root@common-server ~]$ ls
+/root
+[root@common-server ~]$ pwd
+[root@common-server ~]$ echo $PATH
+/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin
+[root@common-server ~]$ ssh root@router.vlabs.ac.in
+ssh: connect to host router.vlabs.ac.in port 22: Connection refused
+#+END_EXAMPLE
+   Now execute history commands to see whether the commands are
+   getting saved with proper time stamp.
+#+BEGIN_EXAMPLE
+[root@common-server ~]$ history
+#+END_EXAMPLE
+
+*** Result
+   Output of step-1 of experiment.
+
+#+BEGIN_EXAMPLE
+   21  15 04 13 10:27:45ls
+   22  15 04 13 10:27:46pwd
+   23  15 04 13 10:27:54echo $PATH
+   24  15 04 13 10:28:17ssh root@router.vlabs.ac.in
+   25  15 04 13 10:28:22history
+#+END_EXAMPLE
+*** Observation
+   History of commands are getting saved with proper time stamp.
+
+*** Conclusion
+   History of commands are getting saved with proper time stamp.
+
+** Test Case: Check nameservers are set
+*** Objective
+   To check nameserver is set on the server for name resolution.
+
+*** Apparatus
+   1) An instance of common role - a common server
+
+*** Experiment
+**** Check content of =/etc/resolv.conf= file.
+#+BEGIN_EXAMPLE
+cat /etc/resolv.conf
+#+END_EXAMPLE
+
+**** Do a dig query for google.com, using nameserver mentioned in =/etc/resolv.conf= file.
+#+BEGIN_EXAMPLE
+dig google.com @<nameserver-ip>
+#+END_EXAMPLE
+
+*** Result
+**** Sample output of step-1 of experiment.
+#+BEGIN_EXAMPLE
+search base1.virtual-labs.ac.in base1.vlabs.ac.in
+nameserver 10.100.1.5
+#+END_EXAMPLE
+
+**** Sample output of step-2 of experiment.
+#+BEGIN_EXAMPLE
+; <<>> DiG 9.8.2rc1-RedHat-9.8.2-0.30.rc1.el6_6.2 <<>> google.com @10.100.1.5
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 1314
+;; flags: qr rd ra; QUERY: 1, ANSWER: 11, AUTHORITY: 4, ADDITIONAL: 4
+
+;; QUESTION SECTION:
+;google.com.			IN	A
+
+;; ANSWER SECTION:
+google.com.		300	IN	A	173.194.36.105
+google.com.		300	IN	A	173.194.36.100
+google.com.		300	IN	A	173.194.36.102
+google.com.		300	IN	A	173.194.36.103
+google.com.		300	IN	A	173.194.36.99
+google.com.		300	IN	A	173.194.36.110
+google.com.		300	IN	A	173.194.36.96
+google.com.		300	IN	A	173.194.36.101
+google.com.		300	IN	A	173.194.36.104
+google.com.		300	IN	A	173.194.36.97
+google.com.		300	IN	A	173.194.36.98
+
+;; AUTHORITY SECTION:
+google.com.		172800	IN	NS	ns2.google.com.
+google.com.		172800	IN	NS	ns3.google.com.
+google.com.		172800	IN	NS	ns1.google.com.
+google.com.		172800	IN	NS	ns4.google.com.
+
+;; ADDITIONAL SECTION:
+ns2.google.com.		172800	IN	A	216.239.34.10
+ns1.google.com.		172800	IN	A	216.239.32.10
+ns3.google.com.		172800	IN	A	216.239.36.10
+ns4.google.com.		172800	IN	A	216.239.38.10
+
+;; Query time: 287 msec
+;; SERVER: 10.100.1.5#53(10.100.1.5)
+;; WHEN: Mon Apr 13 06:08:15 2015
+;; MSG SIZE  rcvd: 340
+#+END_EXAMPLE
+
+*** Observation
+   Server is able to resolve the names using the given nameservers.
+
+*** Conclusion
+   Nameservers are properly set on all the servers in the cluster.
