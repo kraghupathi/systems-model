@@ -85,7 +85,7 @@ iptables -I INPUT -s <ADS_IP_here> -m tcp -p tcp --dport 9089 -j ACCEPT
 -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
 
 #Allow incoming connection from ADS on TCP port 9098
--A INPUT -s {{ads_ip}} -m tcp -p tcp --dport 9098 -j ACCEPT
+-A INPUT -s {{ads_ip}} -m tcp -p tcp -m state --state NEW --dport 9098 -j ACCEPT
 
 #Allow incoming SSH connections from ansible server IPs.  Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
 {% for item in ansible_server_ips  %}
