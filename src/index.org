@@ -201,26 +201,24 @@ To know further about these please refer [[Appendix][Appendix]].
 ** Bootstrapping the Base1/Base4 cluster
    This bootstrapping steps are done based on ansible playbooks of
    the systems-model repository. 
-*** Create VM
-    - NOTE :: Creating a VM is an optional. It is not compulsory.You
-              can go to next step for bootstrapping process.
-     - To create VM, install the following packages
+*** Create VM (OPTIONAL)
+    - NOTE :: Creating a VM is an optional.You can go to next step for
+              bootstrapping process.
+    - To create VM, install the following packages
     #+BEGIN_SRC 
     yum install virt-manager libvirt libvirt-python libvirt-client qemu-kvm virt-viewer
     #+END_SRC
-    - We can Create VM in two ways
+    - We can create VM in two ways
       1. Using *virt-manager* GUI (Applications-->System Tools-->Virtual Machine Manager)
       2. Using *virsh-install* command http://wiki.centos.org/HowTos/KVM
          #+BEGIN_SRC 
          virt-install --os-variant=rhel6 --network bridge=br0 --disk /var/lib/libvirt/images/test-delet.img,size=20 --cdrom=~/iso/CentOS-6.5-x86_64-bin-DVD1.iso --vcpu=1 --ram=2048 --name=test-delete
          #+END_SRC
-   - After installing OS (Host machine)on created VM do the following steps 
-   - Host machine should have updated CentOS-6.6
-   - Host machine should have centos template ready to create
-     containers on host machine
-   - Set proxy for all the nodes and labs if network uses any proxy
-   - Note ::  Private ips of the nodes on AWS and base{1,4} clusters
-              are same except public IPs of router and ansible nodes.
+    - Use *virt-viewer* commnad to enter into the VM.
+    - You can also access the VM over ssh 
+    - Set proxy for all the nodes and labs if network uses any proxy
+    - Note ::  Private ips of the nodes on AWS and base{1,4} clusters
+               are same except public IPs of router and ansible nodes.
 *** Setup bridged network 
     - Host machine should have updated CentOS-6.6 with vzkernel
       installed and configured properly.
@@ -353,7 +351,7 @@ To know further about these please refer [[Appendix][Appendix]].
      BOOTPROTO=static
      ONBOOT=yes
      NM_CONTROLLED=no
-     IPADDR=10.100.1.1
+     diIPADDR=10.100.1.1
      NETMASK=255.255.252.0
      #+END_EXAMPLE
     - Restart the router container
@@ -361,14 +359,14 @@ To know further about these please refer [[Appendix][Appendix]].
 **** Add  NAT rule and Edit =/etc/sysctl.conf= file
      Write a NATing rule to get internet for all the containers
      #+BEGIN_EXAMPLE 
-     -A POSTROUTING ! -d 10.100.0.0/22 -o eth0 -j SNAT --to-source 10.2.58.154
+     -A POSTROUTING ! -d 10.100.0.0/22 -o eth0 -j SNAT --to-source <router_public_ip>
      #+END_EXAMPLE
       Edit/open the file =/etc/sysctl.conf= and modify the following line
      #+BEGIN_EXAMPLE 
      net.ipv4.ip_forward = 1
      #+END_EXAMPLE
      - Check the link for above things done for router
-https://openvz.org/Using_NAT_for_container_with_private_IPs
+      https://openvz.org/Using_NAT_for_container_with_private_IPs
 
 *** Config-server node
    - We need two IPs to setup ansible machine one is for public access
@@ -424,16 +422,12 @@ https://openvz.org/Using_NAT_for_container_with_private_IPs
     - Share public key to all the nodes including itself. So that we
       can run ansible playbooks to configure nodes.
     - Edit or create hosts file to point to correct servers/nodes.
-    - Run makefile. Change directory to cloned reository systems-model 
+    - Change directory to cloned reository systems-model and run makefile
       #+BEGIN_SRC 
       $cd systems-model/
       $make
       #+END_SRC
     - Copy or move created hosts file to =build/{base1 or base4}-code/= 
-    - Check syntax errors if any
-      #+BEGIN_SRC 
-      $ansible-playbook -i hosts site.yaml --syntax-check
-      #+END_SRC
 
 *** Create DNS servers
     - Create following servers:
@@ -446,13 +440,34 @@ https://openvz.org/Using_NAT_for_container_with_private_IPs
     - We must use temporary external dns server's IP other than cluster's dns
       server just to configure these nodes. 
     - We must comment the task in common role which chages the
-     =nameserver= value in =/etc/resolv.conf=.
-    - Run public-dns.yaml and private-dns play books on config-server
+      =nameserver= value in =/etc/resolv.conf=. *OR* Make sure that
+      the =private_dns_ips: none= and =private_dns_zone: none=
+      variable value shoud be empty(none) in
+      =roles/common_vars/vars/main.yaml= to configure these nodes.
+      + NOTE :: If you are working under any proxy enabled network, we
+                may need to check/do the following steps.
+
+                - Cluster private dns may not connect to the
+                  external network, for this to work we may have to
+                  add "forwarders{10.4.12.160;10.4.12.221;};" to
+                  =/etc/namd.conf= file. 
+                - Check OUTPUT firewaal rule for port 8080 to connetct
+                  to the proxy
+                - export proxy 
+                
+    - Run *public-dns.yaml* and private-dns play books on config-server
       to configure public-dns.
+      #+BEGIN_SRC 
+      ansible-playbook -i hosts private-dns.yaml
+      #+END_SRC
+      #+BEGIN_SRC 
+      ansible-playbook -i hosts private-dns.yaml
+      #+END_SRC
     - Once the nodes are configured using playbooks, we need to test
       them whether the nodes are functioning properly or not. 
-    - Once the testing is done with proper configuration, we can
-      un-comment the task in common role.
+    - Once the testing is done with proper configuration,update
+      varibales =private_dns_ips= and =private_dns_zone= to defualt
+      values.
 
     Specifically for DNS servers look at variables in respective DNS
     server files.  Also ensure that roles/named_server/files has
@@ -540,12 +555,10 @@ https://openvz.org/Using_NAT_for_container_with_private_IPs
     
 *** Run site.yaml on config-server
     - Make sure all changes are done in
-      =roles/common_vars/vars/main.yaml= appropriately. mainly
-    - Un-comment the task which changes =/etc/resolv.conf= in
-      =roles/common/tasks/main.yaml= to use private dns ip as
-      nameserver.
+      =roles/common_vars/vars/main.yaml= appropriately.
     - Make sure that the hosts file with the ips of nodes and with
       their names.
+    - Check management_ips in common_vars role
     - Comment rsnapshot_client role in all the roles. 
     - Run site.yaml file 
       #+BEGIN_SRC 
