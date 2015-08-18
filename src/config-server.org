@@ -91,27 +91,28 @@ The design of the service provided by the configuration server are described
 below.
   #+CAPTION:  Configuration Server Services Design Diagram
   #+LABEL:  fig-config-services-diagram
-  [[./diagrams/hooks2.png]]
+  [[./diagrams/hooks1.png]]
 
 *** Description
 - Hosting of a Lab ::
-Hosting a lab means instantiating a new node in the cluster, then deploying a
-lab on it. Once the lab is being deployed the entries for DNS, reverseproxy,
-nagios and awstats are made. Once the entries are done the lab becomes
-accessible from the internet.
+Hosting a lab comprises of deployment and registration of lab. 
+
+- Deployment of a Lab :: 
+Instantiating a new node in the cluster, deploying a lab on the node.
 
 - Registration ::
 A lab is said to be registered by the service when the necessary configuration
-changes are done and lab is accessible from external world.
+changes in the system servers such as DNS, reverseproxy, nagios are done and lab
+is accessible from external world.
 
 - De registration ::
 A lab is said to be de-registered by the service when the various entries are
 removed from the servers and lab is no longer accessible.
 
 - Work Flow of the Service ::
-ADS invokes the services provided by the configuration server over SSH to
-register or de register a lab. Service program first writes the input arguments
-passed by the ADS into a data file (.txt). Then the data is appended in the yaml
+To register or deregister a lab ADS invokes the service provided by the
+configuration server over SSH. Service first writes the input arguments passed
+by the ADS into a data file (.txt). Then the data is appended in the yaml
 file. Ansible playbook is then run to reconfigure the whole cluster again.
 
 ** System Configuration files Summary
@@ -343,14 +344,14 @@ cluster. ADS invokes service exposed by the configuration server over ssh as
 follows:
 
 #+BEGIN_EXAMPLE
-python config-services <service name> <arguments>
+ssh ansible@ansible.vlabs.ac.in service <register/deregister> <labid> <ipaddress>
 #+END_EXAMPLE
 
 - Program Design ::
 The program takes the following three arguments as input:
 1. A keyword - (register or deregister)
-2. IP Address - ipaddress of the lab
-3. FQDN - Frequently Qualified Domain Name of the lab
+2. Labid
+3. Ipaddress of the lab
 
 The arguments passed to the service are saved in a data file in the following
 format:
@@ -361,72 +362,104 @@ lab2 10.100.1.12
 #+END_EXAMPLE
 
 Service then reads the data from the data file and updates the entries in the
-yml files of various server. The structure of yml files is as follows:
-
-#+BEGIN_EXAMPLE
-- { hostname: lab1, ip: 10.100.1.10 }
-- { hostname: lab2, ip: 10.100.1.12 }
-#+END_EXAMPLE
+yml files of various server.
 
 *** Service Program
 Following program updates the entries in the data file with the values passed by
-ADS service. This service is invoked by the ADS server. Service registers or
-de-registers the lab.
+the ADS service.
 
-**** Register Service
+**** Main Function
 Flow of the function is as follows:
 
-- 1 :: Read data from input file
-- 2 :: Save existing entries in a variable
-- 3 :: Add new entry to the variable if not already present 
-- 4 :: Write the new entry along with all the old entries in a file
-- 5 :: Call update functions to update reverseproxy and dns entries
+1. Call register function if argument passed is register
+2. Call deregister function if argument passed is deregister
+3. Call update function to update yml files
 
 #+BEGIN_SRC python :tangle service.py :eval no
-import sys 
-from format import *
+#!/usr/bin/env python
 
-def register(hostname, ip):
+import sys
+from modularised_program import *
 
-    readLabFile = open("lab.txt", "r")
-    hostnameIP = "%s %s\n" %(hostname, ip) 
+def main(argv):
 
-    labData = readLabFile.readlines()
-    readLabFile.close()
+    if (str(argv[0]) == "register"):
+        register(argv[1], argv[2])
+    elif (str(argv[0] == "deregister")):
+        deregister(argv[1], argv[2])
 
-    indexCount = len(labData)
-    existingEntries = []
-
-    for index in range(0, indexCount):
-        existingEntries.append(labData[index])
-
-    setOfEntries = set(existingEntries)
-    setOfEntries.add(hostnameIP)
-
-    writeLabFile = open("lab.txt", "w")
-    for item in setOfEntries:
-        writeLabFile.write(item)
-
-    writeLabFile.close()
+    update("lab.txt")
 
     return
 
 #+END_SRC
 
-**** Deregister Service
+**** Register
 Flow of the function is as follows:
 
-- 1 :: Read data from input file
-- 2 :: Save existing entries in a variable
-- 3 :: Delete new entry from the variable if present 
-- 4 :: Write the new entry along with all the old entries in a file
-- 5 :: Call update functions to update reverseproxy and dns entries
+1. Call findEntry function to check if entry already exists
+2. Write entry to data file if entry does not exist
+3. Throw error if entry already exist in data file
+
+#+BEGIN_SRC python :tangle service.py :eval no
+def register(hostname, ip):
+
+    index, entries = findEntry(hostname, ip)
+    if (index >= 0):
+        print "Error: Lab is already registered\n"
+
+    else:
+        print "Registering the lab\n"
+        hostnameIP = "%s %s\n" %(hostname, ip)
+        entries.append(hostnameIP)
+	writeLabFile = open("lab.txt", "w")
+	for item in entries:
+            writeLabFile.write(item)
+
+        writeLabFile.close()
+
+    return
+
+#+END_SRC
+
+**** Deregister
+Flow of the function is as follows:
+
+1. Call findEntry function to check if entry already exists
+2. Delete entry from data file if exist
+3. Throw error if entry does not exist in data file
 
 #+BEGIN_SRC python :tangle service.py :eval no
 def deregister(hostname, ip):
 
+    index, entries = findEntry(hostname, ip)
+
+    if (index >= 0):
+	print "Deregistering the lab\n"
+        del entries[index]
+        writeLabFile = open("lab.txt", "w")
+        for item in entries:
+            writeLabFile.write(item)
+        writeLabFile.close()
+    else:
+        print "Error: Lab is not registered\n"
+
+    return
+#+END_SRC
+
+**** Findentry
+Flow of the function is as follows:
+
+1. Read data from data file into a list
+2. Search for entry in the data file
+3. Return index of entry if entry exist in the file
+4. Return -1 if entry does not exist
+
+#+BEGIN_SRC python :tangle service.py :eval no
+def findEntry(hostname, ip):
+    
     readLabFile = open("lab.txt", "r")
-    hostnameIP = "%s %s\n" %(hostname, ip) 
+    hostnameIP = "%s %s\n" %(hostname, ip)
 
     labData = readLabFile.readlines()
     readLabFile.close()
@@ -438,212 +471,153 @@ def deregister(hostname, ip):
         existingEntries.append(labData[index])
 
     try:
-        indexDelete = existingEntries.index(hostnameIP)
-        del existingEntries[indexDelete]
+        index = existingEntries.index(hostnameIP)
+        return index, existingEntries 
     except:
-        pass
+        return -1, existingEntries
 
-    writeLabFile = open("lab.txt", "w")
-    for item in existingEntries:
-        writeLabFile.write(item)
-
-    writeLabFile.close()
-
-    return
-#+END_SRC
-
-**** Main Function
-Flow of the function is as follows:
-
-- 1 :: Call register service if argument passed is register
-- 2 :: Call deregister service if argument passed is deregister
-
-#+BEGIN_SRC python :tangle service.py :eval no
-def main(argv):
-
-    if (str(argv[0]) == "register"):
-        register(argv[1], argv[2])
-    elif (str(argv[0] == "deregister")):
-        deregister(argv[1], argv[2])
-
-    pathFile = open("path.txt", "r")
-
-    for line in pathFile.readlines():
-        splitLine = line.split()
-        if splitLine[0] == "reverseproxy":
-               revpath = splitLine[1]
-        elif splitLine[0] == "dns":
-               dnspath = splitLine[1]
-        elif splitLine[0] == "nagios":
-               nagiospath = splitLine[1]
-        elif splitLine[0] == "rsnapshot":
-               rsnapshotpath = splitLine[1]
-
-    reverseproxy("lab.txt", revpath)
-    dns("lab.txt", dnspath)
-    rsnapshot("lab.txt", rsnapshotpath)
-    nagios("lab.txt", nagiospath)
-
-    return
-
-if __name__ == "__main__":
-    main(sys.argv[1:])
 #+END_SRC
 
 *** Update Program
 Following program reads the values from data file and updates the yml file.
 
-**** DNS Entry
-Flow of the function is as follows:
-
-- 1 :: Read data from the yml file
-- 2 :: Find start of the DNS entry section
-- 3 :: Read values from input data file
-- 4 :: Save all the new entries in a variable
-- 5 :: Combine existing data and new entries
-- 6 :: Write all the entries in the yml file
+**** Define Global Variables
+1. *delimiters* - Defines the delimiters used by various sections in the yml files
+2. *fileLocation* - Defines the file location of the various yml files where
+   variables are defined. 
 
 #+BEGIN_SRC python :tangle program.py :eval no
-def dns(inputFile, outputFile):
-    labFile = open(inputFile, "r")
-    ymlFile = open(outputFile, "r")
+delimiters = {}
+delimiters['dns'] = ["#DNS_START\n", "#DNS_END\n"]
+delimiters['reverseproxy'] = ["#DOMAIN_START\n", "#DOMAIN_END\n"]
+delimiters['awstats'] = ["#AWSTATS_START\n", "#AWSTATS_END\n"]
+delimiters['nagios'] = ["#Nagios_START\n", "#Nagios_END\n"]
 
-    ymlData = ymlFile.readlines()
-
-    dnsStartIndex = ymlData.index("#DNS_START\n")
-    dnsEndIndex = ymlData.index("#DNS_END\n")
-    dnsNewEntries = []
-
-    for line in labFile.readlines():
-        splitLine = line.split()
-        hostnameAndIP = " - { hostname: %s, ip: %s }\n" %(splitLine[0], splitLine[1])
-        dnsNewEntries.append(hostnameAndIP)
-
-    delimeter = list("#DNS_END\n")
-    newYmlData = ymlData[0:dnsStartIndex + 1] + dnsNewEntries + delimeter + ymlData[dnsEndIndex+1:]
-
-    labFile.close()
-    ymlFile.close()
-
-    newYmlFile = open(outputFile, "w")
-
-    for lines in newYmlData:
-        newYmlFile.write(lines)
-
-    newYmlFile.close()
-
-    return
+fileLocation = {}
+fileLocation['dns'] = 'main.yml'
+fileLocation['nagios'] = 'main.yml'
+fileLocation['reverseproxy'] = 'main.yml'
+fileLocation['awstats'] = 'main.yml'
 #+END_SRC
 
-**** Reverseproxy entry
-Flow of the function is as follows:
-
-- 1 :: Read data from the yml file
-- 2 :: Find start and end of the "Domain" and "AWSTATS" entry section
-- 3 :: Read values from input data file
-- 4 :: Save all the new entries in a variable
-- 5 :: Combine existing data and new entries
-- 6 :: Write all the entries in the yml file
-
+**** Update
+Update function gets the proper format of the data for various servers DNS,
+reverseproxy, awstats and nagios. Update function calls the server's function to
+represent the data in the respective format. Then call *append_data* function to
+append data in the yml files.
 #+BEGIN_SRC python :tangle program.py :eval no
-def reverseproxy(inputFile, outputFile):
+def update(inputFile):
+
+    entries = {}
+    entries['dns'] = []
+    entries['reverseproxy'] = []
+    entries['nagios'] = []
+    entries['awstats'] = []
 
     labFile = open(inputFile, "r")
-    ymlFile = open(outputFile, "r")
-
-    ymlData = ymlFile.readlines()
-
-    domainStartIndex = ymlData.index("#DOMAIN_START\n")
-    domainEndIndex = ymlData.index("#DOMAIN_END\n")
-
-    awstatsStartIndex = ymlData.index("#AWSTATS_START\n")
-    awstatsEndIndex = ymlData.index("#AWSTATS_END\n")
-
-    domainNewEntries = []
-    awstatsNewEntries = []
-
+    
     for line in labFile.readlines():
-        splitLine = line.split()
-        fqdn = splitLine[0] + ".virtual-labs.ac.in"
-        alias = splitLine[0] + ".vlabs.ac.in"
-        hostnameAndIP = '  - {domain: "%s", alias: "%s" }\n' %(fqdn, alias)
-        awstats = '  - %s\n' %(fqdn)
-
-        domainNewEntries.append(hostnameAndIP)
-        awstatsNewEntries.append(awstats)
-
-    delimeter = list("#DOMAIN_END\n\n#AWSTATS_START\nawstats_domains:\n")
-    newYmlData = ymlData[0:domainStartIndex + 1] + domainNewEntries + ymlData[domainEndIndex:awstatsStartIndex+1] + awstatsNewEntries + ymlData[awstatsEndIndex:]
+	entries['dns'].append(dns(line))
+	entries['reverseproxy'].append(reverseproxy(line))
+	entries['nagios'].append(nagios(line))
+	entries['awstats'].append(awstats(line))
 
     labFile.close()
-    ymlFile.close()
 
-    newYmlFile = open(outputFile, "w")
-
-    for lines in newYmlData:
-        newYmlFile.write(lines)
-
-    newYmlFile.close()
-
-    return
+    for key in entries:
+        append_to_data(key, entries[key])
 #+END_SRC
 
-**** Nagios entry
-Flow of the function is as follows:
-
-- 1 :: Read data from the yml file
-- 2 :: Find start and end of the "Nagios" entry section
-- 3 :: Read values from input data file
-- 4 :: Save all the new entries in a variable
-- 5 :: Combine existing data and new entries
-- 6 :: Write all the entries in the yml file
-
+**** Rsnapshot
+Rsnapshot uses *awstats-domain* variables so there is nothing explicitly to be
+done for this.
 #+BEGIN_SRC python :tangle program.py :eval no
-def nagios(inputFile, outputFile):
-    labFile = open(inputFile, "r")
-    ymlFile = open(outputFile, "r")
-
-    ymlData = ymlFile.readlines()
-
-    nagiosStartIndex = ymlData.index("#Nagios_START\n")
-    nagiosEndIndex = ymlData.index("#Nagios_END\n")
-    nagiosNewEntries = []
-
-    for line in labFile.readlines():
-        splitLine = line.split()
-        labidHostname = '    %s: { hostname: "%s.{{prefix}}vlabs.ac.in", group: lab }\n' %(splitLine[0], splitLine[0])
-        nagiosNewEntries.append(labidHostname)
-
-    delimeter = list("#Nagios_END\n")
-    newYmlData = ymlData[0:nagiosStartIndex + 2] + nagiosNewEntries + delimeter + ymlData[nagiosEndIndex+1:]
-
-    labFile.close()
-    ymlFile.close()
-
-    newYmlFile = open(outputFile, "w")
-
-    for lines in newYmlData:
-        newYmlFile.write(lines)
-
-    newYmlFile.close()
-
-    return
-
-#+END_SRC
-
-**** Rsnapshot entry
-Rsnapshot yml files reads data from "awstats_domain" variable. There is no
-separate entries for rsnapshot.
-#+BEGIN_SRC python :tangle program.py :eval no
-def rsnapshot(inputFile, outputFile):
+def rsnapshot(line):
     ''' 
-            There is no need to do anything explicit for the lab rsnapshot-server.
-            It reads entries from awstats-domains variables
-    '''
+	    There is no need to do anything explicit for the lab rsnapshot-server.
+	    It reads entries from awstats-domains variables
+    '''    
 
     return
 
 #+END_SRC
+
+**** Nagios
+Create data in the proper format to be updated in the nagios variable section.
+#+BEGIN_SRC python :tangle program.py :eval no
+def nagios(line):
+    splitLine = line.split()
+    labidHostname = '    %s: { hostname: "%s.{{prefix}}vlabs.ac.in", group: lab }\n' %(splitLine[0], splitLine[0])
+    return labidHostname
+#+END_SRC
+
+**** DNS
+Create data in the proper format to be updated in the dns variable section.
+#+BEGIN_SRC python :tangle program.py :eval no
+def dns(line):    
+    splitLine = line.split()
+    entry = " - { hostname: %s, ip: %s }\n" %(splitLine[0], splitLine[1])
+    return entry
+#+END_SRC
+
+**** Awstats
+Create data in the proper format to be updated in the awstats variable section.
+#+BEGIN_SRC python :tangle program.py :eval no
+def awstats(line):  
+    splitLine = line.split()
+    fqdn = splitLine[0] + ".virtual-labs.ac.in"
+    entry = '  - %s\n' %(fqdn)
+    return entry
+#+END_SRC
+
+**** Reverseproxy
+Create data in the proper format to be updated in the reverseproxy variable section.
+#+BEGIN_SRC python :tangle program.py :eval no
+def reverseproxy(line):
+    splitLine = line.split()
+    fqdn = splitLine[0] + ".virtual-labs.ac.in"
+    alias = splitLine[0] + ".vlabs.ac.in"
+    entry = '  - {domain: "%s", alias: "%s" }\n' %(fqdn, alias)
+
+    return entry
+#+END_SRC
+
+**** Append to data
+Data in the yml file is structured in the following format.
+#+BEGIN_EXAMPLE
+variable_name:
+#Start_Section
+<entry>
+<entry>
+<entry>
+#End_Section
+#+END_EXAMPLE
+This function reads the yml file and finds the data section which is to be
+updated using the *start* and *end* delimiters for various servers. Then update
+the data with the new entries and writes back to the yml file.
+
+#+BEGIN_SRC python :tangle program.py :eval no
+def append_to_data(key, data):
+
+    ymlFile = open(fileLocation[key], "r")
+
+    ymlData = ymlFile.readlines()
+
+    startIndex = ymlData.index(delimiters[key][0])
+    endIndex = ymlData.index(delimiters[key][1])
+
+    newYmlData = ymlData[0:startIndex + 1] + data + ymlData[endIndex:]
+
+    ymlFile.close()
+
+    newYmlFile = open(fileLocation[key], "w")
+
+    for lines in newYmlData:
+        newYmlFile.write(lines)
+
+    newYmlFile.close()
+#+END_SRC
+
 
 * Release
 Next release will consist of ads hooks. ADS hooks impose services that can be
@@ -770,3 +744,14 @@ invoked by ADS to register a lab in the cluster.
   server is able accept ssh connections only from IIIT/management IPs
   and not from unknown ips.
 
+* Review
+** DONE Describe how common_vars is structured and how functions update the entries.
+** DONE Set path variable in the program itself + Environment variable
+** DONE Elaborate first line of work flow of service. also see if figure can be included.
+** DONE Throwing error when lab is already registered.
+** DONE Improve hosting definition. Hosting of a lab comprises of instantiating and
+   then ...
+** DONE Make a function to read the lab.txt and then delete or add entry and throw errors.
+** DONE Hosting of a lab  = deployment + registration
+** DONE Formation of string is different for different functions rest everything is same.
+** DONE Modularise the code
