@@ -375,11 +375,11 @@ Flow of the function is as follows:
 2. Call deregister function if argument passed is deregister
 3. Call update function to update yml files
 
-#+BEGIN_SRC python :tangle service.py :eval no
+#+BEGIN_SRC python :tangle hosting.py :eval no
 #!/usr/bin/env python
 
 import sys
-from modularised_program import *
+from update import *
 
 def main(argv):
 
@@ -401,7 +401,7 @@ Flow of the function is as follows:
 2. Write entry to data file if entry does not exist
 3. Throw error if entry already exist in data file
 
-#+BEGIN_SRC python :tangle service.py :eval no
+#+BEGIN_SRC python :tangle hosting.py :eval no
 def register(hostname, ip):
 
     index, entries = findEntry(hostname, ip)
@@ -429,7 +429,7 @@ Flow of the function is as follows:
 2. Delete entry from data file if exist
 3. Throw error if entry does not exist in data file
 
-#+BEGIN_SRC python :tangle service.py :eval no
+#+BEGIN_SRC python :tangle hosting.py :eval no
 def deregister(hostname, ip):
 
     index, entries = findEntry(hostname, ip)
@@ -455,7 +455,7 @@ Flow of the function is as follows:
 3. Return index of entry if entry exist in the file
 4. Return -1 if entry does not exist
 
-#+BEGIN_SRC python :tangle service.py :eval no
+#+BEGIN_SRC python :tangle hosting.py :eval no
 def findEntry(hostname, ip):
     
     readLabFile = open("lab.txt", "r")
@@ -486,7 +486,7 @@ Following program reads the values from data file and updates the yml file.
 2. *fileLocation* - Defines the file location of the various yml files where
    variables are defined. 
 
-#+BEGIN_SRC python :tangle program.py :eval no
+#+BEGIN_SRC python :tangle update.py :eval no
 delimiters = {}
 delimiters['dns'] = ["#DNS_START\n", "#DNS_END\n"]
 delimiters['reverseproxy'] = ["#DOMAIN_START\n", "#DOMAIN_END\n"]
@@ -505,7 +505,7 @@ Update function gets the proper format of the data for various servers DNS,
 reverseproxy, awstats and nagios. Update function calls the server's function to
 represent the data in the respective format. Then call *append_data* function to
 append data in the yml files.
-#+BEGIN_SRC python :tangle program.py :eval no
+#+BEGIN_SRC python :tangle update.py :eval no
 def update(inputFile):
 
     entries = {}
@@ -531,7 +531,7 @@ def update(inputFile):
 **** Rsnapshot
 Rsnapshot uses *awstats-domain* variables so there is nothing explicitly to be
 done for this.
-#+BEGIN_SRC python :tangle program.py :eval no
+#+BEGIN_SRC python :tangle update.py :eval no
 def rsnapshot(line):
     ''' 
 	    There is no need to do anything explicit for the lab rsnapshot-server.
@@ -544,7 +544,7 @@ def rsnapshot(line):
 
 **** Nagios
 Create data in the proper format to be updated in the nagios variable section.
-#+BEGIN_SRC python :tangle program.py :eval no
+#+BEGIN_SRC python :tangle update.py :eval no
 def nagios(line):
     splitLine = line.split()
     labidHostname = '    %s: { hostname: "%s.{{prefix}}vlabs.ac.in", group: lab }\n' %(splitLine[0], splitLine[0])
@@ -553,7 +553,7 @@ def nagios(line):
 
 **** DNS
 Create data in the proper format to be updated in the dns variable section.
-#+BEGIN_SRC python :tangle program.py :eval no
+#+BEGIN_SRC python :tangle update.py :eval no
 def dns(line):    
     splitLine = line.split()
     entry = " - { hostname: %s, ip: %s }\n" %(splitLine[0], splitLine[1])
@@ -562,7 +562,7 @@ def dns(line):
 
 **** Awstats
 Create data in the proper format to be updated in the awstats variable section.
-#+BEGIN_SRC python :tangle program.py :eval no
+#+BEGIN_SRC python :tangle update.py :eval no
 def awstats(line):  
     splitLine = line.split()
     fqdn = splitLine[0] + ".virtual-labs.ac.in"
@@ -572,7 +572,7 @@ def awstats(line):
 
 **** Reverseproxy
 Create data in the proper format to be updated in the reverseproxy variable section.
-#+BEGIN_SRC python :tangle program.py :eval no
+#+BEGIN_SRC python :tangle update.py :eval no
 def reverseproxy(line):
     splitLine = line.split()
     fqdn = splitLine[0] + ".virtual-labs.ac.in"
@@ -596,7 +596,7 @@ This function reads the yml file and finds the data section which is to be
 updated using the *start* and *end* delimiters for various servers. Then update
 the data with the new entries and writes back to the yml file.
 
-#+BEGIN_SRC python :tangle program.py :eval no
+#+BEGIN_SRC python :tangle update.py :eval no
 def append_to_data(key, data):
 
     ymlFile = open(fileLocation[key], "r")
@@ -617,7 +617,6 @@ def append_to_data(key, data):
 
     newYmlFile.close()
 #+END_SRC
-
 
 * Release
 Next release will consist of ads hooks. ADS hooks impose services that can be
@@ -744,7 +743,7 @@ invoked by ADS to register a lab in the cluster.
   server is able accept ssh connections only from IIIT/management IPs
   and not from unknown ips.
 
-* Review
+* COMMENT Review
 ** DONE Describe how common_vars is structured and how functions update the entries.
 ** DONE Set path variable in the program itself + Environment variable
 ** DONE Elaborate first line of work flow of service. also see if figure can be included.
