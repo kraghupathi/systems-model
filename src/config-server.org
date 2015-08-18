@@ -364,6 +364,11 @@ lab2 10.100.1.12
 Service then reads the data from the data file and updates the entries in the
 yml files of various server.
 
+Work Flow of the service is described in following diagram
+#+CAPTION:  Hooks Service Work Flow Diagram
+  #+LABEL:  fig-config-services-diagram
+  [[./diagrams/hooks-workflow.png]]
+
 *** Service Program
 Following program updates the entries in the data file with the values passed by
 the ADS service.
