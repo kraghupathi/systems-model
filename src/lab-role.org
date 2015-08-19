@@ -52,7 +52,6 @@
 
    [[./diagrams/lab-role.odg][Lab_role]]
 * Implementation
-** Layout of scripts
 ** Firewall rules
    This node has the same firewall rules as explained in [[file:common.org::*Common%20Firewall%20Rules][Common
    firewall rules]]. The exception is for Security Requirement 7, which
@@ -442,7 +441,7 @@ dependencies:
     are open,
 
 #+BEGIN_EXAMPLE
-telnet <lad_node_ip> <tcp_port_to_test>
+telnet <lab_node_ip> <tcp_port_to_test>
 
 telnet 10.100.0.1 22
 
