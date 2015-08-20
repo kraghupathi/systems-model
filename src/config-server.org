@@ -110,10 +110,15 @@ A lab is said to be de-registered by the service when the various entries are
 removed from the servers and lab is no longer accessible.
 
 - Work Flow of the Service ::
-To register or deregister a lab ADS invokes the service provided by the
+To register or deregister a lab, ADS invokes the service provided by the
 configuration server over SSH. Service first writes the input arguments passed
 by the ADS into a data file (.txt). Then the data is appended in the yaml
 file. Ansible playbook is then run to reconfigure the whole cluster again.
+
+Work Flow of the service is described in following diagram
+#+CAPTION:  Hooks Service Work Flow Diagram
+  #+LABEL:  fig-config-services-diagram
+  [[./diagrams/hooks-workflow.png]]
 
 ** System Configuration files Summary
 
@@ -140,6 +145,10 @@ files. Other configuration files are updated in common role.
    scripts that configures the machine. The scripts are organized as follows:
 
 #+BEGIN_EXAMPLE
+|-- services
+|   |-- hosting_service.py
+|   |-- program.py
+|   `-- config.py
 |-- config_server.yml
 |-- roles
 |   |-- config_server
@@ -304,6 +313,16 @@ COMMIT
   notify: restart iptables
 #+END_SRC
 
+**** Set PATH environment
+Set environment variable "PATH" so the service can be invoked from anywhere
+independent of the same working directory where file is present.
+
+#+BEGIN_SRC yaml :tangle roles/config_server/tasks/main.yml
+---
+- name: set environment variable
+  lineinfile: dest=/etc/environment regexp=^PATH= line=PATH=/usr/lib64/qt-3.3/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin
+#+END_SRC
+
 **** Handlers
    Restart the iptables service if configuration file of iptables is
    modified. These handlers are called only when tasks notifies to
@@ -340,17 +359,17 @@ COMMIT
 
 ** Services
 Configuration server provides service to register and deregister a lab in a
-cluster. ADS invokes service exposed by the configuration server over ssh as
+cluster. ADS invokes service exposed by the configuration server over *ssh* as
 follows:
 
 #+BEGIN_EXAMPLE
-ssh ansible@ansible.vlabs.ac.in service <register/deregister> <labid> <ipaddress>
+ssh ansible@ansible.vlabs.ac.in service <register/deregister> <hostname> <ipaddress>
 #+END_EXAMPLE
 
-- Program Design ::
+- Input Arguments ::
 The program takes the following three arguments as input:
 1. A keyword - (register or deregister)
-2. Labid
+2. Hostname
 3. Ipaddress of the lab
 
 The arguments passed to the service are saved in a data file in the following
@@ -364,134 +383,136 @@ lab2 10.100.1.12
 Service then reads the data from the data file and updates the entries in the
 yml files of various server.
 
-Work Flow of the service is described in following diagram
-#+CAPTION:  Hooks Service Work Flow Diagram
-  #+LABEL:  fig-config-services-diagram
-  [[./diagrams/hooks-workflow.png]]
-
 *** Service Program
 Following program updates the entries in the data file with the values passed by
 the ADS service.
 
 **** Main Function
-Flow of the function is as follows:
+The main function provides help to the user about the functionality of the
+service.  Its main job is to register the lab if the argument passed is
+'register' and deregister the lab if the argument passed is 'deregister'. It
+updates the yml configuration file. Error code is thrown if the ads service
+tries to register existing lab or tries to deregister non-existent lab.
 
-1. Call register function if argument passed is register
-2. Call deregister function if argument passed is deregister
-3. Call update function to update yml files
-
-#+BEGIN_SRC python :tangle hosting.py :eval no
+#+BEGIN_SRC python :tangle hosting_service.py :eval no
 #!/usr/bin/env python
 
 import sys
-from update import *
+from config import *
+from modularised_program import *
 
 def main(argv):
 
+    if (len(argv) == 1 and argv[0] == '--help'):
+	print serviceHelp
+	return
+
+    if (len(argv) < 3):
+	print serviceHelp
+	return
+
     if (str(argv[0]) == "register"):
-        register(argv[1], argv[2])
+        returnCode = register(argv[1], argv[2])
+
     elif (str(argv[0] == "deregister")):
-        deregister(argv[1], argv[2])
+        returnCode = deregister(argv[1], argv[2])
 
-    update("lab.txt")
+    if (returnCode != code['regError'] and returnCode != code['deregError']):
+	update()
+    else:
+	sys.exit(123)
 
-    return
-
+    return returnCode
 #+END_SRC
 
 **** Register
-Flow of the function is as follows:
+Register function finds the entry of the lab to be registered in the data
+file. If the entry is not present then it appends the new entry in the data
+file. But if the entry is already present then it throws an error.
 
-1. Call findEntry function to check if entry already exists
-2. Write entry to data file if entry does not exist
-3. Throw error if entry already exist in data file
-
-#+BEGIN_SRC python :tangle hosting.py :eval no
+#+BEGIN_SRC python :tangle hosting_service.py :eval no
 def register(hostname, ip):
 
     index, entries = findEntry(hostname, ip)
     if (index >= 0):
-        print "Error: Lab is already registered\n"
+        return code['regError']
 
     else:
-        print "Registering the lab\n"
         hostnameIP = "%s %s\n" %(hostname, ip)
         entries.append(hostnameIP)
-	writeLabFile = open("lab.txt", "w")
-	for item in entries:
-            writeLabFile.write(item)
-
-        writeLabFile.close()
-
-    return
-
+	writeData(entries)
+        return code['regSuccess']
 #+END_SRC
 
 **** Deregister
-Flow of the function is as follows:
+Deregister function finds the entry of the lab to be deregistered in the data
+file. If the entry is present then it deletes the entry from the data file. But
+if the entry is not present then it throws an error.
 
-1. Call findEntry function to check if entry already exists
-2. Delete entry from data file if exist
-3. Throw error if entry does not exist in data file
-
-#+BEGIN_SRC python :tangle hosting.py :eval no
+#+BEGIN_SRC python :tangle hosting_service.py :eval no
 def deregister(hostname, ip):
 
     index, entries = findEntry(hostname, ip)
 
     if (index >= 0):
-	print "Deregistering the lab\n"
         del entries[index]
-        writeLabFile = open("lab.txt", "w")
-        for item in entries:
-            writeLabFile.write(item)
-        writeLabFile.close()
+	writeData(entries)
+	return code['deregSuccess']
     else:
-        print "Error: Lab is not registered\n"
-
-    return
+	return code['deregError']
 #+END_SRC
 
 **** Findentry
-Flow of the function is as follows:
+Findentry function finds the entry of a lab in the data file.
+If the entry exist function returns the index of the entry, if the entry is not
+found it returns -1. Existent entries are also returned.
 
-1. Read data from data file into a list
-2. Search for entry in the data file
-3. Return index of entry if entry exist in the file
-4. Return -1 if entry does not exist
-
-#+BEGIN_SRC python :tangle hosting.py :eval no
+#+BEGIN_SRC python :tangle hosting_service.py :eval no
 def findEntry(hostname, ip):
     
-    readLabFile = open("lab.txt", "r")
+    readLabFile = open(labPath, "r")
     hostnameIP = "%s %s\n" %(hostname, ip)
 
     labData = readLabFile.readlines()
     readLabFile.close()
 
-    indexCount = len(labData)
-    existingEntries = []
-
-    for index in range(0, indexCount):
-        existingEntries.append(labData[index])
-
     try:
-        index = existingEntries.index(hostnameIP)
-        return index, existingEntries 
+        index = labData.index(hostnameIP)
+        return index, labData 
     except:
-        return -1, existingEntries
+        return -1, labData
+#+END_SRC
 
+**** WriteData
+This function writes the lab entries in the data file.
+
+#+BEGIN_SRC python :tangle hosting_service.py :eval no
+def writeData(configData):
+    writeLabFile = open(labPath, "w")
+    for item in configData:
+        writeLabFile.write(item)
+    writeLabFile.close()
+    return
+#+END_SRC
+
+**** Main function condition
+#+BEGIN_SRC python :tangle hosting_service.py :eval no
+if __name__ == "__main__":
+    main(sys.argv[1:])
 #+END_SRC
 
 *** Update Program
 Following program reads the values from data file and updates the yml file.
 
-**** Define Global Variables
+**** Define Variables
 1. *delimiters* - Defines the delimiters used by various sections in the yml files
 2. *fileLocation* - Defines the file location of the various yml files where
    variables are defined. 
+3. *labPath* - Define lab data file path
+4. *code* - Defines various error and success code
+5. *serviceHelp* - Docstring of the service to provide help to users
 
-#+BEGIN_SRC python :tangle update.py :eval no
+#+BEGIN_SRC python :tangle config.py :eval no
 delimiters = {}
 delimiters['dns'] = ["#DNS_START\n", "#DNS_END\n"]
 delimiters['reverseproxy'] = ["#DOMAIN_START\n", "#DOMAIN_END\n"]
@@ -503,6 +524,30 @@ fileLocation['dns'] = 'main.yml'
 fileLocation['nagios'] = 'main.yml'
 fileLocation['reverseproxy'] = 'main.yml'
 fileLocation['awstats'] = 'main.yml'
+
+labPath = "/root/lab.txt"
+
+code = {}
+code['regError'] = "Code 1: Error - Lab is already registered"
+code['deregError'] = "Code 1: Error - Lab is not registered"
+code['regSuccess'] = "Code 0: Success - Lab is now registered"
+code['deregSuccess'] = "Code 0: Success - Lab is now deregistered"
+
+serviceHelp = '''
+Configuration server provides service to register and deregister a lab in a
+cluster. ADS invokes service exposed by the configuration server over *ssh* as
+follows:
+
+"ssh ansible@ansible.vlabs.ac.in service <register/deregister> <hostname> <ipaddress>"
+
+Input Arguments:
+The program takes the following three arguments as input:
+1. A keyword - (register or deregister)
+2. Hostname
+3. Ipaddress of the lab
+
+To know more type: "pydoc hosting_service"
+'''
 #+END_SRC
 
 **** Update
@@ -510,8 +555,11 @@ Update function gets the proper format of the data for various servers DNS,
 reverseproxy, awstats and nagios. Update function calls the server's function to
 represent the data in the respective format. Then call *append_data* function to
 append data in the yml files.
-#+BEGIN_SRC python :tangle update.py :eval no
-def update(inputFile):
+
+#+BEGIN_SRC python :tangle hosting_service.py :eval no
+from config import *
+
+def update():
 
     entries = {}
     entries['dns'] = []
@@ -519,13 +567,13 @@ def update(inputFile):
     entries['nagios'] = []
     entries['awstats'] = []
 
-    labFile = open(inputFile, "r")
+    labFile = open(labPath, "r")
     
     for line in labFile.readlines():
-	entries['dns'].append(dns(line))
-	entries['reverseproxy'].append(reverseproxy(line))
-	entries['nagios'].append(nagios(line))
-	entries['awstats'].append(awstats(line))
+	entries['dns'].append(dns_format(line))
+	entries['reverseproxy'].append(reverseproxy_format(line))
+	entries['nagios'].append(nagios_format(line))
+	entries['awstats'].append(awstats_format(line))
 
     labFile.close()
 
@@ -536,8 +584,9 @@ def update(inputFile):
 **** Rsnapshot
 Rsnapshot uses *awstats-domain* variables so there is nothing explicitly to be
 done for this.
-#+BEGIN_SRC python :tangle update.py :eval no
-def rsnapshot(line):
+
+#+BEGIN_SRC python :tangle hosting_service.py :eval no
+def rsnapshot_format(line):
     ''' 
 	    There is no need to do anything explicit for the lab rsnapshot-server.
 	    It reads entries from awstats-domains variables
@@ -549,8 +598,9 @@ def rsnapshot(line):
 
 **** Nagios
 Create data in the proper format to be updated in the nagios variable section.
-#+BEGIN_SRC python :tangle update.py :eval no
-def nagios(line):
+
+#+BEGIN_SRC python :tangle hosting_service.py :eval no
+def nagios_format(line):
     splitLine = line.split()
     labidHostname = '    %s: { hostname: "%s.{{prefix}}vlabs.ac.in", group: lab }\n' %(splitLine[0], splitLine[0])
     return labidHostname
@@ -558,8 +608,9 @@ def nagios(line):
 
 **** DNS
 Create data in the proper format to be updated in the dns variable section.
-#+BEGIN_SRC python :tangle update.py :eval no
-def dns(line):    
+
+#+BEGIN_SRC python :tangle hosting_service.py :eval no
+def dns_format(line):    
     splitLine = line.split()
     entry = " - { hostname: %s, ip: %s }\n" %(splitLine[0], splitLine[1])
     return entry
@@ -567,8 +618,9 @@ def dns(line):
 
 **** Awstats
 Create data in the proper format to be updated in the awstats variable section.
-#+BEGIN_SRC python :tangle update.py :eval no
-def awstats(line):  
+
+#+BEGIN_SRC python :tangle hosting_service.py :eval no
+def awstats_format(line):  
     splitLine = line.split()
     fqdn = splitLine[0] + ".virtual-labs.ac.in"
     entry = '  - %s\n' %(fqdn)
@@ -576,9 +628,11 @@ def awstats(line):
 #+END_SRC
 
 **** Reverseproxy
-Create data in the proper format to be updated in the reverseproxy variable section.
-#+BEGIN_SRC python :tangle update.py :eval no
-def reverseproxy(line):
+Create data in the proper format to be updated in the reverseproxy variable
+section.
+
+#+BEGIN_SRC python :tangle hosting_service.py :eval no
+def reverseproxy_format(line):
     splitLine = line.split()
     fqdn = splitLine[0] + ".virtual-labs.ac.in"
     alias = splitLine[0] + ".vlabs.ac.in"
@@ -589,6 +643,7 @@ def reverseproxy(line):
 
 **** Append to data
 Data in the yml file is structured in the following format.
+
 #+BEGIN_EXAMPLE
 variable_name:
 #Start_Section
@@ -597,11 +652,12 @@ variable_name:
 <entry>
 #End_Section
 #+END_EXAMPLE
+
 This function reads the yml file and finds the data section which is to be
 updated using the *start* and *end* delimiters for various servers. Then update
 the data with the new entries and writes back to the yml file.
 
-#+BEGIN_SRC python :tangle update.py :eval no
+#+BEGIN_SRC python :tangle hosting_service.py :eval no
 def append_to_data(key, data):
 
     ymlFile = open(fileLocation[key], "r")
@@ -618,7 +674,7 @@ def append_to_data(key, data):
     newYmlFile = open(fileLocation[key], "w")
 
     for lines in newYmlData:
-        newYmlFile.write(lines)
+       newYmlFile.write(lines)
 
     newYmlFile.close()
 #+END_SRC
@@ -749,13 +805,27 @@ invoked by ADS to register a lab in the cluster.
   and not from unknown ips.
 
 * COMMENT Review
-** DONE Describe how common_vars is structured and how functions update the entries.
-** DONE Set path variable in the program itself + Environment variable
-** DONE Elaborate first line of work flow of service. also see if figure can be included.
-** DONE Throwing error when lab is already registered.
-** DONE Improve hosting definition. Hosting of a lab comprises of instantiating and
-   then ...
-** DONE Make a function to read the lab.txt and then delete or add entry and throw errors.
-** DONE Hosting of a lab  = deployment + registration
-** DONE Formation of string is different for different functions rest everything is same.
-** DONE Modularise the code
+** [2015-08-13 Thu]
+*** DONE Describe how common_vars is structured and how functions update the entries.
+*** DONE Set path variable in the program itself + Environment variable
+*** DONE Elaborate first line of work flow of service. also see if figure can be included.
+*** DONE Throwing error when lab is already registered.
+*** DONE Improve hosting definition. Hosting of a lab comprises of instantiating and
+    then ...
+*** DONE Make a function to read the lab.txt and then delete or add entry and throw errors.
+*** DONE Hosting of a lab  = deployment + registration
+*** DONE Formation of string is different for different functions rest everything is same.
+*** DONE Modularise the code
+** [2015-08-19 Wed]
+*** DONE export path in /etc/environment
+*** DONE Instead of points write literate in paragraph format.
+*** DONE File structure where the python programs will sit.
+*** DONE Add config server box in diagram and add apply configurationn box
+*** DONE Write help for the program
+*** DONE Check return codes of ssh
+*** DONE Publish return codes 500, etc.
+*** DONE Return error code instead of printing the error
+*** DONE Write global variable definition into a config file and import it into the main file.
+*** DONE Write another function for writing data to the file. Remove common code to a function.
+*** DONE lab.txt location should be set in configuration file with absolute path
+*** DONE Change labid to hostname
