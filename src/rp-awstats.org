@@ -2109,6 +2109,27 @@ ScriptAlias /awstats/ "/usr/share/awstats/wwwroot/cgi-bin/"
   notify:
     - restart httpd
 #+END_SRC
+*** Configure =logrotate=
+    Logrotate is an utility which manages logs, it rotates log
+    periodically depending upon the size or set time. This keeps logs
+    in manageable size rather than having an single large log file
+    growing without limits. It has multiple features, refer its =man=
+    page for more details. Here we modify a single parameter of this
+    utility in order to save =httpd= logs for a long duration.
+
+    To configure =logrotate= for Apache, we modify file
+    =/etc/logrotate.d/httpd/=, we will leave the global options in
+    =/etc/logrotate.conf= unchanged. It is assumed that in the global
+    option is to rotate logs weekly, this is the default when
+    =logrotate= is first installed.
+
+#+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml
+
+- name: configure logrotate to store logs for 400 weeks
+  lineinfile: dest=/etc/logrotate.d/httpd regexp="^    rotate 400" state=present insertafter="* {"
+
+#+END_SRC
+
 ** Handlers
 *** Restart the services
     Restart the services httpd and iptables if there are any changes
