@@ -201,7 +201,7 @@ To know further about these please refer [[Appendix][Appendix]].
 ** Bootstrapping the Base1/Base4 cluster
    This bootstrapping steps are done based on ansible playbooks of
    the systems-model repository. 
-*** Create VM (OPTIONAL)
+*** (OPTIONAL) Create VM
     - NOTE :: Creating a VM is an optional.You can go to next step for
               bootstrapping process.
     - To create VM, install the following packages
@@ -288,7 +288,7 @@ To know further about these please refer [[Appendix][Appendix]].
     https://www.sbarjatiya.com/notes_wiki/index.php/Installing_openVZ_on_Cent_OS
     https://github.com/vlead/ovpl/blob/master/docs/bridge-setup.org
 
-*** Router 
+*** Create Router 
     - We need two IPS to setup router machine one is for accessing
       labs and servers over http, https and dns and another is for
       private network ip. This private ip is for gateway to all the
@@ -297,7 +297,6 @@ To know further about these please refer [[Appendix][Appendix]].
       authentication
     - Create router node and configure the network as follows on host
       machine
-  
       #+BEGIN_EXAMPLE 
       (host-machine)$vzctl create 1001 --ostemplate centos-6-x86_64 --hostname router.vlabs.ac.in
       #+END_EXAMPLE 
@@ -334,7 +333,7 @@ To know further about these please refer [[Appendix][Appendix]].
      BOOTPROTO=static
      ONBOOT=yes
      NM_CONTROLLED=no
-     IPADDR=10.2.58.155
+     IPADDR=10.2.58.158
      NETMASK=255.255.252.0
      GATEWAY=10.2.56.1
      DNS1=10.4.12.160
@@ -351,15 +350,16 @@ To know further about these please refer [[Appendix][Appendix]].
      BOOTPROTO=static
      ONBOOT=yes
      NM_CONTROLLED=no
-     diIPADDR=10.100.1.1
+     IPADDR=10.100.1.1
      NETMASK=255.255.252.0
      #+END_EXAMPLE
     - Restart the router container
-
 **** Add  NAT rule and Edit =/etc/sysctl.conf= file
-     Write a NATing rule to get internet for all the containers
+     Write a temporary NATing rule to get internet in private network
+     containers and This rule will be used to run playbooks of private
+     and public dns nodes and router nodes smoothly.
      #+BEGIN_EXAMPLE 
-     -A POSTROUTING ! -d 10.100.0.0/22 -o eth0 -j SNAT --to-source <router_public_ip>
+     iptables -t nat -A POSTROUTING ! -d 10.100.0.0/22 -o eth0 -j SNAT --to-source <router_public_ip>
      #+END_EXAMPLE
       Edit/open the file =/etc/sysctl.conf= and modify the following line
      #+BEGIN_EXAMPLE 
@@ -368,7 +368,7 @@ To know further about these please refer [[Appendix][Appendix]].
      - Check the link for above things done for router
       https://openvz.org/Using_NAT_for_container_with_private_IPs
 
-*** Config-server node
+*** Create Config-server node
    - We need two IPs to setup ansible machine one is for public access
      over ssh and another is for private network ip. Private ip is for
      configuring other nodes as well as itself and internal
@@ -433,30 +433,33 @@ To know further about these please refer [[Appendix][Appendix]].
     - Create following servers:
       + public DNS
       + private DNS
+	#+BEGIN_SRC 
+        (host-machine)$vzctl create CTID --ostemplate centos-6-x86_64 --hostname <server-name>.vlabs.ac.in
+        (host-machine)$vzctl set CTID  --netif_add eth1,,,,br1 --save
+	#+END_SRC
     - For each of the above servers do the following:
       + Enable ssh access from ansible using key-based authentication
-    - Change public_dns_vars variable in =common_vars/vars/main.yaml=
-      file.
     - We must use temporary external dns server's IP other than cluster's dns
       server just to configure these nodes. 
-    - We must comment the task in common role which chages the
-      =nameserver= value in =/etc/resolv.conf=. *OR* Make sure that
-      the =private_dns_ips: none= and =private_dns_zone: none=
-      variable value shoud be empty(none) in
-      =roles/common_vars/vars/main.yaml= to configure these nodes.
+    - Changes which we need to do in =roles/common_vars/vars/main.yaml= are as follows
+      + =public_dns_vars= variable value with router and config-server
+        public ips.
+      + Comment =private_dns_ips: 10.100.1.5= , =private-dns-zone:
+        base{1,4}.vlabs.ac.in= and comment out =private-dns-ips: none=
+        and =private-dns-zone: none=
+      + Change the value of =public-zone-address= variable.
       + NOTE :: If you are working under any proxy enabled network, we
                 may need to check/do the following steps.
-
-                - Cluster private dns may not connect to the
-                  external network, for this to work we may have to
-                  add "forwarders{10.4.12.160;10.4.12.221;};" to
-                  =/etc/namd.conf= file. 
-                - Check OUTPUT firewaal rule for port 8080 to connetct
-                  to the proxy
-                - export proxy 
+        - Cluster private dns may not connect to the external network,
+          for this to work we may have to add
+          "forwarders{10.4.12.160;10.4.12.221;};" to =/etc/namd.conf=
+          file.
+	- Check OUTPUT firewaal rule for port 8080 to connetct to the
+          proxy
+	- export proxy
                 
-    - Run *public-dns.yaml* and private-dns play books on config-server
-      to configure public-dns.
+    - Run *public_dns.yaml* and *private_dns.yaml* play books on
+      config-server.
       #+BEGIN_SRC 
       ansible-playbook -i hosts private-dns.yaml
       #+END_SRC
@@ -464,33 +467,40 @@ To know further about these please refer [[Appendix][Appendix]].
       ansible-playbook -i hosts private-dns.yaml
       #+END_SRC
     - Once the nodes are configured using playbooks, we need to test
-      them whether the nodes are functioning properly or not. 
-    - Once the testing is done with proper configuration,update
-      varibales =private_dns_ips= and =private_dns_zone= to defualt
-      values.
+      them whether the dns nodes are functioning properly or not.
 
     Specifically for DNS servers look at variables in respective DNS
     server files.  Also ensure that roles/named_server/files has
     correct zone files for each zone with necessary zone_file_prefix.
+*** Configure Router 
+    In order to apply proper firewall rules for our cluster we need to
+    configure router after dns servers are configured.
 
+    - NOTE :: Reason to run router.yaml play book here is: We added
+              NATing rule as temporary firewall rule. So in common
+              role there is task which restarts iptables service,
+              temporary rule will be no more. 
+	      
+	      If we set POSTROUTING firewall rule as permanent rule
+              then no need to run router.yaml file after dns servers
+              are configured. We can go to [[Run site.yaml on config-server][Run site.yaml]] to setup
+              complete cluster.
+    
 *** Setup ossec server
     - Create ossec server and setup trust based SSH to it. 
-    - Edit hosts file to reflect correct IP of ossec-server.
+      #+BEGIN_SRC 
+      (host-machine)$vzctl create CTID --ostemplate centos-6-x86_64 --hostname <server-name>.vlabs.ac.in
+      (host-machine)$vzctl set CTID  --netif_add eth1,,,,br1 --save
+      #+END_SRC
     - Enable ssh access from ansible using key-based authentication
-*** Enable ossec_client role on all the nodes
-    - Enable ossec_client role in all the server roles. 
-*** Configure machines to use private DNS
-    Edit roles/common_vars/vars/main.yaml and set private_dns_ips and
-    private_dns_zone values appropriately.
-
 *** Create rsyslog server
     - Create a machine to setup rsyslog server.  
+      #+BEGIN_SRC 
+      (host-machine)$vzctl create CTID --ostemplate centos-6-x86_64 --hostname <server-name>.vlabs.ac.in
+      (host-machine)$vzctl set CTID  --netif_add eth1,,,,br1 --save
+      #+END_SRC
     - Enable ssh access from ansible machine using key-based
       authentication  
-
-*** Configure machines to send logs to rsyslog server
-    Add or un-comment role rsyslog_client on all servers except
-    rsyslog_servers.
 
 *** Create Reverse-proxy server
     Note that proper configuration of this and future steps depends
@@ -499,31 +509,45 @@ To know further about these please refer [[Appendix][Appendix]].
     private DNS so that lab containers can be resolved using FQDN.
 
     - Create a machine for reverseproxy.  
+      #+BEGIN_SRC 
+      (host-machine)$vzctl create CTID --ostemplate centos-6-x86_64 --hostname <server-name>.vlabs.ac.in
+      (host-machine)$vzctl set CTID  --netif_add eth1,,,,br1 --save
+      #+END_SRC
+
     - Enable ssh access from ansible
     - We need to add ssl certificate to reverseproxy server manually
       before running reverseproxy_server.yaml play book from ansible
       machine.
     - Private DNS must be setup completely before reverseproxy is
       created.
-
+      
 *** Create Rsnapshot server
     - Rnsapshot server is for taking backup of necessary files and
       folders from required nodes of the cluster.
     - Create a container for rsnapshot server.
+      #+BEGIN_SRC 
+      (host-machine)$vzctl create CTID --ostemplate centos-6-x86_64 --hostname <server-name>.vlabs.ac.in
+      (host-machine)$vzctl set CTID  --netif_add eth1,,,,br1 --save
+      #+END_SRC
+
     - Enable ssh access from ansible node using key-based
       authentication.
-*** Configure machines to be backed up using rsnapshot server
-    Add or un-comment rsnapshot_client role in all the nodes
 *** Monitoring Server (Nagios)
     - Create nagios server to monitor services from all the nodes in
       the cluster
+      #+BEGIN_SRC 
+      (host-machine)$vzctl create CTID --ostemplate centos-6-x86_64 --hostname <server-name>.vlabs.ac.in
+      (host-machine)$vzctl set CTID  --netif_add eth1,,,,br1 --save
+      #+END_SRC
     - Enable SSH access from ansible machine 
      
-*** Configure machines to be monitored by Nagios serer
-    Add or un-comment nagios_client role in all the nodes
-
 *** Create ADS server
     - Create a container for ADS server
+      #+BEGIN_SRC 
+      (host-machine)$vzctl create CTID --ostemplate centos-6-x86_64 --hostname <server-name>.vlabs.ac.in
+      (host-machine)$vzctl set CTID  --netif_add eth1,,,,br1 --save
+      #+END_SRC
+
     - Enable ssh access from ansible server
     - Install git
       #+BEGIN_SRC 
@@ -549,26 +573,66 @@ To know further about these please refer [[Appendix][Appendix]].
 	#+END_SRC
       + change directory to ovpl and run manage_services.sh file:
 	#+BEGIN_SRC 
-         cd ovpl
-         ./manage_services.sh start LOGGER
+        cd ovpl
+        ./manage_services.sh start LOGGER
 	#+END_SRC
     
+*** Configure machines to use private DNS
+    Edit roles/common_vars/vars/main.yaml and set private_dns_ips and
+    private_dns_zone values appropriately.
+*** Enable ossec_client role on all the nodes
+    Enable ossec_client role in all the server roles. By default this
+    is enabled in all the nodes playbooks
+
+*** Configure machines to send logs to rsyslog server
+    Add or un-comment role rsyslog_client on all servers except
+    rsyslog_servers.By default this is enabled in all the nodes
+    playbooks
+
+*** Configure machines to be backed up using rsnapshot server
+    By default this is disabled in all the nodes playbooks. Keep as it
+    was for now.
+*** Configure machines to be monitored by Nagios serer
+    Add or un-comment nagios_client role in all the nodes.By default
+    this is enabled in all the nodes playbooks
+
 *** Run site.yaml on config-server
     - Make sure all changes are done in
       =roles/common_vars/vars/main.yaml= appropriately.
     - Make sure that the hosts file with the ips of nodes and with
-      their names.
+      their names according to name of the server's playbook .
     - Check management_ips in common_vars role
-    - Comment rsnapshot_client role in all the roles. 
+    - Comment out =private_dns_ips: 10.100.1.5= , =private-dns-zone:
+      base{1,4}.vlabs.ac.in= and comment =private-dns-ips: none= and
+      =private-dns-zone: none= in common_vars role.
+    - Add servers internal ips to =ossec_client_ips= variable in
+      common_vars role.
+    - Commet ossec_client role in all the servers playbooks since
+      model not yet done.
     - Run site.yaml file 
       #+BEGIN_SRC 
       ansible-playbook -i hosts site.yaml
       #+END_SRC
-    - Un-comment rsnapshot_client role in all the roles
+    - Un-comment rsnapshot_client role in all the roles and run
       #+BEGIN_SRC 
       ansible-playbook -i hosts site.yaml
       #+END_SRC
-    
+*** Another way to run site.yaml 
+    If we want to run directly site.yaml from config-server after
+    creating all containers then do the following steps:
+    - Comment =private_dns_ips: 10.100.1.5= , =private-dns-zone:
+      base{1,4}.vlabs.ac.in= and comment out =private-dns-ips: none= and
+      =private-dns-zone: none= in common_vars role.
+    - Update all other variable values which are required in
+      common_vars role
+    - comment ossec_client role in all the nodes
+    - Run site.yaml
+    - Comment out =private_dns_ips: 10.100.1.5= , =private-dns-zone:
+      base{1,4}.vlabs.ac.in= and comment =private-dns-ips: none= and
+      =private-dns-zone: none= in common_vars role.
+    - comment out rsnapshot_client role in all the servers playbooks
+    - run site.yaml
+
 * Design of the cluster model
   The diagram below depicts the architecture of the nodes in the
   cluster model.  This architecture is same for all the three
@@ -599,6 +663,7 @@ To know further about these please refer [[Appendix][Appendix]].
   /In near future an ADS interface will also be accessible via/
   /router, for all the virtual-labs developers, perhaps through a/
   /different port./
+
 
 * Nodes in the cluster
   There are several nodes in the cluster which are all common to the
@@ -656,8 +721,8 @@ To know further about these please refer [[Appendix][Appendix]].
   [[./vlead-compliance-with-aws-security-best-practicses.org][Vlead compliance with aws security best practicses]]
 
 * Known Issues
-  A separate repository for systems related issues which includes the
-  cluster and its implementation can be viewed [[https://bitbucket.org/vlead/systems/issues?status%3Dnew&status%3Dopen][here]].
+  - A separate repository for systems related issues which includes
+    the cluster and its implementation can be viewed [[https://bitbucket.org/vlead/systems/issues?status%3Dnew&status%3Dopen][here]].
 * Appendix
 ** Version control
    The cluster model would involve timely changes, be it in the
