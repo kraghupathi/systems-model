@@ -694,6 +694,7 @@ rsnapshot_config_backup:
           - [backup, "root@reverseproxy.{{prefix}}vlabs.ac.in:/etc/awstats/", reverseproxy/]
           - [backup, "root@reverseproxy.{{prefix}}vlabs.ac.in:/etc/sysconfig/", reverseproxy/]
           - [backup, "root@reverseproxy.{{prefix}}vlabs.ac.in:/var/log/httpd/", reverseproxy/]
+          - [backup, "root@reverseproxy.{{prefix}}vlabs.ac.in:/var/lib/awstats", reverseproxy/]
           - [backup_script, /bin/date "+ backup of reverseproxy completed at %c" > end.txt, reverseproxy/reverseproxy_end]
 
     - name: nagios.vlabs.ac.in
