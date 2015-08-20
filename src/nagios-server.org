@@ -665,7 +665,7 @@ nagios_commands:
     - common
     - ossec_client
     - rsyslog_client
-    - rsnapshot_client
+#    - rsnapshot_client
     - nagios_server
 #+END_SRC
 

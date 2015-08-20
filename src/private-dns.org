@@ -431,7 +431,7 @@ $TTL 3600
     - rsyslog_client
     - ossec_client
     - nagios_client
-    - rsnapshot_client
+#    - rsnapshot_client
     - named_server
 
 #+END_SRC

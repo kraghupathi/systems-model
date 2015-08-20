@@ -756,6 +756,8 @@ rsnapshot_crontab:
    host_name: "rsnapshot-server.{{prefix}}vlabs.ac.in"
   roles:
     - common
+    - ossec_client
+    - rsnapshot_client
     - rsnapshot_server
 
 #+END_SRC
