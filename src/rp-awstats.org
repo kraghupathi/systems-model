@@ -354,6 +354,18 @@ COMMIT
   tags:
    - https
 #+END_SRC
+*** Enable log forwarding to =rsyslog= node
+    
+    
+#+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml :eval no
+- name: Enable forwarding of ErrorLog to rsyslog
+  linefile: line='ErrorLog "||/usr/bin/logger -t http_error"' regexp='^ErrorLog "||/usr/bin/logger -t http_error"' state=present insertafter="^ErrorLog logs/"
+
+- name: Enable forwarding of CustomLog to rsyslog
+  lineinfile: line='CustomLog "||/usr/bin/logger -t http_access"' regexp='^CustomLog "||/usr/bin/logger -t http_access"' state=present insertafter="^CustomLog logs/"
+
+#+END_SRC
+
 *** Create a template for virtualhosts
     Following =virtualhosts.conf= template defines http and https
     virtual-hosts.  The template uses "proxy_domains" variable which
@@ -2126,7 +2138,7 @@ ScriptAlias /awstats/ "/usr/share/awstats/wwwroot/cgi-bin/"
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml
 
 - name: configure logrotate to store logs for 400 weeks
-  lineinfile: dest=/etc/logrotate.d/httpd regexp="^    rotate 400" state=present insertafter="* {"
+  lineinfile: dest=/etc/logrotate.d/httpd regexp="^    rotate 400" line="    rotate 400" state=present insertafter=" {"
 
 #+END_SRC
 
