@@ -1,0 +1,68 @@
+#+TITLE: Security updates/Patching
+
+* Introduction
+  This document describes the patching process of the AWS cluster as
+  well the base machine containers. The patching process includes yum
+  updates for CentOs containers apt-get updates for Debian or Ubuntu
+  containers.This will update every currently installed packages in
+  the containers. Yum updates if run without any packages, it will
+  update every currently installed package.  If one or more packages
+  are specified to yum, only those packages will be updated
+* Requirements
+  - Script for updating containers/VMs based on the OS
+  -  Setting up proxy for containers, if needed.
+* Design
+** Update Base machines containers
+   Use the shell script to update the containers on Base machines. On
+   successful updation, restart the containers. The order being
+   followed is:
+   - Update base4 containers 
+   - update base1 containers
+   - update base2 containers
+   - Update Base3 Containers
+** Update AWS VMs
+   To update AWS instances,
+   - We can update all server nodes from ansible node.
+* Implementation
+  The actual implementation files for doing security updates goes in
+  this section.
+** Base machines
+   - To update all containers on base machines, the following shell
+     script is useful
+   - The following script updates containers which are in any machine
+     based on Operating System
+   - Some containers do not need to set proxy to update the packages.
+     for example clusters on base1 and base4 machines, these clusters
+     do not require proxy.
+   #+BEGIN_SRC 
+    for i in `cat /proc/vz/veinfo | awk '{print $1}'|egrep -v '^0$'`
+    do
+    if [[ $(vzctl exec $i  "cat /etc/issue | cut -d ' ' -f1 | sed 2d") == "Debian" ]] || [[ $(vzctl exec $i  "cat /etc/issue | cut -d ' ' -f1 | sed 2d") == "Ubuntu" ]];then echo "Container  Debian or Ubuntu ID is : $i";  
+    sed -i '/^Acquire.*/d' /vz/private/$i/etc/apt/apt.conf;
+    echo 'Acquire::http::proxy "http://proxy.iiit.ac.in:8080/";' >> /vz/private/$i/etc/apt/apt.conf;
+    echo 'Acquire::https::proxy "http://proxy.iiit.ac.in:8080/";' >> /vz/private/$i/etc/apt/apt.conf;
+    sed -i 's/#//g' /vz/private/$i/etc/apt/apt.conf;
+    #vzctl exec $i killall apt-get;
+    vzctl exec $i apt-get update -y; 
+    elif [ $i -ge 1001 ]||[ $i -le 1011 ];then
+    echo $i
+    #vzctl exec $i killall yum; 
+    sed -i '/^proxy=http:.*/d' /vz/private/$i/etc/yum.conf;
+    vzctl exec $i yum update -y; 
+    else
+    echo "Container CentOS ID is : $i"; 
+    sed -i '/^proxy=http:.*/d' /vz/private/$i/etc/yum.conf;
+    echo 'proxy=http://proxy.iiit.ac.in:8080/' >> /vz/private/$i/etc/yum.conf;
+    sed -i 's/#//g' /vz/private/$i/etc/yum.conf;
+    #vzctl exec $i killall yum;
+    vzctl exec $i yum update -y; 
+    fi;
+    done
+
+
+   #+END_SRC
+
+
+
+  
+
