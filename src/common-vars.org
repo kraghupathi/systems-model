@@ -1171,6 +1171,7 @@ proxy_domains:
   - {domain: "reverseproxy.base4.virtual-labs.ac.in", alias: "reverseproxy.base4.vlabs.ac.in", alias2: "rp.base4.virtual-labs.ac.in"}
   - {domain: "nagios.base4.virtual-labs.ac.in", alias: "nagios.base4.vlabs.ac.in"}
   - {domain: "ossec-server.base4.virtual-labs.ac.in", alias: "ossec-server.base4.vlabs.ac.in"}
+  - {domain: "ads.base4.virtual-labs.ac.in", alias: "ads.base4.vlabs.ac.in"}
 
 awstats_domains:
   - reverseproxy.base4.virtual-labs.ac.in
@@ -1197,7 +1198,7 @@ public_dns_entries:
  - { hostname: public-dns, ip: 10.4.14.200 }
  - { hostname: reverseproxy, ip: 10.4.14.200 }
  - { hostname: nagios, ip: 10.4.14.200 }
-
+ - { hostname: ads, ip: 10.4.14.200 }
 #+END_SRC
 
 
