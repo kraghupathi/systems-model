@@ -359,7 +359,7 @@ COMMIT
     
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml :eval no
 - name: Enable forwarding of ErrorLog to rsyslog
-  lineinfile: dest=/etc/httpd/conf/httpd.conf line='ErrorLog "||/usr/bin/logger -t http_error"' regexp=^ErrorLog.*http_.*" state=present insertafter="^ErrorLog "
+  lineinfile: dest=/etc/httpd/conf/httpd.conf line='ErrorLog "||/usr/bin/logger -t http_error"' regexp="^ErrorLog.*http_.*" state=present insertafter="^ErrorLog "
 
 - name: Enable forwarding of CustomLog to rsyslog
   lineinfile: dest=/etc/httpd/conf/httpd.conf line='CustomLog "||/usr/bin/logger -t http_access" combined' regexp="^CustomLog.*http_*" state=present insertafter="^CustomLog "
