@@ -556,7 +556,7 @@ reverseproxy, awstats and nagios. Update function calls the server's function to
 represent the data in the respective format. Then call *append_data* function to
 append data in the yml files.
 
-#+BEGIN_SRC python :tangle hosting_service.py :eval no
+#+BEGIN_SRC python :tangle hosting_program.py :eval no
 from config import *
 
 def update():
@@ -579,13 +579,15 @@ def update():
 
     for key in entries:
         append_to_data(key, entries[key])
+    
+    return
 #+END_SRC
 
 **** Rsnapshot
 Rsnapshot uses *awstats-domain* variables so there is nothing explicitly to be
 done for this.
 
-#+BEGIN_SRC python :tangle hosting_service.py :eval no
+#+BEGIN_SRC python :tangle hosting_program.py :eval no
 def rsnapshot_format(line):
     ''' 
 	    There is no need to do anything explicit for the lab rsnapshot-server.
@@ -599,7 +601,7 @@ def rsnapshot_format(line):
 **** Nagios
 Create data in the proper format to be updated in the nagios variable section.
 
-#+BEGIN_SRC python :tangle hosting_service.py :eval no
+#+BEGIN_SRC python :tangle hosting_program.py :eval no
 def nagios_format(line):
     splitLine = line.split()
     labidHostname = '    %s: { hostname: "%s.{{prefix}}vlabs.ac.in", group: lab }\n' %(splitLine[0], splitLine[0])
@@ -609,7 +611,7 @@ def nagios_format(line):
 **** DNS
 Create data in the proper format to be updated in the dns variable section.
 
-#+BEGIN_SRC python :tangle hosting_service.py :eval no
+#+BEGIN_SRC python :tangle hosting_program.py :eval no
 def dns_format(line):    
     splitLine = line.split()
     entry = " - { hostname: %s, ip: %s }\n" %(splitLine[0], splitLine[1])
@@ -619,7 +621,7 @@ def dns_format(line):
 **** Awstats
 Create data in the proper format to be updated in the awstats variable section.
 
-#+BEGIN_SRC python :tangle hosting_service.py :eval no
+#+BEGIN_SRC python :tangle hosting_program.py :eval no
 def awstats_format(line):  
     splitLine = line.split()
     fqdn = splitLine[0] + ".virtual-labs.ac.in"
@@ -631,7 +633,7 @@ def awstats_format(line):
 Create data in the proper format to be updated in the reverseproxy variable
 section.
 
-#+BEGIN_SRC python :tangle hosting_service.py :eval no
+#+BEGIN_SRC python :tangle hosting_program.py :eval no
 def reverseproxy_format(line):
     splitLine = line.split()
     fqdn = splitLine[0] + ".virtual-labs.ac.in"
@@ -657,7 +659,7 @@ This function reads the yml file and finds the data section which is to be
 updated using the *start* and *end* delimiters for various servers. Then update
 the data with the new entries and writes back to the yml file.
 
-#+BEGIN_SRC python :tangle hosting_service.py :eval no
+#+BEGIN_SRC python :tangle hosting_program.py :eval no
 def append_to_data(key, data):
 
     ymlFile = open(fileLocation[key], "r")
@@ -677,6 +679,8 @@ def append_to_data(key, data):
        newYmlFile.write(lines)
 
     newYmlFile.close()
+
+    return
 #+END_SRC
 
 * Release
@@ -804,6 +808,183 @@ invoked by ADS to register a lab in the cluster.
   server is able accept ssh connections only from IIIT/management IPs
   and not from unknown ips.
 
+** Test case ID :: Invoke hosting service over SSH
+*** Objective
+    Test to check if the hosting service is being invoked from the ads server
+    over SSH.
+*** Apparatus
+    1. Configuration server
+    2. ADS Server
+*** Procedure
+    1. Login to ads machine.
+    2. Invoke hosting service from ads machine as follows via SSH
+#+BEGIN_EXAMPLE
+ssh ansible@ansible.vlabs.ac.in service register test-lab <ipaddress>
+#+END_EXAMPLE
+   3. Check the return status of the ssh command using following command. If the
+      command returns '0' then it is executed successfully else the command has
+      thrown some error.
+#+BEGIN_EXAMPLE
+echo $?
+#+END_EXAMPLE
+*** Observation
+    Configuration server is able to accept request to host lab via ssh from ads
+    server.
+*** Result
+    Test is passed. Hosting service is working fine
+*** Conclusion
+  Hosting service program is developed properly and is configured properly.
+
+** Unit Tests
+Following program tests the functionality of each function of the hosting
+service module.
+
+#+BEGIN_SRC python :tangle testing_program.py :eval no
+import unittest
+from hosting_program import *
+from hosting_service import *
+
+def findIndex(path, entry):
+    readFile = open(path, "r")
+
+    fileData = readFile.readlines()
+    readFile.close()
+    try:
+        index = fileData.index(entry)
+    except:
+        index = -1
+    
+    return index
+
+def writetoFile(hostnameIP):
+
+    writeLabFile = open(labPath, "w")
+    writeLabFile.write(hostnameIP)
+    writeLabFile.close()
+    return
+
+def deleteFile():
+    with open(labPath, "w"):
+        pass
+    return
+
+class TestUpdateMethods(unittest.TestCase):
+    
+    def test_findEntry(self):
+	hostname = "lab10"
+	IP = "10.1.1.1"
+	hostnameIP = "%s %s\n" %(hostname, IP)
+	
+	writetoFile(hostnameIP)
+
+	index, entries = findEntry(hostname, IP)
+        deleteFile()
+        self.assertTrue(index >= 0)
+	return
+
+    def test_writeData(self):
+	hostname = "lab10"
+	IP = "10.1.1.1"
+	hostnameIP = "%s %s\n" %(hostname, IP)
+	data = [hostnameIP]
+	writeData(data)
+
+        index = findIndex(labPath, hostnameIP)
+        
+        deleteFile()
+
+        self.assertTrue(index >= 0)
+	return
+    
+    def test_register_with_error(self):
+        hostname = "lab10"
+	IP = "10.1.1.1"
+	hostnameIP = "%s %s\n" %(hostname, IP)
+	
+	writetoFile(hostnameIP)
+	
+	returncode = register(hostname, IP)
+	deleteFile()
+        self.assertEqual(returncode, code['regError'])
+	return
+	
+
+    def test_register_with_success(self):
+	hostname = "lab10"
+	IP = "10.1.1.1"
+	hostnameIP = "%s %s\n" %(hostname, IP)
+	returncode = register(hostname, IP)
+        deleteFile()
+	self.assertEqual(returncode, code['regSuccess'])
+	return
+
+    def test_nagios_format(self):
+	line = 'lab10	10.1.1.1'
+	function_return = nagios_format(line)
+	splitLine = line.split()
+	entry = '    %s: { hostname: "%s.{{prefix}}vlabs.ac.in", group: lab }\n' %(splitLine[0], splitLine[0])
+	self.assertEqual(entry, function_return)
+	return
+
+    def test_dns_format(self):
+	line = 'lab10	10.1.1.1'
+	function_return = dns_format(line)
+	splitLine = line.split()
+	entry = " - { hostname: %s, ip: %s }\n" %(splitLine[0], splitLine[1])
+	self.assertEqual(entry, function_return)
+	return
+
+    def test_awstats_format(self):
+	line = 'lab10	10.1.1.1'
+	function_return = awstats_format(line)
+	splitLine = line.split()
+	fqdn = splitLine[0] + ".virtual-labs.ac.in"
+	entry = '  - %s\n' %(fqdn)
+	self.assertEqual(entry, function_return)
+	return
+
+    def test_reverseproxy_format(self):
+	line = 'lab10	10.1.1.1'
+	function_return = reverseproxy_format(line)
+	splitLine = line.split()
+	fqdn = splitLine[0] + ".virtual-labs.ac.in"
+	alias = splitLine[0] + ".vlabs.ac.in"
+	entry = '  - {domain: "%s", alias: "%s" }\n' %(fqdn, alias)
+	self.assertEqual(entry, function_return)
+        return
+
+
+    def test_append_to_data(self):
+	line = 'lab10	10.1.1.1'
+	splitLine = line.split()
+        key = 'dns'
+        entry = " - { hostname: %s, ip: %s }\n" %(splitLine[0], splitLine[1])
+	data = [entry]
+        append_to_data(key, data)
+        
+	index = findIndex(fileLocation[key], entry)
+	
+        self.assertTrue(index >= 0)
+
+	return
+
+    def test_update(self):
+	line = 'lab10	10.1.1.1'
+	splitLine = line.split()
+	writetoFile(line)
+	update()
+        key = 'dns'
+        entry = " - { hostname: %s, ip: %s }\n" %(splitLine[0], splitLine[1])
+
+	index = findIndex(fileLocation[key], entry)
+        self.assertTrue(index >= 0)
+	return
+
+
+if __name__ == '__main__':
+    unittest.main()
+
+#+END_SRC
 * COMMENT Review
 ** [2015-08-13 Thu]
 *** DONE Describe how common_vars is structured and how functions update the entries.
