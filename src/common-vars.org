@@ -1134,6 +1134,10 @@ private_dns_entries:
   - { hostname: nagios, ip: 10.100.1.8 }
   - { hostname: ads, ip: 10.100.1.9 }
   - { hostname: rsnapshot-server, ip: 10.100.1.10 }
+  - { hostname: fpga-coep, ip: 10.100.0.4}
+  - { hostname: vml-dei, ip: 10.100.0.5}
+  - { hostname: vcl-dei, ip: 10.100.0.8}
+  - { hostname: vca-iitk, ip: 10.100.0.9}
  
 public_dns_entries:
  - { hostname: router, ip: 10.4.14.200 }
@@ -1145,6 +1149,10 @@ public_dns_entries:
  - { hostname: reverseproxy, ip: 10.4.14.200 }
  - { hostname: nagios, ip: 10.4.14.200 }
  - { hostname: ads, ip: 10.4.14.200 }
+ - { hostname: fpga-coep, ip: 10.4.14.200 }
+ - { hostname: vml-dei, ip: 10.4.14.200 }
+ - { hostname: vcl-dei, ip: 10.4.14.200 }
+ - { hostname: vca-iitk, ip: 10.4.14.200 }
 #+END_SRC
 
 
