@@ -55,7 +55,7 @@
 ** Functional Requirements
    Rsyslog service should run on UDP port 514 to accept log messages
    from clients. These log messages should be saved in different
-   folders / files per client for easy reference.
+   directories / files per client for easy reference.
 
 ** Security Requirements
    All common security requirements as described in [[file:common.org::*Security Requirements][common role]] are
