@@ -427,7 +427,9 @@ ServerAdmin engg@vlabs.ac.in
 ServerName {{domain.domain}}
 ServerAlias {{domain.alias}}
 ErrorLog logs/{{domain.domain}}-error_log
+ErrorLog "||/usr/bin/logger -t {{domain.domain}}-elog"
 CustomLog logs/{{domain.domain}}-access_log combined
+CustomLog "||/usr/bin/logger -t {{domain.domain}}-alog" combined
 <Location />
 ProxyPass http://{{domain.domain}}/
 </Location>
@@ -439,7 +441,9 @@ ServerAdmin engg@vlabs.ac.in
 ServerName {{domain.domain}}
 ServerAlias {{domain.alias}}
 ErrorLog logs/{{domain.domain}}-error_log
+ErrorLog "||/usr/bin/logger -t {{domain.domain}}-elog"
 CustomLog logs/{{domain.domain}}-access_log combined
+CustomLog "||/usr/bin/logger -t {{domain.domain}}-alog" combined
 <Location />
 ProxyPass http://{{domain.domain}}/
 </Location>
