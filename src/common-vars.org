@@ -406,6 +406,9 @@ proxy_domains:
   - {domain: "mas-iiith.virtual-labs.ac.in", alias: "mas-iiith.vlabs.ac.in"}
   - {domain: "mfs-iiith.virtual-labs.ac.in", alias: "mfs-iiith.vlabs.ac.in"}
   - {domain: "nlp-iiith.virtual-labs.ac.in", alias: "nlp-iiith.vlabs.ac.in"}
+  - {domain: "cp-iiith.virtual-labs.ac.in", alias: "cp-iiith.vlabs.ac.in"}
+  - {domain: "virtual-labs.ac.in", alias: "vlabs.ac.in"}
+  - {domain: "www.virtual-labs.ac.in", alias: "www.vlabs.ac.in"}
 
 awstats_domains:
   - cse01-iiith.virtual-labs.ac.in
@@ -476,9 +479,66 @@ awstats_domains:
   - mas-iiith.virtual-labs.ac.in
   - mfs-iiith.virtual-labs.ac.in
   - nlp-iiith.virtual-labs.ac.in
+  - cp-iiith.virtual-labs.ac.in
+  - virtual-labs.ac.in
+  - www.virtual-labs.ac.in
 
+#AWS public DNS is also listing other public records of vlabs
 public_dns_entries:
-  - { hostname: router, ip: 54.85.93.7 }
+  - { hostname: portable-media, ip: 196.12.53.130 }
+  - { hostname: lik, ip: 196.12.53.130 }
+  - { hostname: music, ip: 196.12.53.130 }
+  - { hostname: staging.music, ip: 196.12.53.130 }
+  - { hostname: iiith-outreach, ip: 196.12.53.130 }
+  - { hostname: vlead, ip: 196.12.53.130 }
+  - { hostname: sage, ip: 196.12.53.130 }
+  - { hostname: community, ip: 196.12.53.130 }
+  - { hostname: civil11, ip: 196.12.53.130 }
+  - { hostname: nitk, ip: 196.12.53.130 }
+  - { hostname: gateone.cse05, ip: 14.139.82.11 }
+  - { hostname: gateone.cse09, ip: 14.139.82.11 }
+  - { hostname: ssh-tunnel, ip: 196.12.53.133 }
+  - { hostname: aws-backup, ip: 196.12.53.133 }
+  - { hostname: labs-info, ip: 196.12.53.130 }
+  - { hostname: analytics, ip: 196.12.53.130 }
+  - { hostname: ads-test, ip: 196.12.53.130 }
+  - { hostname: outreach-portal, ip: 196.12.53.130 }
+  - { hostname: mech26, ip: 196.12.53.130 }
+  - { hostname: eee06, ip: 196.12.53.130 }
+  - { hostname: mech08, ip: 196.12.53.130 }
+  - { hostname: phy01, ip: 196.12.53.130 }
+  - { hostname: chs13, ip: 196.12.53.130 }
+  - { hostname: aerospaceengg, ip: 196.12.53.130 }
+  - { hostname: combustion, ip: 196.12.53.130 }
+  - { hostname: t4e2015 , ip: 196.12.53.130 }
+  - { hostname: renarration, ip: 196.12.53.130 }
+  - { hostname: cse04-iiith, ip: 196.12.53.130 }
+  - { hostname: cse06-iiith, ip: 196.12.53.130 }
+  - { hostname: cse07-iiith, ip: 196.12.53.130 }
+  - { hostname: cse09-iiith, ip: 196.12.53.130 }
+  - { hostname: cse05-iiith, ip: 196.12.53.130 }
+  - { hostname: cse13-iiith, ip: 196.12.53.130 }
+  - { hostname: cse16-iiith, ip: 196.12.53.130 }
+  - { hostname: cse17-iiith, ip: 196.12.53.130 }
+  - { hostname: cse21-iiith, ip: 196.12.53.130 }
+  - { hostname: cse24-iiith, ip: 196.12.53.130 }
+  - { hostname: cse30-iiith, ip: 196.12.53.130 }
+  - { hostname: eerc04-iiith, ip: 196.12.53.130 }
+  - { hostname: eerc02-iiith, ip: 196.12.53.130 }
+  - { hostname: eerc05-iiith, ip: 196.12.53.130 }
+  - { hostname: cse23-iiith, ip: 196.12.53.130 }
+  - { hostname: cse10-iitkgp, ip: 196.12.53.130 }
+  - { hostname: civil13-iitb, ip: 196.12.53.130 }
+  - { hostname: ccnsb01-iiith, ip: 196.12.53.130 }
+  - { hostname: ccnsb02-iiith, ip: 196.12.53.130 }
+  - { hostname: ccnsb03-iiith, ip: 196.12.53.130 }
+  - { hostname: ccnsb04-iiith, ip: 196.12.53.130 }
+  - { hostname: ccnsb05-iiith, ip: 196.12.53.130 }
+  - { hostname: ccnsb07-iiith, ip: 196.12.53.130 }
+  - { hostname: mech01-iitg, ip: 196.12.53.130 }
+  - { hostname: eee06-dei, ip: 196.12.53.130 }
+  - { hostname: vlabs-dependencies, ip: 196.12.53.130 }
+  - { hostname: router, ip: 54.85.93.7 }  ###AWS-cluster IPs start here###
   - { hostname: bandwidthd, ip: 54.85.93.7 }
   - { hostname: ansible, ip: 52.4.150.142 }
   - { hostname: ossec-server, ip: 54.85.93.7 }
@@ -557,6 +617,8 @@ public_dns_entries:
   - { hostname: mas-iiith, ip: 54.85.93.7}
   - { hostname: mfs-iiith, ip: 54.85.93.7}
   - { hostname: nlp-iiith, ip: 54.85.93.7}
+  - { hostname: cp-iiith, ip: 54.85.93.7}
+  - { hostname: www, ip: 54.85.93.7}
 
 private_dns_entries:
   - { hostname: router, ip: 10.100.1.1 }
@@ -639,6 +701,8 @@ private_dns_entries:
   - { hostname: mas-iiith, ip: 10.100.1.187}
   - { hostname: mfs-iiith, ip: 10.100.1.149}
   - { hostname: nlp-iiith, ip: 10.100.3.184}
+  - { hostname: cp-iiith, ip: 10.100.1.190}
+  - { hostname: www, ip: 10.100.1.13}
 
 
 #+END_SRC
@@ -806,7 +870,9 @@ proxy_domains:
   - {domain: "mas-iiith.base1.virtual-labs.ac.in", alias: "mas-iiith.base1.vlabs.ac.in"}
   - {domain: "mfs-iiith.base1.virtual-labs.ac.in", alias: "mfs-iiith.base1.vlabs.ac.in"}
   - {domain: "nlp-iiith.base1.virtual-labs.ac.in", alias: "nlp-iiith.base1.vlabs.ac.in"}
-
+  - {domain: "cp-iiith.virtual-labs.ac.in", alias: "cp-iiith.vlabs.ac.in"}
+  - {domain: "virtual-labs.ac.in", alias: "vlabs.ac.in"}
+  - {domain: "www.virtual-labs.ac.in", alias: "www.vlabs.ac.in"}
 
 awstats_domains:
   - reverseproxy.base1.virtual-labs.ac.in
@@ -869,6 +935,10 @@ awstats_domains:
   - qnm-iitd.base1.virtual-labs.ac.in
   - msvs-dei.base1.virtual-labs.ac.in
   - vp-dei.base1.virtual-labs.ac.in
+  - cp-iiith.virtual-labs.ac.in
+  - virtual-labs.ac.in
+  - www.virtual-labs.ac.in
+
 
 public_dns_entries:
   - { hostname: router, ip: 10.4.14.150 }
@@ -880,7 +950,7 @@ public_dns_entries:
   - { hostname: public-dns, ip: 10.4.14.150 }
   - { hostname: reverseproxy, ip: 10.4.14.150 }
   - { hostname: nagios, ip: 10.4.14.150 }
-  -  { hostname: ads, ip: 10.4.14.150 }
+  - { hostname: ads, ip: 10.4.14.150 }
   - { hostname: rsnapshot-server, ip: 10.4.14.150 }
   - { hostname: cse01-iiith, ip: 10.4.14.150 }
   - { hostname: cse02-iiith, ip: 10.4.14.150 }
@@ -941,6 +1011,8 @@ public_dns_entries:
   - { hostname: qnm-iitd, ip: 10.4.14.150 }
   - { hostname: msvs-dei, ip: 10.4.14.150 }
   - { hostname: vp-dei, ip: 10.4.14.150 }
+  - { hostname: cp-iiith, ip: 10.4.14.150 }
+  - { hostname: www, ip: 10.4.14.150}
 
 private_dns_entries:
   - { hostname: router, ip: 10.100.1.1 }
@@ -1014,6 +1086,8 @@ private_dns_entries:
   - { hostname: qnm-iitd, ip: 10.100.0.47 }
   - { hostname: msvs-dei, ip: 10.100.0.48 }
   - { hostname: vp-dei, ip: 10.100.0.49 }
+  - { hostname: cp-iiith, ip: 10.100.0.61}
+#  - { hostname: www, ip: 10.100.1.13}
 
 #+END_SRC
 
@@ -1117,10 +1191,17 @@ proxy_domains:
   - {domain: "reverseproxy.base4.virtual-labs.ac.in", alias: "reverseproxy.base4.vlabs.ac.in", alias2: "rp.base4.virtual-labs.ac.in"}
   - {domain: "nagios.base4.virtual-labs.ac.in", alias: "nagios.base4.vlabs.ac.in"}
   - {domain: "ossec-server.base4.virtual-labs.ac.in", alias: "ossec-server.base4.vlabs.ac.in"}
-
+  - {domain: "ads.base4.virtual-labs.ac.in", alias: "ads.base4.vlabs.ac.in"}
+  - {domain: "fpga-coep.base4.virtual-labs.ac.in", alias: "fpga-coep.base4.vlabs.ac.in"}
+  - {domain: "vml-dei.base4.virtual-labs.ac.in", alias: "vml-dei.base4.vlabs.ac.in"}
+  - {domain: "vcl-dei.base4.virtual-labs.ac.in", alias: "vcl-dei.base4.vlabs.ac.in"}
+  - {domain: "vca-iitk.base4.virtual-labs.ac.in", alias: "vca-iitk.base4.vlabs.ac.in"}
 awstats_domains:
   - reverseproxy.base4.virtual-labs.ac.in
-
+  - fpga-coep.base4.virtual-labs.ac.in
+  - vml-dei.base4.virtual-labs.ac.in
+  - vcl-dei.base4.virtual-labs.ac.in
+  - vca-iitk.base4.virtual-labs.ac.in
 private_dns_entries:
   - { hostname: router, ip: 10.100.1.1 }
   - { hostname: bandwidthd, ip: 10.100.1.1 }
@@ -1133,6 +1214,10 @@ private_dns_entries:
   - { hostname: nagios, ip: 10.100.1.8 }
   - { hostname: ads, ip: 10.100.1.9 }
   - { hostname: rsnapshot-server, ip: 10.100.1.10 }
+  - { hostname: fpga-coep, ip: 10.100.0.4}
+  - { hostname: vml-dei, ip: 10.100.0.5}
+  - { hostname: vcl-dei, ip: 10.100.0.8}
+  - { hostname: vca-iitk, ip: 10.100.0.9}
  
 public_dns_entries:
  - { hostname: router, ip: 10.4.14.200 }
@@ -1143,7 +1228,11 @@ public_dns_entries:
  - { hostname: public-dns, ip: 10.4.14.200 }
  - { hostname: reverseproxy, ip: 10.4.14.200 }
  - { hostname: nagios, ip: 10.4.14.200 }
-
+ - { hostname: ads, ip: 10.4.14.200 }
+ - { hostname: fpga-coep, ip: 10.4.14.200 }
+ - { hostname: vml-dei, ip: 10.4.14.200 }
+ - { hostname: vcl-dei, ip: 10.4.14.200 }
+ - { hostname: vca-iitk, ip: 10.4.14.200 }
 #+END_SRC
 
 
