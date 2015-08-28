@@ -335,6 +335,7 @@ public_zone_address: 54.85.93.7
 proxy_domains:
   - {domain: "reverseproxy.virtual-labs.ac.in", alias: "reverseproxy.vlabs.ac.in", alias2: "rp.virtual-labs.ac.in"}
   - {domain: "bandwidthd.virtual-labs.ac.in", alias: "bandwidthd.vlabs.ac.in", alias2: "bwd.virtual-labs.ac.in"}
+  - {domain: "ossec-server.virtual-labs.ac.in", alias: "ossec-server.vlabs.ac.in"}
   - {domain: "cse01-iiith.virtual-labs.ac.in", alias: "cse01-iiith.vlabs.ac.in"}
   - {domain: "cse02-iiith.virtual-labs.ac.in", alias: "cse02-iiith.vlabs.ac.in"}
   - {domain: "cse15-iiith.virtual-labs.ac.in", alias: "cse15-iiith.vlabs.ac.in"}
