@@ -354,6 +354,21 @@ COMMIT
   tags:
    - https
 #+END_SRC
+*** Enable log forwarding to =rsyslog= node
+    We configure Apache to send logs to the local =rsyslog=, which
+    will then forward it to the central =rsyslog= server. The changes
+    required for local =rsyslog= server on reverse proxy to further
+    forward logs is configured using the [[./rsyslog-client.org][Rsyslog client]] role.
+    
+#+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml :eval no
+- name: Enable forwarding of ErrorLog to rsyslog
+  lineinfile: dest=/etc/httpd/conf/httpd.conf line='ErrorLog "||/usr/bin/logger -t http_error"' regexp="^ErrorLog.*http_.*" state=present insertafter="^ErrorLog "
+
+- name: Enable forwarding of CustomLog to rsyslog
+  lineinfile: dest=/etc/httpd/conf/httpd.conf line='CustomLog "||/usr/bin/logger -t http_access" combined' regexp="^CustomLog.*http_*" state=present insertafter="^CustomLog "
+
+#+END_SRC
+
 *** Create a template for virtualhosts
     Following =virtualhosts.conf= template defines http and https
     virtual-hosts.  The template uses "proxy_domains" variable which
@@ -2109,6 +2124,27 @@ ScriptAlias /awstats/ "/usr/share/awstats/wwwroot/cgi-bin/"
   notify:
     - restart httpd
 #+END_SRC
+*** Configure =logrotate=
+    Logrotate is an utility which manages logs, it rotates log
+    periodically depending upon the size or set time. This keeps logs
+    in manageable size rather than having an single large log file
+    growing without limits. It has multiple features, refer its =man=
+    page for more details. Here we modify a single parameter of this
+    utility in order to save =httpd= logs for a long duration.
+
+    To configure =logrotate= for Apache, we modify file
+    =/etc/logrotate.d/httpd/=, we will leave the global options in
+    =/etc/logrotate.conf= unchanged. It is assumed that in the global
+    option is to rotate logs weekly, this is the default when
+    =logrotate= is first installed.
+
+#+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml
+
+- name: configure logrotate to store logs for 400 weeks
+  lineinfile: dest=/etc/logrotate.d/httpd regexp="^    rotate 400" line="    rotate 400" state=present insertafter=" {"
+
+#+END_SRC
+
 ** Handlers
 *** Restart the services
     Restart the services httpd and iptables if there are any changes
