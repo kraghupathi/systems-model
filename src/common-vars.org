@@ -870,7 +870,7 @@ proxy_domains:
   - {domain: "mas-iiith.base1.virtual-labs.ac.in", alias: "mas-iiith.base1.vlabs.ac.in"}
   - {domain: "mfs-iiith.base1.virtual-labs.ac.in", alias: "mfs-iiith.base1.vlabs.ac.in"}
   - {domain: "nlp-iiith.base1.virtual-labs.ac.in", alias: "nlp-iiith.base1.vlabs.ac.in"}
-  - {domain: "cp-iiith.virtual-labs.ac.in", alias: "cp-iiith.vlabs.ac.in"}
+  - {domain: "cp-iiith.base1.virtual-labs.ac.in", alias: "cp-iiith.base1.vlabs.ac.in"}
   - {domain: "virtual-labs.ac.in", alias: "vlabs.ac.in"}
   - {domain: "www.virtual-labs.ac.in", alias: "www.vlabs.ac.in"} 
   - {domain: "ps-iiith.base1.virtual-labs.ac.in", alias: "ps-iiith.base1.vlabs.ac.in"}
@@ -938,7 +938,7 @@ awstats_domains:
   - qnm-iitd.base1.virtual-labs.ac.in
   - msvs-dei.base1.virtual-labs.ac.in
   - vp-dei.base1.virtual-labs.ac.in
-  - cp-iiith.virtual-labs.ac.in
+  - cp-iiith.base1.virtual-labs.ac.in
   - virtual-labs.ac.in
   - www.virtual-labs.ac.in
   - ps-iiith.base1.virtual-labs.ac.in
@@ -1018,8 +1018,8 @@ public_dns_entries:
   - { hostname: vp-dei, ip: 10.4.14.150 }
   - { hostname: cp-iiith, ip: 10.4.14.150 }
   - { hostname: www, ip: 10.4.14.150}
-  - { hostname: ps-iiith, ip: 10.100.0.62 }
-  - { hostname: ssl-iitg, ip: 10.100.0.63 }
+  - { hostname: ps-iiith, ip: 10.4.14.150 }
+  - { hostname: ssl-iitg, ip: 10.4.14.150 }
 
 private_dns_entries:
   - { hostname: router, ip: 10.100.1.1 }
