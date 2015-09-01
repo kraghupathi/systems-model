@@ -752,6 +752,7 @@ ossec_client_ips:
   - 10.100.1.6
   - 10.100.1.7
   - 10.100.1.8
+  - 10.100.1.9
   - 10.100.1.10
 #Administrator email address and SMTP server through which
 #administrator can be reached.  Used by OSSEC server to send emails.
@@ -1145,6 +1146,8 @@ ossec_client_ips:
   - 10.100.1.6
   - 10.100.1.7
   - 10.100.1.8
+  - 10.100.1.9
+  - 10.100.1.10
 
 #Administrator email address and SMTP server through which
 #administrator can be reached.  Used by OSSEC server to send emails.
