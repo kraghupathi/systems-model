@@ -53,7 +53,7 @@
 
 #+CAPTION:  Rsnapshot Server Network Diagram
 #+LABEL:  fig-rsnapshot-server-design-diagram
-[[./diagrams/rsnapshot-server-design-diagram.png]]
+[[./diagrams/rsnapshot-diagram.png]]
 
 ** System design after functional requirement 3)
    Following is the functional diagram. 
