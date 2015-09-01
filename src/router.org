@@ -152,19 +152,19 @@ COMMIT
 -A INPUT -p icmp --icmp-type echo-request -j DROP
 #Allow ongoing connections
 -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-#Allow incoming SSH connections from management IPs.  Hopefully fail2ban will take care of bruteforce attacks from management IPs
+#Allow incoming SSH connections from management IPs.  
 {% for item in management_ips  %}
 -A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
-#Allow incoming SSH connections from ansible server IPs.  Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
+#Allow incoming SSH connections from ansible server IPs.
 {% for item in ansible_server_ips  %}
 -A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
-#Allow incoming SSH connections from nagios server IPs.  Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
+#Allow incoming SSH connections from nagios server IPs.
 {% for item in nagios_server_ips  %}
 -A INPUT -m state --state NEW -s {{nagios_server_ips[0]}} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
-#Allow incoming SSH connections from rsnapshot server IPs.  Hopefully fail2ban will take care of bruteforce attacks from ansible server IPs
+#Allow incoming SSH connections from rsnapshot server IPs.
 {% for item in rsnapshot_server_ips  %}
 -A INPUT -m state --state NEW -s {{rsnapshot_server_ips[0]}} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
