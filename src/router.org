@@ -28,10 +28,15 @@ The functional and security requirements of router are:
   requirements of the router are to allow forwarding of packets to reverse proxy on TCP port 80/443
   and also to public DNS on UDP port 53. Every request from any external lab user would be accepted
   on TCP port 80/443 and UDP port 53.
+ 
+  The router also allows outgoing SSH/Rsync over TCP port 2222 from
+  [[./rsnapshot-server.org][Rsnapshot server]] to [[https://vlead.virtual-labs.ac.in/wiki/index.php/Aws-backup.virtual-labs.ac.in][aws-backup.vlabs.ac.in]]
 
 ** Security Requirements
-  All common security requirements and general server hardening as described in [[file:common.org::*Security Requirements][common role]] are applicable
-  to router with an exception that TCP port 80/443 and UDP port 53 are open for all lab users.
+  All common security requirements and general server hardening as
+  described in [[file:common.org::*Security Requirements][common role]] are applicable to router with an exception
+  that TCP port 80/443 and UDP port 53 are open for all lab users. And
+  TCP port 2222 is allowed for rsnapshot node/backup node.
  
 * Design
 ** Overall Network diagram of the router
@@ -43,6 +48,10 @@ TCP and UDP for the communication.
 #+CAPTION: Router Configuration diagram
 #+LABEL: router-configuration-diagram
 [[./diagrams/router-config.png]]
+
+** Source file for the network diagram
+   Created using Libreoffice/OpenOffice, with VRT extensions.
+   [[./diagrams/router-config.odg][Download-source-file]]
 
 ** Important configuration and data files and folders
 |------+----------+------------------------------+------------------------|
@@ -129,6 +138,8 @@ COMMIT
 -A INPUT -i lo -d 127.0.0.0/8 -j ACCEPT
 #Accept http/tcp request from internal network for displaying bandwidthd
 -A INPUT -s {{local_subnet}} -p tcp -m tcp --dport 8000 -j ACCEPT
+#Accept incoming TCP on port 2222 from rsnapshot server
+-A INPUT -s {{rsnapshot_server_ips}} -p tcp -m tcp --dport 2222 -j ACCEPT
 #Rate limit new connections to 20 new connections per 30 seconds
 -A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --set
 -A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --rcheck --seconds 30 --hitcount 20 -m limit --limit 2/min -j LOG --log-prefix "new_limit_"
@@ -191,6 +202,8 @@ COMMIT
 -A OUTPUT -p udp -m udp --dport 514 -j ACCEPT
 #Allow outgoing connections to OSSEC server
 -A OUTPUT -p udp -m udp --dport 1514 -j ACCEPT
+#Allow outgoing connection from backup server to aws-backup(secondary backup)
+-A OUTPUT -p tcp -m tcp -d {{aws_backup}} --dport 2222 -j ACCEPT
 #Log all other "blocked_output_" attempts
 -A OUTPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_output_"
 #Reply with proper ICMP error message and reject the connection
