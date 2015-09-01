@@ -139,7 +139,9 @@ COMMIT
 #Accept http/tcp request from internal network for displaying bandwidthd
 -A INPUT -s {{local_subnet}} -p tcp -m tcp --dport 8000 -j ACCEPT
 #Accept incoming TCP on port 2222 from rsnapshot server
--A INPUT -s {{rsnapshot_server_ips}} -p tcp -m tcp --dport 2222 -j ACCEPT
+{% for item in rsnapshot_server_ips %}
+-A INPUT -s {{item}} -p tcp -m tcp --dport 2222 -j ACCEPT
+{% endfor %}
 #Rate limit new connections to 20 new connections per 30 seconds
 -A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --set
 -A INPUT ! -p udp -m state --state NEW -m recent --name new_limit --rcheck --seconds 30 --hitcount 20 -m limit --limit 2/min -j LOG --log-prefix "new_limit_"
