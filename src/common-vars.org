@@ -541,6 +541,8 @@ public_dns_entries:
   - { hostname: mech01-iitg, ip: 196.12.53.130 }
   - { hostname: eee06-dei, ip: 196.12.53.130 }
   - { hostname: vlabs-dependencies, ip: 196.12.53.130 }
+  - { hostname: http, ip: 196.12.53.130 }
+  - { hostname: issues, ip: 196.12.53.130 }
   - { hostname: router, ip: 54.85.93.7 }  ###AWS-cluster IPs start here###
   - { hostname: bandwidthd, ip: 54.85.93.7 }
   - { hostname: ansible, ip: 52.4.150.142 }
