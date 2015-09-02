@@ -409,6 +409,8 @@ proxy_domains:
   - {domain: "cp-iiith.virtual-labs.ac.in", alias: "cp-iiith.vlabs.ac.in"}
   - {domain: "virtual-labs.ac.in", alias: "vlabs.ac.in"}
   - {domain: "www.virtual-labs.ac.in", alias: "www.vlabs.ac.in"}
+  - {domain: "ps-iiith.virtual-labs.ac.in", alias: "ps-iiith.vlabs.ac.in"}
+  - {domain: "ssl-iitg.virtual-labs.ac.in", alias: "ssl-iitg.vlabs.ac.in"}
 
 awstats_domains:
   - cse01-iiith.virtual-labs.ac.in
@@ -482,6 +484,8 @@ awstats_domains:
   - cp-iiith.virtual-labs.ac.in
   - virtual-labs.ac.in
   - www.virtual-labs.ac.in
+  - ps-iiith.virtual-labs.ac.in
+  - ssl-iitg.virtual-labs.ac.in
 public_dns_entries:
   - { hostname: router, ip: 54.85.93.7 }
   - { hostname: bandwidthd, ip: 54.85.93.7 }
@@ -563,7 +567,9 @@ public_dns_entries:
   - { hostname: mfs-iiith, ip: 54.85.93.7}
   - { hostname: nlp-iiith, ip: 54.85.93.7}
   - { hostname: cp-iiith, ip: 54.85.93.7}
-  - { hostname: www, ip: 54.85.93.7}  
+  - { hostname: www, ip: 54.85.93.7}
+  - { hostname: ps-iiith, ip: 54.85.93.7}
+  - { hostname: ssl-iitg, ip: 54.85.93.7}  
 
 private_dns_entries:
   - { hostname: router, ip: 10.100.1.1 }
@@ -648,6 +654,8 @@ private_dns_entries:
   - { hostname: nlp-iiith, ip: 10.100.3.184}
   - { hostname: cp-iiith, ip: 10.100.1.190}
   - { hostname: www, ip: 10.100.1.13}
+  - { hostname: ps-iiith, ip: 10.100.2.21}
+  - { hostname: ssl-iitg, ip: 10.100.1.221}
 
 #Used by private-dns ans public dns to set their zone file names
 prefix: ""
