@@ -95,7 +95,11 @@ To know further about these please refer [[Appendix][Appendix]].
     #+BEGIN_EXAMPLE
     yum -y install ansible
     #+END_EXAMPLE
-    to install ansible
+    to install ansible. Create a 'vlead' user in the machine.
+    #+BEGIN_EXAMPLE
+    adduser vlead 
+    #+END_EXAMPLE
+    ssh public key of this user has to be copied in all other machine.
 
 *** Version control setup
     Setup version control on ansible machine using:
@@ -369,6 +373,11 @@ To know further about these please refer [[Appendix][Appendix]].
       https://openvz.org/Using_NAT_for_container_with_private_IPs
 
 *** Create Config-server node
+   - Create a 'vlead' user in the machine.
+     #+BEGIN_EXAMPLE
+     adduser vlead 
+     #+END_EXAMPLE
+     ssh public key of this user has to be copied in all other machine.
    - We need two IPs to setup ansible machine one is for public access
      over ssh and another is for private network ip. Private ip is for
      configuring other nodes as well as itself and internal
@@ -402,9 +411,9 @@ To know further about these please refer [[Appendix][Appendix]].
      branch of the systems model. From this node we do not push the
      updated files/folders to systems-model repository.
 
-     Clone the systems-model repository. For this we have to add
-     public key to repository since we do cloning over ssh by issuing
-     the following command.     
+     Clone the systems-model repository inside 'vlead' user home directory. For
+     this we have to add public key to repository since we do cloning over ssh
+     by issuing the following command.
      #+BEGIN_EXAMPLE 
      git clone git@bitbucket.org:vlead/systems-model.git
      #+END_EXAMPLE
