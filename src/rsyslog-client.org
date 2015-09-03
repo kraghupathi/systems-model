@@ -211,8 +211,13 @@ $ActionQueueSaveOnShutdown on # save in-memory data if rsyslog shuts down
 
 #+BEGIN_SRC yml :tangle roles/rsyslog_client/tasks/main.yml :eval no
 ---
-- name: Install rsyslog package
+- name: CentOS -Install rsyslog package
   yum: name=rsyslog state=present
+
+- name: Debian - Install rsyslog package
+  apt: name=rsyslog state=present
+  when: ansible_disribution == "Debian" or ansible_distribution == "Ubuntu"
+
 #+END_SRC 
 
 *** Configure Rsyslog service
@@ -250,8 +255,7 @@ $ActionQueueSaveOnShutdown on # save in-memory data if rsyslog shuts down
 #+END_SRC
 
 ** Rsyslog configuration script
-   Rsyslog server is configured using common and =rsyslog_client=
-   role.
+   Rsyslog server is configured using =rsyslog_client= role.
 
 #+BEGIN_SRC 
 ---
@@ -259,7 +263,6 @@ $ActionQueueSaveOnShutdown on # save in-memory data if rsyslog shuts down
   hosts: rsyslog_client
   remote_user: root
   roles:
-   - common
    - rsyslog_client
 #+END_SRC
 
