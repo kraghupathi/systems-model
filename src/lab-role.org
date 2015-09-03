@@ -420,6 +420,7 @@ dependencies:
 
   roles: 
     - lab_role
+    - rsyslog_client
 
 #+END_SRC
 
