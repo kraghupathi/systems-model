@@ -93,11 +93,15 @@ To know further about these please refer [[Appendix][Appendix]].
     #+BEGIN_EXAMPLE
     yum -y install ansible
     #+END_EXAMPLE
-    to install ansible. Create a 'vlead' user in the machine.
-    #+BEGIN_EXAMPLE
-    adduser vlead 
-    #+END_EXAMPLE
-    ssh public key of this user has to be copied in all other machine.
+    to install ansible. 
+     Create a 'vlead' user in the machine.
+     #+BEGIN_EXAMPLE
+     adduser vlead 
+     #+END_EXAMPLE
+     ssh public key of this user has to be copied in all other machine.  If the
+     root user has already been created then the root user's private and public
+     key can be placed inside the vlead user's .ssh directory, so that from
+     vlead user we can login to other machine roots account.
 
 *** Version control setup
     Setup version control on ansible machine using:
@@ -375,7 +379,10 @@ To know further about these please refer [[Appendix][Appendix]].
      #+BEGIN_EXAMPLE
      adduser vlead 
      #+END_EXAMPLE
-     ssh public key of this user has to be copied in all other machine.
+     ssh public key of this user has to be copied in all other machine.  If the
+     root user has already been created then the root user's private and public
+     key can be placed inside the vlead user's .ssh directory, so that from
+     vlead user we can login to other machine roots account.
    - We need two IPs to setup ansible machine one is for public access
      over ssh and another is for private network ip. Private ip is for
      configuring other nodes as well as itself and internal
