@@ -2179,11 +2179,12 @@ ScriptAlias /awstats/ "/usr/share/awstats/wwwroot/cgi-bin/"
      host_name: "reverseproxy.{{prefix}}vlabs.ac.in"
     roles:
       - common
+      - reverseproxy_server
       - ossec_client
       - rsyslog_client
       - nagios_client
-#      - rsnapshot_client
-      - reverseproxy_server
+      - rsnapshot_client
+
 #+END_SRC
 * Test Cases
 ** Test Case ID: Reverseproxy test Without internal(Private) DNS  

@@ -448,10 +448,11 @@ authpriv.*      ?TmplAuth
    host_name: "rsyslog-server.{{prefix}}vlabs.ac.in"
   roles:
     - common
+    - rsyslog_server
     - ossec_client
     - nagios_client
-#    - rsnapshot_client
-    - rsyslog_server
+    - rsnapshot_client
+
 #+END_SRC
 
 * Test Cases for testing rsyslog server soundness and completeness
