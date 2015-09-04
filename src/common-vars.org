@@ -573,7 +573,7 @@ private_dns_entries:
   - { hostname: cse02-iiith, ip: 10.100.2.13 }
   - { hostname: cse15-iiith, ip: 10.100.0.83 }
   - { hostname: cse18-iiith, ip: 10.100.0.202 }
-  - { hostname: cse19-iiith, ip: 10.100.3.233 }
+  - { hostname: cse19-iiith, ip: 10.100.2.68 }
   - { hostname: cse20-iiith, ip: 10.100.0.61 }
   - { hostname: emt-iiith, ip: 10.100.0.157 }
   - { hostname: cse29-iiith, ip: 10.100.0.238 }
