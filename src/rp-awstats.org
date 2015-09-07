@@ -234,6 +234,8 @@ etc. Analytics can be viewed on terminal and also in the browser.
 
 #Allow server to send emails.  Required for sending logwatch emails
 -A OUTPUT -p tcp -m tcp --dport 25 -j ACCEPT
+#Allow outgoing SSH connection to analytics_server_ip
+-A OUTPUT -p tcp -m tcp -d {{analytics_server_ip}} --dport 22 -j ACCEPT
 #Allow server to contact web-servers.  This is must for reverseproxy to be able to forward requests to internal web servers
 # 443 OUTPUT is needed for yum
 -A OUTPUT -p tcp -m tcp --dport 80 -j ACCEPT
