@@ -167,6 +167,13 @@ etc. Analytics can be viewed on terminal and also in the browser.
   in the cluster including reverse proxy server are described in
   [[./common.org][common role]].
 - Rules which are specific to reverse proxy server are described [[Allow HTTP(80) and HTTPS(443) packets][here]].
+- An addition is allowing outgoing TCP port 22 connection to analytics
+  node for copying AWstats, Apache logs
+
+#+BEGIN_EXAMPLE
+#Allow outgoing SSH connection to analytics_server_ip
+-A OUTPUT -p tcp -m tcp -d {{analytics_server_ip}} --dport 22 -j ACCEPT
+#+END_EXAMPLE
 
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/templates/iptables
 *filter
@@ -2045,6 +2052,13 @@ ExtraTrackedRowsLimit=500
 
 #+END_SRC
 **** Generating and copying ssh keypair for rsyncing logs, stats to analytics server
+     Here we are setting the =cron= job required to =rsync= AWstats,
+     Apache logs at regular interval, for this process to be automatic
+     we generate a password less SSH key using which this node
+     connects to the analytics server.
+
+     The key needs to be placed manually in analytics node.
+
 #+BEGIN_SRC  yaml :tangle roles/reverseproxy_server/tasks/main.yaml
 #Generating and copying ssh keypair for rsyncing logs, stats to analytics server
   
@@ -2068,6 +2082,15 @@ ExtraTrackedRowsLimit=500
         hour=01
         state=present
         job="rsync -arR /var/lib/awstats root@10.100.1.12:/root/aws/"
+
+- name: Rsync the Apache log files to analytics server
+  cron:
+        name=rsync_stats
+        user=root
+        hour=01
+        state=present
+        job="rsync -arR /var/log/httpd root@10.100.1.12:/root/aws/"
+
 #+END_SRC                                                                           
 
 
