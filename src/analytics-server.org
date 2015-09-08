@@ -28,6 +28,32 @@
    =Ansible= and another one a manually configured server, data
    collation is also a mix of automation and manual steps.
 
+   It is assumed that source node will push the data to analytics
+   node. For these assumptions we need to make changes to the reverse
+   proxy model of the cluster and manually configure the reverse proxy
+   at IIIT-H. These changes are described in respective node models,
+   the gist, however, is this node will receive AWstats, apache log
+   files every hour.
+
+*** Re-configuring AWS cluster, for the requirements of analytics node
+ - Analytics server configured to accept =rsync= over =TCP=, manually
+   copy the public key generated on reverse proxy to analytics node
+ - Reverse Proxy(Source 1) configured to push the generated statistics
+   to =Analytics= server at regular intervals
+ - Router cofigured to allow incoming =rsync= connections from Source
+   2(IIIT-H reverse proxy) to Analytics server
+
+*** On BASE
+   Here we manually setup:
+ - Reverse Proxy(Source 2) configued to push generated statistics to
+   =Analytics= server every hour
+
+#+BEGIN_EXAMPLE
+[root@http ~]# crontab -l
+#Rsync stats from http container to stats instance on AWS
+@hourly rsync -azR -e "ssh -p 2222" /var/www/awstats/awstats* stats.vlabs.ac.in:/root/base/
+@hourly rsync -azR -e "ssh -p 2222" /var/log/httpd/* stats.vlabs.ac.in:/root/base/
+#+END_EXAMPLE
 ** Network Diagram
 *** Network diagram of analytics node
     The network diagram of analytics node in the cluster is
