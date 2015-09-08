@@ -507,19 +507,19 @@ backup_script	/bin/date "+ backup ended at %T-%F" >> lab_{{backup}}_log	{{backup
 
 #+BEGIN_SRC yaml :tangle roles/lab_rsnapshot_server/tasks/main.yaml :eval no
 ---
-- name:(1) Installing rsnapshot
+- name: (1) Installing rsnapshot
   yum: name=rsnapshot state=installed
   environment: proxy_env
 
-- name:(2) Applying iptables for rsnapshot
+- name: (2) Applying iptables for rsnapshot
   template: src=rsnapshot_server_iptables dest=/etc/sysconfig/iptables owner=root group=root
   notify: restart iptables
 
 #updating rsnapshot.conf also includes configuring backup of remote machines
-- name:(3) updating rsnapshot.conf
+- name: (3) updating rsnapshot.conf
   template: src=rsnapshot.conf.j2 dest=/etc/rsnapshot.conf owner=root group=root mode=644 backup=yes
 
-- name:(4) Configure cron
+- name: (4) Configure cron
   cron: name="{{ item.name }}"
         user=root
         cron_file=ansible_rsnapshot
@@ -531,7 +531,7 @@ backup_script	/bin/date "+ backup ended at %T-%F" >> lab_{{backup}}_log	{{backup
         job="{{ item.job}}"
   with_items: lab_rsnapshot_crontab
 
-- name:(5) Enable cron service
+- name: (5) Enable cron service
   service: name=crond enabled=yes
 
 #+END_SRC
