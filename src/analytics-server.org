@@ -10,6 +10,36 @@
 * Introduction
 * Requirement
 * Design
+  This section describes the design to make this node functional, the
+  implementation is explained in the following section.
+  
+   We have two different sources, a reverse proxy on AWS
+   cluster(Source 1) and a reverse proxy on the base machines in
+   IIIT-H (Source 2). These sources are geographically located in
+   different continents and on different network.
+
+   We need a way of transferring the data(statistics, logs) in a
+   secure manner to the analytics server where it will be
+   processed. We have used =rsync= to transfer, and have setup
+   periodic transfer jobs using =cronie= which executes every hour.
+
+   As this task involves collecting data from different sources, like
+   a cluster which is managed with configuration management tool
+   =Ansible= and another one a manually configured server, data
+   collation is also a mix of automation and manual steps.
+
+** Network Diagram
+*** Network diagram of analytics node
+    The network diagram of analytics node in the cluster is
+    represented below, it also shows how the node gets the web server
+    logs, AWstats statistics files.
+    [[./diagrams/analytics-node.png][Analytics node]]
+
+*** Source file for the diagram
+    The source file was prepared using Libreoffice 4.3 and VRT
+    extensions.
+    [[./diagrams/analytics-node.odg][Download source file]]
+
 * Implementation
 ** Structure of Scripts
 
@@ -26,6 +56,10 @@ roles/analytics_server
 #+END_EXAMPLE
 
 ** Firewall Rules
+
+   In addition to common firewall rules, this node allows incoming TCP
+   port 22 connections from reverse proxy, for copying logs from
+   reverse proxy.
 
 #+BEGIN_SRC yml -n :tangle roles/analytics_server/templates/analytics_server_iptables :eval no
 *filter
