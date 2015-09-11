@@ -47,27 +47,27 @@
   This section describes the design to make this node functional, the
   implementation is explained in the following section.
   
-   We have two different sources, a reverse proxy on AWS
-   cluster(Source 1) and a reverse proxy on the base machines in
-   IIIT-H (Source 2). These sources are geographically located in
-   different continents and on different network.
+  We have two different sources, a reverse proxy on AWS
+  cluster(Source 1) and a reverse proxy (http container)on the base
+  machines in IIIT-H (Source 2). These sources are geographically
+  located in different continents and on different network.
 
-   We need a way of transferring the data(statistics, logs) in a
-   secure manner to the analytics server where it will be
-   processed. We have used =rsync= to transfer, and have setup
-   periodic transfer jobs using =cronie= which executes every hour.
-
-   As this task involves collecting data from different sources, like
-   a cluster which is managed with configuration management tool
-   =Ansible= and another one a manually configured server, data
-   collation is also a mix of automation and manual steps.
-
-   It is assumed that source node will push the data to analytics
-   node. For these assumptions we need to make changes to the reverse
-   proxy model of the cluster and manually configure the reverse proxy
-   at IIIT-H. These changes are described in respective node models,
-   the gist, however, is this node will receive AWstats, apache log
-   files every hour.
+  We need a way of transferring the data(statistics, logs) in a
+  secure manner to the analytics server where it will be
+  processed. We have used =rsync= to transfer, and have setup
+  periodic transfer jobs using =cronie= which executes every hour.
+  
+  As this task involves collecting data from different sources, like
+  a cluster which is managed with configuration management tool
+  =Ansible= and another one a manually configured server, data
+  collation is also a mix of automation and manual steps.
+  
+  It is assumed that source node will push the data to analytics
+  node. For these assumptions we need to make changes to the reverse
+  proxy model of the cluster and manually configure the reverse proxy
+  at IIIT-H. These changes are described in respective node models,
+  the gist, however, is this node will receive AWstats, apache log
+  files every hour.
 
 *** Re-configuring AWS cluster, for the requirements of analytics node
     - Analytics server configured to accept =rsync= over =TCP=,
@@ -78,7 +78,7 @@
     - Router cofigured to allow incoming =rsync= connections from
       Source 2(IIIT-H reverse proxy) to Analytics server
 
-*** On BASE
+*** On BASE machines
    Here we manually setup:
  - Reverse Proxy(Source 2) configured to push generated statistics to
    =Analytics= server every hour.
@@ -94,12 +94,261 @@
     The network diagram of analytics node in the cluster is
     represented below, it also shows how the node gets the web server
     logs, AWstats statistics files.
-    [[./diagrams/analytics-node.png][Analytics node]]
+    [[./diagrams/analytics-node.png]]
 *** Source file for the diagram
     The source file was prepared using Libreoffice 4.3 and VRT
     extensions.
     [[./diagrams/analytics-node.odg][Download source file]]
 
+** Labs on Deploy
+  + Deploy  :: The container running labs and other stuff 
+
+** Labs on IIIT Infrastructure
+  + IIITH infrastructure :: Deploy plus other machines/containers.  
+
+|------+---------+------------------------+---------------------------------------+---------------------------------------|
+| S.no | Lab ID  | Lab Name               | Pattern Name                          | Log File name                         |
+|------+---------+------------------------+---------------------------------------+---------------------------------------|
+|    1 | cse04   | Problem                | cse04.virtual-labs.ac.in-access_log   | cse04.virtual-labs.ac.in-access_log   |
+|      |         | Solving                |                                       |                                       |
+|------+---------+------------------------+---------------------------------------+---------------------------------------|
+|    2 | cse06   | Data Mining            | cse06.virtual-labs.ac.in-access_log   | cse06.virtual-labs.ac.in-access_log   |
+|      |         |                        |                                       |                                       |
+|------+---------+------------------------+---------------------------------------+---------------------------------------|
+|    3 | cse07   | Databases              | cse07.virtual-labs.ac.in-access_log   | cse07.virtual-labs.ac.in-access_log   |
+|      |         |                        |                                       |                                       |
+|------+---------+------------------------+---------------------------------------+---------------------------------------|
+|    4 | cse09   | Linux Lab              | cse09.virtual-labs.ac.in-access_log   | cse09.virtual-labs.ac.in-access_log   |
+|      |         |                        |                                       |                                       |
+|------+---------+------------------------+---------------------------------------+---------------------------------------|
+|    5 | cse05   | Principles of          | cse05.virtual-labs.ac.in-access_log   | cse05.virtual-labs.ac.in-access_log   |
+|      |         | Programming            |                                       |                                       |
+|      |         | Languages              |                                       |                                       |
+|------+---------+------------------------+---------------------------------------+---------------------------------------|
+|    6 | cse13   | Advanced VLSI          | cse13.virtual-labs.ac.in-access_log   | cse13.virtual-labs.ac.in-access_log   |
+|      |         |                        |                                       |                                       |
+|------+---------+------------------------+---------------------------------------+---------------------------------------|
+|      | cse16   | Speech Signal          | cse16.virtual-labs.ac.in-access_log   | cse16.virtual-labs.ac.in-access_log   |
+|    7 |         | Processing             |                                       |                                       |
+|      |         | (IIIT-H)               |                                       |                                       |
+|------+---------+------------------------+---------------------------------------+---------------------------------------|
+|    8 | cse17   | Mobile Robotics        | cse17.virtual-labs.ac.in-access_log   | cse17.virtual-labs.ac.in-access_log   |
+|      |         |                        |                                       |                                       |
+|------+---------+------------------------+---------------------------------------+---------------------------------------|
+|    9 | cse21   | Optical Remote         | cse21.virtual-labs.ac.in-access_log   | cse21.virtual-labs.ac.in-access_log   |
+|      |         | Sensing                |                                       |                                       |
+|------+---------+------------------------+---------------------------------------+---------------------------------------|
+|      | cse24   | Natural Language       | cse24.virtual-labs.ac.in-access_log   | cse24.virtual-labs.ac.in-access_log   |
+|   10 |         | Processing             |                                       |                                       |
+|------+---------+------------------------+---------------------------------------+---------------------------------------|
+|      | cse30   | Analog CMOS VLSI       | cse30.virtual-labs.ac.in-access_log   | cse30.virtual-labs.ac.in-access_log   |
+|   11 |         | Circuit Design         |                                       |                                       |
+|------+---------+------------------------+---------------------------------------+---------------------------------------|
+|   12 | eerc02  | Soil Mechanics         | eerc02.virtual-labs.ac.in-access_log  | eerc02.virtual-labs.ac.in-access_log  |
+|      |         |                        |                                       |                                       |
+|------+---------+------------------------+---------------------------------------+---------------------------------------|
+|   13 | eerc04  | Basic Structural       | eerc04.virtual-labs.ac.in-access_log  | eerc04.virtual-labs.ac.in-access_log  |
+|      |         | Analysis               |                                       |                                       |
+|------+---------+------------------------+---------------------------------------+---------------------------------------|
+|   14 | eerc05  | Geotechnical           | eerc05.virtual-labs.ac.in-access_log  | eerc05.virtual-labs.ac.in-access_log  |
+|      |         | Engineering Lab        |                                       |                                       |
+|------+---------+------------------------+---------------------------------------+---------------------------------------|
+|   15 | cse23   | Computational          | cse23.virtual-labs.ac.in-access_log   | cse23.virtual-labs.ac.in-access_log   |
+|      |         | Linguistics            |                                       |                                       |
+|------+---------+------------------------+---------------------------------------+---------------------------------------|
+|   16 | cse10   | Computer               | cse10.virtual-labs.ac.in-access_log   | cse10.virtual-labs.ac.in-access_log   |
+|      |         | Organization and       |                                       |                                       |
+|      |         | Architecture           |                                       |                                       |
+|------+---------+------------------------+---------------------------------------+---------------------------------------|
+|   17 | civil13 | Urban Transportation   | civil13.virtual-labs.ac.in-access_log | civil13.virtual-labs.ac.in-access_log |
+|      |         | Systems Planning       |                                       |                                       |
+|------+---------+------------------------+---------------------------------------+---------------------------------------|
+|   18 | ccnsb01 | Molecular Fluorescence | ccnsb01.virtual-labs.ac.in-access_log | ccnsb01.virtual-labs.ac.in-access_log |
+|      |         | Spectroscopy           |                                       |                                       |
+|------+---------+------------------------+---------------------------------------+---------------------------------------|
+|   19 | ccnsb02 | Colloid and Surface    | ccnsb02.virtual-labs.ac.in-access_log | ccnsb02.virtual-labs.ac.in-access_log |
+|      |         | Chemistry              |                                       |                                       |
+|------+---------+------------------------+---------------------------------------+---------------------------------------|
+|   20 | ccnsb03 | Molecular Absorption   | ccnsb03.virtual-labs.ac.in-access_log | ccnsb03.virtual-labs.ac.in-access_log |
+|      |         | Spectroscopy           |                                       |                                       |
+|------+---------+------------------------+---------------------------------------+---------------------------------------|
+|   21 | ccnsb04 | Quantum Chemistry      | ccnsb04.virtual-labs.ac.in-access_log | ccnsb04.virtual-labs.ac.in-access_log |
+|      |         |                        |                                       |                                       |
+|------+---------+------------------------+---------------------------------------+---------------------------------------|
+|   22 | ccnsb05 | Circular Dichroism     | ccnsb05.virtual-labs.ac.in-access_log | ccnsb05.virtual-labs.ac.in-access_log |
+|      |         | Spectroscopy           |                                       |                                       |
+|------+---------+------------------------+---------------------------------------+---------------------------------------|
+|   23 | ccnsb07 | Molecular              | ccnsb07.virtual-labs.ac.in-access_log | ccnsb07.virtual-labs.ac.in-access_log |
+|      |         | Interactions           |                                       |                                       |
+|------+---------+------------------------+---------------------------------------+---------------------------------------|
+|   24 | cse28   | Advanced Network       | cse28.virtual-labs.ac.in-access_log   | cse28.virtual-labs.ac.in-access_log   |
+|      |         | Technologies           |                                       |                                       |
+|      |         |                        |                                       |                                       |
+|------+---------+------------------------+---------------------------------------+---------------------------------------|
+|      | cse08   | Software               | cse08.virtual-labs.ac.in-access_log   | cse08.virtual-labs.ac.in-access_log   |
+|   25 |         | Engineering            |                                       |                                       |
+|------+---------+------------------------+---------------------------------------+---------------------------------------|
+|      | civil11 | Virtual Satellite      |                                       |                                       |
+|      |         | Image Processing and   |                                       |                                       |
+|      |         | Analysis               |                                       |                                       |
+|------+---------+------------------------+---------------------------------------+---------------------------------------|
+
+
+
+** Labs on AWS
+   List of labs running on AWS. Apache and awstats logs of each lab
+   being stored in aws reverse proxy node  in =/var/log/httpd/= 
+   
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   | S.no | Lab id       | Lab Name                                                                         | Log Pattern                                  | Log File Name                                   |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |    1 | cse01        | Data Structures                                                                  | cse01-iiith.virtual-labs.ac.in-access*       | cse01-iiith.virtual-labs.ac.in-access_log       |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |    2 | cse02        | Computer programming                                                             | cse02-iiith.virtual-labs.ac.in-access*       | cse02-iiith.virtual-labs.ac.in-access_log       |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |    3 | cse15        | DLD                                                                              | cse15-iiith.virtual-labs.ac.in-access*       | cse15-iiith.virtual-labs.ac.in-access_log       |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |    4 | cse19        | Image processing                                                                 | cse19-iiith.virtual-labs.ac.in-access*       | cse19-iiith.virtual-labs.ac.in-access_log       |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |    5 | cse18        | Computer Graphics                                                                | cse18-iiith.virtual-labs.ac.in-access*       | cse18-iiith.virtual-labs.ac.in-access_log       |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |    6 | cse20        | Pattern recognition                                                              | cse20-iiith.virtual-labs.ac.in-access*       | cse20-iiith.virtual-labs.ac.in-access_log       |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |    7 | emt          | EMT                                                                              | emt-iiith.virtual-labs.ac.in-access*         | emt-iiith.virtual-labs.ac.in-access_log         |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |    8 | cse29        | Cryptography                                                                     | cse29-iiith.virtual-labs.ac.in-access*       | cse29-iiith.virtual-labs.ac.in-access_log       |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |    9 | cse22        | Artificial Nueral Networks                                                       | cse22-iiith.virtual-labs.ac.in-access*       | cse22-iiith.virtual-labs.ac.in-access_log       |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   10 | cse11        | CO                                                                               | cse11-iiith.virtual-labs.ac.in-access*       | cse11-iiith.virtual-labs.ac.in-access_log       |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   11 | cse14        | VLSI                                                                             | cse14-iiith.virtual-labs.ac.in-access*       | cse14-iiith.virtual-labs.ac.in-access_log       |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   12 | eerc03       | Hydraulics and fluid mechanics                                                   | eerc03-iiith.virtual-labs.ac.in-access*      | eerc03-iiith.virtual-labs.ac.in-access_log      |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   13 | phy14        | Physical Sciences                                                                | phy14-iiith.virtual-labs.ac.in-access*       | phy14-iiith.virtual-labs.ac.in-access_log       |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   14 | ccnsb06      | Physical chemistry                                                               | ccnsb06-iiith.virtual-labs.ac.in-access*     | ccnsb06-iiith.virtual-labs.ac.in-access_log     |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   15 | eerc01       | Engineering Mechanics And SOM                                                    | eerc01-iiith.virtual-labs.ac.in-access*      | eerc01-iiith.virtual-labs.ac.in-access_log      |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   16 | csc          | Colloid and Surface Chemistry Virtual Lab                                        | csc-iiith.virtual-labs.ac.in-access*         | csc-iiith.virtual-labs.ac.in-access_log         |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   17 | bsa          | Basic Structural Analysis                                                        | bsa-iiith.virtual-labs.ac.in-access*         | bsa-iiith.virtual-labs.ac.in-access_log         |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   18 | cds          | Circular Dichronism Spectroscopy                                                 | cds-iiith.virtual-labs.ac.in-access*         | cds-iiith.virtual-labs.ac.in-access_log         |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   19 | smfe         | Soil Mechanics and Foundation Engineering                                        | cse01-iiith.virtual-labs.ac.in-access*       | cse01-iiith.virtual-labs.ac.in-access_log       |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   20 | ssp          | Speech Signal Processing                                                         | ssp-iiith.virtual-labs.ac.in-access*         | ssp-iiith.virtual-labs.ac.in-access_log         |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   21 | sd           | Structural Dynamics                                                              | sd-iiith.virtual-labs.ac.in-access*          | sd-iiith.virtual-labs.ac.in-access_log          |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   22 | cl           | Computational Linguistics                                                        | cl-iiith.virtual-labs.ac.in-access*          | cl-iiith.virtual-labs.ac.in-access_log          |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   23 | ge           | Geotechnical Engineering                                                         | ge-iiith.virtual-labs.ac.in-access*          | ge-iiith.virtual-labs.ac.in-access_log          |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   24 | mi           | Molecular Interactions                                                           | mi-iiith.virtual-labs.ac.in-access*          | mi-iiith.virtual-labs.ac.in-access_log          |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   25 | mas          | Molecular Absorption Spectroscopy                                                | mas-iiith.virtual-labs.ac.in-access*         | mas-iiith.virtual-labs.ac.in-access_log         |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   26 | mfs          | Molecular Florescence Spectroscopy                                               | mfs-iiith.virtual-labs.ac.in-access*         | mfs-iiith.virtual-labs.ac.in-access_log         |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   27 | nlp          | Natural Language Processing                                                      | nlp-iiith.virtual-labs.ac.in-access*         | nlp-iiith.virtual-labs.ac.in-access_log         |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   28 | cp           | Computer Programming Responsive                                                  | cp -iiith.virtual-labs.ac.in-access*         | cp -iiith.virtual-labs.ac.in-access_log         |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   29 | ps           | Problem Solving Lab                                                              | ps-iiith.virtual-labs.ac.in-access*          | ps-iiith.virtual-labs.ac.in-access_log          |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   30 | ssl          | Signals And Systems Laboratory                                                   | ssl-iitg.virtual-labs.ac.in-access*          | ssl-iitg.virtual-labs.ac.in-access_log          |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   31 | bmi          | Bio-Medical Instrumentation Lab                                                  | bmi-iitr.virtual-labs.ac.in-access*          | bmi-iitr.virtual-labs.ac.in-access_log          |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   32 | bmsip        | Bio-medical signal and image processing lab                                      | bmsip-iitr.virtual-labs.ac.in-access*        | bmsip-iitr.virtual-labs.ac.in-access_log        |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   33 | em           | Elecrical Machines Lab                                                           | em-iitr.virtual-labs.ac.in-access*           | em-iitr.virtual-labs.ac.in-access_log           |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   34 | sl           | Surveying Lab                                                                    | sl-iitr.virtual-labs.ac.in-access*           | sl-iitr.virtual-labs.ac.in-access_log           |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   35 | mrmsmtbs     | Material Response to Micro Structural, Mechanical,Thermal and Biological Stimuli | mrmsmtbs-iitk.virtual-labs.ac.in-access*     | mrmsmtbs-iitk.virtual-labs.ac.in-access_log     |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   36 | va           | Virtual Astrophysica Lab                                                         | va-iitk.virtual-labs.ac.in-access*           | va-iitk.virtual-labs.ac.in-access_log           |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   37 | ufls         | Ultra fast Laser Spectroscopy Lab                                                | ufls-iitk.virtual-labs.ac.in-access*         | ufls-iitk.virtual-labs.ac.in-access_log         |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   38 | vlae         | Virtual Lab Aerospace Engineering                                                | vlae-iitk.virtual-labs.ac.in-access*         | vlae-iitk.virtual-labs.ac.in-access_log         |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   39 | vcal         | Virtual Combustion and Automization Lab                                          | vcal-iitk.virtual-labs.ac.in-access*         | vcal-iitk.virtual-labs.ac.in-access_log         |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   40 | pev          | Population Ecology Virtual Lab I                                                 | pev-au.virtual-labs.ac.in-access*            | pev-au.virtual-labs.ac.in-access_log            |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   41 | pevii        | Population Ecology Virtual Lab II                                                | pevii-au.virtual-labs.ac.in-access*          | pevii-au.virtual-labs.ac.in-access_log          |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   42 | anthropology | Virtual Anthropology Lab                                                         | anthropology-iitg.virtual-labs.ac.in-access* | anthropology-iitg.virtual-labs.ac.in-access_log |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   43 | ergonomics   | Virtual Ergonomics Lab                                                           | ergonomics-iitg.virtual-labs.ac.in-access*   | ergonomics-iitg.virtual-labs.ac.in-access_log   |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   44 | vem          | Virtual Electrical Machine Lab                                                   | vem-iitg.virtual-labs.ac.in-access*          | vem-iitg.virtual-labs.ac.in-access_log          |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   45 | ve           | Virtual English & Communication Lab                                              | ve-iitg.virtual-labs.ac.in-access*           | ve-iitg.virtual-labs.ac.in-access_log           |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   46 | ial          | Industrial Automation Laboratory                                                 | ial-coep.virtual-labs.ac.in-access*          | ial-coep.virtual-labs.ac.in-access_log          |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   47 | sl           | Virtual Sensor Lab                                                               | sl-coep.virtual-labs.ac.in-access*           | sl-coep.virtual-labs.ac.in-access_log           |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   48 | plc          | Virtual Programmable Logic Controller Lab                                        | plc-coep.virtual-labs.ac.in-access*          | plc-coep.virtual-labs.ac.in-access_log          |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   49 | em           | Virtual Electrical Machines Lab                                                  | em-coep.virtual-labs.ac.in-access*           | em-coep.virtual-labs.ac.in-access_log           |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   50 | va           | Virtual Vibrations & Acoustics Lab                                               | va-coep.virtual-labs.ac.in-access*           | va-coep.virtual-labs.ac.in-access_log           |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   51 | mm           | Virtual Micro Machining Laboratory                                               | mm-coep.virtual-labs.ac.in-access*           | mm-coep.virtual-labs.ac.in-access_log           |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   52 | fab          | Virtual FAB Laboratory                                                           | fab-coep.virtual-labs.ac.in-access*          | fab-coep.virtual-labs.ac.in-access_log          |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   53 | bmsp         | Virtual Bio-Medical & Signal Processing Laboratory                               | bmsp-coep.virtual-labs.ac.in-access*         | bmsp-coep.virtual-labs.ac.in-access_log         |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   54 | he           | Virtual Hybrid Elecronics Lab                                                    | he-coep.virtual-labs.ac.in-access*           | he-coep.virtual-labs.ac.in-access_log           |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   55 | ied          | Virtual Industrial Electrical Drives Lab                                         | ied-nitk.virtual-labs.ac.in-access*          | ied-nitk.virtual-labs.ac.in-access_log          |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   56 | sa           | Virtual Substration Automation Lab                                               | sa-nitk.virtual-labs.ac.in-access*           | sa-nitk.virtual-labs.ac.in-access_log           |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   57 | fm           | Virtual Fluid Mechanics Lab                                                      | fm-nitk.virtual-labs.ac.in-access*           | fm-nitk.virtual-labs.ac.in-access_log           |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   58 | sm           | Virtual Strength of Materials Lab                                                | sm-nitk.virtual-labs.ac.in-access*           | sm-nitk.virtual-labs.ac.in-access_log           |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   59 | mm           | Virtual Mechanics of Machine Lab                                                 | mm-nitk.virtual-labs.ac.in-access*           | mm-nitk.virtual-labs.ac.in-access_log           |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   60 | mdmv         | Machine Dynamics and Vibration Lab                                               | mdmv-nitk.virtual-labs.ac.in-access*         | mdmv-nitk.virtual-labs.ac.in-access_log         |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   61 | uorepc       | Process Control, Reaction Engineering and Unit Operations Lab                    | uorepc-nitk.virtual-labs.ac.in-access*       | uorepc-nitk.virtual-labs.ac.in-access_log       |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   62 | vssd         | Virtual smart Structures and Dynamics Lab                                        | vssd-iitd.virtual-labs.ac.in-access*         | vssd-iitd.virtual-labs.ac.in-access_log         |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   63 | qnm          | Queueing networks modelling lab                                                  | qnm-iitd.virtual-labs.ac.in-access*          | qnm-iitd.virtual-labs.ac.in-access_log          |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   64 | eem          | Engineering Electro-magnetics Lab                                                | eem-iitd.virtual-labs.ac.in-access*          | eem-iitd.virtual-labs.ac.in-access_log          |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   65 | msvs         | Metal Forming Virtual Simulation Lab                                             | msvs-dei.virtual-labs.ac.in-access*          | msvs-dei.virtual-labs.ac.in-access_log          |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   66 | vp           | Virtual Power Lab                                                                | vp-dei.virtual-labs.ac.in-access*            | vp-dei.virtual-labs.ac.in-access_log            |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   67 | vc           | Virtual Chemistry Lab                                                            | vc-dei.virtual-labs.ac.in-access*            | vc-dei.virtual-labs.ac.in-access_log            |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   68 | pe           | Virtual Proteomics Laboratory                                                    | pe-iitb.virtual-labs.ac.in-access*           | pe-iitb.virtual-labs.ac.in-access_log           |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   69 | ce           | Chemical Engineering Lab                                                         | ce-iitb.virtual-labs.ac.in-access*           | ce-iitb.virtual-labs.ac.in-access_log           |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+   |   70 | ee           | Electronics Devices and Circuits                                                 | ee-iitb.virtual-labs.ac.in-access*           | ee-iitb.virtual-labs.ac.in-access_log           |
+   |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
+
+
+** Final Listing
+|--------+---------------+---+---+---|
+| lab_id | log_file_name |   |   |   |
+|--------+---------------+---+---+---|
+|        |               |   |   |   |
 * Implementation
 ** Structure of Scripts
 
@@ -116,12 +365,11 @@ roles/analytics_server
 #+END_EXAMPLE
 
 ** Firewall Rules
-
    In addition to common firewall rules, this node allows incoming TCP
    port 22 connections from reverse proxy, for copying logs from
    reverse proxy.
 
-#+BEGIN_SRC yml -n :tangle roles/analytics_server/templates/analytics_server_iptables :eval no
+#+BEGIN_SRC yml :tangle roles/analytics_server/templates/analytics_server_iptables :eval no
 *filter
 :INPUT ACCEPT [0:0]
 :FORWARD ACCEPT [0:0]
@@ -187,17 +435,32 @@ roles/analytics_server
 -A OUTPUT -j REJECT --reject-with icmp-host-prohibited
 COMMIT
 #+END_SRC
+** Create a =.wsgi= file
+   To run your application you need a =analytics.wsgi= file.  This
+   file contains the code =mod_wsgi= is executing on startup to get
+   the application object.  The object called application in that file
+   is then used as application.
+   #+BEGIN_SRC yml :tangle roles/analytics_server/files/analytics.wsgi :eval no
+   import sys 
+   sys.path.insert (0,'/var/www/html/analytics/')
+   import logging, sys
+   logging.basicConfig(stream=sys.stderr)
+   from app import app as application
+   #+END_SRC
+
+** =Apache= configuration for Web server gateway interface(WSGI)
+#+BEGIN_SRC yml :tangle roles/analytics_server/files/analytics_http.conf :eval no
+WSGIScriptAlias / /var/www/html/analytics/analytics.wsgi
+WSGIScriptReloading On
+<Directory /var/www/html/analytics>
+     Order deny,allow
+     Allow from all
+ </Directory>
+#+END_SRC
+
 ** Tasks 
    Following playbook has tasks to configure the node
 #+BEGIN_SRC yml :tangle roles/analytics_server/tasks/main.yaml :eval no
-- name: Configure firewall rules
-  template: src=analytics_server_iptables dest=/etc/sysconfig/iptables owner=root group=root mode=0600
-  notify:
-   - restart iptables
-
-#Copying the RP public key, to allow passwordless rsync of AWstats 
-- name: Copy the RP pub key to Analytics server
-  authorized_key: user=root key="{{ lookup('file', 'rp_pub_key') }}" state=present
 
 # Install epel-release to get pip, and to install flask
 - name: install http,epel-release, python-pip, mod_wsgi
@@ -214,12 +477,25 @@ COMMIT
   with_items:
    - Flask
    - Flask-Cache
+- name: Configure firewall rules
+  template: src=analytics_server_iptables dest=/etc/sysconfig/iptables owner=root group=root mode=0600
+  notify:
+   - restart iptables
+
+#Copying the RP public key, to allow passwordless rsync of AWstats 
+- name: Copy the RP pub key to Analytics server
+  authorized_key: user=root key="{{ lookup('file', 'rp_pub_key') }}" state=present
+
+#Copy the analytics.wsgi file to http configuration under conf.d/
+- name: Copying analytics.wsgi to analytics server
+  copy: src=analytics.wsgi dest=/var/www/html/analytics/ 
 
 #Copy the WSGI file to http configuration under conf.d/
 - name: Copying analytics_http.conf to analytics server
   copy: src=analytics_http.conf dest=/etc/http/conf.d/analytics_http.conf
   notify:
    - restart apache
+
 #+END_SRC
 
 ** Handlers
@@ -237,16 +513,6 @@ COMMIT
 
 #+END_SRC
 
-** =apache= configuration for Web server gateway interface(WSGI)
-
-#+BEGIN_SRC yml :tangle roles/analytics_server/files/analytics_http.conf :eval no
-WSGIScriptAlias / /var/www/html/analytics/analytics.wsgi
-WSGIScriptReloading On
-<Directory /var/www/html/analytics>
-     Order deny,allow
-     Allow from all
- </Directory>
-#+END_SRC
 ** Configuration script for setting up analytics server.
 
 #+BEGIN_SRC yml :tangle analytics_server.yaml :eval no
@@ -266,13 +532,12 @@ WSGIScriptReloading On
     - nagios_client
 
 #+END_SRC
-* COMMENT  Provision the analytics node 
-** Machine Configuration
+* COMMENT  Provision the analytics node (manually)
+** Container/VM/Machine basic requirements
    + Operating System: centos-6.6
    + Architecture: x86_64
    + Memory: 256 MB
    + Disk space: 10 GB
-   + Interface: venet0
 ** Steps to manually create a centos container 
    #+BEGIN_SRC 
    vzctl create 16133 --ostemplate centos-6-x86_64-point6 --ipadd 10.4.15.133 --diskspace 10G:15.0G --hostname stats-demo.vlabs.ac.in
@@ -292,16 +557,9 @@ WSGIScriptReloading On
    #+BEGIN_SRC 
    sudo yum -y update
    #+END_SRC
-** Install virtualenv
-   Run the following command to download and install virtualenv using
-   pip.  =virtualenv= is a tool to create isolated Python
-   environments.
+** Install Epel-repo
    #+BEGIN_SRC 
-   sudo pip install virtualenv
-   #+END_SRC
-** Install epel For RHEL 6.x and CentOS 6.x (x86_64)
-   #+BEGIN_SRC 
-   rpm -ivh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
+   yum install epel-release -y
    #+END_SRC
 ** Install pip with yum command
    #+BEGIN_SRC 
@@ -324,6 +582,7 @@ WSGIScriptReloading On
    (frameworks) to work with each other, allowing interchangeability
    when necessary (e.g. switching from development to production
    environment).
+
    #+BEGIN_SRC 
    yum install mod_wsgi
    #+END_SRC
@@ -362,3 +621,9 @@ WSGIScriptReloading On
    #+END_SRC
 
 * Test cases
+** Test Case : Provision of analytics node
+   Test to setup analitcs server using analytics_server.yaml playbook
+
+
+
+
