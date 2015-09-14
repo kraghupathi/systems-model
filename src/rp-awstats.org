@@ -2052,10 +2052,10 @@ ExtraTrackedRowsLimit=500
 
 #+END_SRC
 **** Generating and copying ssh keypair for rsyncing logs, stats to analytics server
-     Here we are setting the =cron= job required to =rsync= AWstats,
-     Apache logs at regular interval, for this process to be automatic
-     we generate a password less SSH key using which this node
-     connects to the analytics server.
+     Set the =cron= job required to =rsync= AWstats, Apache logs at
+     regular interval, for this process to be automatic generate a
+     password less SSH key using which this node connects to the
+     analytics server.
 
      The key needs to be placed manually in analytics node.
 
@@ -2085,7 +2085,7 @@ ExtraTrackedRowsLimit=500
 
 - name: Rsync the Apache log files to analytics server
   cron:
-        name=rsync_stats
+        name=rsync_apache_logs
         user=root
         hour=01
         state=present
