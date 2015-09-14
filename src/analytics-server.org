@@ -47,29 +47,28 @@
   This section describes the design to make this node functional, the
   implementation is explained in the following section.
   
-  We have two different sources, a reverse proxy on AWS
-  cluster(Source 1) and a reverse proxy (http container)on the base
-  machines in IIIT-H (Source 2). These sources are geographically
-  located in different continents and on different network.
+  Two different sources, a reverse proxy on AWS cluster(Source 1) and
+  a reverse proxy (http container)on the base machines in IIIT-H
+  (Source 2). These sources are geographically located in different
+  continents and on different network.
 
-  We need a way of transferring the data(statistics, logs) in a
-  secure manner to the analytics server where it will be
-  processed. We have used =rsync= to transfer, and have setup
-  periodic transfer jobs using =cronie= which executes every hour.
+  Need a way of transferring the data(statistics, logs) in a secure
+  manner to the analytics server where it will be processed. =rsync=
+  is used to transfer, and setup periodic transfer jobs using =cronie=
+  which executes every hour.
   
   As this task involves collecting data from different sources, like
   a cluster which is managed with configuration management tool
-  =Ansible= and another one a manually configured server, data
-  collation is also a mix of automation and manual steps.
+  =Ansible= and another one a manually configured server.
   
   It is assumed that source node will push the data to analytics
-  node. For these assumptions we need to make changes to the reverse
-  proxy model of the cluster and manually configure the reverse proxy
-  at IIIT-H. These changes are described in respective node models,
-  the gist, however, is this node will receive AWstats, apache log
-  files every hour.
+  node. For these assumptions, make changes to the reverse proxy model
+  of the cluster and manually configure the reverse proxy at
+  IIIT-H. These changes are described in respective node models, the
+  gist, however, is this node will receive AWstats, apache log files
+  every hour.
 
-*** Re-configuring AWS cluster, for the requirements of analytics node
+*** Re-configured AWS cluster, for the requirements of analytics node
     - Analytics server configured to accept =rsync= over =TCP=,
       manually copy the public key generated on reverse proxy to
       analytics node
@@ -100,104 +99,388 @@
     extensions.
     [[./diagrams/analytics-node.odg][Download source file]]
 
-** Labs on Deploy
-  + Deploy  :: The container running labs and other stuff 
+** Log files for each labs on Deploy Container
+   - Pattern Name :: Collection of apache access logs of each lab.
+ 
+   - Log File Name :: A file name which collects apache logs in a
+                      single file. 
+  
+   - Before de-commissioning the =deploy.virtual-labs.ac.in= :: The
+        following tables shows list of labs running from
+        =deploy.virtual-labs.ac.in= container and logs of each lab are
+        stored in a file called
+        =/var/log/httpd/deploy.virtual-labs.ac.in-access*= in
+        =httpd.virtual-labs.ac.in= (Reverse proxy)container. These
+        logs of each lab are actually old logs.
+   |------+-----------------------------------+--------------------------------------|
+   | S.No | Pattern Name                      | Log File Name                        |
+   |------+-----------------------------------+--------------------------------------|
+   |    1 | deploy.virtual-labs.ac.in-access* | deploy.virtual-labs.ac.in-access_log |
+   |------+-----------------------------------+--------------------------------------|
 
-** Labs on IIIT Infrastructure
-  + IIITH infrastructure :: Deploy plus other machines/containers.  
+   
+   |------+----------+-------------------------------------+----------------------------------------|
+   | S.No | Lab ID   | Pattern Name                        | Log File Name                          |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |    1 | cse01    | cse01.virtual-labs.ac.in-access*    | cse01.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |    2 | cse02    | cse02.virtual-labs.ac.in-access*    | cse02.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |    3 | cse03    | cse03.virtual-labs.ac.in-access*    | cse03.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |    4 | cse04    | cse04.virtual-labs.ac.in-access*    | cse04.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |    5 | cse05    | cse05.virtual-labs.ac.in-access*    | cse05.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |    6 | cse06    | cse06.virtual-labs.ac.in-access*    | cse06.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |    7 | cse07    | cse07.virtual-labs.ac.in-access*    | cse07.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |    8 | cse08    | cse08.virtual-labs.ac.in-access*    | cse08.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |    9 | cse09    | cse09.virtual-labs.ac.in-access*    | cse09.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   10 | cse10    | cse10.virtual-labs.ac.in-access*    | cse10.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   11 | cse11    | cse11.virtual-labs.ac.in-access*    | cse11.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   12 | cse12    | cse12.virtual-labs.ac.in-access*    | cse12.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   13 | cse13    | cse13.virtual-labs.ac.in-access*    | cse13.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   14 | cse14    | cse14.virtual-labs.ac.in-access*    | cse14.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   15 | cse15    | cse15.virtual-labs.ac.in-access*    | cse15.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   16 | cse16    | cse16.virtual-labs.ac.in-access*    | cse16.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   17 | cse17    | cse17.virtual-labs.ac.in-access*    | cse17.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   18 | cse18    | cse18.virtual-labs.ac.in-access*    | cse18.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   19 | cse19    | cse19.virtual-labs.ac.in-access*    | cse19.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   20 | cse20    | cse20.virtual-labs.ac.in-access*    | cse20.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   21 | cse21    | cse21.virtual-labs.ac.in-access*    | cse21.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   22 | cse22    | cse22.virtual-labs.ac.in-access*    | cse22.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   23 | cse23    | cse23.virtual-labs.ac.in-access*    | cse23.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   24 | cse24    | cse24.virtual-labs.ac.in-access*    | cse24.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   25 | cse25    | cse25.virtual-labs.ac.in-access*    | cse25.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   26 | cse26    | cse26.virtual-labs.ac.in-access*    | cse26.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   27 | cse27    | cse27.virtual-labs.ac.in-access*    | cse27.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   28 | cse28    | cse28.virtual-labs.ac.in-access*    | cse28.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   29 | cse29    | cse29.virtual-labs.ac.in-access*    | cse29.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   30 | cse30    | cse30.virtual-labs.ac.in-access*    | cse30.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   31 | ece01    | ece01.virtual-labs.ac.in-access*    | ece01.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   32 | ece02    | ece02.virtual-labs.ac.in-access*    | ece02.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   33 | ece03    | ece03.virtual-labs.ac.in-access*    | ece03.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   34 | ece04    | ece04.virtual-labs.ac.in-access*    | ece04.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   35 | ece05    | ece05.virtual-labs.ac.in-access*    | ece05.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   36 | ece06    | ece06.virtual-labs.ac.in-access*    | ece06.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   37 | ece07    | ece07.virtual-labs.ac.in-access*    | ece07.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   38 | ece08    | ece08.virtual-labs.ac.in-access*    | ece08.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   39 | ece09    | ece09.virtual-labs.ac.in-access*    | ece09.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   40 | ece10    | ece10.virtual-labs.ac.in-access*    | ece10.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   41 | ece11    | ece11.virtual-labs.ac.in-access*    | ece11.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   42 | bio15    | bio15.virtual-labs.ac.in-access*    | bio15.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   43 | bio16    | bio16.virtual-labs.ac.in-access*    | bio16.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   44 | ccnsb01  | ccnsb01.virtual-labs.ac.in-accesss* | ccnsb01.virtual-labs.ac.in-access_log  |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   45 | ccnsb02  | ccnsb02.virtual-labs.ac.in-access*  | ccnsb02.virtual-labs.ac.in-access_log  |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   46 | ccnsb03  | ccnsb03.virtual-labs.ac.in-access*  | ccnsb03.virtual-labs.ac.in-access_log  |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   47 | ccnsb04  | ccnsb04.virtual-labs.ac.in-access*  | ccnsb04.virtual-labs.ac.in-access_log  |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   48 | ccnsb05  | ccnsb05.virtual-labs.ac.in-access*  | ccnsb05.virtual-labs.ac.in-access_log  |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   49 | ccnsb06  | ccnsb06.virtual-labs.ac.in-access*  | ccnsb06.virtual-labs.ac.in-access_log  |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |   50 | ccnsb07  | ccnsb07.virtual-labs.ac.in-access*  | ccnsb07.virtual-labs.ac.in-access_log  |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   51 | chem01   | chem01.virtual-labs.ac.in-access*   | chem01.virtual-labs.ac.in-access_log   |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   52 | civil09  | civil09.virtual-labs.ac.in-access*  | civil09.virtual-labs.ac.in-access_log  |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   53 | civil13  | civil13.virtual-labs.ac.in-access*  | civil13.virtual-labs.ac.in-access_log  |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   54 | civil15  | civil15.virtual-labs.ac.in-access*  | civil15.virtual-labs.ac.in-access_log  |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   55 | civil16  | civil16.virtual-labs.ac.in-access*  | civil16.virtual-labs.ac.in-access_log  |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   56 | engg01   | engg01.virtual-labs.ac.in-access*   | engg01.virtual-labs.ac.in-access_log   |
+   |      |          |                                     |                                        |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   57 | hss01    | hss01 virtual-labs.ac.in-access*    | hss01 virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   58 | hss02    | hss02.virtual-labs.ac.in-access*    | hss02.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   59 | hss03    | hss03.virtual-labs.ac.in-access*    | hss03.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   60 | mech01   | mech01.virtual-labs.ac.in-access*   | mech01.virtual-labs.ac.in-access_log   |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   61 | mech04   | mech04.virtual-labs.ac.in-access*   | mech04.virtual-labs.ac.in-access_log   |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   62 | mech17   | mech17.virtual-labs.ac.in-access*   | mech17.virtual-labs.ac.in-access_log   |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   63 | mech18   | mech18.virtual-labs.ac.in-access*   | mech18.virtual-labs.ac.in-access_log   |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |   64 | phy14    | phy14.virtual-labs.ac.in-access*    | phy14.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |   65 | phy19    | phy19.virtual-labs.ac.in-access*    | phy19.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |   66 | sample1  | sample1.virtual-labs.ac.in-access*  | sample1.virtual-labs.ac.in-access_log  |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   67 | sample13 | sample13.virtual-labs.ac.in-access* | sample13.virtual-labs.ac.in-access_log |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   68 | sample16 | sample16.virtual-labs.ac.in-access* | sample16.virtual-labs.ac.in-access_log |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   69 | sample2  | sample2.virtual-labs.ac.in-access*  | sample2.virtual-labs.ac.in-access_log  |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   70 | sample20 | sample20.virtual-labs.ac.in-access* | sample20.virtual-labs.ac.in-access_log |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   71 | sample21 | sample21.virtual-labs.ac.in-access* | sample21.virtual-labs.ac.in-access_log |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   72 | ece18    | ece18.virtual-labs.ac.in-access*    | ece18.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   73 | ece19    | ece19.virtual-labs.ac.in-access*    | ece19.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   74 | ece21    | ece21.virtual-labs.ac.in-access*    | ece21.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   75 | ece26    | ece26.virtual-labs.ac.in-access*    | ece26.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   76 | eee03    | eee03.virtual-labs.ac.in-access*    | eee03.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   77 | eee05    | eee05.virtual-labs.ac.in-access*    | eee05.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   78 | eee07    | eee07.virtual-labs.ac.in-access*    | eee07.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   79 | eee08    | eee08.virtual-labs.ac.in-access*    | eee08.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   80 | eee09    | eee09.virtual-labs.ac.in-access*    | eee09 .virtual-labs.ac.in-access_log   |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   81 | eee10    | eee10.virtual-labs.ac.in-access*    | eee10.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   82 | eee12    | eee12.virtual-labs.ac.in-access*    | eee12.virtual-labs.ac.in-access_log    |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   83 | eerc01   | eerc01.virtual-labs.ac.in-access*   | eerc01.virtual-labs.ac.in-access_log   |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   84 | eerc02   | eerc02.virtual-labs.ac.in-access*   | eerc02.virtual-labs.ac.in-access_log   |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   85 | eerc03   | eerc03.virtual-labs.ac.in-access*   | eerc03.virtual-labs.ac.in-access_log   |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   86 | eerc04   | eerc04.virtual-labs.ac.in-access*   | eerc04.virtual-labs.ac.in-access_log   |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   87 | eerc05   | eerc05.virtual-labs.ac.in-access*   | eerc05.virtual-labs.ac.in-access_log   |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   88 | eerc06   | eerc06.virtual-labs.ac.in-access*   | eerc06.virtual-labs.ac.in-access_log   |
+   |------+----------+-------------------------------------+----------------------------------------|
+   |      |          |                                     |                                        |
+   |   89 | emt      | emt.virtual-labs.ac.in-access*      | emt.virtual-labs.ac.in-access_log      |
+   |------+----------+-------------------------------------+----------------------------------------|
 
-|------+---------+------------------------+---------------------------------------+---------------------------------------|
-| S.no | Lab ID  | Lab Name               | Pattern Name                          | Log File name                         |
-|------+---------+------------------------+---------------------------------------+---------------------------------------|
-|    1 | cse04   | Problem                | cse04.virtual-labs.ac.in-access_log   | cse04.virtual-labs.ac.in-access_log   |
-|      |         | Solving                |                                       |                                       |
-|------+---------+------------------------+---------------------------------------+---------------------------------------|
-|    2 | cse06   | Data Mining            | cse06.virtual-labs.ac.in-access_log   | cse06.virtual-labs.ac.in-access_log   |
-|      |         |                        |                                       |                                       |
-|------+---------+------------------------+---------------------------------------+---------------------------------------|
-|    3 | cse07   | Databases              | cse07.virtual-labs.ac.in-access_log   | cse07.virtual-labs.ac.in-access_log   |
-|      |         |                        |                                       |                                       |
-|------+---------+------------------------+---------------------------------------+---------------------------------------|
-|    4 | cse09   | Linux Lab              | cse09.virtual-labs.ac.in-access_log   | cse09.virtual-labs.ac.in-access_log   |
-|      |         |                        |                                       |                                       |
-|------+---------+------------------------+---------------------------------------+---------------------------------------|
-|    5 | cse05   | Principles of          | cse05.virtual-labs.ac.in-access_log   | cse05.virtual-labs.ac.in-access_log   |
-|      |         | Programming            |                                       |                                       |
-|      |         | Languages              |                                       |                                       |
-|------+---------+------------------------+---------------------------------------+---------------------------------------|
-|    6 | cse13   | Advanced VLSI          | cse13.virtual-labs.ac.in-access_log   | cse13.virtual-labs.ac.in-access_log   |
-|      |         |                        |                                       |                                       |
-|------+---------+------------------------+---------------------------------------+---------------------------------------|
-|      | cse16   | Speech Signal          | cse16.virtual-labs.ac.in-access_log   | cse16.virtual-labs.ac.in-access_log   |
-|    7 |         | Processing             |                                       |                                       |
-|      |         | (IIIT-H)               |                                       |                                       |
-|------+---------+------------------------+---------------------------------------+---------------------------------------|
-|    8 | cse17   | Mobile Robotics        | cse17.virtual-labs.ac.in-access_log   | cse17.virtual-labs.ac.in-access_log   |
-|      |         |                        |                                       |                                       |
-|------+---------+------------------------+---------------------------------------+---------------------------------------|
-|    9 | cse21   | Optical Remote         | cse21.virtual-labs.ac.in-access_log   | cse21.virtual-labs.ac.in-access_log   |
-|      |         | Sensing                |                                       |                                       |
-|------+---------+------------------------+---------------------------------------+---------------------------------------|
-|      | cse24   | Natural Language       | cse24.virtual-labs.ac.in-access_log   | cse24.virtual-labs.ac.in-access_log   |
-|   10 |         | Processing             |                                       |                                       |
-|------+---------+------------------------+---------------------------------------+---------------------------------------|
-|      | cse30   | Analog CMOS VLSI       | cse30.virtual-labs.ac.in-access_log   | cse30.virtual-labs.ac.in-access_log   |
-|   11 |         | Circuit Design         |                                       |                                       |
-|------+---------+------------------------+---------------------------------------+---------------------------------------|
-|   12 | eerc02  | Soil Mechanics         | eerc02.virtual-labs.ac.in-access_log  | eerc02.virtual-labs.ac.in-access_log  |
-|      |         |                        |                                       |                                       |
-|------+---------+------------------------+---------------------------------------+---------------------------------------|
-|   13 | eerc04  | Basic Structural       | eerc04.virtual-labs.ac.in-access_log  | eerc04.virtual-labs.ac.in-access_log  |
-|      |         | Analysis               |                                       |                                       |
-|------+---------+------------------------+---------------------------------------+---------------------------------------|
-|   14 | eerc05  | Geotechnical           | eerc05.virtual-labs.ac.in-access_log  | eerc05.virtual-labs.ac.in-access_log  |
-|      |         | Engineering Lab        |                                       |                                       |
-|------+---------+------------------------+---------------------------------------+---------------------------------------|
-|   15 | cse23   | Computational          | cse23.virtual-labs.ac.in-access_log   | cse23.virtual-labs.ac.in-access_log   |
-|      |         | Linguistics            |                                       |                                       |
-|------+---------+------------------------+---------------------------------------+---------------------------------------|
-|   16 | cse10   | Computer               | cse10.virtual-labs.ac.in-access_log   | cse10.virtual-labs.ac.in-access_log   |
-|      |         | Organization and       |                                       |                                       |
-|      |         | Architecture           |                                       |                                       |
-|------+---------+------------------------+---------------------------------------+---------------------------------------|
-|   17 | civil13 | Urban Transportation   | civil13.virtual-labs.ac.in-access_log | civil13.virtual-labs.ac.in-access_log |
-|      |         | Systems Planning       |                                       |                                       |
-|------+---------+------------------------+---------------------------------------+---------------------------------------|
-|   18 | ccnsb01 | Molecular Fluorescence | ccnsb01.virtual-labs.ac.in-access_log | ccnsb01.virtual-labs.ac.in-access_log |
-|      |         | Spectroscopy           |                                       |                                       |
-|------+---------+------------------------+---------------------------------------+---------------------------------------|
-|   19 | ccnsb02 | Colloid and Surface    | ccnsb02.virtual-labs.ac.in-access_log | ccnsb02.virtual-labs.ac.in-access_log |
-|      |         | Chemistry              |                                       |                                       |
-|------+---------+------------------------+---------------------------------------+---------------------------------------|
-|   20 | ccnsb03 | Molecular Absorption   | ccnsb03.virtual-labs.ac.in-access_log | ccnsb03.virtual-labs.ac.in-access_log |
-|      |         | Spectroscopy           |                                       |                                       |
-|------+---------+------------------------+---------------------------------------+---------------------------------------|
-|   21 | ccnsb04 | Quantum Chemistry      | ccnsb04.virtual-labs.ac.in-access_log | ccnsb04.virtual-labs.ac.in-access_log |
-|      |         |                        |                                       |                                       |
-|------+---------+------------------------+---------------------------------------+---------------------------------------|
-|   22 | ccnsb05 | Circular Dichroism     | ccnsb05.virtual-labs.ac.in-access_log | ccnsb05.virtual-labs.ac.in-access_log |
-|      |         | Spectroscopy           |                                       |                                       |
-|------+---------+------------------------+---------------------------------------+---------------------------------------|
-|   23 | ccnsb07 | Molecular              | ccnsb07.virtual-labs.ac.in-access_log | ccnsb07.virtual-labs.ac.in-access_log |
-|      |         | Interactions           |                                       |                                       |
-|------+---------+------------------------+---------------------------------------+---------------------------------------|
-|   24 | cse28   | Advanced Network       | cse28.virtual-labs.ac.in-access_log   | cse28.virtual-labs.ac.in-access_log   |
-|      |         | Technologies           |                                       |                                       |
-|      |         |                        |                                       |                                       |
-|------+---------+------------------------+---------------------------------------+---------------------------------------|
-|      | cse08   | Software               | cse08.virtual-labs.ac.in-access_log   | cse08.virtual-labs.ac.in-access_log   |
-|   25 |         | Engineering            |                                       |                                       |
-|------+---------+------------------------+---------------------------------------+---------------------------------------|
-|      | civil11 | Virtual Satellite      |                                       |                                       |
-|      |         | Image Processing and   |                                       |                                       |
-|      |         | Analysis               |                                       |                                       |
-|------+---------+------------------------+---------------------------------------+---------------------------------------|
+
+** Log files for each lab hosted on IIIT Infrastructure
+   The following labs hosted on IIIT infrastructure.
+   |------+---------+------------------------+---------------------------------------+---------------------------------------|
+   | S.no | Lab ID  | Lab Name               | Pattern Name                          | Log File name                         |
+   |------+---------+------------------------+---------------------------------------+---------------------------------------|
+   |    1 | cse04   | Problem                | cse04.virtual-labs.ac.in-access_log   | cse04.virtual-labs.ac.in-access_log   |
+   |      |         | Solving                |                                       |                                       |
+   |------+---------+------------------------+---------------------------------------+---------------------------------------|
+   |    2 | cse06   | Data Mining            | cse06.virtual-labs.ac.in-access_log   | cse06.virtual-labs.ac.in-access_log   |
+   |      |         |                        |                                       |                                       |
+   |------+---------+------------------------+---------------------------------------+---------------------------------------|
+   |    3 | cse07   | Databases              | cse07.virtual-labs.ac.in-access_log   | cse07.virtual-labs.ac.in-access_log   |
+   |      |         |                        |                                       |                                       |
+   |------+---------+------------------------+---------------------------------------+---------------------------------------|
+   |    4 | cse09   | Linux Lab              | cse09.virtual-labs.ac.in-access_log   | cse09.virtual-labs.ac.in-access_log   |
+   |      |         |                        |                                       |                                       |
+   |------+---------+------------------------+---------------------------------------+---------------------------------------|
+   |    5 | cse05   | Principles of          | cse05.virtual-labs.ac.in-access_log   | cse05.virtual-labs.ac.in-access_log   |
+   |      |         | Programming            |                                       |                                       |
+   |      |         | Languages              |                                       |                                       |
+   |------+---------+------------------------+---------------------------------------+---------------------------------------|
+   |    6 | cse13   | Advanced VLSI          | cse13.virtual-labs.ac.in-access_log   | cse13.virtual-labs.ac.in-access_log   |
+   |      |         |                        |                                       |                                       |
+   |------+---------+------------------------+---------------------------------------+---------------------------------------|
+   |      | cse16   | Speech Signal          | cse16.virtual-labs.ac.in-access_log   | cse16.virtual-labs.ac.in-access_log   |
+   |    7 |         | Processing             |                                       |                                       |
+   |      |         | (IIIT-H)               |                                       |                                       |
+   |------+---------+------------------------+---------------------------------------+---------------------------------------|
+   |    8 | cse17   | Mobile Robotics        | cse17.virtual-labs.ac.in-access_log   | cse17.virtual-labs.ac.in-access_log   |
+   |      |         |                        |                                       |                                       |
+   |------+---------+------------------------+---------------------------------------+---------------------------------------|
+   |    9 | cse21   | Optical Remote         | cse21.virtual-labs.ac.in-access_log   | cse21.virtual-labs.ac.in-access_log   |
+   |      |         | Sensing                |                                       |                                       |
+   |------+---------+------------------------+---------------------------------------+---------------------------------------|
+   |      | cse24   | Natural Language       | cse24.virtual-labs.ac.in-access_log   | cse24.virtual-labs.ac.in-access_log   |
+   |   10 |         | Processing             |                                       |                                       |
+   |------+---------+------------------------+---------------------------------------+---------------------------------------|
+   |      | cse30   | Analog CMOS VLSI       | cse30.virtual-labs.ac.in-access_log   | cse30.virtual-labs.ac.in-access_log   |
+   |   11 |         | Circuit Design         |                                       |                                       |
+   |------+---------+------------------------+---------------------------------------+---------------------------------------|
+   |   12 | eerc02  | Soil Mechanics         | eerc02.virtual-labs.ac.in-access_log  | eerc02.virtual-labs.ac.in-access_log  |
+   |      |         |                        |                                       |                                       |
+   |------+---------+------------------------+---------------------------------------+---------------------------------------|
+   |   13 | eerc04  | Basic Structural       | eerc04.virtual-labs.ac.in-access_log  | eerc04.virtual-labs.ac.in-access_log  |
+   |      |         | Analysis               |                                       |                                       |
+   |------+---------+------------------------+---------------------------------------+---------------------------------------|
+   |   14 | eerc05  | Geotechnical           | eerc05.virtual-labs.ac.in-access_log  | eerc05.virtual-labs.ac.in-access_log  |
+   |      |         | Engineering Lab        |                                       |                                       |
+   |------+---------+------------------------+---------------------------------------+---------------------------------------|
+   |   15 | cse23   | Computational          | cse23.virtual-labs.ac.in-access_log   | cse23.virtual-labs.ac.in-access_log   |
+   |      |         | Linguistics            |                                       |                                       |
+   |------+---------+------------------------+---------------------------------------+---------------------------------------|
+   |   16 | cse10   | Computer               | cse10.virtual-labs.ac.in-access_log   | cse10.virtual-labs.ac.in-access_log   |
+   |      |         | Organization and       |                                       |                                       |
+   |      |         | Architecture           |                                       |                                       |
+   |------+---------+------------------------+---------------------------------------+---------------------------------------|
+   |   17 | civil13 | Urban Transportation   | civil13.virtual-labs.ac.in-access_log | civil13.virtual-labs.ac.in-access_log |
+   |      |         | Systems Planning       |                                       |                                       |
+   |------+---------+------------------------+---------------------------------------+---------------------------------------|
+   |   18 | ccnsb01 | Molecular Fluorescence | ccnsb01.virtual-labs.ac.in-access_log | ccnsb01.virtual-labs.ac.in-access_log |
+   |      |         | Spectroscopy           |                                       |                                       |
+   |------+---------+------------------------+---------------------------------------+---------------------------------------|
+   |   19 | ccnsb02 | Colloid and Surface    | ccnsb02.virtual-labs.ac.in-access_log | ccnsb02.virtual-labs.ac.in-access_log |
+   |      |         | Chemistry              |                                       |                                       |
+   |------+---------+------------------------+---------------------------------------+---------------------------------------|
+   |   20 | ccnsb03 | Molecular Absorption   | ccnsb03.virtual-labs.ac.in-access_log | ccnsb03.virtual-labs.ac.in-access_log |
+   |      |         | Spectroscopy           |                                       |                                       |
+   |------+---------+------------------------+---------------------------------------+---------------------------------------|
+   |   21 | ccnsb04 | Quantum Chemistry      | ccnsb04.virtual-labs.ac.in-access_log | ccnsb04.virtual-labs.ac.in-access_log |
+   |      |         |                        |                                       |                                       |
+   |------+---------+------------------------+---------------------------------------+---------------------------------------|
+   |   22 | ccnsb05 | Circular Dichroism     | ccnsb05.virtual-labs.ac.in-access_log | ccnsb05.virtual-labs.ac.in-access_log |
+   |      |         | Spectroscopy           |                                       |                                       |
+   |------+---------+------------------------+---------------------------------------+---------------------------------------|
+   |   23 | ccnsb07 | Molecular              | ccnsb07.virtual-labs.ac.in-access_log | ccnsb07.virtual-labs.ac.in-access_log |
+   |      |         | Interactions           |                                       |                                       |
+   |------+---------+------------------------+---------------------------------------+---------------------------------------|
+   |   24 | cse28   | Advanced Network       | cse28.virtual-labs.ac.in-access_log   | cse28.virtual-labs.ac.in-access_log   |
+   |      |         | Technologies           |                                       |                                       |
+   |      |         |                        |                                       |                                       |
+   |------+---------+------------------------+---------------------------------------+---------------------------------------|
+   |      | cse08   | Software               | cse08.virtual-labs.ac.in-access_log   | cse08.virtual-labs.ac.in-access_log   |
+   |   25 |         | Engineering            |                                       |                                       |
+   |------+---------+------------------------+---------------------------------------+---------------------------------------|
+   |      | civil11 | Virtual Satellite      |                                       |                                       |
+   |      |         | Image Processing and   |                                       |                                       |
+   |      |         | Analysis               |                                       |                                       |
+   |------+---------+------------------------+---------------------------------------+---------------------------------------|
+   
 
 
-
-** Labs on AWS
-   List of labs running on AWS. Apache and awstats logs of each lab
-   being stored in aws reverse proxy node  in =/var/log/httpd/= 
+** Log files for each lab hosted on AWS
+   List of labs running on AWS. Apache and awstats logs for each lab
+   being stored in aws reverse proxy node in =/var/log/httpd/=
    
    |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
    | S.no | Lab id       | Lab Name                                                                         | Log Pattern                                  | Log File Name                                   |
@@ -343,12 +626,6 @@
    |   70 | ee           | Electronics Devices and Circuits                                                 | ee-iitb.virtual-labs.ac.in-access*           | ee-iitb.virtual-labs.ac.in-access_log           |
    |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
 
-
-** Final Listing
-|--------+---------------+---+---+---|
-| lab_id | log_file_name |   |   |   |
-|--------+---------------+---+---+---|
-|        |               |   |   |   |
 * Implementation
 ** Structure of Scripts
 
@@ -492,7 +769,7 @@ WSGIScriptReloading On
 
 #Copy the WSGI file to http configuration under conf.d/
 - name: Copying analytics_http.conf to analytics server
-  copy: src=analytics_http.conf dest=/etc/http/conf.d/analytics_http.conf
+  copy: src=analytics_http.conf dest=/etc/httpd/conf.d/analytics_http.conf
   notify:
    - restart apache
 
@@ -621,9 +898,107 @@ WSGIScriptReloading On
    #+END_SRC
 
 * Test cases
-** Test Case : Provision of analytics node
-   Test to setup analitcs server using analytics_server.yaml playbook
+** Test Case 01
+*** Objective
+    Test to setup analitcs server using analytics_server.yaml playbook
+*** Apparatus
+    1. Container in the cluster
+    2. ansible playbook to setup analytics node
+*** Procedure 
+    1. Create the container with proper network configuration 
+       #+BEGIN_SRC 
+       vzctl create 1012 --ostemplate centos-6-x86_64-point6 --hostname analytics-server.base4.vlabs.ac.in 
+       vzctl set 1012 --netif_add eth1,,,,base4br --save
+       vzctl start 1012
+       #+END_SRC
+    2. Configure the network
+      #+BEGIN_SRC 
+       vim /etc/sysconfig/network-scripts/ifcfg-eth1    
+      #+END_SRC
+      #+BEGIN_SRC 
+      DEVICE=eth1
+      IPADDR=10.100.1.12
+      NETMASK=255.255.252.0
+      ONBOOT=yes
+      BOOTPROTO=static
+      NM_CONTROLLED=no
+      GATEWAY=10.100.1.1
+      #+END_SRC
+    3. Restart the network
+       #+BEGIN_SRC 
+       service network start
+       #+END_SRC
+    4. Check the default gate (10.100.1.1). If not, add default gate
+       way as 10.100.1.1. (Common role takes of adding it)
+       #+BEGIN_SRC 
+       route add default gw 10.100.1.1
+       #+END_SRC
+    5. Enable ssh access from config-server
+    6. Add analytics server's ip to hosts file.
+    7. Add pub-key of both RP of aws and http of IIIT  to analytics
+       server
+       Here: Adding public key of RP of amazon is taken care by
+       common role. But  Adding public key of http container of IIIT
+       to analytics server is manual step.
+    7. Pull the updated sources of analytics node of systems-model
+       repo
+    8. Run make
+*** Experiments
+    - Run analytics_server.yaml file from config-server to setup
+      analytics node
+    - Cronjob rules are added in reverse proxy
+    - Run cronjobs to rsync apache logs and awstats from revers proxy
+      to analytics node.
+      #+BEGIN_SRC 
+      rsync -arR /var/lib/awstats root@10.100.1.12:/root/aws      
+      rsync -arR /var/log/httpd root@10.100.1.12:/root/aws/
+      #+END_SRC
+*** Result
+    Logs are getting stored in pertricular location of analytics node
+*** Conclusion
+    The node has been configure using ansible playbook. Installed
+    dependencies required for analyitcs node.
 
-
-
-
+** Test Case 02
+*** Objective
+    Test to check whether the cronjob on reverse proxy of aws cluster
+    is able to rsync apache logs and awstats to analytics node or not
+*** Apparatus
+    - Reverse proxy on aws with cron jobs
+    - Analytics node to get logs from reverse proxy node
+*** Experiments
+    - run the following commands from reverse proxy on aws
+      #+BEGIN_SRC 
+      rsync -arR /var/lib/awstats root@10.100.1.12:/root/aws/
+      rsync -arR /var/log/httpd root@10.100.1.12:/root/aws/
+      #+END_SRC
+    - Look for awstats in =/root/aws/awstast= in analytics server
+    - Look for apache logs in =/root/aws/httpd= in analytics server    
+*** Result 
+    Apache logs and awstats are being stored in analytics server
+*** Conclusion
+    Cronjobs added correctly and reverse proxy server is able to rsync
+    apache logs and awstats to analytics server.
+    
+** Test Case 03
+*** Objective 
+    Test to check whether the cronjob on reverse proxy of IIIT
+    infrastructure is able to rsync apache logs and awstats to
+    analytics node or not
+*** Apparatus
+    - Reverse proxy on IIIT infrastructure with cron jobs
+    - Analytics node to get logs from reverse proxy node
+*** Experiments
+    - Run the following commands from reverse proxy 
+      #+BEGIN_SRC 
+      rsync -azR -e "ssh -p 2222" /var/www/awstats/awstats* stats.vlabs.ac.in:/root/base/
+      rsync -azR -e "ssh -p 2222" /var/log/httpd/* stats.vlabs.ac.in:/root/base/
+      #+END_SRC
+    - Look for awstats in =/root/base/= in analytics server
+    - Look for apache logs in =/root/base/= in analytics server    
+*** Result 
+    Apache logs and awstats are being stored in analytics server
+*** Conclusion
+    Cronjobs added correctly and reverse proxy node is able to rsync
+    apache logs and awstats to analytics server.
+   
