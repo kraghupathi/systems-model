@@ -813,9 +813,9 @@ WSGIScriptReloading On
 #Set hourly cronjobs to rsync the AWstats statistics files and apache logs to                                                      
 #Analytics server the "name= " parameter should not be changed and                                                 
 #must be unique      
-- name:rsync base machine's reverse proxy of aws logs to /var/www/html/data/aws/
+- name: rsync base machine's reverse proxy of aws logs to /var/www/html/data/aws/
   cron:                                                                                                              
-        name= Rsync-aws-log-files
+        name=Rsync-aws-log-files
         user=root                                                                                                    
         hour=01                                                                                                      
         state=present                                                                                                
