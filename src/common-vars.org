@@ -570,6 +570,8 @@ public_dns_entries:
   - { hostname: ps-iiith, ip: 54.85.93.7}
   - { hostname: ssl-iitg, ip: 54.85.93.7}  
   - { hostname: outreach, ip: 54.85.93.7}  
+  - { hostname: t4e2015, ip: 52.26.141.190 }  #Added by Saurabh for T4E
+  - { hostname: test.t4e2015, ip: 196.12.53.130 }  #Added by Saurabh for T4E
 
 private_dns_entries:
   - { hostname: router, ip: 10.100.1.1 }
