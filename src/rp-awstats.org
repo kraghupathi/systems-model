@@ -439,6 +439,7 @@ ErrorLog logs/{{domain.domain}}-error_log
 CustomLog logs/{{domain.domain}}-access_log combined
 <Location />
 ProxyPass http://{{domain.domain}}/
+ProxyPassReverse http://{{domain.domain}}/
 </Location>
 </VirtualHost>
 
@@ -451,6 +452,7 @@ ErrorLog logs/{{domain.domain}}-error_log
 CustomLog logs/{{domain.domain}}-access_log combined
 <Location />
 ProxyPass http://{{domain.domain}}/
+ProxyPassReverse http://{{domain.domain}}/
 </Location>
 </VirtualHost>
 
@@ -2081,7 +2083,7 @@ ExtraTrackedRowsLimit=500
         user=root
         hour=01
         state=present
-        job="rsync -arR /var/lib/awstats root@10.100.1.12:/root/aws/"
+        job="rsync -arp /var/lib/awstats root@10.100.1.12:/root/aws/"
 
 - name: Rsync the Apache log files to analytics server
   cron:
@@ -2089,7 +2091,7 @@ ExtraTrackedRowsLimit=500
         user=root
         hour=01
         state=present
-        job="rsync -arR /var/log/httpd root@10.100.1.12:/root/aws/"
+        job="rsync -arp /var/log/httpd root@10.100.1.12:/root/aws/"
 
 #+END_SRC                                                                           
 
