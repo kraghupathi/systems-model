@@ -9,7 +9,7 @@
 
 * Introduction
   This documentation describes the requirements, design and
-  implementation of analytics node. 
+  implementation of analytics node(server). 
 
   The basic idea to build this node is to have all the webserver logs
   and awstats of each lab in one place. So that Analytics service uses
@@ -20,29 +20,29 @@
   bellow and common requirements are defined in
   [[./common.org][common role]]
 ** Functional requirements
-   1. Collect the web server(apache) logs and awstats logs for all the
+   1) Collect the web server(apache) logs and awstats logs for all the
       labs deployed on both AWS and IIITH infrastructure that are
       currently live(Production).
-   2. Collect web server(apache) logs and awstats logs for all the
+   2) Collect web server(apache) logs and awstats logs for all the
       labs that are not live.
       - Not live labs :: 
 			 *Example 1*: Logs of the labs that were
-                         resuming from deploy container on IIITH
+                         resumed from deploy container on IIITH
                          infrastructure.
-			 *Example 2*: Labs on aws which are stopped.
+       
+                         *Example 2*: Labs on aws which are stopped.
 			 
-      - NOTE :: Second(2) requirement is one time job. Once we have
-                collected the required logs from non live labs, no
+      - NOTE :: Second(2) requirement is one time job. Once the
+                required logs are collected from non live labs, no
                 need to collect logs frequently as first(1)
                 requirement.
-   3. Allow incoming connections on tcp ports 80 and 443 to accept the
+   3) Allow incoming connections on tcp ports 80 and 443 to accept the
       web requests coming from the local subnet
-   4. Allow outgoing connections on tcp ports 80 and 443 for yum. 
-   5. Available to the external world through domain name(URL).
+   4) Available to the external world through domain name(URL).
 ** Security requirements
     1. Accept incoming connections on tcp port 22 from reverse proxy
-       of aws cluster and iiith infrastructure in order to collect
-       the logs using rsync command.
+       of aws cluster and iiith infrastructure in order to collect the
+       logs using rsync command.
 * Design
   This section describes the design to make this node functional, the
   implementation is explained in the following section.
@@ -57,31 +57,37 @@
   is used to transfer, and setup periodic transfer jobs using =cronie=
   which executes every hour.
   
-  As this task involves collecting data from different sources, like
-  a cluster which is managed with configuration management tool
+  As this task involves collecting data from two different sources,
+  like a cluster which is managed with configuration management tool
   =Ansible= and another one a manually configured server.
   
-  It is assumed that source node will push the data to analytics
+  It is assumed that source node pushes the data to analytics
   node. For these assumptions, make changes to the reverse proxy model
   of the cluster and manually configure the reverse proxy at
   IIIT-H. These changes are described in respective node models, the
   gist, however, is this node will receive AWstats, apache log files
   every hour.
 
+ 
 *** Re-configured AWS cluster, for the requirements of analytics node
-    - Analytics server configured to accept =rsync= over =TCP=,
-      manually copy the public key generated on reverse proxy to
-      analytics node
+    *Automated*::
+    The following changes are done in reverse proxy node model and
+    router node model.
+    - Analytics server configured to accept =rsync= over =TCP=.
     - Reverse Proxy(Source 1) configured to push the generated
       statistics to =Analytics= server at regular intervals
-    - Router cofigured to allow incoming =rsync= connections from
+    - Router configured to allow incoming =rsync= connections from
       Source 2(IIIT-H reverse proxy) to Analytics server
 
 *** On BASE machines
-   Here we manually setup:
- - Reverse Proxy(Source 2) configured to push generated statistics to
+    *Manual step*:: 
+    
+    Source 2 is located in IIITH infrastructure. In order to get logs
+    from the source2 to analytics node, Add http_container's public
+    key to the analytics node, Then source2 will be able to push the
+    logs to analytics node on port 2222 using rsync command.
+    - Reverse Proxy(Source 2) configured to push generated statistics to
    =Analytics= server every hour.
-
    #+BEGIN_EXAMPLE
    [root@http ~]# crontab -l
    #Rsync stats from http container to stats instance on AWS
@@ -98,27 +104,55 @@
     The source file was prepared using Libreoffice 4.3 and VRT
     extensions.
     [[./diagrams/analytics-node.odg][Download source file]]
+*** Location of apache logs and AWStats in analytics server
+**** From Source1 
+    - AWS reverse proxy server is pushing the apache logs to analytics
+      server's =/root/aws/aws/httpd/= location
+    - AWS reverse proxy server is pushing the awstats to analytics
+      server's =/root/aws/awstats/= location.
+**** From Source2
+    - IIIT reverse proxy server is pushing the apache logs to analytics
+      server's =/root/base/var/log/httpd/= location
+    - IIIT reverse proxy server is pushing the awstats to analytics
+      server's =/root/base/var/www/awstats/= location
+*** Cron job to copy the logs from /root/ to /var/www/html/data/ in analytics server
+    After copying the logs from sources to analytics server, analytics
+    server will have a cron job to copy these logs to appropriate
+    location from where analytics service uses these logs. Associated
+    task for this added in tasks section.
+    #+BEGIN_EXAMPLE
+    rsync -arp /root/aws/* /var/www/html/data/aws/"
+    rsync -arp /root/base/* /var/www/html/data/base/"
+    #+END_EXAMPLE
 
-** Log files for each labs on Deploy Container
+** Log files of each lab on Deploy Container
    - Pattern Name :: Collection of apache access logs of each lab.
  
-   - Log File Name :: A file name which collects apache logs in a
-                      single file. 
+   - Log File Name :: For each lab there might be many log files based
+                      time/date. To have all the logs in single file,
+                      merge those logs into one single log file.
   
-   - Before de-commissioning the =deploy.virtual-labs.ac.in= :: The
-        following tables shows list of labs running from
-        =deploy.virtual-labs.ac.in= container and logs of each lab are
-        stored in a file called
-        =/var/log/httpd/deploy.virtual-labs.ac.in-access*= in
-        =httpd.virtual-labs.ac.in= (Reverse proxy)container. These
-        logs of each lab are actually old logs.
+   - Following table shows where the logs of each lab were getting
+     stored before decommissioning the deploy container. Logs of each
+     lab were stored at
+     =/var/log/httpd/deploy.virtual-labs.ac.in-access*= in
+     http_container(http.virtual-labs.ac.in).
+    
    |------+-----------------------------------+--------------------------------------|
    | S.No | Pattern Name                      | Log File Name                        |
    |------+-----------------------------------+--------------------------------------|
    |    1 | deploy.virtual-labs.ac.in-access* | deploy.virtual-labs.ac.in-access_log |
    |------+-----------------------------------+--------------------------------------|
 
-   
+    The following table shows list of labs running from deploy
+    container via http_container(http.virtual-labs.ac.in) before
+    decommissioning the deploy container. The log files according to
+    lab_id are actually generated from cronjob for grep command
+    running on =/var/log/httpd/deploy.virtual-labs.ac.in-access*=.
+
+    Check the cronjob for grep at =/etc/cron.hourly/= in
+    http.virtual-labs.ac.in container
+
    |------+----------+-------------------------------------+----------------------------------------|
    | S.No | Lab ID   | Pattern Name                        | Log File Name                          |
    |------+----------+-------------------------------------+----------------------------------------|
@@ -387,8 +421,11 @@
    |------+----------+-------------------------------------+----------------------------------------|
 
 
-** Log files for each lab hosted on IIIT Infrastructure
-   The following labs hosted on IIIT infrastructure.
+** Log files of each lab hosted on IIIT Infrastructure
+   The following table shows the labs that are hosted on IIIT
+   infrastructure. These labs are actually moved from deploy container
+   and hosted in separate containers.
+   
    |------+---------+------------------------+---------------------------------------+---------------------------------------|
    | S.no | Lab ID  | Lab Name               | Pattern Name                          | Log File name                         |
    |------+---------+------------------------+---------------------------------------+---------------------------------------|
@@ -478,9 +515,10 @@
    
 
 
-** Log files for each lab hosted on AWS
+** Log files of each lab hosted on AWS
    List of labs running on AWS. Apache and awstats logs for each lab
-   being stored in aws reverse proxy node in =/var/log/httpd/=
+   being stored in aws reverse proxy node in =/var/log/httpd/= and
+   =/var/lib/awstats/= respectively.
    
    |------+--------------+----------------------------------------------------------------------------------+----------------------------------------------+-------------------------------------------------|
    | S.no | Lab id       | Lab Name                                                                         | Log Pattern                                  | Log File Name                                   |
@@ -772,6 +810,24 @@ WSGIScriptReloading On
   copy: src=analytics_http.conf dest=/etc/httpd/conf.d/analytics_http.conf
   notify:
    - restart apache
+#Set hourly cronjobs to rsync the AWstats statistics files and apache logs to                                                      
+#Analytics server the "name= " parameter should not be changed and                                                 
+#must be unique      
+- name: Rsync the log files to analytics server
+  cron:                                                                                                              
+        name=rsync base machine's reverse proxy of aws logs to /var/www/html/data/aws/
+        user=root                                                                                                    
+        hour=01                                                                                                      
+        state=present                                                                                                
+        job="rsync -arp /root/aws/* /var/www/html/data/aws/"
+                                                                                                                 
+- name: Rsync the log files to analytics server                                                               
+  cron:                                                                                                              
+        name=rsync base machine's reverse proxy logs to /var/www/html/data/base/                                                                                       
+        user=root                                                                                                    
+        hour=01                                                                                                      
+        state=present                                                                                                
+        job="rsync -arp /root/base/* /var/www/html/data/base/"           
 
 #+END_SRC
 
