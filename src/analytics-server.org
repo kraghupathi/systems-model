@@ -925,7 +925,7 @@ WSGIScriptReloading On
    file contains the code =mod_wsgi= is executing on startup to get
    the application object.  The object called application in that file
    is then used as application.
-   #+BEGIN_SRC  python :tangle analytics/analytics.wsgi
+   #+BEGIN_SRC
    import sys 
    sys.path.insert (0,'/var/www/html/analytics/')
    import logging, sys
