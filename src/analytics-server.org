@@ -107,12 +107,12 @@
 *** Location of apache logs and AWStats in analytics server
 **** From Source1 
     - AWS reverse proxy server pushes the apache logs to analytics
-      server's =/var/www/html/analytics/aws-logs/= location
+      server's =/var/www/html/aws-logs/= location
     - AWS reverse proxy server pushes the awstats to analytics
       server's =/root/aws-awstats/= location.
 **** From Source2
     - IIIT reverse proxy server is pushing the apache logs to analytics
-      server's =/var/www/html/analytics/deploy-logs/= location
+      server's =/var/www/html/deploy-logs/= location
     - IIIT reverse proxy server is pushing the awstats to analytics
       server's =/root/base/deploy-awstats/= location
 
@@ -503,7 +503,6 @@
    |      |         | Analysis               |                                       |                                       |
    |------+---------+------------------------+---------------------------------------+---------------------------------------|
    
-
 ** Log files of each lab hosted on AWS
    List of labs running on AWS. Apache and awstats logs for each lab
    being stored in aws reverse proxy node in =/var/log/httpd/= and
@@ -793,8 +792,8 @@ WSGIScriptReloading On
   authorized_key: user=root key="{{ lookup('file', 'rp_pub_key') }}" state=present
 
 #Copy the analytics.wsgi file to http configuration under conf.d/
-- name: Copying analytics.wsgi to analytics server
-  copy: src=analytics.wsgi dest=/var/www/html/analytics/ 
+#- name: Copying analytics.wsgi to analytics server
+#  copy: src=analytics.wsgi dest=/var/www/html/analytics/ 
 
 #Copy the WSGI file to http configuration under conf.d/
 - name: Copying analytics_http.conf to analytics server
@@ -802,7 +801,18 @@ WSGIScriptReloading On
   notify:
    - restart apache
 #+END_SRC
-
+*** Setup org-mode8 
+    In order to tangle the analytics service model, org-mode8 setup
+    is required.
+#+BEGIN_SRC yml :tangle roles/analytics_server/tasks/main.yaml :eval no
+# Setup org-mode8 
+- name: Creating ~/emacs/lisp/ directory 
+  file: path=~/emacs/lisp state=directory
+- name: Getting the org-mode-8 sources
+  get_url: url=http://orgmode.org/org-8.2.10.tar.gz dest=~/emacs/lisp/
+- name: Extracting the sources into ~/emacs/lisp/
+  unarchive: src=~/emacs/lisp/org-8.2.10.tar.gz dest=~/emacs/lisp/
+#+END_SRC
 ** Handlers
    Restart the services httpd and iptables if there are any changes in
    the configuration files. These handlers are called when associated
