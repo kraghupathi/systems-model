@@ -699,6 +699,8 @@ roles/analytics_server
 {% for item in rsnapshot_server_ips %}
 -A INPUT -s {{item}} -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
 {% endfor %}
+# Allow incoming http packets from local subnet via the router
+-A INPUT -s {{local_subnet}} -p tcp -m tcp --dport 80 -j ACCEPT
 #Allow incoming connections from http container on base on TCP port 22
 -A INPUT -m state --state NEW -s {{http_container}} -p tcp -m tcp --dport 22 -j ACCEPT
 #Allow incoming NRPE queries for nagios from nagios servers
