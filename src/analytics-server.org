@@ -106,24 +106,15 @@
     [[./diagrams/analytics-node.odg][Download source file]]
 *** Location of apache logs and AWStats in analytics server
 **** From Source1 
-    - AWS reverse proxy server is pushing the apache logs to analytics
-      server's =/root/aws/aws/httpd/= location
-    - AWS reverse proxy server is pushing the awstats to analytics
-      server's =/root/aws/awstats/= location.
+    - AWS reverse proxy server pushes the apache logs to analytics
+      server's =/var/www/html/analytics/aws-logs/= location
+    - AWS reverse proxy server pushes the awstats to analytics
+      server's =/root/aws-awstats/= location.
 **** From Source2
     - IIIT reverse proxy server is pushing the apache logs to analytics
-      server's =/root/base/var/log/httpd/= location
+      server's =/var/www/html/analytics/deploy-logs/= location
     - IIIT reverse proxy server is pushing the awstats to analytics
-      server's =/root/base/var/www/awstats/= location
-*** Cron job to copy the logs from /root/ to /var/www/html/data/ in analytics server
-    After copying the logs from sources to analytics server, analytics
-    server will have a cron job to copy these logs to appropriate
-    location from where analytics service uses these logs. Associated
-    task for this added in tasks section.
-    #+BEGIN_EXAMPLE
-    rsync -arp /root/aws/* /var/www/html/data/aws/"
-    rsync -arp /root/base/* /var/www/html/data/base/"
-    #+END_EXAMPLE
+      server's =/root/base/deploy-awstats/= location
 
 ** Log files of each lab on Deploy Container
    - Pattern Name :: Collection of apache access logs of each lab.
@@ -420,7 +411,6 @@
    |   89 | emt      | emt.virtual-labs.ac.in-access*      | emt.virtual-labs.ac.in-access_log      |
    |------+----------+-------------------------------------+----------------------------------------|
 
-
 ** Log files of each lab hosted on IIIT Infrastructure
    The following table shows the labs that are hosted on IIIT
    infrastructure. These labs are actually moved from deploy container
@@ -513,7 +503,6 @@
    |      |         | Analysis               |                                       |                                       |
    |------+---------+------------------------+---------------------------------------+---------------------------------------|
    
-
 
 ** Log files of each lab hosted on AWS
    List of labs running on AWS. Apache and awstats logs for each lab
@@ -750,7 +739,8 @@ roles/analytics_server
 -A OUTPUT -j REJECT --reject-with icmp-host-prohibited
 COMMIT
 #+END_SRC
-** Create a =.wsgi= file
+** COMMENT Create a =.wsgi= file
+   *This step is taken care by analtyics service*
    To run your application you need a =analytics.wsgi= file.  This
    file contains the code =mod_wsgi= is executing on startup to get
    the application object.  The object called application in that file
@@ -785,7 +775,8 @@ WSGIScriptReloading On
    - python-pip
    - mod_wsgi
    - httpd
-
+   - git 
+   - emacs
 #Use pip to install Flask, Flask-Cache
 - name: install Flask, Flask-Cache using pip
   pip: name={{item}} state=present
@@ -810,25 +801,6 @@ WSGIScriptReloading On
   copy: src=analytics_http.conf dest=/etc/httpd/conf.d/analytics_http.conf
   notify:
    - restart apache
-#Set hourly cronjobs to rsync the AWstats statistics files and apache logs to                                                      
-#Analytics server the "name= " parameter should not be changed and                                                 
-#must be unique      
-- name: rsync base machine's reverse proxy of aws logs to /var/www/html/data/aws/
-  cron:                                                                                                              
-        name=Rsync-aws-log-files
-        user=root                                                                                                    
-        hour=01                                                                                                      
-        state=present                                                                                                
-        job="rsync -arp /root/aws/* /var/www/html/data/aws/"
-                                                                                                                 
-- name: rsyncbase machine's reverse proxy logs to /var/www/html/data/base/
-  cron:                                                                                                              
-        name=Rsync-base-machine-log-files
-        user=root                                                                                                    
-        hour=01                                                                                                      
-        state=present                                                                                                
-        job="rsync -arp /root/base/* /var/www/html/data/base/"           
-
 #+END_SRC
 
 ** Handlers
