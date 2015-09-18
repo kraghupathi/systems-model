@@ -740,7 +740,7 @@ roles/analytics_server
 -A OUTPUT -j REJECT --reject-with icmp-host-prohibited
 COMMIT
 #+END_SRC
-** COMMENT Create a =.wsgi= file
+** Create a =.wsgi= file
    *This step is taken care by analtyics service*
    To run your application you need a =analytics.wsgi= file.  This
    file contains the code =mod_wsgi= is executing on startup to get
