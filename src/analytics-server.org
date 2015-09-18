@@ -748,13 +748,13 @@ COMMIT
    file contains the code =mod_wsgi= is executing on startup to get
    the application object.  The object called application in that file
    is then used as application.
-   #+BEGIN_SRC yml :tangle roles/analytics_server/files/analytics.wsgi :eval no
-   import sys 
-   sys.path.insert (0,'/var/www/html/analytics/')
-   import logging, sys
-   logging.basicConfig(stream=sys.stderr)
-   from app import app as application
-   #+END_SRC
+#+BEGIN_SRC yml :tangle roles/analytics_server/files/analytics.wsgi :eval no
+import sys 
+sys.path.insert (0,'/var/www/html/analytics/')
+import logging, sys
+logging.basicConfig(stream=sys.stderr)
+from app import app as application
+#+END_SRC
 
 ** =Apache= configuration for Web server gateway interface(WSGI)
 #+BEGIN_SRC yml :tangle roles/analytics_server/files/analytics_http.conf :eval no
@@ -797,8 +797,8 @@ WSGIScriptReloading On
   authorized_key: user=root key="{{ lookup('file', 'rp_pub_key') }}" state=present
 
 #Copy the analytics.wsgi file to http configuration under conf.d/
-#- name: Copying analytics.wsgi to analytics server
-#  copy: src=analytics.wsgi dest=/var/www/html/analytics/ 
+- name: Copying analytics.wsgi to analytics server
+  copy: src=analytics.wsgi dest=/var/www/html/analytics/ 
 
 #Copy the WSGI file to http configuration under conf.d/
 - name: Copying analytics_http.conf to analytics server
