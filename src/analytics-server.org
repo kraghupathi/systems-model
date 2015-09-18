@@ -39,6 +39,8 @@
    3) Allow incoming connections on tcp ports 80 and 443 to accept the
       web requests coming from the local subnet
    4) Available to the external world through domain name(URL).
+   5) Convert apache logs into csv files for every two hours by adding
+      a cronjob.
 ** Security requirements
     1. Accept incoming connections on tcp port 22 from reverse proxy
        of aws cluster and iiith infrastructure in order to collect the
@@ -784,6 +786,7 @@ WSGIScriptReloading On
   with_items:
    - Flask
    - Flask-Cache
+   - Flask-Testing 
 - name: Configure firewall rules
   template: src=analytics_server_iptables dest=/etc/sysconfig/iptables owner=root group=root mode=0600
   notify:
@@ -802,6 +805,14 @@ WSGIScriptReloading On
   copy: src=analytics_http.conf dest=/etc/httpd/conf.d/analytics_http.conf
   notify:
    - restart apache
+# Cron job for converting logs into csv files.
+- name: Adding cronjob for converting logs into .csv files
+  cron: 
+        name=logs_to_csv
+        user=root
+        hour=03
+        state=present
+        job="python /var/www/html/analytics/logs_to_csv.py"
 #+END_SRC
 *** Setup org-mode8 
     In order to tangle the analytics service model, org-mode8 setup
