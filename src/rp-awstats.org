@@ -35,6 +35,8 @@ etc. Analytics can be viewed on terminal and also in the browser.
  4) Stores analytics of each lab using AWStats (Logfile analyzer).
  5) Revers proxy uses router IP as default gateway to reach the
     external world.
+ 6) Copy the logs and awstats to analytics server 
+
 ** Security Requirements
   1) Accept incoming connections on tcp ports 80 and 443 from
      anywhere.
@@ -2080,20 +2082,19 @@ ExtraTrackedRowsLimit=500
   cron:
         name=rsync_apache_logs
         user=root
-        hour=01
+        minute=01
         state=present
-        job="rsync -arp /var/log/httpd/* root@10.100.1.12:/var/www/html/aws-logs/"
+        job="rsync -arp /var/log/httpd/* root@{analytics_server_ip}:/var/www/html/aws-logs/"
     
 - name: Rsync the AWstats stats file to analytics server
   cron:
         name=rsync_stats
         user=root
-        hour=01
+        minute=01
         state=present
-        job="rsync -arp /var/lib/awstats/* root@10.100.1.12:/root/aws-awstats/"
+        job="rsync -arp /var/lib/awstats/* root@{analytics_server_ip}:/root/aws-awstats/"
 
 #+END_SRC                                                                           
-
 
 **** Allow access to awstats from management ips
      To access awstats from management ips , configure apache server
@@ -2451,3 +2452,49 @@ Test to check the AWStats for virtual hosts
 *** Conclusion 
   Awstats ( analytics of each lab ) are storing and able to access the
   analytics from browser
+** Test Case ID : Rsync logs and awstats to analytics node 
+*** Objective 
+    Test to check the logs and awstats are copying to analytics node
+    or not for every minute using cronjobs on reverse proxy
+*** Apparatus 
+    1. AWS reverse proxy
+    2. Analytics Server
+*** Procedure
+    1. Add cron job to reverse proxy using reverse_proxy.yaml
+       playbook.
+    2. After running the playbook, Check for cron job on reverse
+       proxy node by issuing the command
+       #+BEGIN_SRC 
+       crontab -l
+       #+END_SRC
+    3. Based on cronjob time, wait for that mush time in order to run
+       crontab job
+    4. After one minute look for copied logs and awstats from reverse
+       proxy to analytics server.
+    
+*** Experiments
+    Assume analytics node has been setup using analytics_server.yaml
+    file
+    1. Add cron jobs on reverse proxy by running reverse_proxy.yaml
+       file. 
+       #+BEGIN_SRC 
+       ansible-playbook -i hosts reverseproxy_server.yaml
+       #+END_SRC
+    2. Checked the cron jobs are added to Reverse proxy or
+       not. Cron jobs are added in crontab
+       #+BEGIN_SRC 
+      #Ansible: rsync_stats
+      01 * * * *rsync -arp /var/lib/awstats/* root@10.100.1.12:/root/aws-awstats/
+      #Ansible: rsync_apache_logs
+      01 * * * *rsync -arp /var/log/httpd/* root@10.100.1.12:/var/www/html/aws-logs/       
+       #+END_SRC
+       
+    3. Waited for two minutes to rsync logs and awstats to analytics
+       node.
+    4. Checked whether the logs are getting saved or not on analytics
+       node. And logs are being saved at specified location.
+*** Result
+    Logs and awstats are being saved at specified location 
+*** Conclusion
+    Logs and awstats are being copied according to cronjob of reverse
+    proxy node to analytics node
