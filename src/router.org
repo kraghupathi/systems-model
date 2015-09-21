@@ -31,7 +31,8 @@ The functional and security requirements of router are:
  
   The router also allows outgoing SSH/Rsync over TCP port 2222 from
   [[./rsnapshot-server.org][Rsnapshot server]] to [[https://vlead.virtual-labs.ac.in/wiki/index.php/Aws-backup.virtual-labs.ac.in][aws-backup.vlabs.ac.in]]
-
+  
+  Forward incoming SSH connection on TCP port 2222 to Analytics server
 ** Security Requirements
   All common security requirements and general server hardening as
   described in [[file:common.org::*Security Requirements][common role]] are applicable to router with an exception
@@ -576,3 +577,29 @@ user with the name resolved.
 *** Conclusion
     The router and the machine configuration are set properly
     according to the network design.
+** Test Case ID :: TC03
+*** Objective
+    Test to check the tcp port 2222 forwarding to analytics server
+*** Apparatus
+    1. IIIT Reverse proxy.
+    2. AWS Router node
+    3. AWS Analytics node
+
+*** Theory
+    IIIT Revere proxy server should be able to push the logs to
+    AWS analytics server over tcp port 2222 via the AWS router.
+*** Procedure 
+    After setting up whole cluster on aws including analytics node,
+    In Reverse proxy,
+    wait for one minute(Some times it may take several minutes to copy
+    depends upon file/folder size) to see whether the updated logs are
+    getting copied to analytics node.
+*** Experiments
+    1. Using ansible plabook of analytics node, cron job will be setup
+    2. Waited for 10 to 20 minutes to check the logs and awstats are
+       copied to analytics server or not
+    3. 
+    
+    
+    
+ 
