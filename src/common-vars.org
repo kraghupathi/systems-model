@@ -758,8 +758,7 @@ rsnapshot_server_ips:
 #AWS remote/secondary backup used by rsnapshot role
 aws_backup: 196.12.53.133
 # http_container variable is used to get logs from reverse proxy of IIITH infrastructure 
-http_container: 196.12.53.130
-
+http_container: 10.4.12.159
 #OSSEC server IP.  Only one
 ossec_server_ip: 10.100.1.3
 
@@ -1159,7 +1158,7 @@ management_ips:
   - 10.2.56.0/22
 
 # http_container variable is used to get logs from reverse proxy of IIITH infrastructure 
-http_container: 196.12.53.130
+http_container: 10.4.12.159
 
 #OSSEC server IP.  Only one
 ossec_server_ip: 10.100.1.3
