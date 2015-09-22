@@ -2092,7 +2092,7 @@ ExtraTrackedRowsLimit=500
         user=root
         minute=01
         state=present
-        job="rsync -arp /var/lib/awstats/* root@{analytics_server_ip}:/root/aws-awstats/"
+        job="rsync -arp /var/lib/awstats/* root@{analytics_server_ip}:/var/www/html/aws-awstats/"
 
 #+END_SRC                                                                           
 
