@@ -579,26 +579,49 @@ user with the name resolved.
     according to the network design.
 ** Test Case ID :: TC03
 *** Objective
-    Test to check the tcp port 2222 forwarding to analytics server
+    Test to check whether the logs and awstats are rsyncing from IIIIT
+    reverse proxy to AWS analytics server over tcp port 2222 via AWS
+    router based on cron job.
 *** Apparatus
     1. IIIT Reverse proxy.
     2. AWS Router node
     3. AWS Analytics node
 
 *** Theory
-    IIIT Revere proxy server should be able to push the logs to
-    AWS analytics server over tcp port 2222 via the AWS router.
+    IIIT Revere proxy server should be able to push the logs and
+    awstats to AWS analytics server over tcp port 2222 via the AWS
+    router.
 *** Procedure 
-    After setting up whole cluster on aws including analytics node,
-    In Reverse proxy,
-    wait for one minute(Some times it may take several minutes to copy
-    depends upon file/folder size) to see whether the updated logs are
-    getting copied to analytics node.
+    1. Add cron job to IIITH reverse proxy(manual step).
+    2. Check for cron job on IIITH reverse proxy node by issuing the
+       command
+       #+BEGIN_SRC                                                                                                   
+       crontab -l                                                                                                    
+       #+END_SRC                                                                                                     
+    3. Add public key of IIITH reverse proxy to AWS analytics server
+    4. Based on cronjob time, wait for that mush time in order to run
+       crontab job
+    5. Check for copied logs and awstats in analytics server.
 *** Experiments
-    1. Using ansible plabook of analytics node, cron job will be setup
-    2. Waited for 10 to 20 minutes to check the logs and awstats are
-       copied to analytics server or not
-    3. 
+    1. Add cornjobs to IIITH reverse proxy 
+       #+BEGIN_SRC 
+       #Rsync stats from http container to stats instance on AWS
+       @hourly rsync -azrp -e "ssh -p 2222" /var/www/awstats/awstats* stats.vlabs.ac.in:/root/base/deploy-awstats/
+       @hourly rsync -azrp -e "ssh -p 2222" /var/log/httpd/* stats.vlabs.ac.in:/var/www/html/deploy-logs/
+       #+END_SRC
+    2. Add public key of IIITH reverse proxy to AWS analytics server
+    3. Wait for cronjob's time 
+    4. Check the logs and awstats in AWS analytics node in specified
+       location in cronjob.
+    5. Logs are being rsynced from IIITH reverse proxy to AWS
+       analytics server
+*** Result
+    IIITH reverse proxy is able to push logs and awstats to aws
+    analytics node over tcp port 2222 via aws router.
+*** Conclusion
+    Cronjobs are added to IIITH reverse proxy and it's public key
+    added to aws analytics node successfully and then IIITH reverse
+    proxy is able to push logs and awstats to aws analytics node.
     
     
     
