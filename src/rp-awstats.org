@@ -2084,7 +2084,7 @@ ExtraTrackedRowsLimit=500
         user=root
         minute=01
         state=present
-        job="rsync -arp /var/log/httpd/* root@{analytics_server_ip}:/var/www/html/aws-logs/"
+        job="rsync -arp /var/log/httpd/* root@{{analytics_server_ip}}:/var/www/html/aws-logs/"
     
 - name: Rsync the AWstats stats file to analytics server
   cron:
@@ -2092,7 +2092,7 @@ ExtraTrackedRowsLimit=500
         user=root
         minute=01
         state=present
-        job="rsync -arp /var/lib/awstats/* root@{analytics_server_ip}:/var/www/html/aws-awstats/"
+        job="rsync -arp /var/lib/awstats/* root@{{analytics_server_ip}}:/var/www/html/aws-awstats/"
 
 #+END_SRC                                                                           
 
