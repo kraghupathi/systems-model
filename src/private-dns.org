@@ -421,18 +421,19 @@ $TTL 3600
     zone_names:
       - "{{prefix}}virtual-labs.ac.in."
       - "{{prefix}}vlabs.ac.in."
-    zone_address: 10.100.1.7
+    zone_address: 10.100.1.13
     allow_query_from: "10.0.0.0/8; 172.16.0.0/12; 192.168.0.0/16;"
     name_server: private-dns
     recursion: yes
     servers: "{{private_dns_entries}}"
   roles:
     - common
+    - named_server
     - rsyslog_client
     - ossec_client
     - nagios_client
-#    - rsnapshot_client
-    - named_server
+    - rsnapshot_client
+
 
 #+END_SRC
    

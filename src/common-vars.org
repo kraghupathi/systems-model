@@ -414,7 +414,7 @@ proxy_domains:
   - {domain: "www.virtual-labs.ac.in", alias: "www.vlabs.ac.in"}
   - {domain: "ps-iiith.virtual-labs.ac.in", alias: "ps-iiith.vlabs.ac.in"}
   - {domain: "ssl-iitg.virtual-labs.ac.in", alias: "ssl-iitg.vlabs.ac.in"}
-
+  - {domain: "outreach.virtual-labs.ac.in", alias: "outreach.vlabs.ac.in"}
 
 awstats_domains:
   - cse01-iiith.virtual-labs.ac.in
@@ -490,7 +490,7 @@ awstats_domains:
   - www.virtual-labs.ac.in
   - ps-iiith.virtual-labs.ac.in
   - ssl-iitg.virtual-labs.ac.in
-
+  - outreach.virtual-labs.ac.in
 
 #AWS public DNS is also listing other public records of vlabs
 public_dns_entries:
@@ -632,6 +632,7 @@ public_dns_entries:
   - { hostname: www, ip: 54.85.93.7}
   - { hostname: ps-iiith, ip: 54.85.93.7}
   - { hostname: ssl-iitg, ip: 54.85.93.7}
+  - { hostname: outreach, ip: 54.85.93.7}
 
 
 private_dns_entries:
@@ -719,7 +720,7 @@ private_dns_entries:
   - { hostname: www, ip: 10.100.1.13}
   - { hostname: ps-iiith, ip: 10.100.2.21}
   - { hostname: ssl-iitg, ip: 10.100.1.221}
-
+  - { hostname: outreach, ip: 10.100.2.35}
 
 #+END_SRC
 
@@ -730,9 +731,9 @@ Variables for Base1 cluster are defined in the following section
 ---
 #Proxy configuration in case direct access to Internet is not available
 proxy_env:
-#  none: none
-   http_proxy: http://proxy.iiit.ac.in:8080/
-   https_proxy: http://proxy.iiit.ac.in:8080/
+  none: none
+#   http_proxy: http://proxy.iiit.ac.in:8080/
+#   https_proxy: http://proxy.iiit.ac.in:8080/
 
 #Release number used in common task to add it to the target
 release_no:
@@ -897,7 +898,7 @@ proxy_domains:
   - {domain: "landingpage.base1.virtual-labs.ac.in", alias: "landingpage.base1.vlabs.ac.in"}
   - {domain: "ps-iiith.base1.virtual-labs.ac.in", alias: "ps-iiith.base1.vlabs.ac.in"}
   - {domain: "ssl-iitg.base1.virtual-labs.ac.in", alias: "ssl-iitg.base1.vlabs.ac.in"}
-
+  - {domain: "outreach.base1.virtual-labs.ac.in", alias: "outreach.base1.vlabs.ac.in"}
 
 awstats_domains:
   - reverseproxy.base1.virtual-labs.ac.in
@@ -966,7 +967,7 @@ awstats_domains:
   - landingpage.base1.virtual-labs.ac.in
   - ps-iiith.base1.virtual-labs.ac.in
   - ssl-iitg.base1.virtual-labs.ac.in
-
+  - outreach.base1.virtual-labs.ac.in
 
 public_dns_entries:
   - { hostname: router, ip: 10.4.14.150 }
@@ -1044,6 +1045,7 @@ public_dns_entries:
   - { hostname: landingpage, ip: 10.4.14.150}
   - { hostname: ps-iiith, ip: 10.4.14.150 }
   - { hostname: ssl-iitg, ip: 10.4.14.150 }
+  - { hostname: outreach, ip: 10.4.14.150 }
 
 private_dns_entries:
   - { hostname: router, ip: 10.100.1.1 }
@@ -1121,6 +1123,7 @@ private_dns_entries:
   - { hostname: landingpage, ip: 10.100.0.61}
   - { hostname: ps-iiith, ip: 10.100.0.62 }
   - { hostname: ssl-iitg, ip: 10.100.0.63 }
+  - { hostname: outreach, ip: 10.100.0.64 }
 
 #  - { hostname: www, ip: 10.100.1.13}
 
