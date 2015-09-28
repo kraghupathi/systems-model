@@ -201,7 +201,7 @@ includedir /etc/xinetd.d
 #  environment: proxy_env
 
 - name: Installing nrpe on client
-  yum: name=nrpe state=installed
+  yum: name=nrpe state=installed enabled=yes
 #  environment: proxy_env
 
 - name: Installing nrpe nagios plugins
