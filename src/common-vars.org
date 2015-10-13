@@ -899,6 +899,8 @@ proxy_domains:
   - {domain: "ps-iiith.base1.virtual-labs.ac.in", alias: "ps-iiith.base1.vlabs.ac.in"}
   - {domain: "ssl-iitg.base1.virtual-labs.ac.in", alias: "ssl-iitg.base1.vlabs.ac.in"}
   - {domain: "outreach.base1.virtual-labs.ac.in", alias: "outreach.base1.vlabs.ac.in"}
+  - {domain: "data.base1.virtual-labs.ac.in", alias: "data.base1.vlabs.ac.in"}
+
 
 awstats_domains:
   - reverseproxy.base1.virtual-labs.ac.in
@@ -968,6 +970,8 @@ awstats_domains:
   - ps-iiith.base1.virtual-labs.ac.in
   - ssl-iitg.base1.virtual-labs.ac.in
   - outreach.base1.virtual-labs.ac.in
+  - data.base1.virtual-labs.ac.in
+
 
 public_dns_entries:
   - { hostname: router, ip: 10.4.14.150 }
@@ -1046,6 +1050,7 @@ public_dns_entries:
   - { hostname: ps-iiith, ip: 10.4.14.150 }
   - { hostname: ssl-iitg, ip: 10.4.14.150 }
   - { hostname: outreach, ip: 10.4.14.150 }
+  - { hostname: data, ip: 10.4.14.150 }
 
 private_dns_entries:
   - { hostname: router, ip: 10.100.1.1 }
@@ -1124,6 +1129,8 @@ private_dns_entries:
   - { hostname: ps-iiith, ip: 10.100.0.62 }
   - { hostname: ssl-iitg, ip: 10.100.0.63 }
   - { hostname: outreach, ip: 10.100.0.64 }
+  - { hostname: data, ip: 10.100.0.65 }
+
 
 #  - { hostname: www, ip: 10.100.1.13}
 
