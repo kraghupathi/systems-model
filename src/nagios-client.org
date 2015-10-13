@@ -234,6 +234,13 @@ includedir /etc/xinetd.d
   notify: restart nrpe
 #+END_SRC
 
+*** Enabling nrpe service on start-up
+
+#+BEGIN_SRC yml :tangle roles/nagios_client/tasks/main.yml :eval no
+- name: enabling nrpe service on start-up
+  service: name=nrpe enabled=yes
+#+END_SRC
+
 ** Handlers
    The services are restarted if there are any changes made to the
    configuration file. Ansible handlers are defined to restart
