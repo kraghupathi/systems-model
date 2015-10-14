@@ -415,6 +415,7 @@ proxy_domains:
   - {domain: "ps-iiith.virtual-labs.ac.in", alias: "ps-iiith.vlabs.ac.in"}
   - {domain: "ssl-iitg.virtual-labs.ac.in", alias: "ssl-iitg.vlabs.ac.in"}
   - {domain: "outreach.virtual-labs.ac.in", alias: "outreach.vlabs.ac.in"}
+  - {domain: "data.virtual-labs.ac.in", alias: "data.vlabs.ac.in"}
 
 awstats_domains:
   - cse01-iiith.virtual-labs.ac.in
@@ -491,6 +492,7 @@ awstats_domains:
   - ps-iiith.virtual-labs.ac.in
   - ssl-iitg.virtual-labs.ac.in
   - outreach.virtual-labs.ac.in
+  - data.virtual-labs.ac.in
 
 #AWS public DNS is also listing other public records of vlabs
 public_dns_entries:
@@ -633,6 +635,7 @@ public_dns_entries:
   - { hostname: ps-iiith, ip: 54.85.93.7}
   - { hostname: ssl-iitg, ip: 54.85.93.7}
   - { hostname: outreach, ip: 54.85.93.7}
+  - { hostname: data, ip: 54.85.93.7}
 
 
 private_dns_entries:
@@ -721,6 +724,7 @@ private_dns_entries:
   - { hostname: ps-iiith, ip: 10.100.2.21}
   - { hostname: ssl-iitg, ip: 10.100.1.221}
   - { hostname: outreach, ip: 10.100.2.35}
+  - { hostname: data, ip: 10.100.1.67}
 
 #+END_SRC
 
