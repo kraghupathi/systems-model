@@ -430,6 +430,7 @@ ErrorLog logs/{{domain.domain}}-error_log
 CustomLog logs/{{domain.domain}}-access_log combined
 <Location />
 ProxyPass http://{{domain.domain}}/
+ProxyPassReverse http://{{domain.domain}}/
 </Location>
 </VirtualHost>
 
@@ -442,6 +443,7 @@ ErrorLog logs/{{domain.domain}}-error_log
 CustomLog logs/{{domain.domain}}-access_log combined
 <Location />
 ProxyPass http://{{domain.domain}}/
+ProxyPassReverse http://{{domain.domain}}/
 </Location>
 </VirtualHost>
 
