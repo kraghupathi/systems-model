@@ -411,6 +411,7 @@ proxy_domains:
   - {domain: "ps-iiith.virtual-labs.ac.in", alias: "ps-iiith.vlabs.ac.in"}
   - {domain: "ssl-iitg.virtual-labs.ac.in", alias: "ssl-iitg.vlabs.ac.in"}
   - {domain: "outreach.virtual-labs.ac.in", alias: "outreach.vlabs.ac.in"}
+  - {domain: "data.virtual-labs.ac.in", alias: "data.vlabs.ac.in"}
 
 awstats_domains:
   - cse01-iiith.virtual-labs.ac.in
@@ -486,6 +487,8 @@ awstats_domains:
   - ps-iiith.virtual-labs.ac.in
   - ssl-iitg.virtual-labs.ac.in
   - outreach.virtual-labs.ac.in
+  - data.virtual-labs.ac.in
+
 public_dns_entries:
   - { hostname: router, ip: 54.85.93.7 }
   - { hostname: bandwidthd, ip: 54.85.93.7 }
@@ -569,9 +572,10 @@ public_dns_entries:
   - { hostname: www, ip: 54.85.93.7}
   - { hostname: ps-iiith, ip: 54.85.93.7}
   - { hostname: ssl-iitg, ip: 54.85.93.7}  
-  - { hostname: outreach, ip: 54.85.93.7}  
+  - { hostname: outreach, ip: 54.85.93.7}
   - { hostname: t4e2015, ip: 52.26.141.190 }  #Added by Saurabh for T4E
   - { hostname: test.t4e2015, ip: 196.12.53.130 }  #Added by Saurabh for T4E
+  - { hostname: data, ip: 54.85.93.7}  
 
 private_dns_entries:
   - { hostname: router, ip: 10.100.1.1 }
@@ -658,6 +662,7 @@ private_dns_entries:
   - { hostname: ps-iiith, ip: 10.100.2.21}
   - { hostname: ssl-iitg, ip: 10.100.1.221}
   - { hostname: outreach, ip: 10.100.2.35}
+  - { hostname: data, ip: 10.100.1.67}
 
 #Used by private-dns ans public dns to set their zone file names
 prefix: ""
