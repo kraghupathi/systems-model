@@ -24,14 +24,18 @@ the router server.These scripts are executed directly from the configuration ser
 The functional and security requirements of router are:
 
 ** Functional Requirements
-  The router acts as a gateway for all other servers to reach the internet. Hence the functional
-  requirements of the router are to allow forwarding of packets to reverse proxy on TCP port 80/443
-  and also to public DNS on UDP port 53. Every request from any external lab user would be accepted
-  on TCP port 80/443 and UDP port 53.
+  The router acts as a gateway for all other servers to reach the
+  internet. Hence the functional requirements of the router are to
+  allow forwarding of packets to reverse proxy on TCP port 80/443 and
+  also to public DNS on UDP port 53. Every request from any external
+  lab user would be accepted on TCP port 80/443 and UDP port 53.
+
+  Forward incoming SSH connection on TCP port 2222 to Analytics server
 
 ** Security Requirements
-  All common security requirements and general server hardening as described in [[file:common.org::*Security Requirements][common role]] are applicable
-  to router with an exception that TCP port 80/443 and UDP port 53 are open for all lab users.
+  All common security requirements and general server hardening as
+  described in [[file:common.org::*Security Requirements][common role]] are applicable to router with an exception
+  that TCP port 80/443 and UDP port 53 are open for all lab users.
  
 * Design
 ** Overall Network diagram of the router
