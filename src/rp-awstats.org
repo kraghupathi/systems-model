@@ -35,6 +35,11 @@ etc. Analytics can be viewed on terminal and also in the browser.
  4) Stores analytics of each lab using AWStats (Logfile analyzer).
  5) Revers proxy uses router IP as default gateway to reach the
     external world.
+ 6) Allow outgoing connections on tcp port 22 to analytics node, So
+    that Revese proxy node will be able to transfer apache logs and
+    awstats to analytics node
+ 7) Rsync apache-logs and awstats from the Reverse proxy node to
+    Analytics node in particular time intervals(Cron jobs).
 ** Security Requirements
   1) Accept incoming connections on tcp ports 80 and 443 from
      anywhere.
@@ -72,6 +77,10 @@ etc. Analytics can be viewed on terminal and also in the browser.
    reverse proxy server.  Awstats configuration is for processing web
    (http and https) usage logs of each lab such that analytics of
    client / user history are available in the reverse proxy server.
+
+   Reverse proxy node transfers apache-logs and awstats to analytics
+   node based on cron jobs added to crontab ( See the
+   =tasks/main.yaml= file for cron jobs)
 
 ** Network diagram 
    The following network diagram represents the communication between
@@ -167,16 +176,6 @@ etc. Analytics can be viewed on terminal and also in the browser.
   in the cluster including reverse proxy server are described in
   [[./common.org][common role]].
 - Rules which are specific to reverse proxy server are described [[Allow HTTP(80) and HTTPS(443) packets][here]].
-
-<<<<<<< HEAD
-#+END_EXAMPLE
-
-** Firewall rules
-- Rules which are specific to reverseproxy server are described [[Allow HTTP(80) and HTTPS(443) packets][here]].
-- Description of some firewall rules of this reverseproxy and which are common
-  across all the systems are described in [[./common.org][common role]].  
-=======
->>>>>>> develop
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/templates/iptables
 *filter
 :INPUT ACCEPT [0:0]
@@ -255,6 +254,9 @@ etc. Analytics can be viewed on terminal and also in the browser.
 -A OUTPUT -d {{item}} -p tcp -m tcp --sport 22 -j ACCEPT
 {% endfor %}
 
+#Allow outgoing SSH connection to analytics_server_ip
+-A OUTPUT -p tcp -m tcp -d {{analytics_server_ip}} --dport 22 -j ACCEPT
+
 #Allow outgoing connections to rsyslog server
 -A OUTPUT -p udp -m udp --dport 514 -j ACCEPT
 
@@ -271,37 +273,15 @@ etc. Analytics can be viewed on terminal and also in the browser.
 
 COMMIT
 #+END_SRC
-<<<<<<< HEAD
-*** Allow HTTP(80) and HTTPS(443) packets
-- The firewall rule accepts HTTP(80) and HTTPS(443) packets from internal network and
-from the [[.router.org][router]]. 
-- In this model, only HTTP packets are accepted. As a future
-  requirement, accept rule for incoming connections on tcp port 443 is
-  commented.
-=======
 **** Allow HTTP(80) and HTTPS(443) packets
      The firewall rule accepts HTTP(80) and HTTPS(443) packets from the
      [[.router.org][router]].
-
->>>>>>> develop
 #+BEGIN_SRC example
 # Allow incoming http packets from internal network
 -A INPUT -s {{local_subnet}} -p tcp -m tcp --dport 80 -j ACCEPT
 #Allow incoming https packets from internal network and router
 #-A INPUT -s {{local_subnet}} -p tcp -m tcp --dport 443 -j ACCEPT
 #+END_SRC
-<<<<<<< HEAD
-** Install required packages
-  Install required packages for setting up reverse proxy and awstats.
-  Required packages are
-  + httpd
-  + awstats
-  In the following script,use proxy_env variable if network uses any proxy, else comment that or
-  remove the line(while working on AWS)
-- Note :: Install "mod_ssl" for HTTPS access. Currently HTTPS access
-          is not enabled. Enable it if it has a valid certificate and
-          test the implementation using
-=======
 *** Install required packages
     Following packages are installed for setting up reverse proxy.
     Required packages are:
@@ -310,7 +290,6 @@ from the [[.router.org][router]].
     =mod_ssl=
 - Note :: Install "mod_ssl" for HTTPS access. Enable it if it has a
           valid certificate and test the implementation using
->>>>>>> develop
           https://www.ssllabs.com/ssltest/index.html
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml
 ---
@@ -385,6 +364,24 @@ from the [[.router.org][router]].
   lineinfile: line="SSLHonorCipherOrder On" regexp="^SSLHonorCipherOrder " dest=/etc/httpd/conf.d/ssl.conf state=present
   tags:
    - https
+
+#Set hourly cronjobs to rsync the AWstats statistics files to                                                      
+#Analytics server the "name= " parameter should not be changed and                                                 
+#must be unique                                                                                                    
+- name: Rsync the Apache log files to analytics server                                                               
+  cron:                                                                                                              
+        name=rsync_apache_logs                                                                                       
+        user=root                                                                                                    
+        minute=01                                                                                                    
+        state=present                                                                                                
+        job="rsync -trp --inplace /var/log/httpd/ root@{{analytics_server_ip}}:/root/aws-http-logs/"                                                                                                             
+- name: Rsync the AWstats stats file to analytics server                                                             
+  cron:                                                                                                              
+        name=rsync_stats                                                                                             
+        user=root                                                                                                    
+        minute=01                                                                                                    
+        state=present                                                                                                
+        job="rsync -trp --delete /var/lib/awstats/ root@{{analytics_server_ip}}:/root/aws-awstats/"     
 #+END_SRC
 *** Create a template for virtualhosts
     Following =virtualhosts.conf= template defines http and https
@@ -447,6 +444,7 @@ ErrorLog logs/{{domain.domain}}-error_log
 CustomLog logs/{{domain.domain}}-access_log combined
 <Location />
 ProxyPass http://{{domain.domain}}/
+ProxyPassReverse http://{{domain.domain}}/
 </Location>
 </VirtualHost>
 
@@ -459,6 +457,7 @@ ErrorLog logs/{{domain.domain}}-error_log
 CustomLog logs/{{domain.domain}}-access_log combined
 <Location />
 ProxyPass http://{{domain.domain}}/
+ProxyPassReverse http://{{domain.domain}}/
 </Location>
 </VirtualHost>
 
