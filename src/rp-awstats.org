@@ -2147,6 +2147,87 @@ ScriptAlias /awstats/ "/usr/share/awstats/wwwroot/cgi-bin/"
 
 #+END_SRC
 
+*** Install SSL certificate and configuration
+    This step is preformed manually. We have used a certificate from a
+    commercial third part vendor. By the end of 2015 [[https://letsencrypt.org./][Let's encrypt]]
+    will be functional which offers free, automated SSL certificate
+    installation.
+
+    It is assumed that this is the first configuration of SSL on a web
+    server node.
+
+    When you purchase a SSL certificate, you get a bunch(usually 3
+    files) of files which are listed below. There is no fixed
+    extension, naming convention of these files, but generally these
+    are named in a fashion which is easy to understand.
+    
+    A Server Certificate file, which generally has =.crt= extension,
+    usually the naming is =<your-domain.here>.crt=.
+    
+    A Server Private key file, which has =.key= extension, the naming
+    of this file is similar to the ceritificate file above.
+
+    And finally a CA Certificate file, which has =.crt= extension.
+    
+    Place these files on the reverse proxy/web server node where you
+    want to configure SSL. Next we configure Apache running on the
+    node to enable SSL.
+
+    First install =mod_ssl= package if it was not installed, the
+    following command will also fetch the required dependencies.
+
+#+BEGIN_EXAMPLE
+yum install mod_ssl
+#+END_EXAMPLE
+
+    Locate the =/etc/httpd/conf.d/ssl.conf= and edit following in the
+    default virtualhost.
+
+#+BEGIN_EXAMPLE
+
+Listen 443
+
+<VirtualHost _default_:443>
+.
+.
+.
+SSlEngine on
+
+SSLCertificateFile /path/to/the/server/certificate/file.crt
+
+SSLCertificateKeyFile /path/to/server/private/key/file.pem
+
+SSLCertificateChainFile /path/to/CA/certificate/file.crt
+.
+.
+.
+</VirtualHost>
+
+#+END_EXAMPLE
+
+    Save the file and check whether there were any syntax errors using
+    =apachectl -t=, if everything is okay, then restart apache.
+
+#+BEGIN_EXAMPLE
+service httpd restart
+#+END_EXAMPLE
+
+    You can now test from a browser whether the default SSL
+    virtualhost is opening over https.
+
+    To enable SSL for other namebased virtualhost, create entires new
+    =VirtualHost= entries which listen on TCP port 443.
+
+#+BEGIN_EXAMPLE
+
+<VirtualHost *:443>
+.
+.
+.
+</VirtualHost>
+
+#+END_EXAMPLE
+
 ** Handlers
 *** Restart the services
     Restart the services httpd and iptables if there are any changes
