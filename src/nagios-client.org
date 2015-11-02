@@ -201,7 +201,7 @@ includedir /etc/xinetd.d
 #  environment: proxy_env
 
 - name: Installing nrpe on client
-  yum: name=nrpe state=installed
+  yum: name=nrpe state=installed enabled=yes
 #  environment: proxy_env
 
 - name: Installing nrpe nagios plugins
@@ -232,6 +232,13 @@ includedir /etc/xinetd.d
 - name: updating nrpe.cfg with nagios-server details
   lineinfile: dest=/etc/nagios/nrpe.cfg line="allowed_hosts=127.0.0.1,{{ nagios_server }}" regexp="allowed_hosts\=127.0.0.1"
   notify: restart nrpe
+#+END_SRC
+
+*** Enabling nrpe service on start-up
+
+#+BEGIN_SRC yml :tangle roles/nagios_client/tasks/main.yml :eval no
+- name: enabling nrpe service on start-up
+  service: name=nrpe enabled=yes
 #+END_SRC
 
 ** Handlers

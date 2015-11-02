@@ -331,10 +331,12 @@ COMMIT
 
   roles:
     - common
+    - config_server
     - rsyslog_client
     - ossec_client
     - nagios_client
-    - config_server
+    - rsnapshot_client
+
 #+END_SRC
 
 ** Services
