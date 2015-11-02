@@ -35,6 +35,8 @@ etc. Analytics can be viewed on terminal and also in the browser.
  4) Stores analytics of each lab using AWStats (Logfile analyzer).
  5) Revers proxy uses router IP as default gateway to reach the
     external world.
+ 6) Forward the virtual hosts Custom(access), Error logs to =rsyslog=
+    node.
 ** Security Requirements
   1) Accept incoming connections on tcp ports 80 and 443 from
      anywhere.
@@ -79,7 +81,6 @@ etc. Analytics can be viewed on terminal and also in the browser.
    #+CAPTION:  Reverse-Proxy Network Diagram
    #+LABEL:  fig-reverse proxy-diagram
    [[./diagrams/Network-Diagram-of-ReverseProxy.png]] 
-
 ** System configuration files 
    The Following table gives the information about the services and
    their configuration files where modifications are required to setup
@@ -360,6 +361,17 @@ COMMIT
     required for local =rsyslog= server on reverse proxy to further
     forward logs is configured using the [[./rsyslog-client.org][Rsyslog client]] role.
     
+    We also forward access(CustomLog), error logs of lab virtual host
+    to =rsyslog= node. This defined in the =virtualhosts.conf=
+    template in coming section.
+
+#+BEGIN_EXAMPLE
+ErrorLog logs/{{domain.domain}}-error_log
+ErrorLog "||/usr/bin/logger -t {{domain.domain}}-elog"
+CustomLog logs/{{domain.domain}}-access_log combined
+CustomLog "||/usr/bin/logger -t {{domain.domain}}-alog" combined
+#+END_EXAMPLE
+
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml :eval no
 - name: Enable forwarding of ErrorLog to rsyslog
   lineinfile: dest=/etc/httpd/conf/httpd.conf line='ErrorLog "||/usr/bin/logger -t http_error"' regexp="^ErrorLog.*http_.*" state=present insertafter="^ErrorLog "
@@ -427,7 +439,9 @@ ServerAdmin engg@vlabs.ac.in
 ServerName {{domain.domain}}
 ServerAlias {{domain.alias}}
 ErrorLog logs/{{domain.domain}}-error_log
+ErrorLog "||/usr/bin/logger -t {{domain.domain}}-elog"
 CustomLog logs/{{domain.domain}}-access_log combined
+CustomLog "||/usr/bin/logger -t {{domain.domain}}-alog" combined
 <Location />
 ProxyPass http://{{domain.domain}}/
 ProxyPassReverse http://{{domain.domain}}/
@@ -440,7 +454,9 @@ ServerAdmin engg@vlabs.ac.in
 ServerName {{domain.domain}}
 ServerAlias {{domain.alias}}
 ErrorLog logs/{{domain.domain}}-error_log
+ErrorLog "||/usr/bin/logger -t {{domain.domain}}-elog"
 CustomLog logs/{{domain.domain}}-access_log combined
+CustomLog "||/usr/bin/logger -t {{domain.domain}}-alog" combined
 <Location />
 ProxyPass http://{{domain.domain}}/
 ProxyPassReverse http://{{domain.domain}}/
