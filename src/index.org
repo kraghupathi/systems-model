@@ -793,6 +793,7 @@ To know further about these please refer [[Appendix][Appendix]].
   - [[./router.org][Router]]
   - [[./rsnapshot-server.org][Backup server]]
   - [[./ossec-server.org][OSSEC server]] 
+  - [[./lab_rsnapshot_server.org][Lab Backup Server]]
   - [[./lab-role.org][Lab node]]
 
   After the bootstrapping process the nodes in the cluster can be
@@ -827,6 +828,7 @@ To know further about these please refer [[Appendix][Appendix]].
 
 #- include: ads_server.yaml
 
+- include: lab_rsnapshot_server.yaml
 
 #+END_SRC 
 * AWS compliance
