@@ -405,11 +405,12 @@ $TTL 3600
     servers: "{{public_dns_entries}}"
   roles:
     - common
+    - named_server
     - rsyslog_client
     - ossec_client
     - nagios_client
     - rsnapshot_client
-    - named_server
+
 #+END_SRC
 
 * Test Cases

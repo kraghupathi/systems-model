@@ -17,10 +17,11 @@
 
   roles:
     - common
+    - ossec_server
     - rsyslog_client
     - nagios_client
     - rsnapshot_client
-    - ossec_server
+
 #+END_SRC
 * tasks/main.yaml
 #+BEGIN_SRC YAML :tangle roles/ossec_server/tasks/setup_ossec_server.yaml

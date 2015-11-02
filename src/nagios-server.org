@@ -493,7 +493,7 @@ check_command           {{ s.command }}
 
 #+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
 - name: creating nagiosadmin user for web interface
-  command: "htpasswd -b /etc/nagios/passwd {{nagios_user}} {{nagios_password}}"
+  command: "htpasswd -cb /etc/nagios/passwd {{nagios_user}} {{nagios_password}}"
   notify: restart apache
 #+END_SRC
 
@@ -610,7 +610,7 @@ check_command           {{ s.command }}
 #+BEGIN_SRC yml :tangle roles/nagios_server/vars/main.yml
 nagios_host: nagios.{{prefix}}virtual-labs.ac.in
 nagios_user: nagiosadmin
-nagios_password: $6$random_salt$GCt04aqiWOZWYG6tnuGv7iYt2aBVmrWNirMbwrx1YXrcIhQYidVwaTkyOpsI4eZVKREFvCAGuFYqwvQsu/9Yy/
+nagios_password: Hief8ogfi
 nagios_admin_name: 'Nagios Admin'
 nagios_admin_email: alerts@vlabs.ac.in
 nagios_cfg_path: /etc/nagios/nagios.cfg
@@ -663,10 +663,11 @@ nagios_commands:
    host_name: "nagios-server.{{prefix}}vlabs.ac.in"
   roles:
     - common
+    - nagios_server
     - ossec_client
     - rsyslog_client
     - rsnapshot_client
-    - nagios_server
+
 #+END_SRC
 
 * Test Cases

@@ -110,12 +110,8 @@
 - name: copying public key of rsnapshot-server to authorized_keys of client
   copy: src=rsnapshot_server_pubic_key/10.100.1.10/root/.ssh/id_rsa.pub dest=/root/.ssh/keys
 
-- name: copying public key of rsnapshot-server to client machine
-  copy: src=rsnapshot_server_pubic_key/10.100.1.10/root/.ssh/id_rsa.pub dest=/root/.ssh/keys
-
 - name: Check whether the key already exist or not. If not, echo newly created public-key to destination
-  shell: 'grep -ir ansible-generated\ on\ {{prefix}}.rsnapshot* /root/.ssh/authorized_keys; if [ $? == 0 ]; then echo "Key already exist"; else echo "$(cat /root/.ssh/keys)" >> /root/.ssh/authorized_keys; fi'
-
+  shell: 'sed --in-place "/ansible-generated\ on\ rsnapshot.*/d" /root/.ssh/authorized_keys ;echo "$(cat /root/.ssh/keys)" >> /root/.ssh/authorized_keys'
 #+END_SRC
     
 * Test Cases

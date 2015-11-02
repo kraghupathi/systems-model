@@ -35,6 +35,8 @@ etc. Analytics can be viewed on terminal and also in the browser.
  4) Stores analytics of each lab using AWStats (Logfile analyzer).
  5) Revers proxy uses router IP as default gateway to reach the
     external world.
+ 6) Forward the virtual hosts Custom(access), Error logs to =rsyslog=
+    node.
 ** Security Requirements
   1) Accept incoming connections on tcp ports 80 and 443 from
      anywhere.
@@ -79,7 +81,6 @@ etc. Analytics can be viewed on terminal and also in the browser.
    #+CAPTION:  Reverse-Proxy Network Diagram
    #+LABEL:  fig-reverse proxy-diagram
    [[./diagrams/Network-Diagram-of-ReverseProxy.png]] 
-
 ** System configuration files 
    The Following table gives the information about the services and
    their configuration files where modifications are required to setup
@@ -242,7 +243,7 @@ etc. Analytics can be viewed on terminal and also in the browser.
 -A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT
 #Allow incoming SSH connections from configuration server IPs.
 {% for item in ansible_server_ips  %}
--A OUTPUT -s {{item}} -p tcp -m tcp --sport 22 -j ACCEPT
+-A OUTPUT -d {{item}} -p tcp -m tcp --sport 22 -j ACCEPT
 {% endfor %}
 
 #Allow outgoing connections to rsyslog server
@@ -309,6 +310,10 @@ COMMIT
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml
 - name: Configure apache to support multiple http virtualhosts
   lineinfile: line="NameVirtualHost *:80" regexp="^NameVirtualHost .*:80" dest=/etc/httpd/conf/httpd.conf
+
+- name: Configure apache httpd.conf to listen on 80
+  lineinfile: line="Listen 80" regexp="^Listen.*80" dest=/etc/httpd/conf/httpd.conf state=present
+
 #+END_SRC
 **** Enable https virtual-hosts
      To support multiple https virtual-hosts *NameVirtualHost *:443* in
@@ -330,11 +335,9 @@ COMMIT
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml
 - name: Configure apache to support multiple https virtualhosts
   lineinfile: line="NameVirtualHost *:443" regexp="^NameVirtualHost .*:443" dest=/etc/httpd/conf/httpd.conf
-- name: Configure apache httpd.conf to listen on 80
-  lineinfile: line="Listen 80" regexp="^Listen .*80" dest=/etc/httpd/conf/httpd.conf state=present
 
 - name: Configure apache ssl.conf to listen on 443
-  lineinfile: line="Listen *:443 http" regexp="^Listen*" dest=/etc/httpd/conf.d/ssl.conf state=present
+  lineinfile: line="Listen *:443 http" regexp="^Listen.*" dest=/etc/httpd/conf.d/ssl.conf state=present
   tags: 
    - https
 
@@ -352,6 +355,32 @@ COMMIT
   tags:
    - https
 #+END_SRC
+*** Enable log forwarding to =rsyslog= node
+    We configure Apache to send logs to the local =rsyslog=, which
+    will then forward it to the central =rsyslog= server. The changes
+    required for local =rsyslog= server on reverse proxy to further
+    forward logs is configured using the [[./rsyslog-client.org][Rsyslog client]] role.
+    
+    We also forward access(CustomLog), error logs of lab virtual host
+    to =rsyslog= node. This defined in the =virtualhosts.conf=
+    template in coming section.
+
+#+BEGIN_EXAMPLE
+ErrorLog logs/{{domain.domain}}-error_log
+ErrorLog "||/usr/bin/logger -t {{domain.domain}}-elog"
+CustomLog logs/{{domain.domain}}-access_log combined
+CustomLog "||/usr/bin/logger -t {{domain.domain}}-alog" combined
+#+END_EXAMPLE
+
+#+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml :eval no
+- name: Enable forwarding of ErrorLog to rsyslog
+  lineinfile: dest=/etc/httpd/conf/httpd.conf line='ErrorLog "||/usr/bin/logger -t http_error"' regexp="^ErrorLog.*http_.*" state=present insertafter="^ErrorLog "
+
+- name: Enable forwarding of CustomLog to rsyslog
+  lineinfile: dest=/etc/httpd/conf/httpd.conf line='CustomLog "||/usr/bin/logger -t http_access" combined' regexp="^CustomLog.*http_*" state=present insertafter="^CustomLog "
+
+#+END_SRC
+
 *** Create a template for virtualhosts
     Following =virtualhosts.conf= template defines http and https
     virtual-hosts.  The template uses "proxy_domains" variable which
@@ -359,20 +388,14 @@ COMMIT
     virtual host entry is added as reverse proxy server, to access the
     awstats from browser.
 
-- Note :: If you are working on BASE1/BASE4, Please change *if
-          condition* of the following template according to your
-          domain name of reverse proxy which is defined in [[./common_vars.org][common_vars
-          role]]. if not, you will not be able to view the awstats from
-          browser.
 #+BEGIN_SRC yaml :tangle roles/reverseproxy_server/templates/virtualhosts.conf
 
 {% for domain in proxy_domains %}
-{% if domain.domain == "reverseproxy.{{prefix}}virtual-labs.ac.in" %}
+{% if domain.domain == "reverseproxy."+prefix+"virtual-labs.ac.in" %}
 <Virtualhost *:80>
 ServerAdmin engg@vlabs.ac.in
 ServerName {{domain.domain}} 
 ServerAlias {{domain.alias}}
-ServerAlias {{domain.alias1}}
 ErrorLog logs/{{domain.domain}}-error_log
 </Virtualhost>
 
@@ -383,7 +406,7 @@ ServerAlias {{domain.alias}}
 ErrorLog logs/{{domain.domain}}-error_log
 </Virtualhost>
 
-{% elif domain.domain == "bandwidthd.{{prefix}}virtual-labs.ac.in" %}
+{% elif domain.domain == "bandwidthd."+prefix+"virtual-labs.ac.in" %}
 <Virtualhost *:80>
 ServerAdmin engg@vlabs.ac.in
 ServerName {{domain.domain}}
@@ -416,9 +439,12 @@ ServerAdmin engg@vlabs.ac.in
 ServerName {{domain.domain}}
 ServerAlias {{domain.alias}}
 ErrorLog logs/{{domain.domain}}-error_log
+ErrorLog "||/usr/bin/logger -t {{domain.domain}}-elog"
 CustomLog logs/{{domain.domain}}-access_log combined
+CustomLog "||/usr/bin/logger -t {{domain.domain}}-alog" combined
 <Location />
 ProxyPass http://{{domain.domain}}/
+ProxyPassReverse http://{{domain.domain}}/
 </Location>
 </VirtualHost>
 
@@ -428,9 +454,12 @@ ServerAdmin engg@vlabs.ac.in
 ServerName {{domain.domain}}
 ServerAlias {{domain.alias}}
 ErrorLog logs/{{domain.domain}}-error_log
+ErrorLog "||/usr/bin/logger -t {{domain.domain}}-elog"
 CustomLog logs/{{domain.domain}}-access_log combined
+CustomLog "||/usr/bin/logger -t {{domain.domain}}-alog" combined
 <Location />
 ProxyPass http://{{domain.domain}}/
+ProxyPassReverse http://{{domain.domain}}/
 </Location>
 </VirtualHost>
 
@@ -2113,6 +2142,108 @@ ScriptAlias /awstats/ "/usr/share/awstats/wwwroot/cgi-bin/"
   notify:
     - restart httpd
 #+END_SRC
+*** Configure =logrotate=
+    Logrotate is an utility which manages logs, it rotates log
+    periodically depending upon the size or set time. This keeps logs
+    in manageable size rather than having an single large log file
+    growing without limits. It has multiple features, refer its =man=
+    page for more details. Here we modify a single parameter of this
+    utility in order to save =httpd= logs for a long duration.
+
+    To configure =logrotate= for Apache, we modify file
+    =/etc/logrotate.d/httpd/=, we will leave the global options in
+    =/etc/logrotate.conf= unchanged. It is assumed that in the global
+    option is to rotate logs weekly, this is the default when
+    =logrotate= is first installed.
+
+#+BEGIN_SRC yaml :tangle roles/reverseproxy_server/tasks/main.yaml
+
+- name: configure logrotate to store logs for 400 weeks
+  lineinfile: dest=/etc/logrotate.d/httpd regexp="^    rotate 400" line="    rotate 400" state=present insertafter=" {"
+
+#+END_SRC
+
+*** Install SSL certificate and configuration
+    This step is preformed manually. We have used a certificate from a
+    commercial third part vendor. By the end of 2015 [[https://letsencrypt.org./][Let's encrypt]]
+    will be functional which offers free, automated SSL certificate
+    installation.
+
+    It is assumed that this is the first configuration of SSL on a web
+    server node.
+
+    When you purchase a SSL certificate, you get a bunch(usually 3
+    files) of files which are listed below. There is no fixed
+    extension, naming convention of these files, but generally these
+    are named in a fashion which is easy to understand.
+    
+    A Server Certificate file, which generally has =.crt= extension,
+    usually the naming is =<your-domain.here>.crt=.
+    
+    A Server Private key file, which has =.key= extension, the naming
+    of this file is similar to the ceritificate file above.
+
+    And finally a CA Certificate file, which has =.crt= extension.
+    
+    Place these files on the reverse proxy/web server node where you
+    want to configure SSL. Next we configure Apache running on the
+    node to enable SSL.
+
+    First install =mod_ssl= package if it was not installed, the
+    following command will also fetch the required dependencies.
+
+#+BEGIN_EXAMPLE
+yum install mod_ssl
+#+END_EXAMPLE
+
+    Locate the =/etc/httpd/conf.d/ssl.conf= and edit following in the
+    default virtualhost.
+
+#+BEGIN_EXAMPLE
+
+Listen 443
+
+<VirtualHost _default_:443>
+.
+.
+.
+SSlEngine on
+
+SSLCertificateFile /path/to/the/server/certificate/file.crt
+
+SSLCertificateKeyFile /path/to/server/private/key/file.pem
+
+SSLCertificateChainFile /path/to/CA/certificate/file.crt
+.
+.
+.
+</VirtualHost>
+
+#+END_EXAMPLE
+
+    Save the file and check whether there were any syntax errors using
+    =apachectl -t=, if everything is okay, then restart apache.
+
+#+BEGIN_EXAMPLE
+service httpd restart
+#+END_EXAMPLE
+
+    You can now test from a browser whether the default SSL
+    virtualhost is opening over https.
+
+    To enable SSL for other namebased virtualhost, create entires new
+    =VirtualHost= entries which listen on TCP port 443.
+
+#+BEGIN_EXAMPLE
+
+<VirtualHost *:443>
+.
+.
+.
+</VirtualHost>
+
+#+END_EXAMPLE
+
 ** Handlers
 *** Restart the services
     Restart the services httpd and iptables if there are any changes
@@ -2147,11 +2278,12 @@ ScriptAlias /awstats/ "/usr/share/awstats/wwwroot/cgi-bin/"
      host_name: "reverseproxy.{{prefix}}vlabs.ac.in"
     roles:
       - common
+      - reverseproxy_server
       - ossec_client
       - rsyslog_client
       - nagios_client
       - rsnapshot_client
-      - reverseproxy_server
+
 #+END_SRC
 * Test Cases
 ** Test Case ID: Reverseproxy test Without internal(Private) DNS  

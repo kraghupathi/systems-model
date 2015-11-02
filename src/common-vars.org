@@ -257,6 +257,9 @@ analytics_server_ip: 10.100.1.12
 rsnapshot_server_ips: 
   - 10.100.1.10
 
+#AWS remote/secondary backup used by rsnapshot role
+aws_backup: 196.12.53.133
+
 #List of management stations.  Multiple is ok
 management_ips:
   - 14.139.82.6/32
@@ -409,6 +412,10 @@ proxy_domains:
   - {domain: "cp-iiith.virtual-labs.ac.in", alias: "cp-iiith.vlabs.ac.in"}
   - {domain: "virtual-labs.ac.in", alias: "vlabs.ac.in"}
   - {domain: "www.virtual-labs.ac.in", alias: "www.vlabs.ac.in"}
+  - {domain: "ps-iiith.virtual-labs.ac.in", alias: "ps-iiith.vlabs.ac.in"}
+  - {domain: "ssl-iitg.virtual-labs.ac.in", alias: "ssl-iitg.vlabs.ac.in"}
+  - {domain: "outreach.virtual-labs.ac.in", alias: "outreach.vlabs.ac.in"}
+  - {domain: "data.virtual-labs.ac.in", alias: "data.vlabs.ac.in"}
 
 awstats_domains:
   - cse01-iiith.virtual-labs.ac.in
@@ -482,6 +489,10 @@ awstats_domains:
   - cp-iiith.virtual-labs.ac.in
   - virtual-labs.ac.in
   - www.virtual-labs.ac.in
+  - ps-iiith.virtual-labs.ac.in
+  - ssl-iitg.virtual-labs.ac.in
+  - outreach.virtual-labs.ac.in
+  - data.virtual-labs.ac.in
 
 #AWS public DNS is also listing other public records of vlabs
 public_dns_entries:
@@ -538,6 +549,8 @@ public_dns_entries:
   - { hostname: mech01-iitg, ip: 196.12.53.130 }
   - { hostname: eee06-dei, ip: 196.12.53.130 }
   - { hostname: vlabs-dependencies, ip: 196.12.53.130 }
+  - { hostname: http, ip: 196.12.53.130 }
+  - { hostname: issues, ip: 196.12.53.130 }
   - { hostname: router, ip: 54.85.93.7 }  ###AWS-cluster IPs start here###
   - { hostname: bandwidthd, ip: 54.85.93.7 }
   - { hostname: ansible, ip: 52.4.150.142 }
@@ -619,6 +632,11 @@ public_dns_entries:
   - { hostname: nlp-iiith, ip: 54.85.93.7}
   - { hostname: cp-iiith, ip: 54.85.93.7}
   - { hostname: www, ip: 54.85.93.7}
+  - { hostname: ps-iiith, ip: 54.85.93.7}
+  - { hostname: ssl-iitg, ip: 54.85.93.7}
+  - { hostname: outreach, ip: 54.85.93.7}
+  - { hostname: data, ip: 54.85.93.7}
+
 
 private_dns_entries:
   - { hostname: router, ip: 10.100.1.1 }
@@ -703,7 +721,10 @@ private_dns_entries:
   - { hostname: nlp-iiith, ip: 10.100.3.184}
   - { hostname: cp-iiith, ip: 10.100.1.190}
   - { hostname: www, ip: 10.100.1.13}
-
+  - { hostname: ps-iiith, ip: 10.100.2.21}
+  - { hostname: ssl-iitg, ip: 10.100.1.221}
+  - { hostname: outreach, ip: 10.100.2.35}
+  - { hostname: data, ip: 10.100.1.67}
 
 #+END_SRC
 
@@ -714,9 +735,9 @@ Variables for Base1 cluster are defined in the following section
 ---
 #Proxy configuration in case direct access to Internet is not available
 proxy_env:
-#  none: none
-   http_proxy: http://proxy.iiit.ac.in:8080/
-   https_proxy: http://proxy.iiit.ac.in:8080/
+  none: none
+#   http_proxy: http://proxy.iiit.ac.in:8080/
+#   https_proxy: http://proxy.iiit.ac.in:8080/
 
 #Release number used in common task to add it to the target
 release_no:
@@ -737,6 +758,10 @@ management_ips:
 #rsnapshot to take backups
 rsnapshot_server_ips:
   - 10.100.1.10
+
+#AWS remote/secondary backup used by rsnapshot role
+aws_backup: 196.12.53.133
+
 #OSSEC server IP.  Only one
 ossec_server_ip: 10.100.1.3
 
@@ -752,6 +777,7 @@ ossec_client_ips:
   - 10.100.1.6
   - 10.100.1.7
   - 10.100.1.8
+  - 10.100.1.9
   - 10.100.1.10
 #Administrator email address and SMTP server through which
 #administrator can be reached.  Used by OSSEC server to send emails.
@@ -870,9 +896,15 @@ proxy_domains:
   - {domain: "mas-iiith.base1.virtual-labs.ac.in", alias: "mas-iiith.base1.vlabs.ac.in"}
   - {domain: "mfs-iiith.base1.virtual-labs.ac.in", alias: "mfs-iiith.base1.vlabs.ac.in"}
   - {domain: "nlp-iiith.base1.virtual-labs.ac.in", alias: "nlp-iiith.base1.vlabs.ac.in"}
-  - {domain: "cp-iiith.virtual-labs.ac.in", alias: "cp-iiith.vlabs.ac.in"}
+  - {domain: "cp-iiith.base1.virtual-labs.ac.in", alias: "cp-iiith.base1.vlabs.ac.in"}
   - {domain: "virtual-labs.ac.in", alias: "vlabs.ac.in"}
-  - {domain: "www.virtual-labs.ac.in", alias: "www.vlabs.ac.in"}
+  - {domain: "www.virtual-labs.ac.in", alias: "www.vlabs.ac.in"} 
+  - {domain: "landingpage.base1.virtual-labs.ac.in", alias: "landingpage.base1.vlabs.ac.in"}
+  - {domain: "ps-iiith.base1.virtual-labs.ac.in", alias: "ps-iiith.base1.vlabs.ac.in"}
+  - {domain: "ssl-iitg.base1.virtual-labs.ac.in", alias: "ssl-iitg.base1.vlabs.ac.in"}
+  - {domain: "outreach.base1.virtual-labs.ac.in", alias: "outreach.base1.vlabs.ac.in"}
+  - {domain: "feedback.base1.virtual-labs.ac.in", alias: "feedback.base1.vlabs.ac.in"}
+  - {domain: "data.base1.virtual-labs.ac.in", alias: "data.base1.vlabs.ac.in"}
 
 awstats_domains:
   - reverseproxy.base1.virtual-labs.ac.in
@@ -935,10 +967,15 @@ awstats_domains:
   - qnm-iitd.base1.virtual-labs.ac.in
   - msvs-dei.base1.virtual-labs.ac.in
   - vp-dei.base1.virtual-labs.ac.in
-  - cp-iiith.virtual-labs.ac.in
+  - cp-iiith.base1.virtual-labs.ac.in
   - virtual-labs.ac.in
   - www.virtual-labs.ac.in
-
+  - landingpage.base1.virtual-labs.ac.in
+  - ps-iiith.base1.virtual-labs.ac.in
+  - ssl-iitg.base1.virtual-labs.ac.in
+  - outreach.base1.virtual-labs.ac.in
+  - feedback.base1.virtual-labs.ac.in
+  - data.base1.virtual-labs.ac.in
 
 public_dns_entries:
   - { hostname: router, ip: 10.4.14.150 }
@@ -1013,6 +1050,12 @@ public_dns_entries:
   - { hostname: vp-dei, ip: 10.4.14.150 }
   - { hostname: cp-iiith, ip: 10.4.14.150 }
   - { hostname: www, ip: 10.4.14.150}
+  - { hostname: landingpage, ip: 10.4.14.150}
+  - { hostname: ps-iiith, ip: 10.4.14.150 }
+  - { hostname: ssl-iitg, ip: 10.4.14.150 }
+  - { hostname: outreach, ip: 10.4.14.150 }
+  - { hostname: feedback, ip: 10.4.14.150 }
+  - { hostname: data, ip: 10.4.14.150 }
 
 private_dns_entries:
   - { hostname: router, ip: 10.100.1.1 }
@@ -1087,6 +1130,13 @@ private_dns_entries:
   - { hostname: msvs-dei, ip: 10.100.0.48 }
   - { hostname: vp-dei, ip: 10.100.0.49 }
   - { hostname: cp-iiith, ip: 10.100.0.61}
+  - { hostname: landingpage, ip: 10.100.0.200}
+  - { hostname: ps-iiith, ip: 10.100.0.62 }
+  - { hostname: ssl-iitg, ip: 10.100.0.63 }
+  - { hostname: outreach, ip: 10.100.0.64 }
+  - { hostname: feedback, ip: 10.100.0.65 }
+  - { hostname: data, ip: 10.100.0.66 }
+
 #  - { hostname: www, ip: 10.100.1.13}
 
 #+END_SRC
@@ -1107,6 +1157,19 @@ ansible_server_ips:
   - 10.100.1.2
 rsnapshot_server_ips:
   - 10.100.1.10
+
+
+
+
+
+
+#AWS remote/secondary backup used by rsnapshot role
+aws_backup: 196.12.53.133
+
+
+
+
+
 #Anlytics IP used by RP role to rsync logs,awstats
 analytics_server_ip: 10.100.1.12
 
@@ -1131,6 +1194,8 @@ ossec_client_ips:
   - 10.100.1.6
   - 10.100.1.7
   - 10.100.1.8
+  - 10.100.1.9
+  - 10.100.1.10
 
 #Administrator email address and SMTP server through which
 #administrator can be reached.  Used by OSSEC server to send emails.
@@ -1196,12 +1261,14 @@ proxy_domains:
   - {domain: "vml-dei.base4.virtual-labs.ac.in", alias: "vml-dei.base4.vlabs.ac.in"}
   - {domain: "vcl-dei.base4.virtual-labs.ac.in", alias: "vcl-dei.base4.vlabs.ac.in"}
   - {domain: "vca-iitk.base4.virtual-labs.ac.in", alias: "vca-iitk.base4.vlabs.ac.in"}
+  - {domain: "dbdm-iiith.base4.virtual-labs.ac.in", alias: "dbdm-iiith.base4.vlabs.ac.in"}
 awstats_domains:
   - reverseproxy.base4.virtual-labs.ac.in
   - fpga-coep.base4.virtual-labs.ac.in
   - vml-dei.base4.virtual-labs.ac.in
   - vcl-dei.base4.virtual-labs.ac.in
   - vca-iitk.base4.virtual-labs.ac.in
+  - dbdm-iiith.base4.virtual-labs.ac.in
 private_dns_entries:
   - { hostname: router, ip: 10.100.1.1 }
   - { hostname: bandwidthd, ip: 10.100.1.1 }
@@ -1218,6 +1285,7 @@ private_dns_entries:
   - { hostname: vml-dei, ip: 10.100.0.5}
   - { hostname: vcl-dei, ip: 10.100.0.8}
   - { hostname: vca-iitk, ip: 10.100.0.9}
+  - { hostname: dbdm-iiith, ip: 10.100.0.2}
  
 public_dns_entries:
  - { hostname: router, ip: 10.4.14.200 }
@@ -1233,6 +1301,7 @@ public_dns_entries:
  - { hostname: vml-dei, ip: 10.4.14.200 }
  - { hostname: vcl-dei, ip: 10.4.14.200 }
  - { hostname: vca-iitk, ip: 10.4.14.200 }
+ - { hostname: dbdm-iiith, ip: 10.4.14.200 }
 #+END_SRC
 
 
