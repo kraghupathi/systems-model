@@ -407,6 +407,11 @@ the variables used by the ansible playbooks.
   shell: route del default; route add default gw {{router_internal_ip}}
   when: not ( i_ans is defined or i_router is defined )
   ignore_errors: yes
+
+- name: make this route persistent after reboot
+  lineinfile: line="route del default; route add default gw {{router_internal_ip}}" destfile=/etc/rc.local state=present regexp="route *"
+  when: not ( i_ans is defined or i_router is defined )
+
 #+END_SRC
 
 *** Block Malicious Attacks
