@@ -469,7 +469,7 @@ link_dest	1
 backup_script	/bin/date "+ backup started at %T-%F" >> lab_{{backup}}_log	{{backup}}/start_logs/
 #Backup script generates the dump, which the next backup directive copies to the server
 backup_script	/usr/bin/ssh root@{{backup}} "cd /root/labs/*/src/scripts; chmod +x backup; ./backup"	{{backup}}/unused1/
-backup	root@{{backup}}:/root/labs/*/src/scripts/labbackup_*.tar	{{backup}}/
+backup	root@{{backup}}:/root/labs/*/src/scripts/labbackup*.tar	{{backup}}/
 backup_script	/bin/date "+ backup ended at %T-%F" >> lab_{{backup}}_log	{{backup}}end_logs/
 {% endfor %}
 
