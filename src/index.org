@@ -295,7 +295,7 @@ To know further about these please refer [[Appendix][Appendix]].
     https://github.com/vlead/ovpl/blob/master/docs/bridge-setup.org
 
 *** Create Router 
-    - We need two IPS to setup router machine one is for accessing
+    - We need two IPs to setup router machine one is for accessing
       labs and servers over http, https and dns and another is for
       private network ip. This private ip is for gateway to all the
       nodes and lab containers.
@@ -304,15 +304,15 @@ To know further about these please refer [[Appendix][Appendix]].
     - Create router node and configure the network as follows on host
       machine
       #+BEGIN_EXAMPLE 
-      (host-machine)$vzctl create 1001 --ostemplate centos-6-x86_64 --hostname router.vlabs.ac.in
+      vzctl create 1001 --ostemplate centos-6-x86_64 --hostname router.vlabs.ac.in
       #+END_EXAMPLE 
 
       The router needs to be connected with two bridges br0 and br1 in
       order to get internet connection and to setup private network
       via this router. Run the following commands
       #+BEGIN_EXAMPLE 
-     (host-machine)$vzctl set 1001 --netif_add eth0,,,,br0 --save
-     (host-machine)$vzctl set 1001 --netif_add eth1,,,,br1 --save
+      vzctl set 1001 --netif_add eth0,,,,br0 --save
+      vzctl set 1001 --netif_add eth1,,,,br1 --save
       #+END_EXAMPLE 
       It means, the container is created with two interfaces eth0 and
       eth1 and eth0 of the router is connected to br0 of host machine
@@ -339,11 +339,11 @@ To know further about these please refer [[Appendix][Appendix]].
      BOOTPROTO=static
      ONBOOT=yes
      NM_CONTROLLED=no
-     IPADDR=10.2.58.158
-     NETMASK=255.255.252.0
-     GATEWAY=10.2.56.1
-     DNS1=10.4.12.160
-     DNS2=10.4.12.221
+     IPADDR=<ip-address>
+     NETMASK=<netmask>
+     GATEWAY=<gateway>
+     DNS1=<external-dns1>
+     DNS2=<external-dns2>
      #+END_EXAMPLE
 
      Create another =ifcfg-eth1= file in
@@ -373,29 +373,60 @@ To know further about these please refer [[Appendix][Appendix]].
      #+END_EXAMPLE
      - Check the link for above things done for router
       https://openvz.org/Using_NAT_for_container_with_private_IPs
-
-*** Create Config-server node
-   - Create a 'vlead' user in the machine.
+**** Enable router to run automatically on machine boot
      #+BEGIN_EXAMPLE
-     adduser vlead 
+     vzctl set 1001 --onboot yes --save
      #+END_EXAMPLE
-     ssh public key of this user has to be copied in all other machine.  If the
-     root user has already been created then the root user's private and public
-     key can be placed inside the vlead user's .ssh directory, so that from
-     vlead user we can login to other machine roots account.
+
+   * Set root password
+     #+BEGIN_EXAMPLE
+     passwd
+     #+END_EXAMPLE
+*** Create Config-server node
+**** Setup container
+   - Create a machine and configure the network with two IPs. Do the
+     same steps as followed for router node except IPADDR and MAC
+     addresses of the interfaces.
+     #+BEGIN_EXAMPLE
+     vzctl create 1002 --hostname ansible.[{cluster-name}.]vlabs.ac.in --ostemplate centos-6-x86_64
+     #+END_EXAMPLE
    - We need two IPs to setup ansible machine one is for public access
      over ssh and another is for private network ip. Private ip is for
      configuring other nodes as well as itself and internal
      connections.
-   - Create a machine and configure the network with two IPs. Do the
-     same steps as followed for router node except IPADDR and MAC
-     addresses of the interfaces.
+     #+BEGIN_EXAMPLE
+     vzctl set 1002 --netif_add eth0,,,,br0 --save
+     vzctl set 1002 --netif_add eth0,,,,br1 --save
+     vzctl set 1002 --onboot yes --save
+     #+END_EXAMPLE
+     Give private IP 10.100.1.2 to ansible container.
+   - Create a 'vlead' user in the machine.
+     #+BEGIN_EXAMPLE
+     passwd  #root password
+     adduser vlead 
+     passwd vlead
+     su - vlead
+     ssh-keygen
+     #+END_EXAMPLE
+     ssh public key of this user has to be copied in all other
+     machine.  
+
+     If the root user has already been created then the root user's
+     private and public key can be placed inside the vlead user's .ssh
+     directory, so that from vlead user we can login to other machine
+     roots account.
    - Enable ssh access from localhost using key-based authentication
+     #+BEGIN_EXAMPLE
+     ssh-copy-id root@localhost  #from vlead user
+     ssh-copy-id root@10.100.1.1  #from vlead user
+     ssh-copy-id root@10.100.1.2  #from vlead user
+     #+END_EXAMPLE
    - Setup rpmfusion-free, rpmfusion-nonfree, rpmforge and
      epel-release repos on the system. Use the following command to
      install ansible
      #+BEGIN_EXAMPLE 
-     yum -y install epel-release  ansible -y
+     yum -y install epel-release  #from root
+     yum -y install ansible       #from root
      #+END_EXAMPLE
 **** Install openssh if not installed
      By default some distro comes with openssh. If the package is not
@@ -420,29 +451,39 @@ To know further about these please refer [[Appendix][Appendix]].
      this we have to add public key to repository since we do cloning over ssh
      by issuing the following command.
      #+BEGIN_EXAMPLE 
-     git clone git@bitbucket.org:vlead/systems-model.git
+     git clone git@bitbucket.org:vlead/systems-model.git   #by vlead user
+     git checkout develop #or other appropriate branch
      #+END_EXAMPLE
      
 **** Setup Emacs and org-mode-8     
-     Setup emacs and org-mode-8. Use the link [[https://vlead.virtual-labs.ac.in/wiki/index.php/How_to_setup_emacs_and_org_8][How to setup emacs and
-     org 8]].
+     Setup emacs using:
+     #+BEGIN_EXAMPLE
+     yum -y install emacs
+     #+END_EXAMPLE
+     
+     Setup org-mode using (for VLEAD user):
+     #+BEGIN_EXAMPLE
+     mkdir -p ~/emacs/lisp   #as vlead user
+     cd emacs/lisp
+     wget http://orgmode.org/org-8.2.10.tar.gz
+     tar zxvf org-8.2.10.tar.gz
+     #+END_EXAMPLE
 
 **** Run make and check syntax of site.yaml
     - Enter into config-server 
-    - Generate ssh-key 
-      #+BEGIN_SRC 
-      $ssh-keygen -t rsa
-      #+END_SRC
     - Share public key to all the nodes including itself. So that we
       can run ansible playbooks to configure nodes.
-    - Edit or create hosts file to point to correct servers/nodes.
-    - Change directory to cloned reository systems-model and run makefile
+    - Change directory to cloned repository systems-model and run makefile
       #+BEGIN_SRC 
-      $cd systems-model/
-      $make
+      cd systems-model/
+      make
       #+END_SRC
     - Copy or move created hosts file to =build/{base1 or base4}-code/= 
-
+    - Edit hosts file of corresponding build folder and verify that all IPs are correct
+    - Check syntax
+      #+BEGIN_EXAMPLE
+      ansible-playbook -i bstest --list-tasks --syntax-check site.yaml
+      #+END_EXAMPLE
 *** Create DNS servers and Configure
     - Create following servers:
       + public DNS
@@ -466,7 +507,7 @@ To know further about these please refer [[Appendix][Appendix]].
         #+END_EXAMPLE
       + Restart the network of dns nodes
         #+BEGIN_SRC 
-        $service network restart
+        service network restart
         #+END_SRC
       + Enable ssh access from ansible using key-based authentication
     - We must use temporary external dns server's IP other than
