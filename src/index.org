@@ -488,10 +488,15 @@ To know further about these please refer [[Appendix][Appendix]].
     - Create following servers:
       + public DNS
       + private DNS  
-	#+BEGIN_SRC 
-        (host-machine)$vzctl create CTID --ostemplate centos-6-x86_64 --hostname <server-name>.vlabs.ac.in
-        (host-machine)$vzctl set CTID  --netif_add eth1,,,,br1 --save
+	#+BEGIN_SRC
+        vzctl create 1005 --ostemplate centos-6-x86_64 --hostname privatedns.[{cluster}].vlabs.ac.in
+        vzctl set 1005  --netif_add eth1,,,,br1 --save
+        vzctl create 1006 --ostemplate centos-6-x86_64 --hostname publicdns.[{cluster}].vlabs.ac.in
+        vzctl set 1006  --netif_add eth1,,,,br1 --save
+        vzctl set 1005 --onboot yes --save
+        vzctl set 1006 --onboot yes --save
 	#+END_SRC
+    - Start both containers
     - For each of the above servers do the following:
       + Configure the network-interface in
         =/etc/sysconfig/network-scripts/ifcfg-eth1= with the following
@@ -510,30 +515,53 @@ To know further about these please refer [[Appendix][Appendix]].
         service network restart
         #+END_SRC
       + Enable ssh access from ansible using key-based authentication
-    - We must use temporary external dns server's IP other than
-      cluster's dns server to configure these nodes using ansible
-      playbooks.
-    - Changes which we need to do in =roles/common_vars/vars/main.yaml= are as follows
-      + =public_dns_vars= variable value with router and config-server
-        public ips.
-      + Comment =private_dns_ips: 10.100.1.5= , =private-dns-zone:
+        (=ssh-copy-id= from vlead user)
+    - We need working DNS in new containers.  If working DNS are
+      obtained due to inherit feature of OpenVZ then it is fine.
+
+      Otherwise we should use temporary external dns server's IP
+      other than cluster's dns server to configure these nodes using
+      ansible playbooks.  
+
+      For example edit /etc/resolv.conf file as follows:
+      #+BEGIN_EXAMPLE
+      nameserver 4.2.2.2
+      nameserver 8.8.8.8
+      #+END_EXAMPLE
+    - Changes which we need to do in ansible machine as vlead user.
+      Edit file =roles/common_vars/vars/main.yaml= are as follows
+      + Ensure =ansible_server_ips= has 10.100.1.2
+      + Set appropriate value for =admin_email_address=
+      + Set =smtp_smart_host= should be none
+      + Comment =private_dns_ips: 10.100.1.5= , =private_dns_zone:
         base{1,4}.vlabs.ac.in= and comment out =private-dns-ips: none=
         and =private-dns-zone: none=
+      + =public_dns_ip= should be 10.100.1.6 
+      + =local_subnet= should be 10.100.0.0/22
+      + =router_interface_ip= should be public IP of router
+      + =router_external_interface= should be eth0
+      + =router_internal_ip= should be 10.100.1.1
+      + =forwarders= should be '"{ }"' without single quotes.
       + Change the value of =public-zone-address= variable (router's
         Public IP).
-      + NOTE :: If you are working under any proxy enabled network, we
-                may need to check/do the following steps.
-        - Cluster private dns may not connect to the external network,
-          for this to work we may have to add
-          "forwarders{10.4.12.160;10.4.12.221;};" to
-          =roles/named_server/tempalates/named.conf= template.
-        
-	- Check OUTPUT firewaal rule for port 8080 to connetct to the
-          proxy
-	- export proxy
+      + Set =is_amazon= based on whether cluster is being setup on AWS
+        or not.  
+      + Set appropriate value of prefix, eg "bstest.".  Note that
+        prefix value should end with a dot(".").
+      + =public_dns_entries= variable value with router and config-server
+        public ips.  ansible IP would be used only once.  All other
+        IPs should be replaced with router IPs.
+
+	Values for router, ansible, private-dns and public-dns must be
+        present.  All other values are optional at this point.
+      + =private_dns_entries= variable also needs to be correct.
+        Values for router, ansible, private-dns and public-dns must be
+        present.  All other values are optional at this point.
     - Make sure that the hosts file with the ips of nodes and with
-      their names according to name of the server's playbook .
-    - Commenet =rsnapshot_client= and =ossec_client= roles in
+      their names according to name of the server's
+      playbook. [private_dns] should be 10.100.1.5.  [public_dns]
+      should be 10.100.1.6
+    - Comment =rsnapshot_client= and =ossec_client= roles in
       private-dns.yaml and public-dns.yaml
     - Run *public_dns.yaml* and *private_dns.yaml* play books on
       config-server.
@@ -544,11 +572,14 @@ To know further about these please refer [[Appendix][Appendix]].
       ansible-playbook -i hosts private-dns.yaml
       #+END_SRC
     - Once the nodes are configured using playbooks, test whether the
-      dns nodes are functioning properly or not.
-
-    Specifically for DNS servers look at variables in respective DNS
-    server files.  Also ensure that roles/named_server/files has
-    correct zone files for each zone with necessary zone_file_prefix.
+      dns nodes are functioning properly or not.  Try following
+      commands:
+      #+BEGIN_EXAMPLE
+      nslookup www.google.co.in 10.100.1.5
+      nslookup router.[{cluster}.]vlabs.ac.in 10.100.1.6
+      nslookup router.[{cluster}.]vlabs.ac.in 10.100.1.5
+      #+END_EXAMPLE
+      
 *** Configure Router 
     - In order to apply proper firewall rules for our cluster we need
       to configure router after dns servers are configured.
