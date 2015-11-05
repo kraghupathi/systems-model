@@ -225,6 +225,16 @@ To know further about these please refer [[Appendix][Appendix]].
     - Set proxy for all the nodes and labs if network uses any proxy
     - Note ::  Private ips of the nodes on AWS and base{1,4} clusters
                are same except public IPs of router and ansible nodes.
+
+**** Troubleshooting VM OpenVZ issues
+     In case the setup is performed in a VM and VM is unstable such
+     that containers fail to stop and VM fails to reboot.  Then
+     following changes may not help:
+     - Reducing OpenVZ kernel version (downgrading)
+     - Removing tboot
+     - Update VM OS to latest packages
+     Most probably issue would be with container template.  Download
+     fresh template directly from openvz.org mirrors. 
 *** Setup bridged network 
     - Host machine should have updated CentOS-6.6 with vzkernel
       installed and configured properly.
@@ -584,9 +594,9 @@ To know further about these please refer [[Appendix][Appendix]].
     - In order to apply proper firewall rules for our cluster we need
       to configure router after dns servers are configured.
     - Enable ssh acces from config-server node
-    #+BEGIN_SRC 
-     ansible-playbook -i hosts router.yaml
-     #+END_SRC
+      #+BEGIN_SRC 
+      ansible-playbook -i hosts router.yaml
+      #+END_SRC
     - NOTE :: Reason to run router.yaml play book here is: We added
               NATing rule as temporary firewall rule. So in common
               role there is task which restarts iptables service,
@@ -594,8 +604,7 @@ To know further about these please refer [[Appendix][Appendix]].
 	      
 	      If we set POSTROUTING firewall rule as permanent rule
               then no need to run router.yaml file after dns servers
-              are configured. We can go to [[Run site.yaml on config-server][Run site.yaml]] to setup
-              complete cluster.
+              are configured. 
     
 *** Setup ossec server
     - Create ossec server and setup trust based SSH to it. 
