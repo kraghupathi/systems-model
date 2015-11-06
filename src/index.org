@@ -593,6 +593,7 @@ To know further about these please refer [[Appendix][Appendix]].
 *** Configure Router 
     - In order to apply proper firewall rules for our cluster we need
       to configure router after dns servers are configured.
+    - Comment ossec_client and rsnapshot_client roles in router.yaml
     - Enable ssh acces from config-server node
       #+BEGIN_SRC 
       ansible-playbook -i hosts router.yaml
@@ -605,12 +606,17 @@ To know further about these please refer [[Appendix][Appendix]].
 	      If we set POSTROUTING firewall rule as permanent rule
               then no need to run router.yaml file after dns servers
               are configured. 
-    
+    - Test router by doing
+      #+BEGIN_EXAMPLE
+      nslookup router.[{cluster}.].vlabs.ac.in <router-public-ip>
+      #+END_EXAMPLE
+      This query should resolve to router public IP itself.
 *** Setup ossec server
     - Create ossec server and setup trust based SSH to it. 
       #+BEGIN_SRC 
-      (host-machine)$vzctl create CTID --ostemplate centos-6-x86_64 --hostname <server-name>.vlabs.ac.in
-      (host-machine)$vzctl set CTID  --netif_add eth1,,,,br1 --save
+      vzctl create 1003 --ostemplate centos-6-x86_64 --hostname ossec.[{cluster}.]vlabs.ac.in
+      vzctl set 1003 --netif_add eth1,,,,br1 --save
+      vzctl set 1003 --onboot yes --save
       #+END_SRC
     - Configure the network-interface in
       =/etc/sysconfig/network-scripts/ifcfg-eth1= with the following
@@ -632,8 +638,9 @@ To know further about these please refer [[Appendix][Appendix]].
 *** Create rsyslog server
     - Create a machine to setup rsyslog server.  
       #+BEGIN_SRC 
-      (host-machine)$vzctl create CTID --ostemplate centos-6-x86_64 --hostname <server-name>.vlabs.ac.in
-      (host-machine)$vzctl set CTID  --netif_add eth1,,,,br1 --save
+      vzctl create 1004 --ostemplate centos-6-x86_64 --hostname rsyslog.[{cluster}.].vlabs.ac.in
+      vzctl set 1004 --netif_add eth1,,,,br1 --save
+      vzctl set 1004 --onboot yes --save
       #+END_SRC
     - Configure the network-interface in
       =/etc/sysconfig/network-scripts/ifcfg-eth1= with the following
@@ -660,8 +667,9 @@ To know further about these please refer [[Appendix][Appendix]].
 
     - Create a machine for reverseproxy.  
       #+BEGIN_SRC 
-      (host-machine)$vzctl create CTID --ostemplate centos-6-x86_64 --hostname <server-name>.vlabs.ac.in
-      (host-machine)$vzctl set CTID  --netif_add eth1,,,,br1 --save
+      vzctl create 1007 --ostemplate centos-6-x86_64 --hostname reverseproxy.[{cluster}.].vlabs.ac.in
+      vzctl set 1007 --netif_add eth1,,,,br1 --save
+      vzctl set 1007 --onboot yes --save
       #+END_SRC
     - Configure the network-interface in
       =/etc/sysconfig/network-scripts/ifcfg-eth1= with the following
@@ -691,8 +699,9 @@ To know further about these please refer [[Appendix][Appendix]].
       folders from required nodes of the cluster.
     - Create a container for rsnapshot server.
       #+BEGIN_SRC 
-      (host-machine)$vzctl create CTID --ostemplate centos-6-x86_64 --hostname <server-name>.vlabs.ac.in
-      (host-machine)$vzctl set CTID  --netif_add eth1,,,,br1 --save
+      vzctl create 1010 --ostemplate centos-6-x86_64 --hostname rsnapshot.[{cluster}.].vlabs.ac.in
+      vzctl set 1010 --netif_add eth1,,,,br1 --save
+      vzctl set 1010 --onboot yes --save
       #+END_SRC
     - Configure the network-interface in
       =/etc/sysconfig/network-scripts/ifcfg-eth1= with the following
@@ -716,8 +725,9 @@ To know further about these please refer [[Appendix][Appendix]].
     - Create nagios server to monitor services from all the nodes in
       the cluster
       #+BEGIN_SRC 
-      (host-machine)$vzctl create CTID --ostemplate centos-6-x86_64 --hostname <server-name>.vlabs.ac.in
-      (host-machine)$vzctl set CTID  --netif_add eth1,,,,br1 --save
+      vzctl create 1008 --ostemplate centos-6-x86_64 --hostname nagios.[{cluster}.].vlabs.ac.in
+      vzctl set 1008 --netif_add eth1,,,,br1 --save
+      vzctl set 1008 --onboot yes --save
       #+END_SRC
     - Configure the network-interface in
       =/etc/sysconfig/network-scripts/ifcfg-eth1= with the following
