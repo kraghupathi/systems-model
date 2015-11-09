@@ -226,16 +226,7 @@ To know further about these please refer [[Appendix][Appendix]].
     - Note ::  Private ips of the nodes on AWS and base{1,4} clusters
                are same except public IPs of router and ansible nodes.
 
-**** Troubleshooting VM OpenVZ issues
-     In case the setup is performed in a VM and VM is unstable such
-     that containers fail to stop and VM fails to reboot.  Then
-     following changes may not help:
-     - Reducing OpenVZ kernel version (downgrading)
-     - Removing tboot
-     - Update VM OS to latest packages
-     Most probably issue would be with container template.  Download
-     fresh template directly from openvz.org mirrors. 
-*** Setup bridged network 
+*** Setup bridged network
     - Host machine should have updated CentOS-6.6 with vzkernel
       installed and configured properly.
     - Do the steps mentioned in the following link to install
@@ -304,6 +295,32 @@ To know further about these please refer [[Appendix][Appendix]].
     https://www.sbarjatiya.com/notes_wiki/index.php/Installing_openVZ_on_Cent_OS
     https://github.com/vlead/ovpl/blob/master/docs/bridge-setup.org
 
+*** Setup base machine with OpenVZ etc. for ADS
+    - Setup base machine server with the following steps
+      + Clone the repository from GitHub
+	#+BEGIN_SRC 
+	git clone https://github.com/vlead/setup-ovpl-centos.git
+	#+END_SRC
+      + Change directory to =setup-ovpl-centos/scripts/=
+	#+BEGIN_SRC 
+	cd setup-ovpl-centos/scripts/
+	#+END_SRC
+      + Run =centos_prepare_ovpl.sh=.  
+	#+BEGIN_SRC 
+	./centos_prepare_ovpl.sh
+	#+END_SRC
+        It will install dependencies for openvz and for ADS server
+        setup.
+
+**** Troubleshooting VM OpenVZ issues
+     In case the setup is performed in a VM and VM is unstable such
+     that containers fail to stop and VM fails to reboot.  Then
+     following changes may not help:
+     - Reducing OpenVZ kernel version (downgrading)
+     - Removing tboot
+     - Update VM OS to latest packages
+     Most probably issue would be with container template.  Download
+     fresh template directly from openvz.org mirrors. 
 *** Create Router 
     - We need two IPs to setup router machine one is for accessing
       labs and servers over http, https and dns and another is for
@@ -750,8 +767,9 @@ To know further about these please refer [[Appendix][Appendix]].
 *** Create ADS server
     - Create a container for ADS server
       #+BEGIN_SRC 
-      (host-machine)$vzctl create CTID --ostemplate centos-6-x86_64 --hostname <server-name>.vlabs.ac.in
-      (host-machine)$vzctl set CTID  --netif_add eth1,,,,br1 --save
+      vzctl create 1009 --ostemplate centos-6-x86_64 --hostname ads.[{cluster}.].vlabs.ac.in
+      vzctl set 1009 --netif_add eth1,,,,br1 --save
+      vzctl set 1009 --onboot yes --save
       #+END_SRC
     - Configure the network-interface in
       =/etc/sysconfig/network-scripts/ifcfg-eth1= with the following
@@ -772,31 +790,66 @@ To know further about these please refer [[Appendix][Appendix]].
     - Enable ssh access from ansible using key-based authentication
     - Install git
       #+BEGIN_SRC 
-      yum install epel-release git -y
+      route add default gw 10.100.1.1
+      echo "nameserver 4.2.2.2" > /etc/resolv.conf
+      yum -y install git
       #+END_SRC
-    - Setup ADS server with the following steps
-      + Clone the repository from GitHub
-	#+BEGIN_SRC 
-	git clone https://github.com/vlead/setup-ovpl-centos.git
-	#+END_SRC
-      + Change directory to =setup-ovpl-centos/scripts/=
-	#+BEGIN_SRC 
-	cd setup-ovpl-centos/scripts/
-	#+END_SRC
-      + Run =centos_prepare_ovpl.sh=.  
-	#+BEGIN_SRC 
-	sh centos_prepare_ovpl.sh
-	#+END_SRC
-        It will install dependencies for openvz and for ADS server setup.
-      + Clone *ovpl* 
-	#+BEGIN_SRC 
-	git clone https://github.com/vlead/ovpl.git
-	#+END_SRC
-      + change directory to ovpl and run manage_services.sh file:
-	#+BEGIN_SRC 
-        cd ovpl
-        ./manage_services.sh start LOGGER
-	#+END_SRC
+    - Generate root users ssh-keys.  Setup trust based ssh from OVPL
+      container root user to Base machine.
+    - Clone *ovpl* 
+      #+BEGIN_SRC 
+      git clone https://github.com/vlead/ovpl.git
+      #+END_SRC
+    - change directory to ovpl and run manage_services.sh file:
+      #+BEGIN_SRC 
+      cd ovpl/config
+      cp sample_config.json config.json
+      cp sample_authorized_users.py authorized_users.py
+      cd adapters
+      cp sample_centos_bridged_config.py centos_bridged_config.py
+      cp sample_base_config.py base_config.py
+      cd ..
+      #+END_SRC
+    - Edit config.json as follows:
+      + COOKIE_SECRET :: Change to some other random string
+      + APP_URL :: Update app url to include FQDN
+      + ADAPTER_TO_USE :: {"POOLID" : 1, "ADAPTERID" : 3 } 
+        - In case of other types of setup use appropriate poolid or
+          adapter Id.
+      + LOGSERVER_CONFIGURATION / SERVER_IP :: 10.100.1.9
+    - Edit authorized_users.py as follows:
+      + Put bunch of gmail IDs separated by , as shown in the example
+        config.  While deploying labs Gmail OpenID login will be
+        used.  Also the given gmail ID may have to be associated with
+        a persona account.
+    - Edit adapters/centos_bridged_config.py as follows:
+      + SUBNET_BRIDGE :: "br1"
+    - Edit adapters/base_config.py as follows:
+      + ADS_ON_CONTAINER = True
+      + SUBNET = ["10.100.2.0/24"]
+      + BASE_IP_ADDRESS = "root@10.4.14.202"  
+        + Replace 10.4.14.202 with correct base machine (ie VM) IP
+      + ADS_SERVER_VM_ID = "1009"
+        + CTID of ADS container.  This is used while copying cloned
+          labs and OVPL code from ADS container to lab container.
+          Note that git clone of lab happens within ADS container and
+          not directly in lab container. 
+      + HOST_NAME = "bstest.vlabs.ac.in"
+        + Domain name of lab-id
+    - Again clone setup-ovpl-centos using:
+      #+BEGIN_EXAMPLE
+      git clone https://github.com/vlead/setup-ovpl-centos.git
+      cd setup-ovpl-centos/scripts
+      vim centos_prepare_ovpl.sh  #Comment OpenVZ installation lines 52,58
+      ./centos_prepare_ovpl.sh
+      #+END_EXAMPLE
+    - Run services using
+      #+BEGIN_EXAMPLE
+      yum -y install python-setuptools
+      cd ~/ovpl
+      python setup.py install
+      ./manage_services.sh start LOGGER      
+      #+END_EXAMPLE
     
 *** Configure machines to use private DNS
     Edit roles/common_vars/vars/main.yaml and set private_dns_ips and
@@ -814,7 +867,7 @@ To know further about these please refer [[Appendix][Appendix]].
     By default this is disabled in all the nodes playbooks. Keep as it
     was for now.
 *** Configure machines to be monitored by Nagios serer
-    Add or un-comment nagios_client role in all the nodes.By default
+    Add or un-comment nagios_client role in all the nodes. By default
     this is enabled in all the nodes playbooks
 
 *** Run site.yaml on config-server
