@@ -531,10 +531,6 @@ Host bitbucket.org
       #+END_SRC
     - Copy or move created hosts file to =build/{base1 or base4}-code/= 
     - Edit hosts file of corresponding build folder and verify that all IPs are correct
-    - Check syntax
-      #+BEGIN_EXAMPLE
-      ansible-playbook -i bstest --list-tasks --syntax-check site.yaml
-      #+END_EXAMPLE
 *** Create DNS servers and Configure
     - Create following servers:
       + public DNS
@@ -616,6 +612,15 @@ Host bitbucket.org
       should be 10.100.1.6
     - Comment =rsnapshot_client= and =ossec_client= roles in
       private-dns.yaml and public-dns.yaml
+    - Add =environment: proxy_env= in tasks/main.yaml file of the
+      roles wherever a package is installed. This means package is
+      installed using the proxy environment, which is defined in
+      common_vars/main.yaml file.
+#+begin_example
+- name: Installing all nagios plugins
+  yum: name=nagios-plugins-all state=installed
+  environment: proxy_env
+#+end_example
     - Run *public_dns.yaml* and *private_dns.yaml* play books on
       config-server.
       #+BEGIN_SRC 
@@ -632,6 +637,9 @@ Host bitbucket.org
       nslookup router.[{cluster}.]vlabs.ac.in 10.100.1.6
       nslookup router.[{cluster}.]vlabs.ac.in 10.100.1.5
       #+END_EXAMPLE
+
+      If this does not work then first try to run router playbook to
+      setup the router node, and then try these commands again.
       
 *** Configure Router 
     - In order to apply proper firewall rules for our cluster we need
@@ -653,9 +661,11 @@ Host bitbucket.org
       #+BEGIN_EXAMPLE
       nslookup router.[{cluster}.].vlabs.ac.in <router-public-ip>
       #+END_EXAMPLE
-      This query should resolve to router public IP itself.
+
+      This query should resolve to router public IP itself.  This test
+      did not work when tested in local vlead desktop machine.
 *** Setup ossec server
-    - Create ossec server and setup trust based SSH to it. 
+    - Create ossec server.
       #+BEGIN_SRC 
       vzctl create 1003 --ostemplate centos-6-x86_64 --hostname ossec.[{cluster}.]vlabs.ac.in
       vzctl set 1003 --netif_add eth1,,,,br1 --save
@@ -677,7 +687,8 @@ Host bitbucket.org
       #+BEGIN_SRC 
       service network restart
       #+END_SRC
-    - Enable ssh access from ansible using key-based authentication
+    - Set root password and enable ssh access from ansible using
+      key-based authentication
 *** Create rsyslog server
     - Create a machine to setup rsyslog server.  
       #+BEGIN_SRC 
@@ -701,7 +712,8 @@ Host bitbucket.org
       #+BEGIN_SRC 
       service network restart
       #+END_SRC
-    - Enable ssh access from ansible using key-based authentication
+    - Set root password and enable ssh access from ansible using
+      key-based authentication.
 *** Create Reverse-proxy server
     Note that proper configuration of this and future steps depends
     upon availability of a few test labs.  Hence create a few lab
@@ -730,7 +742,8 @@ Host bitbucket.org
       #+BEGIN_SRC 
       service network restart
       #+END_SRC
-    - Enable ssh access from ansible using key-based authentication
+    - Set root password and enable ssh access from ansible using
+      key-based authentication
     - We need to add ssl certificate to reverseproxy server manually
       before running reverseproxy_server.yaml play book from ansible
       machine.
@@ -762,7 +775,8 @@ Host bitbucket.org
       #+BEGIN_SRC 
       service network restart
       #+END_SRC
-    - Enable ssh access from ansible using key-based authentication
+    - set root password and enable ssh access from ansible using
+      key-based authentication
 
 *** Monitoring Server (Nagios)
     - Create nagios server to monitor services from all the nodes in
@@ -788,7 +802,8 @@ Host bitbucket.org
       #+BEGIN_SRC 
       service network restart
       #+END_SRC
-    - Enable ssh access from ansible using key-based authentication
+    - Set root password and enable ssh access from ansible using
+      key-based authentication
      
 *** Create ADS server
     - Create a container for ADS server
@@ -813,15 +828,20 @@ Host bitbucket.org
       #+BEGIN_SRC 
       service network restart
       #+END_SRC
-    - Enable ssh access from ansible using key-based authentication
-    - Install git
+    - Set root passwd and enable ssh access from ansible using
+      key-based authentication
+    - Install git, (set proxy if you are in a proxy environment)
       #+BEGIN_SRC 
       route add default gw 10.100.1.1
-      echo "nameserver 4.2.2.2" > /etc/resolv.conf
+      echo "nameserver 10.4.12.160" > /etc/resolv.conf
       yum -y install git
       #+END_SRC
     - Generate root users ssh-keys.  Setup trust based ssh from OVPL
       container root user to Base machine.
+#+begin_example
+ssh-keygen -t rsa
+ssh-copy-id root@<base-machine-ip>
+#+end_example
     - Clone *ovpl* 
       #+BEGIN_SRC 
       git clone https://github.com/vlead/ovpl.git
@@ -877,44 +897,29 @@ Host bitbucket.org
       ./manage_services.sh start LOGGER      
       #+END_EXAMPLE
     
-*** Configure machines to use private DNS
-    Edit roles/common_vars/vars/main.yaml and set private_dns_ips and
-    private_dns_zone values appropriately.
-*** Enable ossec_client role on all the nodes
-    Enable ossec_client role in all the server roles. By default this
-    is enabled in all the nodes playbooks
-
-*** Configure machines to send logs to rsyslog server
-    Add or un-comment role rsyslog_client on all servers except
-    rsyslog_servers.By default this is enabled in all the nodes
-    playbooks
-
-*** Configure machines to be backed up using rsnapshot server
-    By default this is disabled in all the nodes playbooks. Keep as it
-    was for now.
-*** Configure machines to be monitored by Nagios serer
-    Add or un-comment nagios_client role in all the nodes. By default
-    this is enabled in all the nodes playbooks
-
 *** Run site.yaml on config-server
     - Make sure all necessary changes are done in
       =roles/common_vars/vars/main.yaml= appropriately.
-    - Make sure that the hosts file with the ips of nodes and with
-      their names according to the name of the server's playbook .
+    - Make sure that the hosts file is correct with the ips of nodes
+      and with their names according to the name of the server's
+      playbook .
     - Check management_ips in common_vars role
-    - Comment out =private_dns_ips: 10.100.1.5= , =private-dns-zone:
+    - Uncomment =private_dns_ips: 10.100.1.5= , =private-dns-zone:
       base{1,4}.vlabs.ac.in= and comment =private-dns-ips: none= and
       =private-dns-zone: none= in common_vars role.
     - Add servers internal ips to =ossec_client_ips= variable in
       common_vars role.
-    - Comment out =ossec_client= and =rsnapshot_client= roles in
+    - Uncomment =ossec_client= and =rsnapshot_client= roles in
       =private-dns.yaml= and =public-dns.yaml=
-    - Comment =osse_client= role in =rsnapshot_server.yaml=
-    - Run site.yaml file 
+    - Check syntax before running the site.yaml
+      #+BEGIN_EXAMPLE
+      ansible-playbook -i bstest --list-tasks --syntax-check site.yaml
+      #+END_EXAMPLE
+    - Run site.yaml file. If you get any error try to run it again,
+      the error may resolve.
       #+BEGIN_SRC 
       ansible-playbook -i hosts site.yaml
       #+END_SRC
-    - Comment out =osse_client= in =rsnapshot_server.yaml=
     - Run rsnapshot_server.yaml(instead of configuring whole cluster
       again)
       #+BEGIN_SRC 
