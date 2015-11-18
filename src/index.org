@@ -836,7 +836,7 @@ Host bitbucket.org
       echo "nameserver 10.4.12.160" > /etc/resolv.conf
       yum -y install git
       #+END_SRC
-    - Generate root users ssh-keys.  Setup trust based ssh from OVPL
+    - Generate root users ssh-keys.  Setup trust based ssh from ads
       container root user to Base machine.
 #+begin_example
 ssh-keygen -t rsa
@@ -883,12 +883,16 @@ ssh-copy-id root@<base-machine-ip>
       + HOST_NAME = "bstest.vlabs.ac.in"
         + Domain name of lab-id
     - Again clone setup-ovpl-centos using:
-      #+BEGIN_EXAMPLE
+#+begin_example
       git clone https://github.com/vlead/setup-ovpl-centos.git
+#+end_example
+      - Install dependencies as follows
+#+begin_example
       cd setup-ovpl-centos/scripts
-      vim centos_prepare_ovpl.sh  #Comment OpenVZ installation lines 52,58
+      vim config.sh #set proxy settings here
+      vim centos_prepare_ovpl.sh  #Comment OpenVZ installation lines 52 to 58 and lines 35 to 41
       ./centos_prepare_ovpl.sh
-      #+END_EXAMPLE
+#+end_example 
     - Run services using
       #+BEGIN_EXAMPLE
       yum -y install python-setuptools
@@ -903,6 +907,8 @@ ssh-copy-id root@<base-machine-ip>
     - Make sure that the hosts file is correct with the ips of nodes
       and with their names according to the name of the server's
       playbook .
+    - If you are in a proxy environment then make sure you have
+      enabled proxy environment, in the installation tasks.
     - Check management_ips in common_vars role
     - Uncomment =private_dns_ips: 10.100.1.5= , =private-dns-zone:
       base{1,4}.vlabs.ac.in= and comment =private-dns-ips: none= and
@@ -920,11 +926,7 @@ ssh-copy-id root@<base-machine-ip>
       #+BEGIN_SRC 
       ansible-playbook -i hosts site.yaml
       #+END_SRC
-    - Run rsnapshot_server.yaml(instead of configuring whole cluster
-      again)
-      #+BEGIN_SRC 
-      ansible-playbook -i hosts rsnapshot_server.yaml
-      #+END_SRC
+
 * Design of the cluster model
   The diagram below depicts the architecture of the nodes in the
   cluster model.  This architecture is same for all the three
