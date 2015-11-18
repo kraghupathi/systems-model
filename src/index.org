@@ -715,11 +715,6 @@ Host bitbucket.org
     - Set root password and enable ssh access from ansible using
       key-based authentication.
 *** Create Reverse-proxy server
-    Note that proper configuration of this and future steps depends
-    upon availability of a few test labs.  Hence create a few lab
-    VMs/containers as necessary before continuing.  Also update
-    private DNS so that lab containers can be resolved using FQDN.
-
     - Create a machine for reverseproxy.  
       #+BEGIN_SRC 
       vzctl create 1007 --ostemplate centos-6-x86_64 --hostname reverseproxy.[{cluster}.].vlabs.ac.in
@@ -806,9 +801,9 @@ Host bitbucket.org
       key-based authentication
      
 *** Create ADS server
-    - Create a container for ADS server
+    - Create a container for ADS server. Mongod service requires container to be of size >= 10GB.
       #+BEGIN_SRC 
-      vzctl create 1009 --ostemplate centos-6-x86_64 --hostname ads.[{cluster}.].vlabs.ac.in
+      vzctl create 1009 --ostemplate centos-6-x86_64 --hostname ads.[{cluster}.].vlabs.ac.in --diskspace 10G:10G
       vzctl set 1009 --netif_add eth1,,,,br1 --save
       vzctl set 1009 --onboot yes --save
       #+END_SRC
@@ -890,7 +885,7 @@ ssh-copy-id root@<base-machine-ip>
 #+begin_example
       cd setup-ovpl-centos/scripts
       vim config.sh #set proxy settings here
-      vim centos_prepare_ovpl.sh  #Comment OpenVZ installation lines 52 to 58 and lines 35 to 41
+      vim centos_prepare_ovpl.sh  #Comment OpenVZ installation lines 52 to 58
       ./centos_prepare_ovpl.sh
 #+end_example 
     - Run services using
@@ -898,9 +893,8 @@ ssh-copy-id root@<base-machine-ip>
       yum -y install python-setuptools
       cd ~/ovpl
       python setup.py install
-      ./manage_services.sh start LOGGER      
+      ./manage_services.sh start
       #+END_EXAMPLE
-    
 *** Run site.yaml on config-server
     - Make sure all necessary changes are done in
       =roles/common_vars/vars/main.yaml= appropriately.
@@ -926,6 +920,19 @@ ssh-copy-id root@<base-machine-ip>
       #+BEGIN_SRC 
       ansible-playbook -i hosts site.yaml
       #+END_SRC
+
+*** Host labs using ads service
+    - Deploy a few labs using ads service to test the whole
+      setup. Open http://ads.{cluster}.vlabs.ac.in:8080 and provide
+      required fields.
+    - After deploying the lab update the entries in common_vars to
+      access the lab using fqdn. Then run ansible-playbooks of three
+      roles as follows:
+#+begin_example
+ansible-playbook -i hosts reverseproxy_server.yaml
+ansible-playbook -i hosts pubcli-dns.yaml
+ansible-playbook -i hosts private-dns.yaml
+#+end_example
 
 * Design of the cluster model
   The diagram below depicts the architecture of the nodes in the
