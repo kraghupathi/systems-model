@@ -216,6 +216,7 @@ To know further about these please refer [[Appendix][Appendix]].
     #+END_SRC
     - We can create VM in two ways
       1. Using *virt-manager* GUI (Applications-->System Tools-->Virtual Machine Manager)
+	 Refer https://vlead.vlabs.ac.in/wiki/index.php/Creating_new_VM.
       2. Using *virsh-install* command http://wiki.centos.org/HowTos/KVM
          #+BEGIN_SRC 
          virt-install --os-variant=rhel6 --network bridge=br0 --disk /var/lib/libvirt/images/test-delet.img,size=20 --cdrom=~/iso/CentOS-6.5-x86_64-bin-DVD1.iso --vcpu=1 --ram=2048 --name=test-delete
@@ -223,10 +224,15 @@ To know further about these please refer [[Appendix][Appendix]].
     - Use *virt-viewer* commnad to enter into the VM.
     - You can also access the VM over ssh 
     - Set proxy for all the nodes and labs if network uses any proxy
+    - Find 3 available ips to assign to the vm, router and ansible machine.
     - Note ::  Private ips of the nodes on AWS and base{1,4} clusters
                are same except public IPs of router and ansible nodes.
 
 *** Setup base machine with OpenVZ etc. for ADS
+    - Install git
+#+begin_example
+yum -y install git
+#+end_example
     - Setup base machine server with the following steps
       + Clone the repository from GitHub
 	#+BEGIN_SRC 
