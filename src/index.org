@@ -228,49 +228,6 @@ To know further about these please refer [[Appendix][Appendix]].
     - Note ::  Private ips of the nodes on AWS and base{1,4} clusters
                are same except public IPs of router and ansible nodes.
 
-*** Setup base machine with OpenVZ etc. for ADS
-    - Install git
-#+begin_example
-yum -y install git
-#+end_example
-    - Setup base machine server with the following steps
-      + Clone the repository from GitHub
-	#+BEGIN_SRC 
-	git clone https://github.com/vlead/setup-ovpl-centos.git
-	#+END_SRC
-      + Change directory to =setup-ovpl-centos/scripts/=
-	#+BEGIN_SRC 
-	cd setup-ovpl-centos/scripts/
-	#+END_SRC
-      + If your network uses a proxy server, then set proxy settings in config.sh.
-        #+begin_example
-          export http_proxy="http://proxy.iiit.ac.in:8080"
-          export https_proxy="http://proxy.iiit.ac.in:8080"
-        #+end_example
-      + Run =centos_prepare_ovpl.sh=.  
-         #+BEGIN_SRC
-         ./centos_prepare_ovpl.sh 
-         #+END_SRC 
-      + Running above script will install dependencies for openvz and
-        for ADS server setup. It also downloads customized ubuntu
-        template used for deploying labs from
-        http://community.virtual-labs.ac.in/downloads/.
-      + After this reboot the machine and choose openvz kernel from boot menu.
-      + Perform the steps mentioned in the below link to make sure
-        openvz is configured properly.
-        https://www.sbarjatiya.com/notes_wiki/index.php/Installing_openVZ_on_Cent_OS
-      + Download the latest centos template from below link and place at =/vz/template/cache=
-        http://download.openvz.org/template/precreated/centos-6-x86_64.tar.gz
-**** Troubleshooting VM OpenVZ issues
-     In case the setup is performed in a VM and VM is unstable such
-     that containers fail to stop and VM fails to reboot.  Then
-     following changes may not help:
-     - Reducing OpenVZ kernel version (downgrading)
-     - Removing tboot
-     - Update VM OS to latest packages
-     Most probably issue would be with container template.  Download
-     fresh template directly from openvz.org mirrors. 
-
 *** Setup bridged network
 **** Connect LAN interface to Bridge (br0) 
      Check your interfaces by running the command
@@ -333,6 +290,49 @@ yum -y install git
 
      For more information go through the following links
     https://github.com/vlead/ovpl/blob/master/docs/bridge-setup.org
+
+*** Setup base machine with OpenVZ etc. for ADS
+    - Install git
+#+BEGIN_EXAMPLE
+yum -y install git
+#+END_EXAMPLE
+    - Setup base machine server with the following steps
+      + Clone the repository from GitHub
+	#+BEGIN_SRC 
+	git clone https://github.com/vlead/setup-ovpl-centos.git
+	#+END_SRC
+      + Change directory to =setup-ovpl-centos/scripts/=
+	#+BEGIN_SRC 
+	cd setup-ovpl-centos/scripts/
+	#+END_SRC
+      + If your network uses a proxy server, then set proxy settings in config.sh.
+        #+BEGIN_EXAMPLE
+          export http_proxy="http://proxy.iiit.ac.in:8080"
+          export https_proxy="http://proxy.iiit.ac.in:8080"
+        #+END_EXAMPLE
+      + Run =centos_prepare_ovpl.sh=.  
+         #+BEGIN_SRC
+         ./centos_prepare_ovpl.sh 
+         #+END_SRC 
+      + Running above script will install dependencies for openvz and
+        for ADS server setup. It also downloads customized ubuntu
+        template used for deploying labs from
+        http://community.virtual-labs.ac.in/downloads/.
+      + After this reboot the machine and choose openvz kernel from boot menu.
+      + Perform the steps mentioned in the below link to make sure
+        openvz is configured properly.
+        https://www.sbarjatiya.com/notes_wiki/index.php/Installing_openVZ_on_Cent_OS
+      + Download the latest centos template from below link and place at =/vz/template/cache=
+        http://download.openvz.org/template/precreated/centos-6-x86_64.tar.gz
+**** Troubleshooting VM OpenVZ issues
+     In case the setup is performed in a VM and VM is unstable such
+     that containers fail to stop and VM fails to reboot.  Then
+     following changes may not help:
+     - Reducing OpenVZ kernel version (downgrading)
+     - Removing tboot
+     - Update VM OS to latest packages
+     Most probably issue would be with container template.  Download
+     fresh template directly from openvz.org mirrors. 
 *** Create Router 
     - Create router node as follows
       machine
@@ -347,16 +347,12 @@ yum -y install git
        #+BEGIN_EXAMPLE 
        vzctl set 1001 --netif_add eth0,,,,br0  --save 
        vzctl set 1001 --netif_add eth1,,,,br1 --save
+       vzctl set 1001 --onboot yes --save
       #+END_EXAMPLE
 
       It means, the container is created with two interfaces eth0 and
       eth1. eth0 of the router is connected to br0 of host machine and
       eth1 of the router is connected to br1.
-   - Enable router to run automatically on machine boot
-     #+BEGIN_EXAMPLE
-     vzctl set 1001 --onboot yes --save
-     #+END_EXAMPLE
-
     - Start the router
       #+BEGIN_EXAMPLE 
       vzctl start 1001
@@ -365,6 +361,10 @@ yum -y install git
       #+BEGIN_EXAMPLE 
       vzctl enter 1001
       #+END_EXAMPLE
+   - Set root passwd, and make note of it in some file.
+#+BEGIN_EXAMPLE
+passwd
+#+END_EXAMPLE
 **** Inside the Router 
      Now you may not get internet to the router. To get that do the
      following steps.
@@ -382,6 +382,7 @@ yum -y install git
      eth0 interface.
      #+BEGIN_EXAMPLE 
      DEVICE=eth0
+     TYPE=Ethernet
      HWADDR=<MAC address of the eth0 interface>
      BOOTPROTO=static
      ONBOOT=yes
@@ -408,9 +409,24 @@ yum -y install git
      NETMASK=255.255.252.0
      #+END_EXAMPLE
     - Restart the network 
-      #+begin_example
+      #+BEGIN_EXAMPLE
           service network restart
-      #+end_example
+      #+END_EXAMPLE
+    - NOTE ::  Check if you are able to access internet. If not then the
+      gateway might be set to default value, not the one we mentioned
+      in config file. Comment =networking= and =gateway= parameter in
+      =/etc/sysconfig/network= file as follows, and restart the network.
+#+BEGIN_EXAMPLE
+#NETWORKING="yes"
+#GATEWAYDEV="venet0"
+NETWORKING_IPV6="yes"
+IPV6_DEFAULTDEV="venet0"
+HOSTNAME="router.{cluster}.vlabs.ac.in"
+#+END_EXAMPLE
+
+     If this approach does not work then download the fresh centos
+     template from openvz and create router again.
+
 **** Add  NAT rule and Edit =/etc/sysctl.conf= file
      Write a temporary NATing rule to get internet in private network
      containers and This rule will be used to run playbooks of private
@@ -425,33 +441,40 @@ yum -y install git
      #+END_EXAMPLE
      - Check the link for above things done for router
       https://openvz.org/Using_NAT_for_container_with_private_IPs
-**** Set root password
-     #+BEGIN_EXAMPLE
-     passwd
-     #+END_EXAMPLE
+     - Restart the router container in order to enable ip forwarding
+#+BEGIN_EXAMPLE
+       reboot
+#+END_EXAMPLE
+
 *** Create Config-server node
 **** Setup container
-   - Create a machine and configure the network with two IPs. Do the
-     same steps as followed for router node, set IPADDR and MAC
-     addresses of the interfaces appropriately.
+   - Create a machine.
+
      #+BEGIN_EXAMPLE
      vzctl create 1002 --hostname ansible.[{cluster-name}.]vlabs.ac.in --ostemplate centos-6-x86_64
      #+END_EXAMPLE
+
    - We need two IPs to setup ansible machine one is for public access
      over ssh and another is for private network ip. Private ip is for
      configuring other nodes as well as itself and internal
      connections.
+
      #+BEGIN_EXAMPLE
      vzctl set 1002 --netif_add eth0,,,,br0 --save
      vzctl set 1002 --netif_add eth0,,,,br1 --save
      vzctl set 1002 --onboot yes --save
      #+END_EXAMPLE
-     Give private IP 10.100.1.2 to ansible container.
+
+   - To configure the network do the same steps as followed for router
+     node [[Inside the Router]], set IPADDR and MAC addresses of the
+     interfaces appropriately. Set private IP as 10.100.1.2 for
+     ansible container.
+
    - Start and enter inside the container.
    - Set root passwd
-     #+begin_example
+     #+BEGIN_EXAMPLE
        passwd
-     #+end_example
+     #+END_EXAMPLE
    - Create a 'vlead' user.
      #+BEGIN_EXAMPLE
      adduser vlead 
@@ -460,11 +483,13 @@ yum -y install git
      ssh-keygen -t rsa
      #+END_EXAMPLE
   
-   - Enable ssh access from localhost using key-based authentication
+   - Enable ssh access from localhost to localhost and router using
+     key-based authentication
+
      #+BEGIN_EXAMPLE
      ssh-copy-id root@localhost  #from vlead user
-     ssh-copy-id root@10.100.1.1  #from vlead user
      ssh-copy-id root@10.100.1.2  #from vlead user
+     ssh-copy-id root@10.100.1.1  #from vlead user
      #+END_EXAMPLE
    - Note :: If the root user's ssh keys were copied earlier then the
      root user's private and public key can be placed inside the vlead
@@ -489,7 +514,8 @@ yum -y install git
      chkconfig sshd on
      #+END_SRC
 **** Version control setup
-     Setup version control on ansible machine using:
+    - Setup version control on ansible machine using:
+
      #+BEGIN_EXAMPLE
      yum install git -y
      #+END_EXAMPLE
@@ -498,30 +524,42 @@ yum -y install git
      branch of the systems model. From this node we do not push the
      updated files/folders to systems-model repository.
 
-     Create .ssh/config file with following content
-#+begin_example
+     Create .ssh/config file with following content, make sure
+     permissions of the file are set to =400=. 
+#+BEGIN_EXAMPLE
 GSSAPIAuthentication no
+#+END_EXAMPLE
+
+    - If machine does not have direct internet access then you may
+      need to add following lines also in .ssh/config file.
+#+BEGIN_EXAMPLE
 Host bitbucket.org
   HostName altssh.bitbucket.org
   Port 443
   User git
-#+end_example
+#+END_EXAMPLE
 
-     Clone the systems-model repository inside 'vlead' user home directory. For
-     this we have to add public key to repository since we do cloning over ssh
-     by issuing the following command.
-     #+BEGIN_EXAMPLE 
-     git clone git@bitbucket.org:vlead/systems-model.git   #from vlead user
-     git checkout develop #or other appropriate branch
-     #+END_EXAMPLE
+    - Copy ssh public keys of vlead user to systems-model repository
+      in bitbucket.  Then clone the systems-model repository inside 'vlead'
+      user home directory.
+#+BEGIN_EXAMPLE
+       git clone
+       git@bitbucket.org:vlead/systems-model.git     #from vlead user git
+#+END_EXAMPLE
+     - checkout develop or other appropriate branch.
+#+BEGIN_EXAMPLE
+git checkout <branch-name>
+#+END_EXAMPLE
      
 **** Setup Emacs and org-mode-8
-     Setup emacs using:
+     - Setup emacs using:
+
      #+BEGIN_EXAMPLE
      yum -y install emacs
      #+END_EXAMPLE
      
-     Setup org-mode using (for VLEAD user):
+     - Setup org-mode using (for VLEAD user):
+
      #+BEGIN_EXAMPLE
      mkdir -p ~/emacs/lisp   #as vlead user
      cd emacs/lisp
@@ -531,12 +569,57 @@ Host bitbucket.org
 
 **** Run make and check syntax of site.yaml
     - Change directory to cloned repository systems-model and run makefile
+
       #+BEGIN_SRC 
-      cd systems-model/
+      cd ~/systems-model/
       make
       #+END_SRC
-    - Copy or move created hosts file to =build/{base1 or base4}-code/= 
-    - Edit hosts file of corresponding build folder and verify that all IPs are correct
+
+    - Create hosts =hosts= file as follows and place it at
+      =build/{cluster}-code/=
+#+BEGIN_EXAMPLE
+[ansible_server]
+#multiple-ok
+#10.100.1.2 ansible_connection=local
+10.100.1.2
+
+[ossec_server]
+#Only one allowed
+10.100.1.3
+
+[public_dns]
+#multiple ok
+10.100.1.6
+
+[private_dns]
+#multiple ok
+10.100.1.5
+
+[rsyslog_server]
+#multiple ok
+10.100.1.4
+
+[reverseproxy_server]
+#multiple ok
+10.100.1.7
+
+[router]
+10.100.1.1
+
+[nagios_server]
+10.100.1.8
+
+[rsnapshot_server]
+10.100.1.10
+#+END_EXAMPLE
+
+    - Check syntax of ansible playbooks.
+
+      #+BEGIN_EXAMPLE
+      cd ~/systems-model/build/{cluster}
+      ansible-playbook -i {cluster} --list-tasks --syntax-check site.yaml
+      #+END_EXAMPLE
+
 *** Create DNS servers and Configure
     - Create following servers:
       + public DNS
@@ -549,7 +632,7 @@ Host bitbucket.org
         vzctl set 1005 --onboot yes --save
         vzctl set 1006 --onboot yes --save
 	#+END_SRC
-    - Start both containers
+    - Start both containers and set root paaswd.
     - For each of the above servers do the following:
       + Configure the network-interface in
         =/etc/sysconfig/network-scripts/ifcfg-eth1= with the following
@@ -618,15 +701,17 @@ Host bitbucket.org
       should be 10.100.1.6
     - Comment =rsnapshot_client= and =ossec_client= roles in
       private-dns.yaml and public-dns.yaml
-    - Add =environment: proxy_env= in tasks/main.yaml file of the
-      roles wherever a package is installed. This means package is
+
+
+    - NOTE :: Add =environment: proxy_env= in tasks/main.yaml file of
+      the roles wherever a package is installed. This means package is
       installed using the proxy environment, which is defined in
       common_vars/main.yaml file.
-#+begin_example
+#+BEGIN_EXAMPLE
 - name: Installing all nagios plugins
   yum: name=nagios-plugins-all state=installed
   environment: proxy_env
-#+end_example
+#+END_EXAMPLE
     - Run *public_dns.yaml* and *private_dns.yaml* play books on
       config-server.
       #+BEGIN_SRC 
@@ -808,8 +893,8 @@ Host bitbucket.org
      
 *** Create ADS server
     - Create a container for ADS server. Mongod service requires container to be of size >= 10GB.
-      #+BEGIN_SRC 
       vzctl create 1009 --ostemplate centos-6-x86_64 --hostname ads.[{cluster}.].vlabs.ac.in --diskspace 10G:10G
+      #+BEGIN_SRC 
       vzctl set 1009 --netif_add eth1,,,,br1 --save
       vzctl set 1009 --onboot yes --save
       #+END_SRC
@@ -839,15 +924,15 @@ Host bitbucket.org
       #+END_SRC
     - Generate root users ssh-keys.  Setup trust based ssh from ads
       container root user to Base machine.
-#+begin_example
+#+BEGIN_EXAMPLE
 ssh-keygen -t rsa
 ssh-copy-id root@<base-machine-ip>
-#+end_example
+#+END_EXAMPLE
     - Clone *ovpl* 
       #+BEGIN_SRC 
       git clone https://github.com/vlead/ovpl.git
       #+END_SRC
-    - change directory to ovpl and run manage_services.sh file:
+    - Do following steps
       #+BEGIN_SRC 
       cd ovpl/config
       cp sample_config.json config.json
@@ -881,19 +966,19 @@ ssh-copy-id root@<base-machine-ip>
           labs and OVPL code from ADS container to lab container.
           Note that git clone of lab happens within ADS container and
           not directly in lab container. 
-      + HOST_NAME = "bstest.vlabs.ac.in"
+      + HOST_NAME = "{cluster}.vlabs.ac.in"
         + Domain name of lab-id
     - Again clone setup-ovpl-centos using:
-#+begin_example
+#+BEGIN_EXAMPLE
       git clone https://github.com/vlead/setup-ovpl-centos.git
-#+end_example
+#+END_EXAMPLE
       - Install dependencies as follows
-#+begin_example
+#+BEGIN_EXAMPLE
       cd setup-ovpl-centos/scripts
-      vim config.sh #set proxy settings here
+      vim config.sh #set proxyi settings here if network uses any proxy
       vim centos_prepare_ovpl.sh  #Comment OpenVZ installation lines 52 to 58
-      ./centos_prepare_ovpl.sh
-#+end_example 
+      ./centos_prepare_ovpl.sh    # Relax for 10 to 15 minutes or Go for a TEA
+#+END_EXAMPLE 
     - Run services using
       #+BEGIN_EXAMPLE
       yum -y install python-setuptools
@@ -911,15 +996,15 @@ ssh-copy-id root@<base-machine-ip>
       enabled proxy environment, in the installation tasks.
     - Check management_ips in common_vars role
     - Uncomment =private_dns_ips: 10.100.1.5= , =private-dns-zone:
-      base{1,4}.vlabs.ac.in= and comment =private-dns-ips: none= and
+      {cluster}.vlabs.ac.in= and comment =private-dns-ips: none=,
       =private-dns-zone: none= in common_vars role.
     - Add servers internal ips to =ossec_client_ips= variable in
       common_vars role.
-    - Uncomment =ossec_client= and =rsnapshot_client= roles in
-      =private-dns.yaml= and =public-dns.yaml=
+    - Comment =ossec_client= in all servers playbook.
+    - Comment =ossec_server.yaml= in =site.yaml=
     - Check syntax before running the site.yaml
       #+BEGIN_EXAMPLE
-      ansible-playbook -i bstest --list-tasks --syntax-check site.yaml
+      ansible-playbook -i hosts --list-tasks --syntax-check site.yaml
       #+END_EXAMPLE
     - Run site.yaml file. If you get any error try to run it again,
       the error may resolve.
@@ -931,14 +1016,26 @@ ssh-copy-id root@<base-machine-ip>
     - Deploy a few labs using ads service to test the whole
       setup. Open http://ads.{cluster}.vlabs.ac.in:8080 and provide
       required fields.
-    - After deploying the lab update the entries in common_vars to
-      access the lab using fqdn. Then run ansible-playbooks of three
-      roles as follows:
+    - After deploying the lab update the entries in common_vars of
+      follwoing variables appropriately.
 #+begin_example
-ansible-playbook -i hosts reverseproxy_server.yaml
-ansible-playbook -i hosts pubcli-dns.yaml
-ansible-playbook -i hosts private-dns.yaml
+      proxy_domains:
+        - {domain: "{lab-id}.{cluster}.virtual-labs.ac.in", alias: {lab-id}.{cluster}.vlabs.ac.in }
+      awstats_domains:
+        - {lab-id}.{cluster}.virtual-labs.ac.in
+      public_dns_entries:
+        - {hostname: {lab-id}, ip: <router-public-ip> }
+      private_dns_entries:
+        - {hostname: {lab-id}, ip: <lab-ip> }
 #+end_example
+    - Then run ansible-playbooks of three roles as follows:
+#+BEGIN_EXAMPLE
+ansible-playbook -i hosts reverseproxy_server.yaml
+ansible-playbook -i hosts public-dns.yaml
+ansible-playbook -i hosts private-dns.yaml
+#+END_EXAMPLE
+     - Check whether the lab has been deployed or not using provided
+       lab url.
 
 * Design of the cluster model
   The diagram below depicts the architecture of the nodes in the
