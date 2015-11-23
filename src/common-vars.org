@@ -751,7 +751,7 @@ ansible_server_ips:
   - 10.100.1.2
 
 #Anlytics IP used by RP role to rsync logs,awstats
-analytics_server_ip: 10.100.1.12
+analytics_server_ip: 10.100.1.13
 
 #Ads Ip used by lab role
 ads_ip: 10.100.1.9
@@ -822,7 +822,6 @@ router_internal_ip: 10.100.1.1
 #Configure IP address of nagios server.  This is used by iptables firewall templates
 nagios_server_ips:
   - 10.100.1.8
-analytics_server_ip: 10.100.1.12
 
 #Forwarders to be updated in Zone files
 forwarders: "{10.4.20.204; 10.4.3.222; }"
