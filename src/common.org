@@ -379,9 +379,6 @@ the variables used by the ansible playbooks.
   lineinfile: dest=/etc/sysconfig/network regexp="HOSTNAME=" line="HOSTNAME={{host_name}}" state=present
   when: host_name is defined
 
-- name: Set the hostname using hostname command
-  hostname: name={{host_name}}
-  when: host_name is defined
 #+END_SRC
 
 *** Set Default Gateway
