@@ -2073,17 +2073,23 @@ ExtraTrackedRowsLimit=500
 - name: Fetch the public key from RP to Ansible
   fetch: src=/root/.ssh/id_rsa.pub dest=rp_pub_key fail_on_missing=yes flat=yes validate_checksum=yes
 
-  #Set hourly cronjobs to rsync the AWstats statistics files to
-  #Analytics server the "name= " parameter should not be changed and
-  #must be unique
-    
-- name: Rsync the AWstats stats file to analytics server
-  cron:
-        name=rsync_stats
-        user=root
-        hour=01
-        state=present
-        job="rsync -arR /var/lib/awstats root@10.100.1.12:/root/aws/"
+#Set hourly cronjobs to rsync the AWstats statistics files to                                                      
+#Analytics server the "name= " parameter should not be changed and                                                 
+#must be unique                                                                                                    
+- name: Rsync the Apache log files to analytics server                                                               
+  cron:                                                                                                              
+        name=rsync_apache_logs                                                                                       
+        user=root                                                                                                    
+        minute=01                                                                                                    
+        state=present                                                                                                
+        job="rsync -trp --inplace /var/log/httpd/ root@{{analytics_server_ip}}:/root/aws-http-logs/"                                                                                                             
+- name: Rsync the AWstats stats file to analytics server                                                             
+  cron:                                                                                                              
+        name=rsync_stats                                                                                             
+        user=root                                                                                                    
+        minute=01                                                                                                    
+        state=present                                                                                                
+        job="rsync -trp --delete /var/lib/awstats/ root@{{analytics_server_ip}}:/root/aws-awstats/"  
 #+END_SRC                                                                           
 
 
