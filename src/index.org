@@ -577,7 +577,7 @@ git checkout <branch-name>
 
     - Create hosts =hosts= file as follows and place it at
       =build/{cluster}-code/=
-#+BEGIN_EXAMPLE
+#+BEGIN_SRC txt :tangle hosts :eval no
 [ansible_server]
 #multiple-ok
 #10.100.1.2 ansible_connection=local
@@ -611,14 +611,14 @@ git checkout <branch-name>
 
 [rsnapshot_server]
 10.100.1.10
-#+END_EXAMPLE
+#+END_SRC
 
     - Check syntax of ansible playbooks.
 
       #+BEGIN_EXAMPLE
       cd ~/systems-model/build/{cluster}
       ansible-playbook -i {cluster} --list-tasks --syntax-check site.yaml
-      #+END_EXAMPLE
+      #+END_EXAMPLL
 
 *** Create DNS servers and Configure
     - Create following servers:
