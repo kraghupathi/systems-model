@@ -568,8 +568,13 @@ git checkout <branch-name>
      #+END_EXAMPLE
 
 **** Run make and check syntax of site.yaml
-    - Change directory to cloned repository systems-model and run makefile
-
+     - Change directory to cloned repository systems-model and change
+       the values of following variables in makefile
+       + *ROUTER_IP* - Router's public IP.
+       + *CONFIG_SERVER* - Ansible/Config server'e public IP.
+       + *CLUSTER* - Name of the cluster
+       + *SMTP_SMART_HOST* - Domain name of mail server/SMTP server.
+      - And then run make 
       #+BEGIN_SRC 
       cd ~/systems-model/
       make
