@@ -281,7 +281,7 @@ COMMIT
 {% endfor %}
 #+END_SRC
 
-**** Installing ansible 
+**** Installing ansible and bind-utils
     Install latest ansible package to setup the configuration server
     itself and to run the ansible scripts to configure the other nodes
     in the cluster.
@@ -290,6 +290,8 @@ COMMIT
 ---
 - name: installing ansible
   yum: name=ansible state=present
+- name: Installing bind-utils
+  yum: name=bind-utils state=present
 #+END_SRC
 **** Apply firewall rules to Configuration server
     Firewall rules are applied by following steps:
@@ -333,7 +335,7 @@ COMMIT
     - common
     - config_server
     - rsyslog_client
-    - ossec_client
+#    - ossec_client
     - nagios_client
     - rsnapshot_client
 
