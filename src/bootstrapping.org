@@ -561,16 +561,6 @@
       #+END_EXAMPLE
     - Comment =rsnapshot_client= and =ossec_client= roles in
       private-dns.yaml and public-dns.yaml
-
-    - NOTE :: Add =environment: proxy_env= in tasks/main.yaml file of
-      the roles wherever a package is installed. This means package is
-      installed using the proxy environment, which is defined in
-      common_vars/main.yaml file.
-      #+BEGIN_EXAMPLE
-      name: Installing all nagios plugins
-      yum: name=nagios-plugins-all state=installed
-      environment: proxy_env
-      #+END_EXAMPLE
     - Run *public_dns.yaml* and *private_dns.yaml* play books on
       config-server.
       #+BEGIN_EXAMPLE 
