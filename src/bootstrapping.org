@@ -11,6 +11,11 @@
 * Bootstrapping the cluster
   This bootstrapping steps are done based on ansible playbooks of the
   systems-model repository.
+  
+  - NOTE ::  While configuring network in servers, *HWADDR* (MAC
+             address of interface) value is an optional or this can be
+             ignored.
+
 ** Base machine Setup 
    Need a base machine to setup cluster where bootstrapping is being
    permormed. The base machine can be either physical machine or
