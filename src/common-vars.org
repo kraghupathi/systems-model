@@ -227,8 +227,8 @@
    FQDN of the same lab hosted on AWS cluster is
    "cse05.virtual-labs.ac.in".
 
-*** Variables for AWS Cluster
-Variables for AWS cluster are defined in the following section
+*** Variables for Cluster setup
+Variables for cluster are defined in the following section
 
 #+BEGIN_SRC yml :tangle roles/common_vars/vars/main.yml
 ---
