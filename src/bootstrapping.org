@@ -185,7 +185,7 @@
     - Update VM OS to latest packages
      Most probably issue would be with container template.  Download
      fresh template directly from openvz.org mirrors. 
-** Create all servers/nodes at a time 
+** Create all servers/nodes
    - Create a file called =cluster.sh= and add the following shell
      commands to it. 
    #+BEGIN_EXAMPLE 
