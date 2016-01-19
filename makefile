@@ -1,12 +1,17 @@
-BUILD_DEST=build
+SHELL = /bin/bash
 
-CODE_DEST="${BUILD_DEST}/code"
+BUILD_DEST=build
+CODE_DEST=${BUILD_DEST}/code
 VER_BRANCH=build-release
 VER_FILE=VERSION
-
 # Configuraion Server variables
-CONFIG_SERVER=10.4.14.101
-CONFIG_SERVER_USER=vlead-jockey
+
+ROUTER_IP=10.4.14.207
+CONFIG_SERVER=10.4.14.208
+CLUSTER=cluster
+SMTP_SMART_HOST= smtp.admin.iiit.ac.in
+ADMIN_EMAIL=alerts@vlabs.ac.in
+CONFIG_SERVER_USER=vlead
 CONFIG_SERVER_HOME_DIR=/home/${CONFIG_SERVER_USER}
 
 
@@ -17,8 +22,32 @@ init:
 
 build: init write-version
 	emacs  --script elisp/publish.el
+	
+	@if [ "${CLUSTER}" == "" ] || [ "${CLUSTER}" == "aws" ]; then \
+	  echo 'make all CLUSTER=" Cluster name" If you want to provide';\
+	  sed -i 's/^public_zone.*/public_zone_address: ${ROUTER_IP}/g' ${CODE_DEST}/roles/common_vars/vars/main.yml;\
+	  sed -i 's/^ansible_external.*/ansible_external_ip: ${CONFIG_SERVER}/g' ${CODE_DEST}/roles/common_vars/vars/main.yml;\
+	  sed -i 's/^smtp_smart.*/smtp_smart_host: ${SMTP_SMART_HOST}/g' ${CODE_DEST}/roles/common_vars/vars/main.yml;\
+          sed -i 's/^admin_email.*/admin_email_address: ${ADMIN_EMAIL}/g' ${CODE_DEST}/roles/common_vars/vars/main.yml;\
+	fi
+	@if [ "${CLUSTER}" != "" ] && [ "${CLUSTER}" != "aws" ]; then \
+           cp -r ${CODE_DEST} ${BUILD_DEST}/${CLUSTER}; \
+	   rm -rf ${CODE_DEST};\
+	   sed -i 's/^prefix.*/prefix: "${CLUSTER}."/g' ${BUILD_DEST}/${CLUSTER}/roles/common_vars/vars/main.yml;\
+	   sed -i 's/^public_zone.*/public_zone_address: ${ROUTER_IP}/g' ${BUILD_DEST}/${CLUSTER}/roles/common_vars/vars/main.yml;\
+	   sed -i 's/^ansible_external.*/ansible_external_ip: ${CONFIG_SERVER}/g' ${BUILD_DEST}/${CLUSTER}/roles/common_vars/vars/main.yml;\
+	   sed -i 's/^is_amazon.*/is_amazon: "no"/g' ${BUILD_DEST}/${CLUSTER}/roles/common_vars/vars/main.yml;\
+	   sed -i 's/^smtp_smart.*/smtp_smart_host: ${SMTP_SMART_HOST}/g' ${BUILD_DEST}/${CLUSTER}/roles/common_vars/vars/main.yml;\
+           sed -i 's/^admin_email.*/admin_email_address: ${ADMIN_EMAIL}/g' ${BUILD_DEST}/${CLUSTER}/roles/common_vars/vars/main.yml;\
+	fi
+# sed -i 's/^prefix.*/prefix: " "/g' ${CODE_DEST}/roles/common_vars/vars/main.yml;
+#	cp -r ${CODE_DEST} ${BUILD_DEST}/base1-code
+#	cp -r ${CODE_DEST} ${BUILD_DEST}/base4-code
+#	mv -f ${BUILD_DEST}/${CODE_DEST}/roles/common_vars/vars/main-aws.yml ${BUILD_DEST}/${CLUSTER}/roles/common_vars/vars/main.yml 
+#	mv -f ${BUILD_DEST}/aws-code/roles/common_vars/vars/main-aws.yml ${BUILD_DEST}/aws-code/roles/common_vars/vars/main.yml 
+#	mv -f ${BUILD_DEST}/base1-code/roles/common_vars/vars/main-base1.yml ${BUILD_DEST}/base1-code/roles/common_vars/vars/main.yml 
+#	mv -f ${BUILD_DEST}/base4-code/roles/common_vars/vars/main-base4.yml ${BUILD_DEST}/base4-code/roles/common_vars/vars/main.yml 
 	rm -f ${BUILD_DEST}/docs/*.html~
-
 # get the latest commit hash and its subject line
 # and write that to the VERSION file
 write-version:

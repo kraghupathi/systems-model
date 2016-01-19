@@ -54,65 +54,63 @@
 ** Common Variables
 *** Variable Description
 
-|------+---------------------------+---------------------------+----------------------------------------------------------------|
-| S.no | Variable                  | Variable Name             | Description                                                    |
-|------+---------------------------+---------------------------+----------------------------------------------------------------|
-|   1. | Proxy Environment         | proxy_env                 | Defines the proxy configuration in case direct access          |
-|      |                           |                           | to internet is not available                                   |
-|------+---------------------------+---------------------------+----------------------------------------------------------------|
-|   2. | HTTP Proxy                | http_proxy                | Defines url of proxy server used by nodes to connect to        |
-|      |                           |                           | http service for internet access                               |
-|------+---------------------------+---------------------------+----------------------------------------------------------------|
-|   3. | HTTPS Proxy               | https_proxy               | Defines url of proxy server used by nodes to connect to https  |
-|      |                           |                           | service for internet access                                    |
-|------+---------------------------+---------------------------+----------------------------------------------------------------|
-|   4. | Ansible Server IPs        | ansible_server_ips        | Defines the list of ip-addresses of ansible server             |
-|------+---------------------------+---------------------------+----------------------------------------------------------------|
-|   5. | Management IPs            | managements_ips           | Defines the list of ip-addresses of various management servers |
-|------+---------------------------+---------------------------+----------------------------------------------------------------|
-|   6. | Ossec Server IP           | ossec_server_ip           | Defines the ip-address of ossec server                         |
-|------+---------------------------+---------------------------+----------------------------------------------------------------|
-|   7. | Ossec Client IP           | ossec_client_ips          | Defines the ip address of various ossec clients                |
-|------+---------------------------+---------------------------+----------------------------------------------------------------|
-|   8. | Admin Email Address       | admin_email_addres        | Defines the email address of the system administrator          |
-|------+---------------------------+---------------------------+----------------------------------------------------------------|
-|   9. | SMTP Server Address       | smtp_server_address       | Defines the SMTP server's address trough which administrator   |
-|      |                           |                           | can be reached. Used by Ossec server to send mails             |
-|------+---------------------------+---------------------------+----------------------------------------------------------------|
-|  10. | SMTP Smart host           | smtp_smart_host           | Defines the SMTP smart host via which various servers can send |
-|      |                           |                           | email                                                          |
-|------+---------------------------+---------------------------+----------------------------------------------------------------|
-|  11. | Private DNS IPs           | private_dns_ips           | Defines the ip address of private DNS server, to configure it  |
-|      |                           |                           | on all the client machines                                     |
-|------+---------------------------+---------------------------+----------------------------------------------------------------|
-|  12. | Private DNS zone          | private_dns_zone          | Defines the various dns zones                                  |
-|------+---------------------------+---------------------------+----------------------------------------------------------------|
-|  13. | Rsyslog Server IP         | rsyslog_server_ips        | Defines the ip address of rsyslog server                       |
-|------+---------------------------+---------------------------+----------------------------------------------------------------|
-|  14. | Virtual Hosts FQDN        | proxy_domains             | Defines list of FQDNs for which virtual hosts are defined      |
-|      |                           |                           | in reverse proxy server                                        |
-|------+---------------------------+---------------------------+----------------------------------------------------------------|
-|  15. | Awstat Domain             | awstats_domains           | Defines list of domain for which analytics is to be collected  |
-|------+---------------------------+---------------------------+----------------------------------------------------------------|
-|  16. | ADS IP                    | ads_ip                    | Defines the ip address of Auto deployment server               |
-|------+---------------------------+---------------------------+----------------------------------------------------------------|
-|  17. | Reverse Proxy IP          | reverseproxy_ip           | Defines the ip address of reverse proxy server                 |
-|------+---------------------------+---------------------------+----------------------------------------------------------------|
-|  18. | Public DNS IP             | public_dns_ip             | Defines the ip address of public dns server                    |
-|------+---------------------------+---------------------------+----------------------------------------------------------------|
-|  19. | Local Subnet              | local_subnet              | Defines the local subnet                                       |
-|------+---------------------------+---------------------------+----------------------------------------------------------------|
-|  20. | Router Interface IP       | router_interface_ip       | Defines the interface of router node                           |
-|------+---------------------------+---------------------------+----------------------------------------------------------------|
-|  21. | Router External Interface | router_external_interface | Defines the external interface of router node                  |
-|------+---------------------------+---------------------------+----------------------------------------------------------------|
-|  22. | Nagios Server IP          | nagios_server_ips         | Defines the ip address of nagios server                        |
-|------+---------------------------+---------------------------+----------------------------------------------------------------|
-|  23. | Release Number            | release_no                | Defines the release version of the configuration files using   |
-|      |                           |                           | which nodes in the cluster are configured                      |
-|------+---------------------------+---------------------------+----------------------------------------------------------------|
-|  24. | Cluster Name              | prefix                    | Defines the cluster name                                       |
-|------+---------------------------+---------------------------+----------------------------------------------------------------|
+|------+---------------------------+---------------------------+------------------------------------------------------------------------------|
+| S.no | Variable                  | Variable Name             | Description                                                                  |
+|------+---------------------------+---------------------------+------------------------------------------------------------------------------|
+|   1. | Proxy Environment         | proxy_env                 | Defines the proxy configuration in case direct access                        |
+|      |                           |                           | to internet is not available                                                 |
+|------+---------------------------+---------------------------+------------------------------------------------------------------------------|
+|   2. | HTTP Proxy                | http_proxy                | Defines url of proxy server used by nodes to connect to                      |
+|      |                           |                           | http service for internet access                                             |
+|------+---------------------------+---------------------------+------------------------------------------------------------------------------|
+|   3. | HTTPS Proxy               | https_proxy               | Defines url of proxy server used by nodes to connect to https                |
+|      |                           |                           | service for internet access                                                  |
+|------+---------------------------+---------------------------+------------------------------------------------------------------------------|
+|   4. | Ansible Server IPs        | ansible_server_ips        | Defines the list of ip-addresses of ansible server                           |
+|------+---------------------------+---------------------------+------------------------------------------------------------------------------|
+|   5. | Management IPs            | managements_ips           | Defines the list of ip-addresses of various management servers               |
+|------+---------------------------+---------------------------+------------------------------------------------------------------------------|
+|   6. | Ossec Server IP           | ossec_server_ip           | Defines the ip-address of ossec server                                       |
+|------+---------------------------+---------------------------+------------------------------------------------------------------------------|
+|   7. | Ossec Client IP           | ossec_client_ips          | Defines the ip address of various ossec clients                              |
+|------+---------------------------+---------------------------+------------------------------------------------------------------------------|
+|   8. | Admin Email Address       | admin_email_addres        | Defines the email address of the system administrator                        |
+|------+---------------------------+---------------------------+------------------------------------------------------------------------------|
+|   9. | SMTP Smart host           | smtp_smart_host           | Defines the SMTP smart host via which various servers can send               |
+|      |                           |                           | email and also Defines the SMTP server's address through which administrator |
+|      |                           |                           | Defines the SMTP server's address trough which administrator                 |
+|------+---------------------------+---------------------------+------------------------------------------------------------------------------|
+|  10. | Private DNS IPs           | private_dns_ips           | Defines the ip address of private DNS server, to configure it                |
+|      |                           |                           | on all the client machines                                                   |
+|------+---------------------------+---------------------------+------------------------------------------------------------------------------|
+|  11. | Private DNS zone          | private_dns_zone          | Defines the various dns zones                                                |
+|------+---------------------------+---------------------------+------------------------------------------------------------------------------|
+|  12. | Rsyslog Server IP         | rsyslog_server_ips        | Defines the ip address of rsyslog server                                     |
+|------+---------------------------+---------------------------+------------------------------------------------------------------------------|
+|  13. | Virtual Hosts FQDN        | proxy_domains             | Defines list of FQDNs for which virtual hosts are defined                    |
+|      |                           |                           | in reverse proxy server                                                      |
+|------+---------------------------+---------------------------+------------------------------------------------------------------------------|
+|  14. | Awstat Domain             | awstats_domains           | Defines list of domain for which analytics is to be collected                |
+|------+---------------------------+---------------------------+------------------------------------------------------------------------------|
+|  15. | ADS IP                    | ads_ip                    | Defines the ip address of Auto deployment server                             |
+|------+---------------------------+---------------------------+------------------------------------------------------------------------------|
+|  16. | Reverse Proxy IP          | reverseproxy_ip           | Defines the ip address of reverse proxy server                               |
+|------+---------------------------+---------------------------+------------------------------------------------------------------------------|
+|  17. | Public DNS IP             | public_dns_ip             | Defines the ip address of public dns server                                  |
+|------+---------------------------+---------------------------+------------------------------------------------------------------------------|
+|  18. | Local Subnet              | local_subnet              | Defines the local subnet                                                     |
+|------+---------------------------+---------------------------+------------------------------------------------------------------------------|
+|  19. | Router Interface IP       | router_interface_ip       | Defines the interface of router node                                         |
+|------+---------------------------+---------------------------+------------------------------------------------------------------------------|
+|  20. | Router External Interface | router_external_interface | Defines the external interface of router node                                |
+|------+---------------------------+---------------------------+------------------------------------------------------------------------------|
+|  21. | Nagios Server IP          | nagios_server_ips         | Defines the ip address of nagios server                                      |
+|------+---------------------------+---------------------------+------------------------------------------------------------------------------|
+|  22. | Release Number            | release_no                | Defines the release version of the configuration files using                 |
+|      |                           |                           | which nodes in the cluster are configured                                    |
+|------+---------------------------+---------------------------+------------------------------------------------------------------------------|
+|  23. | Cluster Name              | prefix                    | Defines the cluster name                                                     |
+|------+---------------------------+---------------------------+------------------------------------------------------------------------------|
 
 *** Variable Value
 
@@ -151,19 +149,17 @@
 |------+---------------------------+-----------------------+---------------+--------------------------------------------+-----------------------------------------|
 |   8. | admin_email_addres        | Single                | Email Address | alerts@vlabs.ac.in                         |                                         |
 |------+---------------------------+-----------------------+---------------+--------------------------------------------+-----------------------------------------|
-|   9. | smtp_server_address       | Single                | FQDN          | smtp.admin.iiit.ac.in                      |                                         |
+|  09. | smtp_smart_host           | Single                | FQDN          | none                                       |                                         |
 |------+---------------------------+-----------------------+---------------+--------------------------------------------+-----------------------------------------|
-|  10. | smtp_smart_host           | Single                | FQDN          | none                                       |                                         |
+|  10. | private_dns_ips           | Multiple              | IPAddress     | 10.100.1.5                                 |                                         |
 |------+---------------------------+-----------------------+---------------+--------------------------------------------+-----------------------------------------|
-|  11. | private_dns_ips           | Multiple              | IPAddress     | 10.100.1.5                                 |                                         |
-|------+---------------------------+-----------------------+---------------+--------------------------------------------+-----------------------------------------|
-|  12. | private_dns_zone          | Multiple              | Domain Name   | virtual-labs.ac.in                         |                                         |
+|  11. | private_dns_zone          | Multiple              | Domain Name   | virtual-labs.ac.in                         |                                         |
 |------+---------------------------+-----------------------+---------------+--------------------------------------------+-----------------------------------------|
 |      |                           |                       | Domain Name   | vlabs.ac.in                                |                                         |
 |------+---------------------------+-----------------------+---------------+--------------------------------------------+-----------------------------------------|
-|  13. | rsyslog_server_ips        | Multiple              | IPAddress     | 10.100.1.4                                 |                                         |
+|  12. | rsyslog_server_ips        | Multiple              | IPAddress     | 10.100.1.4                                 |                                         |
 |------+---------------------------+-----------------------+---------------+--------------------------------------------+-----------------------------------------|
-|  14. | proxy_domains             | Multiple              | List of       | {                                          | Virtual Host domain and alias           |
+|  13. | proxy_domains             | Multiple              | List of       | {                                          | Virtual Host domain and alias           |
 |      |                           |                       | {Key: Value}  | domain: "reverseproxy.virtual-labs.ac.in", | for Reverse Proxy server.               |
 |      |                           |                       |               | alias: "reverseproxy.vlabs.ac.in",         |                                         |
 |      |                           |                       |               | alias2: "rp.virtual-labs.ac.in"            |                                         |
@@ -189,31 +185,31 @@
 |      |                           |                       |               | alias: "ossec-server.vlabs.ac.in"          |                                         |
 |      |                           |                       |               | }                                          |                                         |
 |------+---------------------------+-----------------------+---------------+--------------------------------------------+-----------------------------------------|
-|  15. | awstats_domains           | Multiple              | FQDN          | reverseproxy.virtual-labs.ac.in            |                                         |
+|  14. | awstats_domains           | Multiple              | FQDN          | reverseproxy.virtual-labs.ac.in            |                                         |
 |------+---------------------------+-----------------------+---------------+--------------------------------------------+-----------------------------------------|
 |      |                           |                       | FQDN          | lab1.virtual-labs.ac.in                    |                                         |
 |------+---------------------------+-----------------------+---------------+--------------------------------------------+-----------------------------------------|
 |      |                           |                       | FQDN          | lab2.virtual-labs.ac.in                    |                                         |
 |------+---------------------------+-----------------------+---------------+--------------------------------------------+-----------------------------------------|
-|  16. | ads_ip                    | Single                | IPAddress     | 127.0.0.1                                  |                                         |
+|  15. | ads_ip                    | Single                | IPAddress     | 127.0.0.1                                  |                                         |
 |------+---------------------------+-----------------------+---------------+--------------------------------------------+-----------------------------------------|
-|  17. | reverseproxy_ip           | Single                | IPAddress     | 10.100.1.7                                 |                                         |
+|  16. | reverseproxy_ip           | Single                | IPAddress     | 10.100.1.7                                 |                                         |
 |------+---------------------------+-----------------------+---------------+--------------------------------------------+-----------------------------------------|
-|  18. | public_dns_ip             | Single                | IPAddress     | 10.100.1.6                                 |                                         |
+|  17. | public_dns_ip             | Single                | IPAddress     | 10.100.1.6                                 |                                         |
 |------+---------------------------+-----------------------+---------------+--------------------------------------------+-----------------------------------------|
-|  19. | local_subnet              | Single                | IPAddress     | 10.100.0.0/22                              |                                         |
+|  18. | local_subnet              | Single                | IPAddress     | 10.100.0.0/22                              |                                         |
 |------+---------------------------+-----------------------+---------------+--------------------------------------------+-----------------------------------------|
-|  20. | router_interface_ip       | Single                | IPAddress     | 10.100.1.1                                 |                                         |
+|  19. | router_interface_ip       | Single                | IPAddress     | 10.100.1.1                                 |                                         |
 |------+---------------------------+-----------------------+---------------+--------------------------------------------+-----------------------------------------|
-|  21. | router_external_interface | Single                | Interface     | eth0                                       |                                         |
+|  20. | router_external_interface | Single                | Interface     | eth0                                       |                                         |
 |------+---------------------------+-----------------------+---------------+--------------------------------------------+-----------------------------------------|
-|  22. | nagios_server_ips         | Single                | IPAddress     | 10.100.1.8                                 |                                         |
+|  21. | nagios_server_ips         | Single                | IPAddress     | 10.100.1.8                                 |                                         |
 |------+---------------------------+-----------------------+---------------+--------------------------------------------+-----------------------------------------|
-|  23. | release_no                | Single                | Integer       | 0                                          | Present version of the configuration    |
+|  22. | release_no                | Single                | Integer       | 0                                          | Present version of the configuration    |
 |      |                           |                       |               |                                            | file is - 0th. Which is the very first  |
 |      |                           |                       |               |                                            | version of configuration files.         |
 |------+---------------------------+-----------------------+---------------+--------------------------------------------+-----------------------------------------|
-|  24. | prefix                    | Multiple              | String        | ""(empty), "base1.", "base4."              | For AWS value of variable is empty,     |
+|  23. | prefix                    | Multiple              | String        | ""(empty), "base1.", "base4."              | For AWS value of variable is empty,     |
 |      |                           |                       |               |                                            | for base1 cluster values of variable    |
 |      |                           |                       |               |                                            | is "base1." and for base4 cluster value |
 |      |                           |                       |               |                                            | of variable is "base4."                 |
@@ -231,10 +227,10 @@
    FQDN of the same lab hosted on AWS cluster is
    "cse05.virtual-labs.ac.in".
 
-*** Variables for AWS Cluster
-Variables for AWS cluster are defined in the following section
+*** Variables for Cluster setup
+Variables for cluster are defined in the following section
 
-#+BEGIN_SRC yml :tangle roles/common_vars/vars/main-aws.yml
+#+BEGIN_SRC yml :tangle roles/common_vars/vars/main.yml
 ---
 #Proxy configuration in case direct access to Internet is not available
 proxy_env:
@@ -246,6 +242,9 @@ proxy_env:
 release_no:
  - 00
 
+#prefix varible used in almost all ansible script. This variable is used to set the cluster name
+prefix: ""
+
 #List of ansible servers.  Mutliple ansible servers are fine
 ansible_server_ips: 
   - 10.100.1.2
@@ -253,14 +252,23 @@ ansible_server_ips:
 #Anlytics IP used by RP role to rsync logs,awstats
 analytics_server_ip: 10.100.1.12
 
+#Ads Ip used by lab role
+ads_ip: 10.100.1.9
+
 #List of rsnapshot servers.
 rsnapshot_server_ips: 
   - 10.100.1.10
+
+#AWS remote/secondary backup used by rsnapshot role
+aws_backup: 196.12.53.133
 
 #List of management stations.  Multiple is ok
 management_ips:
   - 14.139.82.6/32
   - 196.12.53.133/32
+
+public_zone_address: 
+ansible_external_ip: 
 
 #OSSEC server IP.  Only one
 ossec_server_ip: 10.100.1.3
@@ -270,8 +278,8 @@ ossec_client_ips:
 #For some reasons {{ansible_default_ipv4.address}} on ansible and router is resolving
 #to 10.4.12.0/22 IPs and not to 10.100.0.0/22 IPs.  So those must be used for configuring
 #client
-  - 10.100.1.1
-  - 10.100.1.2
+  - "{{public_sone_address}}"
+  - "{{ansible_external_ip}}"
   - 10.100.1.4
   - 10.100.1.5
   - 10.100.1.6
@@ -283,8 +291,6 @@ ossec_client_ips:
 #Administrator email address and SMTP server through which
 #administrator can be reached.  Used by OSSEC server to send emails.
 admin_email_address: alerts@vlabs.ac.in
-#Leaving as it is for now.  The server would relay message. 
-smtp_server_address: smtp.admin.iiit.ac.in
 
 #SMTP smart host via which various servers can send email
 #Set this to none if smtp_smart_host configuration is not required
@@ -293,12 +299,16 @@ smtp_smart_host: none
 #DNS client configuration to configure DNS client on all machines
 #after DNS server have been setup.  If DNS is not setup then setup these 
 #values to none
-#private_dns_ips: none
-#private_dns_zone: none 
-private_dns_ips: 
-  - 10.100.1.5
-private_dns_zone: virtual-labs.ac.in vlabs.ac.in
+private_dns_ips: none
+private_dns_zone: none 
+#private_dns_ips: 
+#  - 10.100.1.5
+#private_dns_zone: "{{prefix}}virtual-labs.ac.in {{prefix}}vlabs.ac.in"
 
+#This variables is set to "yes" if the cluster is on AWS and "no" if
+#cluster is on base machines so that it can be used in setting zones
+#in named.conf of both DNS(public and private) roles
+is_amazon: "yes"
 
 #Rsyslog server IPs.  Set to none if there is no rsyslog server
 rsyslog_server_ips:
@@ -310,7 +320,7 @@ ads_ip: 10.100.1.9
 reverseproxy_ip: 10.100.1.7
 public_dns_ip: 10.100.1.6
 local_subnet: 10.100.0.0/22
-router_interface_ip: 10.100.1.1
+router_interface_ip: "{{public_zone_address}}"
 router_external_interface: eth0
 #Used by bandwidthd, similar to base1 nomenclature 
 router_internal_ip: 10.100.1.1
@@ -319,611 +329,53 @@ router_internal_ip: 10.100.1.1
 nagios_server_ips:
   - 10.100.1.8
 
+#Forwarders to be updated in Zone files
+forwarders: "{ }"
+
 #Used by private-dns ans public dns to set their zone file names
-prefix: ""
 
-public_zone_address: 54.85.93.7
 
-#List of domains to pass through reverseproxy
-proxy_domains:
-  - {domain: "reverseproxy.virtual-labs.ac.in", alias: "reverseproxy.vlabs.ac.in", alias2: "rp.virtual-labs.ac.in"}
-  - {domain: "bandwidthd.virtual-labs.ac.in", alias: "bandwidthd.vlabs.ac.in", alias2: "bwd.virtual-labs.ac.in"}
-  - {domain: "cse01-iiith.virtual-labs.ac.in", alias: "cse01-iiith.vlabs.ac.in"}
-  - {domain: "cse02-iiith.virtual-labs.ac.in", alias: "cse02-iiith.vlabs.ac.in"}
-  - {domain: "cse15-iiith.virtual-labs.ac.in", alias: "cse15-iiith.vlabs.ac.in"}
-  - {domain: "cse19-iiith.virtual-labs.ac.in", alias: "cse19-iiith.vlabs.ac.in"}
-  - {domain: "cse18-iiith.virtual-labs.ac.in", alias: "cse18-iiith.vlabs.ac.in"}
-  - {domain: "cse20-iiith.virtual-labs.ac.in", alias: "cse20-iiith.vlabs.ac.in"}
-  - {domain: "emt-iiith.virtual-labs.ac.in", alias: "emt-iiith.vlabs.ac.in"}
-  - {domain: "cse29-iiith.virtual-labs.ac.in", alias: "cse29-iiith.vlabs.ac.in"}
-  - {domain: "cse22-iiith.virtual-labs.ac.in", alias: "cse22-iiith.vlabs.ac.in"}
-  - {domain: "cse11-iiith.virtual-labs.ac.in", alias: "cse11-iiith.vlabs.ac.in"}
-  - {domain: "cse14-iiith.virtual-labs.ac.in", alias: "cse14-iiith.vlabs.ac.in"}
-  - {domain: "eerc03-iiith.virtual-labs.ac.in", alias: "eerc03-iiith.vlabs.ac.in"}
-  - {domain: "phy14-iiith.virtual-labs.ac.in", alias: "phy14-iiith.vlabs.ac.in"}
-  - {domain: "ccnsb06-iiith.virtual-labs.ac.in", alias: "ccnsb06-iiith.vlabs.ac.in"}
-  - {domain: "eerc01-iiith.virtual-labs.ac.in", alias: "eerc01-iiith.vlabs.ac.in"}
-  - {domain: "csc-iiith.virtual-labs.ac.in", alias: "csc-iiith.vlabs.ac.in"}
-  - {domain: "nagios.virtual-labs.ac.in", alias: "nagios.vlabs.ac.in"}
-  - {domain: "ads.virtual-labs.ac.in", alias: "ads.vlabs.ac.in"}
-  - {domain: "bmi-iitr.virtual-labs.ac.in", alias: "bmi-iitr.vlabs.ac.in"}
-  - {domain: "bmsip-iitr.virtual-labs.ac.in", alias: "bmsip-iitr.vlabs.ac.in"}
-  - {domain: "em-iitr.virtual-labs.ac.in", alias: "em-iitr.vlabs.ac.in"}
-  - {domain: "sl-iitr.virtual-labs.ac.in", alias: "sl-iitr.vlabs.ac.in"}
-  - {domain: "mrmsmtbs-iitk.virtual-labs.ac.in", alias: "mrmsmtbs-iitk.vlabs.ac.in"}
-  - {domain: "va-iitk.virtual-labs.ac.in", alias: "va-iitk.vlabs.ac.in"}
-  - {domain: "ufls-iitk.virtual-labs.ac.in", alias: "ufls-iitk.vlabs.ac.in"}
-  - {domain: "vlae-iitk.virtual-labs.ac.in", alias: "vlae-iitk.vlabs.ac.in"}
-  - {domain: "vcal-iitk.virtual-labs.ac.in", alias: "vcal-iitk.vlabs.ac.in"}
-  - {domain: "pev-au.virtual-labs.ac.in", alias: "pev-au.vlabs.ac.in"}
-  - {domain: "pevii-au.virtual-labs.ac.in", alias: "pevii-au.vlabs.ac.in"}
-  - {domain: "anthropology-iitg.virtual-labs.ac.in", alias: "anthropology-iitg.vlabs.ac.in"}
-  - {domain: "ergonomics-iitg.virtual-labs.ac.in", alias: "ergonomics-iitg.vlabs.ac.in"}
-  - {domain: "vem-iitg.virtual-labs.ac.in", alias: "vem-iitg.vlabs.ac.in"}
-  - {domain: "ve-iitg.virtual-labs.ac.in", alias: "ve-iitg.vlabs.ac.in"}
-  - {domain: "sl-coep.virtual-labs.ac.in", alias: "sl-coep.vlabs.ac.in"}
-  - {domain: "plc-coep.virtual-labs.ac.in", alias: "plc-coep.vlabs.ac.in"}
-  - {domain: "em-coep.virtual-labs.ac.in", alias: "em-coep.vlabs.ac.in" }
-  - {domain: "va-coep.virtual-labs.ac.in", alias: "va-coep.vlabs.ac.in" }
-  - {domain: "mm-coep.virtual-labs.ac.in", alias: "mm-coep.vlabs.ac.in" }
-  - {domain: "fab-coep.virtual-labs.ac.in", alias: "fab-coep.vlabs.ac.in" }
-  - {domain: "bmsp-coep.virtual-labs.ac.in", alias: "bmsp-coep.vlabs.ac.in"}
-  - {domain: "ial-coep.virtual-labs.ac.in", alias: "ial-coep.vlabs.ac.in"}
-  - {domain: "ied-nitk.virtual-labs.ac.in", alias: "ied-nitk.vlabs.ac.in"}
-  - {domain: "sa-nitk.virtual-labs.ac.in", alias: "sa-nitk.vlabs.ac.in"}
-  - {domain: "fm-nitk.virtual-labs.ac.in", alias: "fm-nitk.vlabs.ac.in"}
-  - {domain: "sm-nitk.virtual-labs.ac.in", alias: "sm-nitk.vlabs.ac.in"}
-  - {domain: "mm-nitk.virtual-labs.ac.in", alias: "mm-nitk.vlabs.ac.in"}
-  - {domain: "mdmv-nitk.virtual-labs.ac.in", alias: "mdmv-nitk.vlabs.ac.in"}
-  - {domain: "uorepc-nitk.virtual-labs.ac.in", alias: "uorepc-nitk.vlabs.ac.in"}
-  - {domain: "vssd-iitd.virtual-labs.ac.in", alias: "vssd-iitd.vlabs.ac.in"} 
-  - {domain: "qnm-iitd.virtual-labs.ac.in", alias: "qnm-iitd.vlabs.ac.in"}
-  - {domain: "msvs-dei.virtual-labs.ac.in", alias: "msvs-dei.vlabs.ac.in"}
-  - {domain: "vp-dei.virtual-labs.ac.in", alias: "vp-dei.vlabs.ac.in"}
-  - {domain: "he-coep.virtual-labs.ac.in", alias: "he-coep.vlabs.ac.in"}
-  - {domain: "eem-iitd.virtual-labs.ac.in", alias: "eem-iitd.vlabs.ac.in"}
-  - {domain: "pe-iitb.virtual-labs.ac.in", alias: "pe-iitb.vlabs.ac.in"}
-  - {domain: "ce-iitb.virtual-labs.ac.in", alias: "ce-iitb.vlabs.ac.in"}
-  - {domain: "ee-iitb.virtual-labs.ac.in", alias: "ee-iitb.vlabs.ac.in"}
-  - {domain: "vc-dei.virtual-labs.ac.in", alias: "vc-dei.vlabs.ac.in"}
-awstats_domains:
-  - cse01-iiith.virtual-labs.ac.in
-  - cse02-iiith.virtual-labs.ac.in
-  - cse15-iiith.virtual-labs.ac.in
-  - cse19-iiith.virtual-labs.ac.in
-  - cse18-iiith.virtual-labs.ac.in
-  - cse20-iiith.virtual-labs.ac.in
-  - emt-iiith.virtual-labs.ac.in
-  - cse29-iiith.virtual-labs.ac.in
-  - cse22-iiith.virtual-labs.ac.in
-  - cse11-iiith.virtual-labs.ac.in
-  - cse14-iiith.virtual-labs.ac.in
-  - eerc03-iiith.virtual-labs.ac.in
-  - phy14-iiith.virtual-labs.ac.in
-  - ccnsb06-iiith.virtual-labs.ac.in
-  - eerc01-iiith.virtual-labs.ac.in
-  - csc-iiith.virtual-labs.ac.in
-  - bmi-iitr.virtual-labs.ac.in
-  - bmsip-iitr.virtual-labs.ac.in
-  - em-iitr.virtual-labs.ac.in
-  - sl-iitr.virtual-labs.ac.in
-  - mrmsmtbs-iitk.virtual-labs.ac.in
-  - va-iitk.virtual-labs.ac.in
-  - ufls-iitk.virtual-labs.ac.in
-  - vlae-iitk.virtual-labs.ac.in
-  - vcal-iitk.virtual-labs.ac.in
-  - pev-au.virtual-labs.ac.in
-  - pevii-au.virtual-labs.ac.in
-  - anthropology-iitg.virtual-labs.ac.in
-  - ergonomics-iitg.virtual-labs.ac.in
-  - vem-iitg.virtual-labs.ac.in
-  - ve-iitg.virtual-labs.ac.in
-  - sl-coep.virtual-labs.ac.in
-  - plc-coep.virtual-labs.ac.in
-  - em-coep.virtual-labs.ac.in
-  - va-coep.virtual-labs.ac.in
-  - mm-coep.virtual-labs.ac.in
-  - fab-coep.virtual-labs.ac.in
-  - bmsp-coep.virtual-labs.ac.in  
-  - ial-coep.virtual-labs.ac.in
-  - ied-nitk.virtual-labs.ac.in
-  - sa-nitk.virtual-labs.ac.in
-  - fm-nitk.virtual-labs.ac.in
-  - sm-nitk.virtual-labs.ac.in
-  - mm-nitk.virtual-labs.ac.in
-  - mdmv-nitk.virtual-labs.ac.in
-  - uorepc-nitk.virtual-labs.ac.in
-  - vssd-iitd.virtual-labs.ac.in
-  - qnm-iitd.virtual-labs.ac.in
-  - msvs-dei.virtual-labs.ac.in
-  - vp-dei.virtual-labs.ac.in
-  - he-coep.virtual-labs.ac.in
-  - eem-iitd.virtual-labs.ac.in
-  - pe-iitb.virtual-labs.ac.in
-  - ce-iitb.virtual-labs.ac.in
-  - ee-iitb.virtual-labs.ac.in
-  - vc-dei.virtual-labs.ac.in
-public_dns_entries:
-  - { hostname: router, ip: 54.85.93.7 }
-  - { hostname: bandwidthd, ip: 54.85.93.7 }
-  - { hostname: ansible, ip: 52.4.150.142 }
-  - { hostname: ossec-server, ip: 54.85.93.7 }
-  - { hostname: rsyslog-server, ip: 54.85.93.7 }
-  - { hostname: private-dns, ip: 54.85.93.7 }
-  - { hostname: public-dns, ip: 54.85.93.7 }
-  - { hostname: reverseproxy, ip: 54.85.93.7 }
-  - { hostname: nagios, ip: 54.85.93.7 }
-  - { hostname: ads, ip: 54.85.93.7 }
-  - { hostname: rsnapshot-server, ip: 54.85.93.7 }
-  - { hostname: cse01-iiith, ip: 54.85.93.7 }
-  - { hostname: cse02-iiith, ip: 54.85.93.7 }
-  - { hostname: cse15-iiith, ip: 54.85.93.7 }
-  - { hostname: cse18-iiith, ip: 54.85.93.7 }
-  - { hostname: cse19-iiith, ip: 54.85.93.7 }
-  - { hostname: cse20-iiith, ip: 54.85.93.7 }
-  - { hostname: emt-iiith, ip: 54.85.93.7 }
-  - { hostname: cse29-iiith, ip: 54.85.93.7 }
-  - { hostname: cse22-iiith, ip: 54.85.93.7 }
-  - { hostname: cse11-iiith, ip: 54.85.93.7 }
-  - { hostname: cse14-iiith, ip: 54.85.93.7 }
-  - { hostname: eerc03-iiith, ip: 54.85.93.7 }
-  - { hostname: phy14-iiith, ip: 54.85.93.7 }
-  - { hostname: ccnsb06-iiith, ip: 54.85.93.7 }
-  - { hostname: eerc01-iiith, ip: 54.85.93.7 }
-  - { hostname: csc-iiith, ip: 54.85.93.7 }
-  - { hostname: bmi-iitr, ip: 54.85.93.7 }
-  - { hostname: bmsip-iitr, ip: 54.85.93.7 }
-  - { hostname: em-iitr, ip: 54.85.93.7 }
-  - { hostname: sl-iitr, ip: 54.85.93.7 }
-  - { hostname: mrmsmtbs-iitk, ip: 54.85.93.7 }
-  - { hostname: va-iitk, ip: 54.85.93.7 }
-  - { hostname: ufls-iitk, ip: 54.85.93.7 }
-  - { hostname: vlae-iitk, ip: 54.85.93.7 }
-  - { hostname: vcal-iitk, ip: 54.85.93.7 }
-  - { hostname: pev-au, ip: 54.85.93.7 }
-  - { hostname: pevii-au, ip: 54.85.93.7 }
-  - { hostname: anthropology-iitg, ip: 54.85.93.7 }
-  - { hostname: ergonomics-iitg, ip: 54.85.93.7 }
-  - { hostname: vem-iitg, ip: 54.85.93.7 }
-  - { hostname: ve-iitg, ip: 54.85.93.7 }
-  - { hostname: sl-coep, ip: 54.85.93.7 }
-  - { hostname: plc-coep, ip: 54.85.93.7 }
-  - { hostname: em-coep, ip: 54.85.93.7 }
-  - { hostname: va-coep, ip: 54.85.93.7 }
-  - { hostname: mm-coep, ip: 54.85.93.7 }
-  - { hostname: fab-coep, ip: 54.85.93.7 }
-  - { hostname: bmsp-coep, ip: 54.85.93.7 }
-  - { hostname: ial-coep, ip: 54.85.93.7 }
-  - { hostname: ied-nitk, ip: 54.85.93.7 }
-  - { hostname: sa-nitk, ip: 54.85.93.7 }
-  - { hostname: fm-nitk, ip: 54.85.93.7 }
-  - { hostname: sm-nitk, ip: 54.85.93.7 }
-  - { hostname: mm-nitk, ip: 54.85.93.7 }
-  - { hostname: mdmv-nitk, ip: 54.85.93.7 }
-  - { hostname: uorepc-nitk, ip: 54.85.93.7 }
-  - { hostname: vssd-iitd, ip: 54.85.93.7 }
-  - { hostname: qnm-iitd, ip: 54.85.93.7 }
-  - { hostname: msvs-dei, ip: 54.85.93.7 }
-  - { hostname: vp-dei, ip: 54.85.93.7 }
-  - { hostname: he-coep, ip: 54.85.93.7 }
-  - { hostname: eem-iitd, ip: 54.85.93.7 }
-  - { hostname: pe-iitb, ip: 54.85.93.7 }
-  - { hostname: ee-iitb, ip: 54.85.93.7 }
-  - { hostname: ce-iitb, ip: 54.85.93.7 }    
-  - { hostname: vc-dei, ip: 54.85.93.7 }
-#+END_SRC
-
-*** Variables for Base1 Cluster
-Variables for Base1 cluster are defined in the following section
-
-#+BEGIN_SRC yml :tangle roles/common_vars/vars/main-base1.yml
----
-#Proxy configuration in case direct access to Internet is not available
-proxy_env:
-#  none: none
-   http_proxy: http://proxy.iiit.ac.in:8080/
-   https_proxy: http://proxy.iiit.ac.in:8080/
-
-#Release number used in common task to add it to the target
-release_no:
- - 00
-
-#List of ansible servers.  Mutliple ansible servers are fine
-ansible_server_ips: 
-  - 10.100.1.2
-
-#Anlytics IP used by RP role to rsync logs,awstats
-analytics_server_ip: 10.100.1.12
-
-#List of management stations.  Multiple is ok
-management_ips:
-  - 10.2.56.3
-  - 196.12.53.130
-  - 10.2.56.0/22
-#rsnapshot to take backups
-rsnapshot_server_ips:
-  - 10.100.1.10
-#OSSEC server IP.  Only one
-ossec_server_ip: 10.100.1.3
-
-#OSSEC client IPs.  Multiple is ok.
-ossec_client_ips: 
-#For some reasons {{ansible_default_ipv4.address}} on ansible and router is resolving
-#to 10.4.12.0/22 IPs and not to 10.100.0.0/22 IPs.  So those must be used for configuring
-#client
-  - 10.4.14.150
-  - 10.4.14.151
-  - 10.100.1.4
-  - 10.100.1.5
-  - 10.100.1.6
-  - 10.100.1.7
-  - 10.100.1.8
-  - 10.100.1.10
-#Administrator email address and SMTP server through which
-#administrator can be reached.  Used by OSSEC server to send emails.
-admin_email_address: alerts@vlabs.ac.in
-#Leaving as it is for now.  The server would relay message. 
-smtp_server_address: 
-
-#SMTP smart host via which various servers can send email
-#Set this to none if smtp_smart_host configuration is not required
-smtp_smart_host: smtp.admin.iiit.ac.in
-
-#DNS client configuration to configure DNS client on all machines
-#after DNS server have been setup.  If DNS is not setup then setup these 
-#values to none
-#private_dns_ips: none
-#private_dns_zone: none 
-private_dns_ips: 
-  - 10.100.1.5
-private_dns_zone: base1.virtual-labs.ac.in base1.vlabs.ac.in
-
-#Rsyslog server IPs.  Set to none if there is no rsyslog server
-rsyslog_server_ips:
-  - 10.100.1.4
-
-#IPs where router will forward web or DNS requests.
-#Multiple IPs or list of IPs wont work as request can be forwarded to only one machine
-ads_ip: 10.100.1.9
-reverseproxy_ip: 10.100.1.7
-public_dns_ip: 10.100.1.6
-local_subnet: 10.100.0.0/22
-router_interface_ip: 10.4.14.150
-router_external_interface: eth1
-#Needed for setting default gateway in common role
-router_internal_ip: 10.100.1.1
-
-#Configure IP address of nagios server.  This is used by iptables firewall templates
-nagios_server_ips:
-  - 10.100.1.8
-analytics_server_ip: 10.100.1.12
-
-public_zone_address: 10.4.12.21
-
-prefix: "base1."
 
 #List of domains to pass through reverseproxy
 proxy_domains:
-  - {domain: "reverseproxy.base1.virtual-labs.ac.in", alias: "reverseproxy.base1.vlabs.ac.in", alias2: "rp.base1.virtual-labs.ac.in"}
-  - {domain: "bandwidthd.base1.virtual-labs.ac.in", alias: "bandwidthd.base1.vlabs.ac.in", alias2: "bwd.base1.virtual-labs.ac.in"}  
-  - {domain: "nagios.base1.virtual-labs.ac.in", alias: "nagios.base1.vlabs.ac.in"}
-  - {domain: "ossec-server.base1.virtual-labs.ac.in", alias: "ossec-server.base1.vlabs.ac.in"}
-  - {domain: "cse01-iiith.base1.virtual-labs.ac.in", alias: "cse01-iiith.base1.vlabs.ac.in"}
-  - {domain: "cse02-iiith.base1.virtual-labs.ac.in", alias: "cse02-iiith.base1.vlabs.ac.in"}
-  - {domain: "cse15-iiith.base1.virtual-labs.ac.in", alias: "cse15-iiith.base1.vlabs.ac.in"}
-  - {domain: "cse19-iiith.base1.virtual-labs.ac.in", alias: "cse19-iiith.base1.vlabs.ac.in"}
-  - {domain: "cse18-iiith.base1.virtual-labs.ac.in", alias: "cse18-iiith.base1.vlabs.ac.in"}
-  - {domain: "cse20-iiith.base1.virtual-labs.ac.in", alias: "cse20-iiith.base1.vlabs.ac.in"}
-  - {domain: "emt-iiith.base1.virtual-labs.ac.in", alias: "emt-iiith.base1.vlabs.ac.in"}
-  - {domain: "cse29-iiith.base1.virtual-labs.ac.in", alias: "cse29-iiith.base1.vlabs.ac.in"}
-  - {domain: "cse22-iiith.base1.virtual-labs.ac.in", alias: "cse22-iiith.base1.vlabs.ac.in"}
-  - {domain: "cse11-iiith.base1.virtual-labs.ac.in", alias: "cse11-iiith.base1.vlabs.ac.in"}
-  - {domain: "cse14-iiith.base1.virtual-labs.ac.in", alias: "cse14-iiith.base1.vlabs.ac.in"}
-  - {domain: "eerc03-iiith.base1.virtual-labs.ac.in", alias: "eerc03-iiith.base1.vlabs.ac.in"}
-  - {domain: "phy14-iiith.base1.virtual-labs.ac.in", alias: "phy14-iiith.base1.vlabs.ac.in"}
-  - {domain: "ccnsb06-iiith.base1.virtual-labs.ac.in", alias: "ccnsb06-iiith.base1.vlabs.ac.in"}
-  - {domain: "eerc01-iiith.base1.virtual-labs.ac.in", alias: "eerc01-iiith.base1.vlabs.ac.in"}
-  - {domain: "ads.base1.virtual-labs.ac.in", alias: "ads.base1.vlabs.ac.in"}
-  - {domain: "bmi-iitr.base1.virtual-labs.ac.in", alias: "bmi-iitr.base1.vlabs.ac.in"}
-  - {domain: "bmsip-iitr.base1.virtual-labs.ac.in", alias: "bmsip-iitr.base1.vlabs.ac.in" }
-  - {domain: "em-iitr.base1.virtual-labs.ac.in", alias: "em-iitr.base1.vlabs.ac.in"}
-  - {domain: "sl-iitr.base1.virtual-labs.ac.in", alias: "sl-iitr.base1.vlabs.ac.in"}
-  - {domain: "mrmsmtbs-iitk.base1.virtual-labs.ac.in", alias: "mrmsmtbs-iitk.base1.vlabs.ac.in"}
-  - {domain: "va-iitk.base1.virtual-labs.ac.in", alias: "va-iitk.base1.vlabs.ac.in"}
-  - {domain: "ufls-iitk.base1.virtual-labs.ac.in", alias: "ufls-iitk.base1.vlabs.ac.in"}
-  - {domain: "vlae-iitk.base1.virtual-labs.ac.in", alias: "vlae-iitk.base1.vlabs.ac.in"}
-  - {domain: "vcal-iitk.base1.virtual-labs.ac.in", alias: "vcal-iitk.base1.vlabs.ac.in"}
-  - {domain: "pev-au.base1.virtual-labs.ac.in", alias: "pev-au.base1.vlabs.ac.in"}
-  - {domain: "anthropology-iitg.base1.virtual-labs.ac.in", alias: "anthropology-iitg.base1.vlabs.ac.in"}
-  - {domain: "ergonomics-iitg.base1.virtual-labs.ac.in", alias: "ergonomics-iitg.base1.vlabs.ac.in"}
-  - {domain: "vem-iitg.base1.virtual-labs.ac.in", alias: "vem-iitg.base1.vlabs.ac.in"}
-  - {domain: "ve-iitg.base1.virtual-labs.ac.in", alias: "ve-iitg.base1.vlabs.ac.in"}
-  - {domain: "ial-coep.base1.virtual-labs.ac.in", alias: "ial-coep.base1.vlabs.ac.in"}
-  - {domain: "sl-coep.base1.virtual-labs.ac.in", alias: "sl-coep.base1.vlabs.ac.in"}
-  - {domain: "plc-coep.base1.virtual-labs.ac.in", alias: "plc-coep.base1.vlabs.ac.in"}
-  - {domain: "em-coep.base1.virtual-labs.ac.in", alias: "em-coep.base1.vlabs.ac.in"}
-  - {domain: "va-coep.base1.virtual-labs.ac.in", alias: "va-coep.base1.vlabs.ac.in"}
-  - {domain: "mm-coep.base1.virtual-labs.ac.in", alias: "mm-coep.base1.vlabs.ac.in"}
-  - {domain: "fab-coep.base1.virtual-labs.ac.in", alias: "fab-coep.base1.vlabs.ac.in"}
-  - {domain: "bmsp-coep.base1.virtual-labs.ac.in", alias: "bmsp-coep.base1.vlabs.ac.in"}
-  - {domain: "ied-nitk.base1.virtual-labs.ac.in", alias: "ied-nitk.base1.vlabs.ac.in"}
-  - {domain: "sa-nitk.base1.virtual-labs.ac.in", alias: "sa-nitk.base1.vlabs.ac.in"}
-  - {domain: "fm-nitk.base1.virtual-labs.ac.in", alias: "fm-nitk.base1.vlabs.ac.in"}
-  - {domain: "sm-nitk.base1.virtual-labs.ac.in", alias: "sm-nitk.base1.vlabs.ac.in"}
-  - {domain: "mm-nitk.base1.virtual-labs.ac.in", alias: "mm-nitk.base1.vlabs.ac.in"}
-  - {domain: "mdmv-nitk.base1.virtual-labs.ac.in", alias: "mdmv-nitk.base1.vlabs.ac.in"}
-  - {domain: "uorepc-nitk.base1.virtual-labs.ac.in", alias: "uorepc-nitk.base1.vlabs.ac.in"}
-  - {domain: "vssd-iitd.base1.virtual-labs.ac.in", alias: "vssd-iitd.base1.vlabs.ac.in"}
-  - {domain: "qnm-iitd.base1.virtual-labs.ac.in", alias: "qnm-iitd.base1.vlabs.ac.in"}
-  - {domain: "msvs-dei.base1.virtual-labs.ac.in", alias: "msvs-dei.base1.vlabs.ac.in"}
-  - {domain: "vp-dei.base1.virtual-labs.ac.in", alias: "vp-dei.base1.vlabs.ac.in"}
+  - {domain: "reverseproxy.{{prefix}}virtual-labs.ac.in", alias: "reverseproxy.{{prefix}}vlabs.ac.in"}
+  - {domain: "bandwidthd.{{prefix}}virtual-labs.ac.in", alias: "bandwidthd.{{prefix}}vlabs.ac.in"}
 
 awstats_domains:
-  - reverseproxy.base1.virtual-labs.ac.in
-  - cse01-iiith.base1.virtual-labs.ac.in
-  - cse02-iiith.base1.virtual-labs.ac.in
-  - cse15-iiith.base1.virtual-labs.ac.in
-  - cse19-iiith.base1.virtual-labs.ac.in
-  - cse18-iiith.base1.virtual-labs.ac.in
-  - cse20-iiith.base1.virtual-labs.ac.in
-  - emt-iiith.base1.virtual-labs.ac.in
-  - cse29-iiith.base1.virtual-labs.ac.in
-  - cse22-iiith.base1.virtual-labs.ac.in
-  - cse11-iiith.base1.virtual-labs.ac.in
-  - cse14-iiith.base1.virtual-labs.ac.in
-  - eerc03-iiith.base1.virtual-labs.ac.in
-  - phy14-iiith.base1.virtual-labs.ac.in
-  - ccnsb06-iiith.base1.virtual-labs.ac.in
-  - eerc01-iiith.base1.virtual-labs.ac.in
-  - bmi-iitr.base1.virtual-labs.ac.in
-  - bmsip-iitr.base1.virtual-labs.ac.in
-  - em-iitr.base1.virtual-labs.ac.in
-  - sl-iitr.base1.virtual-labs.ac.in
-  - mrmsmtbs-iitk.base1.virtual-labs.ac.in
-  - va-iitk.base1.virtual-labs.ac.in
-  - ufls-iitk.base1.virtual-labs.ac.in
-  - vlae-iitk.base1.virtual-labs.ac.in
-  - vcal-iitk.base1.virtual-labs.ac.in
-  - pev-au.base1.virtual-labs.ac.in
-  - anthropology-iitg.base1.virtual-labs.ac.in
-  - ergonomics-iitg.base1.virtual-labs.ac.in
-  - vem-iitg.base1.virtual-labs.ac.in
-  - ve-iitg.base1.virtual-labs.ac.in
-  - ial-coep.base1.virtual-labs.ac.in
-  - sl-coep.base1.virtual-labs.ac.in
-  - plc-coep.base1.virtual-labs.ac.in
-  - em-coep.base1.virtual-labs.ac.in
-  - va-coep.base1.virtual-labs.ac.in
-  - mm-coep.base1.virtual-labs.ac.in
-  - fab-coep.base1.virtual-labs.ac.in
-  - bmsp-coep.base1.virtual-labs.ac.in
-  - ied-nitk.base1.virtual-labs.ac.in
-  - sa-nitk.base1.virtual-labs.ac.in
-  - fm-nitk.base1.virtual-labs.ac.in
-  - sm-nitk.base1.virtual-labs.ac.in
-  - mm-nitk.base1.virtual-labs.ac.in
-  - mdmv-nitk.base1.virtual-labs.ac.in
-  - uorepc-nitk.base1.virtual-labs.ac.in
-  - vssd-iitd.base1.virtual-labs.ac.in
-  - qnm-iitd.base1.virtual-labs.ac.in
-  - msvs-dei.base1.virtual-labs.ac.in
-  - vp-dei.base1.virtual-labs.ac.in
+#  - cp."{{prefix}}"virtual-labs.ac.in
 
+
+#AWS public DNS is also listing other public records of vlabs
 public_dns_entries:
- - { hostname: router, ip: 10.4.14.150 }
- - { hostname: bandwidthd, ip: 10.4.14.150 }
- - { hostname: ansible, ip: 10.4.14.151 }
- - { hostname: ossec-server, ip: 10.4.14.150 }
- - { hostname: rsyslog-server, ip: 10.4.14.150 }
- - { hostname: private-dns, ip: 10.4.14.150 }
- - { hostname: public-dns, ip: 10.4.14.150 }
- - { hostname: reverseproxy, ip: 10.4.14.150 }
- - { hostname: nagios, ip: 10.4.14.150 }
- - { hostname: ads, ip: 10.4.14.150 }
- - { hostname: rsnapshot-server, ip: 10.4.14.150 }
- - { hostname: cse01-iiith, ip: 10.4.14.150 }
- - { hostname: cse02-iiith, ip: 10.4.14.150 }
- - { hostname: cse15-iiith, ip: 10.4.14.150 }
- - { hostname: cse19-iiith, ip: 10.4.14.150 }
- - { hostname: cse18-iiith, ip: 10.4.14.150 }
- - { hostname: cse20-iiith, ip: 10.4.14.150 }
- - { hostname: emt-iiith, ip: 10.4.14.150 }
- - { hostname: cse29-iiith, ip: 10.4.14.150 }
- - { hostname: cse22-iiith, ip: 10.4.14.150 }
- - { hostname: cse11-iiith, ip: 10.4.14.150 }
- - { hostname: cse14-iiith, ip: 10.4.14.150 }
- - { hostname: eerc03-iiith, ip: 10.4.14.150 }
- - { hostname: phy14-iiith, ip: 10.4.14.150 }
- - { hostname: ccnsb06-iiith, ip: 10.4.14.150 }
- - { hostname: eerc01-iiith, ip: 10.4.14.150 }
- - { hostname: bmi-iitr, ip: 10.4.14.150 }
- - { hostname: bmsip-iitr, ip: 10.4.14.150 }
- - { hostname: em-iitr, ip: 10.4.14.150 }
- - { hostname: sl-iitr, ip: 10.4.14.150 }
- - { hostname: mrmsmtbs-iitk, ip: 10.4.14.150 }
- - { hostname: va-iitk, ip: 10.4.14.150 }
- - { hostname: ufls-iitk, ip: 10.4.14.150 }
- - { hostname: vlae-iitk, ip: 10.4.14.150 }
- - { hostname: vcal-iitk, ip: 10.4.14.150 }
- - { hostname: pev-au, ip: 10.4.14.150 }
- - { hostname: anthropology-iitg, ip: 10.4.14.150 }
- - { hostname: ergonomics-iitg, ip: 10.4.14.150 }
- - { hostname: vem-iitg, ip: 10.4.14.150 }
- - { hostname: ve-iitg, ip: 10.4.14.150 }
- - { hostname: ial-coep, ip: 10.4.14.150 }
- - { hostname: sl-coep, ip: 10.4.14.150 }
- - { hostname: plc-coep, ip: 10.4.14.150 }
- - { hostname: em-coep, ip: 10.4.14.150 }
- - { hostname: va-coep, ip: 10.4.14.150 }
- - { hostname: mm-coep, ip: 10.4.14.150 }
- - { hostname: fab-coep, ip: 10.4.14.150 }
- - { hostname: bmsp-coep, ip: 10.4.14.150 }
- - { hostname: ied-nitk, ip: 10.4.14.150 }
- - { hostname: sa-nitk, ip: 10.4.14.150 }
- - { hostname: fm-nitk, ip: 10.4.14.150 }
- - { hostname: sm-nitk, ip: 10.4.14.150 }
- - { hostname: mm-nitk, ip: 10.4.14.150 }
- - { hostname: mdmv-nitk, ip: 10.4.14.150 }
- - { hostname: uorepc-nitk, ip: 10.4.14.150 }
- - { hostname: vssd-iitd, ip: 10.4.14.150 }
- - { hostname: qnm-iitd, ip: 10.4.14.150 }
- - { hostname: msvs-dei, ip: 10.4.14.150 }
- - { hostname: vp-dei, ip: 10.4.14.150 }
+  - { hostname: router, ip: "{{public_zone_address}}" } 
+  - { hostname: bandwidthd, ip: "{{public_zone_address}}" }
+  - { hostname: ansible, ip: "{{ansible_external_ip}}"}
+  - { hostname: ossec-server, ip: "{{public_zone_address}}" }
+  - { hostname: rsyslog-server, ip: "{{public_zone_address}}" }
+  - { hostname: private-dns, ip: "{{public_zone_address}}" }
+  - { hostname: public-dns, ip: "{{public_zone_address}}" }
+  - { hostname: reverseproxy, ip: "{{public_zone_address}}" }
+  - { hostname: nagios, ip: "{{public_zone_address}}" }
+  - { hostname: ads, ip: "{{public_zone_address}}" }
+  - { hostname: rsnapshot-server, ip: "{{public_zone_address}}" }
+#  - { hostname: cp, ip: "{{public_zone_address}}" }
 
 
-#+END_SRC
 
-*** Variables for Base4 Cluster
-Variables for Base4 cluster are defined in the following section
-
-#+BEGIN_SRC yml :tangle roles/common_vars/vars/main-base4.yml
----
-#Proxy configuration in case direct access to Internet is not available
-proxy_env:
-  none: none
-#  http_proxy: http://proxy.iiit.ac.in:8080/
-#  https_proxy: http://proxy.iiit.ac.in:8080/
-
-#List of ansible servers.  Mutliple ansible servers are fine
-ansible_server_ips:
-  - 10.100.1.2
-rsnapshot_server_ips:
-  - 10.100.1.10
-#Anlytics IP used by RP role to rsync logs,awstats
-analytics_server_ip: 10.100.1.12
-
-#List of management stations.  Multiple is ok
-management_ips:
-  - 10.2.56.3
-  - 196.12.53.130
-  - 10.2.56.0/22
-
-#OSSEC server IP.  Only one
-ossec_server_ip: 10.100.1.3
-
-#OSSEC client IPs.  Multiple is ok.
-ossec_client_ips:
-#For some reasons {{ansible_default_ipv4.address}} on ansible and router is resolving
-#to 10.4.12.0/22 IPs and not to 10.100.0.0/22 IPs.  So those must be used for configuring
-#client
-  - 10.4.14.200
-  - 10.4.14.201
-  - 10.100.1.4
-  - 10.100.1.5
-  - 10.100.1.6
-  - 10.100.1.7
-  - 10.100.1.8
-
-#Administrator email address and SMTP server through which
-#administrator can be reached.  Used by OSSEC server to send emails.
-admin_email_address: alerts@vlabs.ac.in
-#Leaving as it is for now.  The server would relay message. 
-smtp_server_address: smtp.admin.iiit.ac.in
-
-#SMTP smart host via which various servers can send email
-#Set this to none if smtp_smart_host configuration is not required
-smtp_smart_host: smtp.admin.iiit.ac.in
-
-#DNS client configuration to configure DNS client on all machines
-#after DNS server have been setup.  If DNS is not setup then setup these 
-#values to none
-#private_dns_ips: none
-#private_dns_zone: none 
-private_dns_ips:
-  - 10.100.1.5
-private_dns_zone: base4.virtual-labs.ac.in base4.vlabs.ac.in
-
-#Rsyslog server IPs.  Set to none if there is no rsyslog server
-rsyslog_server_ips:
-  - 10.100.1.4
-rsnapshot_server_ips:
-  - 10.100.1.10
-#Release number used in common task to add it to the target
-release_no:
-  - 00
-#IPs where router will forward web or DNS requests.
-#Multiple IPs or list of IPs wont work as request can be forwarded to only one machine
-ads_ip: 10.100.1.9
-reverseproxy_ip: 10.100.1.7
-public_dns_ip: 10.100.1.6
-local_subnet: 10.100.0.0/22
-router_interface_ip: 10.4.14.200
-router_external_interface: eth0
-#Needed for setting default gateway in common role
-router_internal_ip: 10.100.1.1
-
-#Configure IP address of nagios server.  This is used by iptables firewall templates
-nagios_server_ips:
-  - 10.100.1.8
-
-public_zone_address: 10.4.12.24
-prefix: "base4."
-
-#List of domains to pass through reverseproxy
-proxy_domains:
-  - {domain: "reverseproxy.base4.virtual-labs.ac.in", alias: "reverseproxy.base4.vlabs.ac.in", alias2: "rp.base4.virtual-labs.ac.in"}
-  - {domain: "nagios.base4.virtual-labs.ac.in", alias: "nagios.base4.vlabs.ac.in"}
-  - {domain: "ossec-server.base4.virtual-labs.ac.in", alias: "ossec-server.base4.vlabs.ac.in"}
-# - {domain: "cse01-iiith.base1.virtual-labs.ac.in", alias: "cse01-iiith.base1.vlabs.ac.in"}
-# - {domain: "cse02-iiith.base1.virtual-labs.ac.in", alias: "cse02-iiith.base1.vlabs.ac.in"}
-# - {domain: "cse15-iiith.base1.virtual-labs.ac.in", alias: "cse15-iiith.base1.vlabs.ac.in"}
-# - {domain: "cse19-iiith.base1.virtual-labs.ac.in", alias: "cse19-iiith.base1.vlabs.ac.in"}
-# - {domain: "cse18-iiith.base1.virtual-labs.ac.in", alias: "cse18-iiith.base1.vlabs.ac.in"}
-# - {domain: "cse20-iiith.base1.virtual-labs.ac.in", alias: "cse20-iiith.base1.vlabs.ac.in"}
-# - {domain: "emt-iiith.base1.virtual-labs.ac.in", alias: "emt-iiith.base1.vlabs.ac.in"}
-# - {domain: "cse29-iiith.base1.virtual-labs.ac.in", alias: "cse29-iiith.base1.vlabs.ac.in"}
-# - {domain: "cse22-iiith.base1.virtual-labs.ac.in", alias: "cse22-iiith.base1.vlabs.ac.in"}
-# - {domain: "cse11-iiith.base1.virtual-labs.ac.in", alias: "cse11-iiith.base1.vlabs.ac.in"}
-# - {domain: "cse14-iiith.base1.virtual-labs.ac.in", alias: "cse14-iiith.base1.vlabs.ac.in"}
-# - {domain: "eerc03-iiith.base1.virtual-labs.ac.in", alias: "eerc03-iiith.base1.vlabs.ac.in"}
-# - {domain: "phy14-iiith.base1.virtual-labs.ac.in", alias: "phy14-iiith.base1.vlabs.ac.in"}
-# - {domain: "ccnsb06-iiith.base1.virtual-labs.ac.in", alias: "ccnsb06-iiith.base1.vlabs.ac.in"}
-# - {domain: "eerc01-iiith.base1.virtual-labs.ac.in", alias: "eerc01-iiith.base1.vlabs.ac.in"}
-
-
-awstats_domains:
-  - reverseproxy.base4.virtual-labs.ac.in
-#  - cse01-iiith.base1.virtual-labs.ac.in
-#  - cse02-iiith.base1.virtual-labs.ac.in
-#   - cse15-iiith.base1.virtual-labs.ac.in
-#   - cse19-iiith.base1.virtual-labs.ac.in
-#   - cse18-iiith.base1.virtual-labs.ac.in
-#   - cse20-iiith.base1.virtual-labs.ac.in
-#   - emt-iiith.base1.virtual-labs.ac.in
-#   - cse29-iiith.base1.virtual-labs.ac.in
-#   - cse22-iiith.base1.virtual-labs.ac.in
-#   - cse11-iiith.base1.virtual-labs.ac.in
-#   - cse14-iiith.base1.virtual-labs.ac.in
-#   - eerc03-iiith.base1.virtual-labs.ac.in
-#   - phy14-iiith.base1.virtual-labs.ac.in
-#   - ccnsb06-iiith.base1.virtual-labs.ac.in
-#   - eerc01-iiith.base1.virtual-labs.ac.in
-
-#  - lab1.base1.virtual-labs.ac.in
-#  - lab1.base1.vlabs.ac.in
-#  - lab2.base1.virtual-labs.ac.in
-#  - lab2.base1.vlabs.ac.in
-#  - nagios.base1.vlabs.ac.in
-#  - nagios.base1.virtual-labs.ac.in
-#  - ossec-server.base1.vlabs.ac.in
-#  - ossec-server.base1.virtual-labs.ac.in 
-#  - ads.base1.vlabs.ac.in
-#  - ads.base1.virtual-labs.ac.in
-
-
-public_dns_entries:
- - { hostname: router, ip: 10.4.14.200 }
- - { hostname: ansible, ip: 10.4.14.201 }
- - { hostname: ossec-server, ip: 10.4.14.200 }
- - { hostname: rsyslog-server, ip: 10.4.14.200 }
- - { hostname: private-dns, ip: 10.4.14.200 }
- - { hostname: public-dns, ip: 10.4.14.200 }
- - { hostname: reverseproxy, ip: 10.4.14.200 }
- - { hostname: nagios, ip: 10.4.14.200 }
+private_dns_entries:
+  - { hostname: router, ip: 10.100.1.1 }
+  - { hostname: bandwidthd, ip: 10.100.1.1 }
+  - { hostname: ansible, ip: 10.100.1.2 }
+  - { hostname: ossec-server, ip: 10.100.1.3 }
+  - { hostname: rsyslog-server, ip: 10.100.1.4 }
+  - { hostname: private-dns, ip: 10.100.1.5 }
+  - { hostname: public-dns, ip: 10.100.1.6 }
+  - { hostname: reverseproxy, ip: 10.100.1.7 }
+  - { hostname: nagios, ip: 10.100.1.8 }
+  - { hostname: ads, ip: 10.100.1.9 }
+  - { hostname: rsnapshot-server, ip: 10.100.1.10 }
+#  - { hostname: cp, ip: 10.100.2.1 }
 
 #+END_SRC
 
 
-
-
-  

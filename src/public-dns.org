@@ -1,4 +1,4 @@
-#+TITLE: Public DNS
+  #+TITLE: Public DNS
 #+PROPERTY: session *scratch*
 #+PROPERTY: results output
 #+PROPERTY: exports code
@@ -260,15 +260,27 @@ logging {
                 severity dynamic;
         };
 };
-
+{% if is_amazon == "yes" %}
 {% for item in zone_names %}
-
 zone "{{item}}" IN {
    type master;
    file "{{item}}forward";
 };
-
 {% endfor %}
+{% else %}
+
+{% for item in zone_names %}
+zone "{{item}}" IN {
+   type master;
+   file "{{item}}forward";
+};
+{% endfor %}
+zone "vlabs.ac.in." IN {
+      type forward;
+      forwarders {{forwarders}};
+};
+
+{% endif %}
 
 
 zone "." IN {
@@ -381,7 +393,7 @@ $TTL 3600
   remote_user: root
 
   vars:
-    host_name: public-dns
+    host_name: "public-dns.{{prefix}}vlabs.ac.in"
     zone_file_prefix: public.
     zone_names:
       - "{{prefix}}virtual-labs.ac.in."
@@ -393,10 +405,12 @@ $TTL 3600
     servers: "{{public_dns_entries}}"
   roles:
     - common
+    - named_server
     - rsyslog_client
     - ossec_client
     - nagios_client
-    - named_server
+    - rsnapshot_client
+
 #+END_SRC
 
 * Test Cases

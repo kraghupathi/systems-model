@@ -1,34 +1,27 @@
-#+TITLE:     Nagios Server Role
-#+DATE:      2015-04-01 Wednesday
-#+PROPERTY: session *scratch*
+#+TITLE:     Lab Nagios Server Role
+#+DATE:      2015-07-01 Wednesday
 #+PROPERTY: results output
 #+PROPERTY: exports code
 #+SETUPFILE: org-templates/level-0.org
-#+DESCRIPTION: Nagios Server Design Model Documentation
+#+DESCRIPTION: Lab Nagios Server Design Model Documentation
 #+OPTIONS: ^:nil
 #+ATTR_HTML: width="80px"
 
 * Introduction
    This document describes the design and implementation of the
-   Monitoring System - Nagios. Nagios is a monitoring tool for
-   monitoring services of a system such as ssh service, cpu usage, ram
-   usage and disk usage. Nodes to be monitored are configured as
-   nrpe-client.
+   Monitoring System for labs using Nagios.
 
-   Nagios server sends email alerts in case of any critical situation
-   inside nrpe-client node.
+   Lab Nagios server sends email alerts in case of any critical situation
+   inside labs.
   
-   Examples and verification are given wherever possible. Test Cases
-   are also described to test the setup.
+   Test Cases are also described to test the setup.
 
 * Requirements
-  The functional and security requirements of the Nagios Server are
-  mentioned in the following sections. Only the Nagios specific
-  requirements which differ from the generic requirements specified in
-  the [[common%20role][common role]] are mentioned here.
+  The functional and security requirements of the Lab Nagios Server are
+  mentioned in the following sections.
 
 ** Functional Requirements
-   1) Monitor various services such as ssh, ping, http on all the system.
+   1) Monitor various services such as ssh, ping, http on all the labs.
    2) Allow incoming connections on TCP port 80.
    3) Allow outgoing connections on TCP port 22.
    4) Allow outgoing connections on TCP port 5666 for nrpe.
@@ -37,22 +30,22 @@
 
 ** Security Requirements
    1) All common security requirements as described in [[file:common.org::*Security Requirements][common role]] are
-      applicable to nagios node.
+      applicable to lab nagios node.
 
 * Design
    Given diagram describes the design of the monitoring
    server. Systems files are listed for a quick overview of whole
    systems.
 ** System Design Diagram
-[[./diagrams/nagios-server-design-diagram.png]]
+   [[./diagrams/lab-nagios-server-design-diagram.png]]
 
 ** COMMENT Editable Link
-[[https://docs.google.com/a/vlabs.ac.in/drawings/d/10tc9FolWsVoPfEXI1FbvJmZKg77SjkGbcix2yJMg81Q/edit][Design Diagram Link]]
+   [[https://docs.google.com/a/vlabs.ac.in/drawings/d/10tc9FolWsVoPfEXI1FbvJmZKg77SjkGbcix2yJMg81Q/edit][Design Diagram Link]]
 
 ** System Files
    The Following tables gives the information about the services and
    their configuration files where modifications are required to setup
-   nagios server.
+   lab nagios server.
 
 |------+----------+---------------------------------------------+-------------------------|
 | S.no | Service  | File                                        | Description             |
@@ -78,13 +71,6 @@
    example a =basic_services= group consists of =ssh=, =ping=, =nrpe
    check users= and =nrpe checking load=.
 
-   Groups are assigned to the client system depending on the services
-   that are to monitored inside the system. For example in a
-   reverseproxy node, services being monitored are =http=, =ssh=,
-   =https=, =ping=, =nrpe check users= and =nrpe check load=, so the
-   group which consists of all these services i.e. =web= is assigned
-   to the reverseproxy node.
-
    Nagios sends email whenever a problem is encountered on the client
    node. Example problem could be - some service is in critical state
    due to downtime. Example alert mail sent by nagios is shown below:
@@ -94,22 +80,20 @@
 
 Notification Type: PROBLEM
 
-Service: DNS checkup
-Host: DNS
+Service: HTTP checkup
+Host: lab1
 Address: localhost
 State: CRITICAL
 
-Date/Time: Sun Jan 25 11:13:05 UTC 2015
+Date/Time: Sun Aug 25 11:13:05 UTC 2015
 
 Additional Info:
 
 CRITICAL - Plugin timed out while executing system call
 #+END_EXAMPLE
 
-   Admin monitors client nodes via web interface. Web interface runs
+   Admin monitors lab nodes via web interface. Web interface runs
    as an http service on nagios node - localhost port 80 and 443.
-
-[[./diagrams/nagios-dashboard-screenshot.png]]
 
 * Implementation
 ** Structure of Scripts
@@ -118,9 +102,9 @@ CRITICAL - Plugin timed out while executing system call
    organized as follows:
 
 #+BEGIN_EXAMPLE
-|-- nagios_server.yml
+|-- lab_nagios_server.yml
 |-- roles
-|   |   |-- nagios_server
+|   |   |-- lab_nagios_server
 |   |   |   |-- handlers
 |   |   |   |   `-- main.yml
 |   |   |   |-- tasks
@@ -129,34 +113,33 @@ CRITICAL - Plugin timed out while executing system call
 |   |   |   |-- templates
 |   |   |   |   |-- commands.cfg
 |   |   |   |   |-- contacts.cfg.j2
-|   |   |   |   |-- nagios_server_iptables
+|   |   |   |   |-- lab_nagios_server_iptables
 |   |   |   |   `-- servers.cfg
 |   |   |   `-- vars
 |   |   |       `-- main.yml
 #+END_EXAMPLE
 
-   Here =nagios_server.yml= file configures the nagios server with
-   the "nagios_server", "common", "ossec_client", "rsyslog_client" and
-   "nagios_server" roles as described in the [[Nagios server
-   configuration script]] section.  
+   Here =lab_nagios_server.yml= file configures the nagios server with
+   the "lab_nagios_server", "common", "ossec_client", "rsyslog_client"
+   roles as described in the [[Nagios server configuration script]] section.  
    
-   The =roles/nagios_server/handlers/main.yml= file defines various
+   The =roles/lab_nagios_server/handlers/main.yml= file defines various
    handlers which are only executed in case a task notifies them.
    These handlers are described in detail in the [[Handlers]] section.
 
    The handlers are called when the tasks described in the [[Tasks][Tasks]]
    section notify them. Various tasks of [[Tasks][Tasks]] section are
-   concatenated into =roles/nagios_server/tasks/main.yml= file. File
-   =roles/nagios_server/tasks/configure_servers.yml= is included
+   concatenated into =roles/lab_nagios_server/tasks/main.yml= file. File
+   =roles/lab_nagios_server/tasks/configure_servers.yml= is included
    inside main.yaml file.
 
-   The =roles/nagios_server/templates/= folder contains four jinja2
+   The =roles/lab_nagios_server/templates/= folder contains four jinja2
    configuration templates - =commands.cfg=, =contancts.cfg.j2=,
-   =nagios_server_iptables= and =servers.cfg=.  These templates use
+   =lab_nagios_server_iptables= and =servers.cfg=.  These templates use
    variables at various places, these variables are defined in =vars/=
    folder with appropriate values.
 
-   =roles/nagios_server/vars/main.yml= file defines the variable as
+   =roles/lab_nagios_server/vars/main.yml= file defines the variable as
    described in the [[Define variables and services groups]] section.
 
 ** Firewall rules for Nagios Server
@@ -177,7 +160,7 @@ CRITICAL - Plugin timed out while executing system call
       being monitored. Defined in line number 56.
 
 *** Firewall Rules
-#+BEGIN_SRC yml -n :tangle roles/nagios_server/templates/nagios_server_iptables :eval no
+#+BEGIN_SRC yml -n :tangle roles/lab_nagios_server/templates/lab_nagios_server_iptables :eval no
 #If packet does not match any rule then the default action is applied to the packet
 *filter
 :INPUT ACCEPT [0:0]
@@ -295,7 +278,7 @@ COMMIT
    variables, and value of these variables are fetched from
    =vars/main.yml=.
 
-#+BEGIN_SRC yml :tangle roles/nagios_server/templates/commands.cfg
+#+BEGIN_SRC yml :tangle roles/lab_nagios_server/templates/commands.cfg
 {% for command in nagios_commands %}
 define command {
   command_name  {{command.name}}
@@ -322,7 +305,7 @@ define command {
    variables, and value of these variables are fetched from
    =vars/main.yml=.
 
-#+BEGIN_SRC yml :tangle roles/nagios_server/templates/contacts.cfg.j2
+#+BEGIN_SRC yml :tangle roles/lab_nagios_server/templates/contacts.cfg.j2
 ###############################################################################
 # CONTACTS.CFG - SAMPLE CONTACT/CONTACTGROUP DEFINITIONS
 #
@@ -404,7 +387,7 @@ define contactgroup{
 |------+---------------------+-----------------|
 | S.no | Directive Name      | Directive Value |
 |------+---------------------+-----------------|
-|   1. | host_name           | router          |
+|   1. | host_name           | lab1            |
 |------+---------------------+-----------------|
 |   2. | service_description | ssh             |
 |------+---------------------+-----------------|
@@ -418,7 +401,7 @@ define contactgroup{
    nodes and another 'for loop' loops over the services defined in the
    group to specify all the services.
 
-#+BEGIN_SRC yml :tangle roles/nagios_server/templates/servers.cfg
+#+BEGIN_SRC yml :tangle roles/lab_nagios_server/templates/servers.cfg
 {% for h in nagios_hosts %}
 define host {
 use             linux-server
@@ -445,7 +428,7 @@ check_command           {{ s.command }}
    All packages inside the node are updated before configuring the
    nagios server node.
 
-#+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml :eval no
+#+BEGIN_SRC yml :tangle roles/lab_nagios_server/tasks/main.yml :eval no
 - name: running yum update
   yum: name=* state=latest
   environment: proxy_env
@@ -458,7 +441,7 @@ check_command           {{ s.command }}
    3) =nagios-plugins-nrpe=
    4) =nrpe=
 
-#+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml :eval no
+#+BEGIN_SRC yml :tangle roles/lab_nagios_server/tasks/main.yml :eval no
 - name: Installing nagios
   yum: name=nagios state=installed
   environment: proxy_env
@@ -480,9 +463,9 @@ check_command           {{ s.command }}
 
    1) Copy iptables jinja2 template from ansible node to the server.
    2) Restart iptables service to enforce the configuration.
-#+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/lab_nagios_server/tasks/main.yml
 - name: Copy iptables configuration file
-  template: src=nagios_server_iptables dest=/etc/sysconfig/iptables owner=root group=root mode=600
+  template: src=lab_nagios_server_iptables dest=/etc/sysconfig/iptables owner=root group=root mode=600
   notify:
     - restart iptables
 #+END_SRC
@@ -491,7 +474,7 @@ check_command           {{ s.command }}
    interface. Value of =nagios_user= and =nagios_password= variables
    are fetched from =vars/main.yml= file.
 
-#+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/lab_nagios_server/tasks/main.yml
 - name: creating nagiosadmin user for web interface
   command: "htpasswd -cb /etc/nagios/passwd {{nagios_user}} {{nagios_password}}"
   notify: restart apache
@@ -501,7 +484,7 @@ check_command           {{ s.command }}
    Configuration file is copied from ansible server to the nagios
    server and nagios service is restarted.
 
-#+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/lab_nagios_server/tasks/main.yml
 - name: Updating contacts.cfg
   template: src=contacts.cfg.j2 dest=/etc/nagios/objects/contacts.cfg
   notify: restart nagios
@@ -512,7 +495,7 @@ check_command           {{ s.command }}
    configuration file by =cfg_file= directive. Value of
    =nagios_cfg_path= variable is fetched from =vars/main.yml= file.
 
-#+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/lab_nagios_server/tasks/main.yml
 - name: updating nagios.cfg
   lineinfile: dest="{{nagios_cfg_path}}" line="cfg_file=/etc/nagios/objects/servers.cfg" regexp="cfg_file\=/etc/nagios/objects/servers.cfg"
   notify: restart nagios
@@ -522,7 +505,7 @@ check_command           {{ s.command }}
    Some of the tasks are defined in another tasks file which is
    included in the main tasks file.
 
-#+BEGIN_SRC yml :tangle roles/nagios_server/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/lab_nagios_server/tasks/main.yml
 - tasks:
   include: configure_servers.yml
 #+END_SRc
@@ -531,7 +514,7 @@ check_command           {{ s.command }}
    Configuration files are copied from ansible node to the nagios
    server node and nagios service is restarted.
 
-#+BEGIN_SRC yml :tangle roles/nagios_server/tasks/configure_servers.yml
+#+BEGIN_SRC yml :tangle roles/lab_nagios_server/tasks/configure_servers.yml
 ---
 #configuring hosts
 - name: "creating servers.cfg"
@@ -548,7 +531,7 @@ check_command           {{ s.command }}
    configuration file by =cfg_file= directive. Value of
    =nagios_cfg_path= variable is fetched from =vars/main.yml= file.
 
-#+BEGIN_SRC yml :tangle roles/nagios_server/tasks/configure_servers.yml
+#+BEGIN_SRC yml :tangle roles/lab_nagios_server/tasks/configure_servers.yml
 - name: load additional_commands.cfg
   lineinfile: dest=/etc/nagios/nagios.cfg line="cfg_file=/etc/nagios/objects/additional_commands.cfg" regexp="cfg_file\=/etc/nagios/objects/additional_commands\.cfg"
   notify: restart nagios
@@ -557,7 +540,7 @@ check_command           {{ s.command }}
 *** Start nagios service
    Any changes in nagios configuration is enforced by restarting the
    nagios service.
-#+BEGIN_SRC yml :tangle roles/nagios_server/handlers/main.yml
+#+BEGIN_SRC yml :tangle roles/lab_nagios_server/handlers/main.yml
 - name: restart nagios
   service: name=nagios state=restarted
 #+END_SRC
@@ -566,7 +549,7 @@ check_command           {{ s.command }}
    Any changes in apache configuration is enforced by restarting the
    apache service.
 
-#+BEGIN_SRC yml :tangle roles/nagios_server/handlers/main.yml
+#+BEGIN_SRC yml :tangle roles/lab_nagios_server/handlers/main.yml
 - name: restart apache
   service: name=httpd state=restarted
 #+END_SRC
@@ -574,7 +557,7 @@ check_command           {{ s.command }}
 *** Start firewall service
    Any changes in iptables configuration file, to update the firewall
    is enforced by restarting the iptables service.
-#+BEGIN_SRC yml :tangle roles/nagios_server/handlers/main.yml
+#+BEGIN_SRC yml :tangle roles/lab_nagios_server/handlers/main.yml
 - name: restart iptables
   service: name=iptables state=restarted
 #+END_SRC
@@ -607,8 +590,8 @@ check_command           {{ s.command }}
 |   9. | nagios_commands    | Define the commands to be executed on nagios client    |
 |------+--------------------+--------------------------------------------------------|
 
-#+BEGIN_SRC yml :tangle roles/nagios_server/vars/main.yml
-nagios_host: nagios.{{prefix}}virtual-labs.ac.in
+#+BEGIN_SRC yml :tangle roles/lab_nagios_server/vars/main.yml
+nagios_host: lab-nagios.{{prefix}}virtual-labs.ac.in
 nagios_user: nagiosadmin
 nagios_password: Hief8ogfi
 nagios_admin_name: 'Nagios Admin'
@@ -618,52 +601,93 @@ nagios_cfg_path: /etc/nagios/nagios.cfg
 ########################################
 ## vars used by configure_servers.yml ##
 ########################################
+
 nagios_hosts:
-     router: { hostname: "router.{{prefix}}vlabs.ac.in", group: basic_services }
-     ansible: { hostname: "ansible.{{prefix}}vlabs.ac.in", group: basic_services }  
-#     ossec_server: { hostname: "ossec-server.{{prefix}}vlabs.ac.in", group: web }
-     rsyslog_server: { hostname: "rsyslog-server.{{prefix}}vlabs.ac.in", group: basic_services }
-     private_dns: { hostname: "private-dns.{{prefix}}vlabs.ac.in", group: basic_services }
-#     public_dns: { hostname: "public-dns.{{prefix}}vlabs.ac.in", group: basic_services }
-     reverseproxy: { hostname: "reverseproxy.{{prefix}}vlabs.ac.in", group: web }
-  
+     cse01-iiith: { hostname: "cse01-iiith.{{prefix}}vlabs.ac.in", group: lab }
+     cse02-iiith: { hostname: "cse02-iiith.{{prefix}}vlabs.ac.in", group: lab }
+     cse15-iiith: { hostname: "cse15-iiith.{{prefix}}vlabs.ac.in", group: lab }
+     cse19-iiith: { hostname: "cse19-iiith.{{prefix}}vlabs.ac.in", group: lab }
+     cse18-iiith: { hostname: "cse18-iiith.{{prefix}}vlabs.ac.in", group: lab }
+     cse20-iiith: { hostname: "cse20-iiith.{{prefix}}vlabs.ac.in", group: lab }
+     emt-iiith: { hostname: "emt-iiith.{{prefix}}vlabs.ac.in", group: lab }
+     cse29-iiith: { hostname: "cse29-iiith.{{prefix}}vlabs.ac.in", group: lab }
+#     cse22-iiith: { hostname: "cse22-iiith.{{prefix}}vlabs.ac.in", group: lab }
+     cse11-iiith: { hostname: "cse11-iiith.{{prefix}}vlabs.ac.in", group: lab }
+     cse14-iiith: { hostname: "cse14-iiith.{{prefix}}vlabs.ac.in", group: lab }
+     eerc03-iiith: { hostname: "eerc03-iiith.{{prefix}}vlabs.ac.in", group: lab }
+     phy14-iiith: { hostname: "phy14-iiith.{{prefix}}vlabs.ac.in", group: lab }
+     ccnsb06-iiith: { hostname: "ccnsb06-iiith.{{prefix}}vlabs.ac.in", group: lab }
+     eerc01-iiith: { hostname: "eerc01-iiith.{{prefix}}vlabs.ac.in", group: lab }
+     bsa-iiith: { hostname: "bsa-iiith.{{prefix}}vlabs.ac.in", group: lab }
+     cds-iiith: { hostname: "cds-iiith.{{prefix}}vlabs.ac.in", group: lab }
+     smfe-iiith: { hostname: "smfe-iiith.{{prefix}}vlabs.ac.in", group: lab }
+     ssp-iiith: { hostname: "ssp-iiith.{{prefix}}vlabs.ac.in", group: lab }
+     sd-iiith: { hostname: "sd-iiith.{{prefix}}vlabs.ac.in", group: lab }
+     cl-iiith: { hostname: "cl-iiith.{{prefix}}vlabs.ac.in", group: lab }
+     mi-iiith: { hostname: "mi-iiith.{{prefix}}vlabs.ac.in", group: lab }
+     mi-iiith: { hostname: "mi-iiith.{{prefix}}vlabs.ac.in", group: lab }
+     mas-iiith: { hostname: "mas-iiith.{{prefix}}vlabs.ac.in", group: lab }
+     mfs-iiith: { hostname: "mfs-iiith.{{prefix}}vlabs.ac.in", group: lab }
+     nlp-iiith: { hostname: "nlp-iiith.{{prefix}}vlabs.ac.in", group: lab }
+     cp-iiith: { hostname: "cp-iiith.{{prefix}}vlabs.ac.in", group: lab }
+     bmi-iitr: { hostname: "bmi-iitr.{{prefix}}vlabs.ac.in", group: lab }
+     bmsip-iitr: { hostname: "bmsip-iitr.{{prefix}}vlabs.ac.in", group: lab }
+     em-iitr: { hostname: "em-iitr.{{prefix}}vlabs.ac.in", group: lab }
+     sl-iitr: { hostname: "sl-iitr.{{prefix}}vlabs.ac.in", group: lab }
+     mrmsmtbs-iitk: { hostname: "mrmsmtbs-iitk.{{prefix}}vlabs.ac.in", group: lab }
+     va-iitk: { hostname: "va-iitk.{{prefix}}vlabs.ac.in", group: lab }
+     ufls-iitk: { hostname: "ufls-iitk.{{prefix}}vlabs.ac.in", group: lab }
+     vlae-iitk: { hostname: "vlae-iitk.{{prefix}}vlabs.ac.in", group: lab }
+     vcal-iitk: { hostname: "vcal-iitk.{{prefix}}vlabs.ac.in", group: lab }
+     pev-au: { hostname: "pev-au.{{prefix}}vlabs.ac.in", group: lab }
+     anthropology-iitg: { hostname: "anthropology-iitg.{{prefix}}vlabs.ac.in", group: lab }
+     ergonomics-iitg: { hostname: "ergonomics-iitg.{{prefix}}vlabs.ac.in", group: lab }
+     vem-iitg: { hostname: "vem-iitg.{{prefix}}vlabs.ac.in", group: lab }
+     ve-iitg: { hostname: "ve-iitg.{{prefix}}vlabs.ac.in", group: lab }
+     ial-coep: { hostname: "ial-coep.{{prefix}}vlabs.ac.in", group: lab }
+     sl-coep: { hostname: "sl-coep.{{prefix}}vlabs.ac.in", group: lab }
+     plc-coep: { hostname: "plc-coep.{{prefix}}vlabs.ac.in", group: lab }
+     em-coep: { hostname: "em-coep.{{prefix}}vlabs.ac.in", group: lab }
+     va-coep: { hostname: "va-coep.{{prefix}}vlabs.ac.in", group: lab }
+     mm-coep: { hostname: "mm-coep.{{prefix}}vlabs.ac.in", group: lab }
+     fab-coep: { hostname: "fab-coep.{{prefix}}vlabs.ac.in", group: lab }
+     bmsp-coep: { hostname: "bmsp-coep.{{prefix}}vlabs.ac.in", group: lab }
+     ied-nitk: { hostname: "ied-nitk.{{prefix}}vlabs.ac.in", group: lab }
+     sa-nitk: { hostname: "sa-nitk.{{prefix}}vlabs.ac.in", group: lab }
+     fm-nitk: { hostname: "fm-nitk.{{prefix}}vlabs.ac.in", group: lab }
+     sm-nitk: { hostname: "sm-nitk.{{prefix}}vlabs.ac.in", group: lab }
+     mm-nitk: { hostname: "mm-nitk.{{prefix}}vlabs.ac.in", group: lab }
+     mdmv-nitk: { hostname: "mdmv-nitk.{{prefix}}vlabs.ac.in", group: lab }
+     uorepc-nitk: { hostname: "uorepc-nitk.{{prefix}}vlabs.ac.in", group: lab }
+     vssd-iitd: { hostname: "vssd-iitd.{{prefix}}vlabs.ac.in", group: lab }
+     qnm-iitd: { hostname: "qnm-iitd.{{prefix}}vlabs.ac.in", group: lab }
+     msvs-dei: { hostname: "msvs-dei.{{prefix}}vlabs.ac.in", group: lab }
+     vp-dei: { hostname: "vp-dei.{{prefix}}vlabs.ac.in", group: lab }
+
 nagios_host_groups:
-     basic_services:
+     lab:
       - { service: "ssh", command: "check_ssh" }
       - { service: "ping", command: "check_ping!100.0,20%!500.0,60%" }
-      - { service: "nrpe checking users", command: "check_nrpe!check_users"}
-      - { service: "nrpe checking load", command: "check_nrpe!check_load"}
-
-     web:
-      - { service: "ssh", command: "check_ssh" }
-      - { service: "http", command: "check_http" }
-      - { service: "https", command: "check_tcp!443" }
-      - { service: "ping", command: "check_ping!100.0,20%!500.0,60%" }
-      - { service: "nrpe checking users", command: "check_nrpe!check_users"}
-      - { service: "nrpe checking load", command: "check_nrpe!check_load"}
-
-nagios_commands:
-    - {name: 'check_nrpe', command: '$USER1$/check_nrpe -H $HOSTADDRESS$ -c $ARG1$'}
-
+      - { service: "http", command: "check_http"}
 #+END_SRC
 ** Nagios server configuration script
    Nagios server is configured by using following roles:
    1) =common=
    2) =ossec_client=
    3) =rsyslog_client=
-   4) =nagios_server=
+   4) =lab_nagios_server=
 
-#+BEGIN_SRC yaml :tangle nagios_server.yaml
+#+BEGIN_SRC yaml :tangle lab_nagios_server.yaml
 ---
 - name: This yml script configures nagios server
-  hosts: nagios_server
+  hosts: lab_nagios_server
   remote_user: root
   
   vars:
-   host_name: "nagios-server.{{prefix}}vlabs.ac.in"
+   host_name: "lab-nagios.{{prefix}}vlabs.ac.in"
   roles:
     - common
-    - nagios_server
+    - lab_nagios_server
     - ossec_client
     - rsyslog_client
     - rsnapshot_client

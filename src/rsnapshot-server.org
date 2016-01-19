@@ -29,10 +29,23 @@
       cluster.
    2) Take periodic backup of various files on local node in case the
       node is rsnapshot server itself.
+   3) Push weekly backups to an off site storage node, currently
+      =aws-backup.vlabs.ac.in= located at IIIT-H.
 
 ** Security Requirements
    All common security requirements as described in [[file:common.org::*Security Requirements][common role]] are
    applicable to rsnapshot server node.
+
+** Assumptions
+   To have reliable secondary backup copy of this node, for better
+   reliability in case of a disaster we have following assumptions
+
+   - A remote node with sufficient storage is available
+   - It accepts file transfer over SSH with =rsync=
+   - It has the public key of this node as authorized key to let this
+     node connect without password
+   - The secondary backup node is reachable over SSH from this node
+
 * Design
 ** System Design Diagram
    The following network diagram represents the interaction between
@@ -40,10 +53,17 @@
 
 #+CAPTION:  Rsnapshot Server Network Diagram
 #+LABEL:  fig-rsnapshot-server-design-diagram
-[[./diagrams/rsnapshot-server-design-diagram.png]]
+[[./diagrams/rsnapshot-diagram.png]]
 
-** COMMENT Editable Link
-[[https://docs.google.com/drawings/d/1HQtQ_UsjmNYmeTcqh6e9l4_Fd6TfRhBh70NI43DuyDY/edit][Link to google drawing board]]
+** System design after functional requirement 3)
+   Following is the functional diagram. 
+
+#+CAPTION: Backup setup
+[[file:diagrams/rsnapshot-diagram.png][Backup setup.]]
+
+** Source of the diagram
+   Created using LibreOffice and VRT extensions
+   [[./diagrams/rsnapshot-diagram.odg][Download source .odg file]]
 
 ** System Files
    The following table gives the information about the configuration
@@ -93,8 +113,8 @@
    section notify them. Various tasks of [[Tasks][Tasks]] section are
    concatenated into =roles/rsnapshot_server/tasks/main.yml= file.
 
-   The =roles/rsnapshot_server/templates/= folder contains two jinja2
-   configuration templates - =rsnapshot.conf.j2= and
+   The =roles/rsnapshot_server/templates/= directory contains two
+   jinja2 configuration templates - =rsnapshot.conf.j2= and
    =rsnapshot_server_iptables=. These templates use variables defined
    at various places to configure the Rsnapshot server with
    appropriate values.
@@ -103,11 +123,18 @@
    described in the [[Variables Definition]] section.
 
 ** Firewall Rules
-   Firewall rules applied to rsnapshot server are mentioned
+   Firewall rules applied to =rsnapshot= server are mentioned
    here. Description of firewall rules which are common across all the
-   nodes are defined in the [[file:common.org::*Common Firewall Rules][common role]]. There are no specific
-   firewall rule for rsnapshot node, only the common rules are
-   applied.
+   nodes are defined in the [[file:common.org::*Common Firewall Rules][common role]].
+
+   There is a specific firewall rule to allow outgoing TCP connections
+   on port 2222 to =aws-backup.vlabs.ac.in=, these connections are
+   forwarded by the router of this cluster.
+
+#+BEGIN_EXAMPLE
+#Allow rsync over ssh port 22 to aws-backups.vlabs.ac.in
+-A OUTPUT -d {{aws_backup}} -p tcp -m tcp --dport 2222 -j ACCEPT
+#+END_EXAMPLE
 
 #+BEGIN_SRC yml -n :tangle roles/rsnapshot_server/templates/rsnapshot_server_iptables :eval no
 *filter
@@ -166,6 +193,9 @@
 
 #Allow SSH
 -A OUTPUT -p tcp -m tcp --dport 22 -j ACCEPT
+
+#Allow rsync over ssh port 22 to aws-backups.vlabs.ac.in
+-A OUTPUT -d {{aws_backup}} -p tcp -m tcp --dport 2222 -j ACCEPT
 
 #Allow server to send emails.  Required for sending logwatch emails
 -A OUTPUT -p tcp -m tcp --dport 25 -j ACCEPT
@@ -302,6 +332,59 @@ backup               "root@nagios.vlabs.ac.in:/home/"                           
 backup               "root@nagios.vlabs.ac.in:/etc/"                                 nagios/
 backup               "root@nagios.vlabs.ac.in:/usr/local/"                           nagios/
 backup_script        /bin/date "+ backup of nagios completed at %c" > end.txt        nagios/nagios_end
+#+END_EXAMPLE
+
+*** =rsync= to a remote server
+    For having redundant backup in case of diaster, we are having a
+    backup node at IIIT-H which will be receiving backups on weekly
+    basis from the AWS =rsnapshot= node. Refer the network diagram
+    which represents the proposed setup.
+
+    As the number of publicly available IP addresses are limited, we
+    resort to sharing a single IP address for various services, by
+    means of NAT.  As an example, a single IP address can be shared by
+    both a web server and a SSH server, with the services listening on
+    different ports.
+    
+    Here we have used the router at IIIT-H to NAT incoming connections
+    on TCP port 2222 to =aws-backup.vlabs.ac.in= on TCP port 22. The
+    =rsanpshot.vlabs.ac.in= server along with usual backup of systems
+    servers also undertakes the task of pushing copies of backup using
+    =rsync=.
+
+    As we are backing up what was earlier backed up from other nodes,
+    we need to ensure some special consideration while using =rsync=,
+    which is achieved using following options.
+
+#+BEGIN_EXAMPLE
+rsync -azH --delete /path/to/source /path/to/destination
+#+END_EXAMPLE
+
+    + =-a=, which equals to =-rlptgoD=
+    + =-z=, which compresses the data before transmission
+    + =-H=, this tells =rynsc= to look for hard link at source and
+      ensure they are hard linked at the destination, this is very
+      important that it is used here.
+    + =--delete=, to remove the files at destination which have been
+      removed at the source
+
+    We then add a =cron= job to automate the push of the backup files
+    every week.
+
+#+BEGIN_EXAMPLE
+0 18 * * 7 rsync -azH --delete -e "ssh -p 2222" /.snapshot/* root@aws-backup.vlabs.ac.in:/destination/
+#+END_EXAMPLE
+
+The various fields of =cron= are described below.
+#+BEGIN_EXAMPLE
+ Example of job definition:
+ .---------------- minute (0 - 59)
+ |  .------------- hour (0 - 23)
+ |  |  .---------- day of month (1 - 31)
+ |  |  |  .------- month (1 - 12) OR jan,feb,mar,apr ...
+ |  |  |  |  .---- day of week (0 - 6) (Sunday=0 or 7) OR sun,mon,tue,wed,thu,fri,sat
+ |  |  |  |  |
+ *  *  *  *  * user-name command to be executed
 #+END_EXAMPLE
 
 *** Complete configuration file
@@ -548,7 +631,7 @@ link_dest	1
 #+END_SRC
 
 *** Set firewall rules
-    Firewall rules are applied and iptables service is restarted.
+    Firewall rules are applied and =iptables= service is restarted.
 
 #+BEGIN_SRC yml :tangle roles/rsnapshot_server/tasks/main.yml :eval no
 - name: Applying iptables for rsnapshot
@@ -556,16 +639,16 @@ link_dest	1
   notify: restart_iptables
 #+END_SRC
 
-*** Generate SSH keys on the rsnapshot server and get it to ansible server
-    Rsnapshot server connects to rsnapshot clients over ssh to take
+*** Generate SSH keys on the =rsnapshot= server and get it to ansible server
+    Rsnapshot server connects to =rsnapshot= clients over SSH to take
     backup. For this SSH key is generated on the Rsnapshot server. The
-    ssh public key is to be placed inside the rsnapshost client node's
+    SSH public key is placed inside the =rsnapshost= client node's
     authorized_keys, for this keys are copied to ansible server and
-    from there it will be placed inside rsnapshot client.
+    from there it will be placed inside =rsnapshot= client.
 
 #+BEGIN_SRC yml :tangle roles/rsnapshot_server/tasks/main.yml :eval no
 - name: Create a SSH key for 'root'
-  user: name=root generate_ssh_key=yes ssh_key_file=.ssh/{{ rsnapshot_ssh_key }}
+  user: name=root generate_ssh_key=yes ssh_key_file=.ssh/id_rsa
   when: rsnapshot_ssh_key != False
 
 - name: Get public key from RSNAPSHOT server to ansible server
@@ -573,8 +656,8 @@ link_dest	1
 #+END_SRC
 
 *** Copy configuration file to rsnapshot server
-    Copy "rsnapshot.conf" jinja2 template from the ansible server to
-    rsnapshot server at =/etc/rsnapshot.conf=.
+    Copy "=rsnapshot.conf=" jinja2 template from the ansible server to
+    =rsnapshot= server at =/etc/rsnapshot.conf=.
 
 #+BEGIN_SRC yml :tangle roles/rsnapshot_server/tasks/main.yml :eval no
 #updating rsnapshot.conf also includes configuring backup of remote nodes
@@ -583,7 +666,7 @@ link_dest	1
 #+END_SRC
    
 *** Configure cron for backup
-    Cronjobs are configured on the rsnapshot server to take backup of
+    Cron jobs are configured on the =rsnapshot= server to take backup of
     the files on the various server automatically at specified
     interval - hourly, daily, weekly and monthly.
 
@@ -603,9 +686,9 @@ link_dest	1
 
 ** Handlers
 *** Start iptables
-    Any changes in iptables configuration file is enforced by
-    restarting the iptables. To restart iptables, handlers (ansible
-    terms) are defined here.
+    Any changes in =iptables= configuration file is enforced by
+    restarting the =iptables=. To restart =iptables=, handlers
+    (ansible terms) are defined here.
 
 #+BEGIN_SRC yml :tangle roles/rsnapshot_server/handlers/main.yml :eval no
 - name: restart_iptables
@@ -644,69 +727,70 @@ rsnapshot_config_backup:
     - name: router.vlabs.ac.in
       points:
           - [backup_script, /bin/date "+ backup of router started at %c" > start.txt, router/router_start]
-          - [backup, "root@router.vlabs.ac.in:/etc/sysconfig/", router/]
+          - [backup, "root@router.{{prefix}}vlabs.ac.in:/etc/sysconfig/", router/]
           - [backup_script, /bin/date "+ backup of router completed at %c" > end.txt, router/router_end]
 
     - name: ansible.vlabs.ac.in
       points:
           - [backup_script, /bin/date "+ backup of ansible started at %c" > start.txt, ansible/ansible_start]
-          - [backup, "root@ansible.vlabs.ac.in:/root/.ssh/", ansible/]
+          - [backup, "root@ansible.{{prefix}}vlabs.ac.in:/root/.ssh/", ansible/]
           - [backup_script, /bin/date "+ backup of ansible completed at %c" > end.txt, ansible/ansible_end]
   
     - name: ossec-server.vlabs.ac.in
       points:
           - [backup_script, /bin/date "+ backup of ossec-server started at %c" > start.txt, ossec-server/ossec-server_start]
-          - [backup, "root@ossec-server.vlabs.ac.in:/etc/sysconfig/", ossec-server/]
-          - [backup, "root@ossec-server.vlabs.ac.in:/root/", ossec-server/]
-          - [backup, "root@ossec-server.vlabs.ac.in:/var/ossec/etc/", ossec-server/]
+          - [backup, "root@ossec-server.{{prefix}}vlabs.ac.in:/etc/sysconfig/", ossec-server/]
+          - [backup, "root@ossec-server.{{prefix}}vlabs.ac.in:/root/", ossec-server/]
+          - [backup, "root@ossec-server.{{prefix}}vlabs.ac.in:/var/ossec/etc/", ossec-server/]
           - [backup_script, /bin/date "+ backup of ossec-server completed at %c" > end.txt, ossec-server/ossec-server_end]
 
     - name: rsyslog-server.vlabs.ac.in
       points:
           - [backup_script, /bin/date "+ backup of rsyslog-server started at %c" > start.txt, rsyslog-server/rsyslog-server_start]
-          - [backup, "root@rsyslog-server.vlabs.ac.in:/etc/rsyslog.conf", rsyslog-server/]
-          - [backup, "root@rsyslog-server.vlabs.ac.in:/etc/sysconfig/iptables", rsyslog-server/]
+          - [backup, "root@rsyslog-server.{{prefix}}vlabs.ac.in:/etc/rsyslog.conf", rsyslog-server/]
+          - [backup, "root@rsyslog-server.{{prefix}}vlabs.ac.in:/etc/sysconfig/iptables", rsyslog-server/]
           - [backup_script, /bin/date "+ backup of rsyslog-server completed at %c" > end.txt, rsyslog-server/rsyslog-server_end]
 
     - name: private-dns.vlabs.ac.in
       points:
           - [backup_script, /bin/date "+ backup of private-dns started at %c" > start.txt, private-dns/private-dns_start]
-          - [backup, "root@private-dns.vlabs.ac.in:/etc/named.conf", private-dns/]
-          - [backup, "root@private-dns.vlabs.ac.in:/var/named/", private-dns/]
-          - [backup, "root@private-dns.vlabs.ac.in:/etc/sysconfig/named", private-dns/]
-          - [backup, "root@private-dns.vlabs.ac.in:/etc/sysconfig/iptables", private-dns/]
+          - [backup, "root@private-dns.{{prefix}}vlabs.ac.in:/etc/named.conf", private-dns/]
+          - [backup, "root@private-dns.{{prefix}}vlabs.ac.in:/var/named/", private-dns/]
+          - [backup, "root@private-dns.{{prefix}}vlabs.ac.in:/etc/sysconfig/named", private-dns/]
+          - [backup, "root@private-dns.{{prefix}}vlabs.ac.in:/etc/sysconfig/iptables", private-dns/]
           - [backup_script, /bin/date "+ backup of private-dns completed at %c" > end.txt, private-dns/private-dns_end]
 
     - name: public-dns.vlabs.ac.in
       points:
           - [backup_script, /bin/date "+ backup of public-dns started at %c" > start.txt, public-dns/public-dns_start]
-          - [backup, "root@public-dns.vlabs.ac.in:/etc/named.conf", pubic-dns/]
-          - [backup, "root@public-dns.vlabs.ac.in:/var/named/", public-dns/]
-          - [backup, "root@public-dns.vlabs.ac.in:/etc/sysconfig/named", public-dns/]
-          - [backup, "root@public-dns.vlabs.ac.in:/etc/sysconfig/iptables", public-dns/]
+          - [backup, "root@public-dns.{{prefix}}vlabs.ac.in:/etc/named.conf", pubic-dns/]
+          - [backup, "root@public-dns.{{prefix}}vlabs.ac.in:/var/named/", public-dns/]
+          - [backup, "root@public-dns.{{prefix}}vlabs.ac.in:/etc/sysconfig/named", public-dns/]
+          - [backup, "root@public-dns.{{prefix}}vlabs.ac.in:/etc/sysconfig/iptables", public-dns/]
           - [backup_script, /bin/date "+ backup of public-dns completed at %c" > end.txt, public-dns/public-dns_end]
 
     - name: reverseproxy.vlabs.ac.in
       points:
           - [backup_script, /bin/date "+ backup of reverseproxy started at %c" > start.txt, reverseproxy/reverseproxy_start]
-          - [backup, "root@reverseproxy.vlabs.ac.in:/etc/httpd/conf/", reverseproxy/]
-          - [backup, "root@reverseproxy.vlabs.ac.in:/etc/httpd/conf.d/", reverseproxy/]
-          - [backup, "root@reverseproxy.vlabs.ac.in:/etc/awstats/", reverseproxy/]
-          - [backup, "root@reverseproxy.vlabs.ac.in:/etc/sysconfig/", reverseproxy/]
-          - [backup, "root@reverseproxy.vlabs.ac.in:/var/log/httpd/", reverseproxy/]
+          - [backup, "root@reverseproxy.{{prefix}}vlabs.ac.in:/etc/httpd/conf/", reverseproxy/]
+          - [backup, "root@reverseproxy.{{prefix}}vlabs.ac.in:/etc/httpd/conf.d/", reverseproxy/]
+          - [backup, "root@reverseproxy.{{prefix}}vlabs.ac.in:/etc/awstats/", reverseproxy/]
+          - [backup, "root@reverseproxy.{{prefix}}vlabs.ac.in:/etc/sysconfig/", reverseproxy/]
+          - [backup, "root@reverseproxy.{{prefix}}vlabs.ac.in:/var/log/httpd/", reverseproxy/]
+          - [backup, "root@reverseproxy.{{prefix}}vlabs.ac.in:/var/lib/awstats", reverseproxy/]
           - [backup_script, /bin/date "+ backup of reverseproxy completed at %c" > end.txt, reverseproxy/reverseproxy_end]
 
     - name: nagios.vlabs.ac.in
       points:
           - [backup_script, /bin/date "+ backup of nagios started at %c" > start.txt, nagios/nagios_start]
-          - [backup, "root@nagios.vlabs.ac.in:/etc/nagios/", nagios/]
+          - [backup, "root@nagios.{{prefix}}vlabs.ac.in:/etc/nagios/", nagios/]
           - [backup_script, /bin/date "+ backup of nagios completed at %c" > end.txt, nagios/nagios_end]
 
     - name: ads.vlabs.ac.in
       points:
           - [backup_script, /bin/date "+ backup of ads started at %c" > start.txt, ads/ads_start]
-          - [backup, "root@ads.vlabs.ac.in:/root/", ads/]
-          - [backup, "root@ads.vlabs.ac.in:/var/log", ads/]
+          - [backup, "root@ads.{{prefix}}vlabs.ac.in:/root/", ads/]
+          - [backup, "root@ads.{{prefix}}vlabs.ac.in:/var/log", ads/]
           - [backup_script, /bin/date "+ backup of ads completed at %c" > end.txt, ads/ads_end]
 
 
@@ -739,6 +823,14 @@ rsnapshot_crontab:
        hour: 2
        minute: 30
        job: "/usr/bin/rsnapshot monthly"
+     - name: rsync_job
+       minute: 30
+       hour: 20
+       day: '*'
+       month: '*'
+       weekday: 6
+       job: "rsync -azH --delete -e 'ssh -p 2222' /.snapshot root@{{aws_backup}}:/srv"
+
 #+END_SRC
 
 ** Rsnapshot server configuration script
@@ -746,17 +838,21 @@ rsnapshot_crontab:
    1) =common=
    2) =rsnapshot_server=
 
-#+BEGIN_SRC yml :tangle rsnapshot_server.yml :eval no
+#+BEGIN_SRC yaml :tangle rsnapshot_server.yaml :eval no
 ---
 - name: This yml script configures rsnapshot server
   hosts: rsnapshot_server
   remote_user: root
 
   vars:
-   host_name: rsnapshot-server
+   host_name: "rsnapshot-server.{{prefix}}vlabs.ac.in"
   roles:
     - common
     - rsnapshot_server
+    - ossec_client
+    - rsyslog_client
+    - rsnapshot_client
+
 
 #+END_SRC
 * Test Cases
@@ -818,3 +914,30 @@ rsnapshot
 
 *** Conclusion
     Rsnapshot server is able to rsync from rsnapshot client.
+
+** Test Case-3
+*** Objective
+    Test/confirm whether backup node is able to push backups to
+    secondary backup node.
+*** Required
+    1. A remote node accessible over SSH, as described in [[Assumptions]]
+    2. This node configured to allow SSH connection to the secondary
+       node.
+
+*** Steps to test
+    1. Log on to the =rsnapshot= node in the cluster.
+    2. Run =telnet <aws-backup.vlabs.ac.in-IP> 2222= and check whether
+       it connects
+    3. Try transferring some file, run =rsync -aZ --progress -e 'ssh
+       -p 2222' <some_file> root@aws-backup.vlabs.ac.in:.=
+    4. Check whether the =rsync= job is listed in the =cron= schedule,
+       open =/etc/cron.d/ansible_rsnapshot= this will list the
+       scheduled job.
+
+*** Observation
+    - If step 2. passes then it means, the node can see other node
+      over network
+    - If step 3, shows that the file was transferred then it means
+      =rsync= copy is supported on the remote node
+    - If step 4, shows a scheduled job, then a copy of the backup
+      directory can be expected on the secondary backup node.

@@ -55,7 +55,7 @@
 ** Functional Requirements
    Rsyslog service should run on UDP port 514 to accept log messages
    from clients. These log messages should be saved in different
-   folders / files per client for easy reference.
+   directories / files per client for easy reference.
 
 ** Security Requirements
    All common security requirements as described in [[file:common.org::*Security Requirements][common role]] are
@@ -175,6 +175,10 @@
 -A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
 
+#Allow incoming SSH connections from rsnapshot server IPs.  Hopefully fail2ban will take care of bruteforce attack$
+{% for item in rsnapshot_server_ips  %}
+-A INPUT -m state --state NEW -s {{rsnapshot_server_ips[0]}} -p tcp -m tcp --dport 22 -j ACCEPT
+{% endfor %}
 #Allow to accept incoming rsyslog messages from anywhere
 -A INPUT -m state --state NEW -p udp -m udp --dport 514 -j ACCEPT
 
@@ -440,13 +444,15 @@ authpriv.*      ?TmplAuth
   hosts: rsyslog_server
   remote_user: root
   vars:
-   - iam_router: false
-
+   iam_router: false
+   host_name: "rsyslog-server.{{prefix}}vlabs.ac.in"
   roles:
     - common
+    - rsyslog_server
     - ossec_client
     - nagios_client
-    - rsyslog_server
+    - rsnapshot_client
+
 #+END_SRC
 
 * Test Cases for testing rsyslog server soundness and completeness
