@@ -319,13 +319,15 @@ COMMIT
 #+END_SRC
 
 **** Set PATH environment
-Set environment variable "PATH" so the service can be invoked from anywhere
-independent of the same working directory where file is present.
+Set environment variable "PATH" so the service can be invoked from
+anywhere independent of the same working directory where file is
+present. Service is located at =/root/systems-model/build/cluster=
+directory.
 
 #+BEGIN_SRC yaml :tangle roles/config_server/tasks/main.yml
 ---
 - name: set environment variable
-  lineinfile: dest=/etc/environment regexp=^PATH= line=PATH=/usr/lib64/qt-3.3/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin
+  lineinfile: dest=/etc/environment regexp=^PATH= line=PATH=/usr/lib64/qt-3.3/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin:/root/systems-model/build/cluster
 #+END_SRC
 
 **** Handlers
