@@ -330,6 +330,14 @@ directory.
   lineinfile: dest=/etc/environment regexp=^PATH= line=PATH=/usr/lib64/qt-3.3/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin:/root/systems-model/build/cluster
 #+END_SRC
 
+**** Make service executable
+Hooks service is run via hosting_service program. To be able to invoke
+this service as a command we will make this program executable.
+#+BEGIN_SRC yaml :tangle roles/config_server/tasks/main.yml
+- name: make service program executable
+  shell: chmod +x hosting_service
+#+END_SRC
+
 **** Handlers
    Restart the iptables service if configuration file of iptables is
    modified. These handlers are called only when tasks notifies to
