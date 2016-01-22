@@ -338,11 +338,15 @@ forwarders: "{ }"
 
 #List of domains to pass through reverseproxy
 proxy_domains:
+#DOMAIN_START
   - {domain: "reverseproxy.{{prefix}}virtual-labs.ac.in", alias: "reverseproxy.{{prefix}}vlabs.ac.in"}
   - {domain: "bandwidthd.{{prefix}}virtual-labs.ac.in", alias: "bandwidthd.{{prefix}}vlabs.ac.in"}
+#DOMAIN_END
 
 awstats_domains:
+#AWSTATS_START
 #  - cp."{{prefix}}"virtual-labs.ac.in
+#AWSTATS_END
 
 
 #AWS public DNS is also listing other public records of vlabs
@@ -363,6 +367,7 @@ public_dns_entries:
 
 
 private_dns_entries:
+#DNS_START
   - { hostname: router, ip: 10.100.1.1 }
   - { hostname: bandwidthd, ip: 10.100.1.1 }
   - { hostname: ansible, ip: 10.100.1.2 }
@@ -375,6 +380,7 @@ private_dns_entries:
   - { hostname: ads, ip: 10.100.1.9 }
   - { hostname: rsnapshot-server, ip: 10.100.1.10 }
 #  - { hostname: cp, ip: 10.100.2.1 }
+#DNS_END
 
 #+END_SRC
 
