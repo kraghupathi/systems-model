@@ -414,18 +414,19 @@ Following program updates the entries in the data file with the values passed by
 the ADS service.
 
 **** Main Function
-The main function provides help to the user about the functionality of the
-service.  Its main job is to register the lab if the argument passed is
-'register' and deregister the lab if the argument passed is 'deregister'. It
-updates the yml configuration file. Error code is thrown if the ads service
-tries to register existing lab or tries to deregister non-existent lab.
+The main function provides help to the user about the functionality of
+the service. Its main job is to register the lab if the argument
+passed is 'register' and deregister the lab if the argument passed is
+'deregister'. It updates the yml configuration file. Error code is
+thrown if the ads service tries to register existing lab or tries to
+deregister non-existent lab.
 
 #+BEGIN_SRC python :tangle hosting_service.py :eval no
 #!/usr/bin/env python
 
 import sys
 from config import *
-from modularised_program import *
+from hosting_program import *
 
 def main(argv):
 
@@ -439,22 +440,26 @@ def main(argv):
 
     if (str(argv[0]) == "register"):
         returnCode = register(argv[1], argv[2])
+        if (returnCode != code['regError']):
+            update_reg(argv[1], argv[2])
+        else:
+     	    sys.exit(123)
 
     elif (str(argv[0] == "deregister")):
         returnCode = deregister(argv[1], argv[2])
-
-    if (returnCode != code['regError'] and returnCode != code['deregError']):
-	update()
-    else:
-	sys.exit(123)
+        if (returnCode != code['deregError']):
+            update_dereg(argv[1], argv[2])
+        else:
+     	    sys.exit(123)
 
     return returnCode
 #+END_SRC
 
 **** Register
-Register function finds the entry of the lab to be registered in the data
-file. If the entry is not present then it appends the new entry in the data
-file. But if the entry is already present then it throws an error.
+Register function finds the entry of the lab to be registered in the
+data file. If the entry is not present then it appends the new entry
+in the data file. But if the entry is already present then it throws
+an error.
 
 #+BEGIN_SRC python :tangle hosting_service.py :eval no
 def register(hostname, ip):
@@ -471,9 +476,10 @@ def register(hostname, ip):
 #+END_SRC
 
 **** Deregister
-Deregister function finds the entry of the lab to be deregistered in the data
-file. If the entry is present then it deletes the entry from the data file. But
-if the entry is not present then it throws an error.
+Deregister function finds the entry of the lab to be deregistered in
+the data file. If the entry is present then it deletes the entry from
+the data file. But if the entry is not present then it throws an
+error.
 
 #+BEGIN_SRC python :tangle hosting_service.py :eval no
 def deregister(hostname, ip):
@@ -489,9 +495,9 @@ def deregister(hostname, ip):
 #+END_SRC
 
 **** Findentry
-Findentry function finds the entry of a lab in the data file.
-If the entry exist function returns the index of the entry, if the entry is not
-found it returns -1. Existent entries are also returned.
+Findentry function finds the entry of a lab in the data file.  If the
+entry exist function returns the index of the entry, if the entry is
+not found it returns -1. Existent entries are also returned.
 
 #+BEGIN_SRC python :tangle hosting_service.py :eval no
 def findEntry(hostname, ip):
@@ -576,39 +582,59 @@ To know more type: "pydoc hosting_service"
 '''
 #+END_SRC
 
-**** Update
-Update function gets the proper format of the data for various servers DNS,
-reverseproxy, awstats and nagios. Update function calls the server's function to
-represent the data in the respective format. Then call *append_data* function to
-append data in the yml files.
+**** Update Register
+This function constructs data in the proper format for dns,
+reverseproxy, awstats and nagios from the argument passed to the
+function. It then calls *append_data* function to append data in the
+yml file.
 
 #+BEGIN_SRC python :tangle hosting_program.py :eval no
 from config import *
 
-def update():
+def update_reg(hostname, ip):
 
-    entries = {}
-    entries['dns'] = []
-    entries['reverseproxy'] = []
-    entries['nagios'] = []
-    entries['awstats'] = []
+    entry = {}
+    entry['dns'] = []
+    entry['reverseproxy'] = []
+#    entries['nagios'] = []
+    entry['awstats'] = []
+    line = hostname + " " + ip
+    entry['dns'].append(dns_format(line))
+    entry['reverseproxy'].append(reverseproxy_format(line))
+#   entry['nagios'].append(nagios_format(line))
+    entry['awstats'].append(awstats_format(line))
 
-    labFile = open(labPath, "r")
-    
-    for line in labFile.readlines():
-	entries['dns'].append(dns_format(line))
-	entries['reverseproxy'].append(reverseproxy_format(line))
-	entries['nagios'].append(nagios_format(line))
-	entries['awstats'].append(awstats_format(line))
-
-    labFile.close()
-
-    for key in entries:
-        append_to_data(key, entries[key])
-    
+    for key in entry:
+        append_to_data(key, entry[key])
     return
 #+END_SRC
 
+**** Update Deregister
+This function constructs pattern that is to be searched in the yaml
+file. It then deletes the entry from yaml file.
+
+#+begin_src python :tangle hosting_program.py :eval no
+def update_dereg(hostname, ip):
+
+    pattern = {}
+    pattern['reverseproxy'] = """  - {domain: "%s.{{prefix}}virtual-labs.ac.in", alias: "%s.{{prefix}}vlabs.ac.in" }\n""" %(hostname, hostname)
+    pattern['awstats'] = """  - %s."{{prefix}}"virtual-labs.ac.in\n""" %(hostname)
+    pattern['dns'] = """  - { hostname: %s, ip: %s }\n""" %(hostname, ip)
+
+    servers = ['dns', 'reverseproxy', 'awstats']
+
+    for key in servers:
+        ymlFile = open(fileLocation[key], "r")
+        ymlData = ymlFile.readlines()
+        del ymlData[ymlData.index(pattern[key])]
+        ymlFile.close()
+        ymlFile = open(fileLocation[key], "w")
+        for lines in ymlData:
+            ymlFile.write(lines)
+        ymlFile.close()
+
+    return
+#+end_src
 **** Rsnapshot
 Rsnapshot uses *awstats-domain* variables so there is nothing explicitly to be
 done for this.
@@ -621,7 +647,6 @@ def rsnapshot_format(line):
     '''    
 
     return
-
 #+END_SRC
 
 **** Nagios
@@ -640,7 +665,7 @@ Create data in the proper format to be updated in the dns variable section.
 #+BEGIN_SRC python :tangle hosting_program.py :eval no
 def dns_format(line):    
     splitLine = line.split()
-    entry = " - { hostname: %s, ip: %s }\n" %(splitLine[0], splitLine[1])
+    entry = "  - { hostname: %s, ip: %s }\n" %(splitLine[0], splitLine[1])
     return entry
 #+END_SRC
 
@@ -650,7 +675,7 @@ Create data in the proper format to be updated in the awstats variable section.
 #+BEGIN_SRC python :tangle hosting_program.py :eval no
 def awstats_format(line):  
     splitLine = line.split()
-    fqdn = splitLine[0] + ".virtual-labs.ac.in"
+    fqdn = splitLine[0] + '."{{prefix}}"virtual-labs.ac.in'
     entry = '  - %s\n' %(fqdn)
     return entry
 #+END_SRC
@@ -695,7 +720,7 @@ def append_to_data(key, data):
     startIndex = ymlData.index(delimiters[key][0])
     endIndex = ymlData.index(delimiters[key][1])
 
-    newYmlData = ymlData[0:startIndex + 1] + data + ymlData[endIndex:]
+    newYmlData = ymlData[0:startIndex + 1] + data + ymlData[startIndex+1:]
 
     ymlFile.close()
 
@@ -719,7 +744,7 @@ Flow of the function is as follows:
 - 5 :: Combine existing data and new entries
 - 6 :: Write all the entries in the yml file
 
-#+BEGIN_SRC python :tangle program.py :eval no
+#+BEGIN_SRC python :tangle hosting_program.py :eval no
 def nagios(inputFile, outputFile):
     labFile = open(inputFile, "r")
     ymlFile = open(outputFile, "r")
@@ -755,7 +780,7 @@ def nagios(inputFile, outputFile):
 **** Rsnapshot entry
 Rsnapshot yml files reads data from "awstats_domain" variable. There is no
 separate entries for rsnapshot.
-#+BEGIN_SRC python :tangle program.py :eval no
+#+BEGIN_SRC python :tangle hosting_program.py :eval no
 def rsnapshot(inputFile, outputFile):
     ''' 
             There is no need to do anything explicit for the lab rsnapshot-server.
