@@ -226,6 +226,9 @@ files. Other configuration files are updated in common role.
 {% for item in rsnapshot_server_ips  %}
 -A INPUT -m state --state NEW -s {{item}} -p tcp -m tcp --dport 22 -j ACCEPT
 {% endfor %}
+#Allow incoming SSH connections from ads server IP. This is used to invoke hooks service from ads server.
+-A INPUT -m state --state NEW -s {{ads_ip}} -p tcp -m tcp --dport 22 -j ACCEPT
+
 #Allow incoming NRPE queries for nagios from nagios servers
 -A INPUT -m state --state NEW -p tcp -m tcp --dport 5666 -j ACCEPT
 #Log all other "blocked_input_" attempts with rate limiting
