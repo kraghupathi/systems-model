@@ -587,18 +587,19 @@ delimiters['awstats'] = ["#AWSTATS_START\n", "#AWSTATS_END\n"]
 delimiters['nagios'] = ["#Nagios_START\n", "#Nagios_END\n"]
 
 fileLocation = {}
-fileLocation['dns'] = 'main.yml'
-fileLocation['nagios'] = 'main.yml'
-fileLocation['reverseproxy'] = 'main.yml'
-fileLocation['awstats'] = 'main.yml'
+fileLocation['dns'] = '/root/systems-model/build/cluster/roles/common_vars/vars/main.yml'
+fileLocation['nagios'] = '/root/systems-model/build/cluster/roles/common_vars/vars/main.yml'
+fileLocation['reverseproxy'] = '/root/systems-model/build/cluster/roles/common_vars/vars/main.yml'
+fileLocation['awstats'] = '/root/systems-model/build/cluster/roles/common_vars/vars/main.yml'
 
-labPath = "/root/lab.txt"
+labPath = "/home/vlead/lab.txt"
 
 code = {}
 code['regError'] = "Code 1: Error - Lab is already registered"
 code['deregError'] = "Code 1: Error - Lab is not registered"
 code['regSuccess'] = "Code 0: Success - Lab is now registered"
 code['deregSuccess'] = "Code 0: Success - Lab is now deregistered"
+code['failcall'] = "Code 1: Error - Service not invoked with proper arguments"
 
 serviceHelp = '''
 Configuration server provides service to register and deregister a lab in a
