@@ -421,7 +421,7 @@ passed is 'register' and deregister the lab if the argument passed is
 thrown if the ads service tries to register existing lab or tries to
 deregister non-existent lab.
 
-#+BEGIN_SRC python :tangle hosting_service.py :eval no
+#+BEGIN_SRC python :tangle hosting_service :eval no
 #!/usr/bin/env python
 
 import sys
@@ -461,7 +461,7 @@ data file. If the entry is not present then it appends the new entry
 in the data file. But if the entry is already present then it throws
 an error.
 
-#+BEGIN_SRC python :tangle hosting_service.py :eval no
+#+BEGIN_SRC python :tangle hosting_service :eval no
 def register(hostname, ip):
 
     index, entries = findEntry(hostname, ip)
@@ -481,7 +481,7 @@ the data file. If the entry is present then it deletes the entry from
 the data file. But if the entry is not present then it throws an
 error.
 
-#+BEGIN_SRC python :tangle hosting_service.py :eval no
+#+BEGIN_SRC python :tangle hosting_service :eval no
 def deregister(hostname, ip):
 
     index, entries = findEntry(hostname, ip)
@@ -499,7 +499,7 @@ Findentry function finds the entry of a lab in the data file.  If the
 entry exist function returns the index of the entry, if the entry is
 not found it returns -1. Existent entries are also returned.
 
-#+BEGIN_SRC python :tangle hosting_service.py :eval no
+#+BEGIN_SRC python :tangle hosting_service :eval no
 def findEntry(hostname, ip):
 
     labData = []
@@ -519,7 +519,7 @@ def findEntry(hostname, ip):
 **** WriteData
 This function writes the lab entries in the data file.
 
-#+BEGIN_SRC python :tangle hosting_service.py :eval no
+#+BEGIN_SRC python :tangle hosting_service :eval no
 def writeData(configData):
     writeLabFile = open(labPath, "w")
     for item in configData:
@@ -529,7 +529,7 @@ def writeData(configData):
 #+END_SRC
 
 **** Main function condition
-#+BEGIN_SRC python :tangle hosting_service.py :eval no
+#+BEGIN_SRC python :tangle hosting_service :eval no
 if __name__ == "__main__":
     main(sys.argv[1:])
 #+END_SRC
