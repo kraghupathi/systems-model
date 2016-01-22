@@ -473,14 +473,18 @@ def main(argv):
         if (returnCode != code['regError']):
             update_reg(argv[1], argv[2])
         else:
-     	    sys.exit(123)
+            sys.exit(123)
 
-    elif (str(argv[0] == "deregister")):
+    elif (str(argv[0]) == "deregister"):
         returnCode = deregister(argv[1], argv[2])
         if (returnCode != code['deregError']):
             update_dereg(argv[1], argv[2])
         else:
-     	    sys.exit(123)
+            sys.exit(123)
+
+    else:
+        returnCode = code['failcall']
+        sys.exit(123)
 
     return returnCode
 #+END_SRC
