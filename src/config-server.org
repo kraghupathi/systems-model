@@ -370,12 +370,13 @@ cluster. ADS invokes service exposed by the configuration server over *ssh* as
 follows:
 
 #+BEGIN_EXAMPLE
-ssh ansible@ansible.vlabs.ac.in service <register/deregister> <hostname> <ipaddress>
+ssh vlead@ansible.vlabs.ac.in service <register/deregister> <hostname> <ipaddress>
 #+END_EXAMPLE
 
 For the above service to work, ADS's public-key is to be placed in
-Configuration server's authorized keys with ssh forced command enabled
-to make sure that only register/deregister service is called by ADS.
+Configuration server's vlead user's authorized keys with ssh forced
+command enabled to make sure that only register/deregister service is
+called by ADS.
 
 - SSH Forced Command ::
    Forced command is used if the users can only connect through ssh.
@@ -571,7 +572,7 @@ Configuration server provides service to register and deregister a lab in a
 cluster. ADS invokes service exposed by the configuration server over *ssh* as
 follows:
 
-"ssh ansible@ansible.vlabs.ac.in service <register/deregister> <hostname> <ipaddress>"
+"ssh vlead@ansible.vlabs.ac.in service <register/deregister> <hostname> <ipaddress>"
 
 Input Arguments:
 The program takes the following three arguments as input:
