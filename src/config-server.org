@@ -336,6 +336,25 @@ this service as a command we will make this program executable.
 #+BEGIN_SRC yaml :tangle roles/config_server/tasks/main.yml
 - name: make service program executable
   shell: chmod +x hosting_service
+
+- name: make hooks.sh executable
+  shell: chmod +x hooks.sh
+#+END_SRC
+
+**** Hooks bash script
+This script is invoked via ssh forced command, when hook service is
+invoked from ads server. This script splits the arguments passed into
+variables and calls hosting_service.
+#+BEGIN_SRC yaml :tangle hooks.sh
+#!/bin/sh
+
+IFS=' ' read -a myarray <<< "$SSH_ORIGINAL_COMMAND"
+
+arg2=${myarray[1]}
+arg3=${myarray[2]}
+arg4=${myarray[3]}
+
+hosting_service $arg2 $arg3 $arg4
 #+END_SRC
 
 **** Handlers
@@ -397,7 +416,7 @@ called by ADS.
 
 #+BEGIN_EXAMPLE
  # in .ssh/authorized_keys 
- command="cd /root/ && service.py arg1 arg2 arg3",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-rsa public_key
+ command="./hooks.sh",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-rsa public_key
 #+END_EXAMPLE
 
 *Note:*  you need these options to secure a forced command: 
