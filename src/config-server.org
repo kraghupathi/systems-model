@@ -729,8 +729,8 @@ section.
 #+BEGIN_SRC python :tangle hosting_program.py :eval no
 def reverseproxy_format(line):
     splitLine = line.split()
-    fqdn = splitLine[0] + '."{{prefix}}"virtual-labs.ac.in'
-    alias = splitLine[0] + '."{{prefix}}"vlabs.ac.in'
+    fqdn = splitLine[0] + '.{{prefix}}virtual-labs.ac.in'
+    alias = splitLine[0] + '.{{prefix}}vlabs.ac.in'
     entry = '  - {domain: "%s", alias: "%s" }\n' %(fqdn, alias)
 
     return entry
