@@ -460,17 +460,21 @@ from hosting_program import *
 def main(argv):
 
     if (len(argv) == 1 and argv[0] == '--help'):
-	print serviceHelp
-	return
+        print serviceHelp
+        return
 
-    if (len(argv) < 3):
-	print serviceHelp
-	return
+    if (len(argv) < 3): 
+        print serviceHelp
+        return
 
     if (str(argv[0]) == "register"):
         returnCode = register(argv[1], argv[2])
         if (returnCode != code['regError']):
-            update_reg(argv[1], argv[2])
+            readLabFile = open(labPath, "r")
+            labData = readLabFile.readlines()
+            readLabFile.close()
+#            update_reg(argv[1], argv[2])
+            update_reg(labData)
         else:
             sys.exit(123)
 
@@ -626,18 +630,21 @@ yml file.
 #+BEGIN_SRC python :tangle hosting_program.py :eval no
 from config import *
 
-def update_reg(hostname, ip):
+def update_reg(labData):
 
     entry = {}
     entry['dns'] = []
     entry['reverseproxy'] = []
 #    entries['nagios'] = []
     entry['awstats'] = []
-    line = hostname + " " + ip
-    entry['dns'].append(dns_format(line))
-    entry['reverseproxy'].append(reverseproxy_format(line))
-#   entry['nagios'].append(nagios_format(line))
-    entry['awstats'].append(awstats_format(line))
+    for labs in labData:
+        labs = labs.strip("\n")
+        hostname, ip = labs.split(" ")
+        line = hostname + " " + ip
+        entry['dns'].append(dns_format(line))
+        entry['reverseproxy'].append(reverseproxy_format(line))
+     #   entry['nagios'].append(nagios_format(line))
+        entry['awstats'].append(awstats_format(line))
 
     for key in entry:
         append_to_data(key, entry[key])
@@ -752,10 +759,20 @@ def append_to_data(key, data):
 
     ymlData = ymlFile.readlines()
 
+    for entry in data:
+        try:
+            del ymlData[ymlData.index(entry)]
+        except:
+            continue
+
     startIndex = ymlData.index(delimiters[key][0])
     endIndex = ymlData.index(delimiters[key][1])
 
-    newYmlData = ymlData[0:startIndex + 1] + data + ymlData[startIndex+1:]
+    entry = ''
+    for element in data:
+        entry+= element
+
+    newYmlData = ymlData[0:startIndex + 1] + entry + ymlData[startIndex+1:]
 
     ymlFile.close()
 
