@@ -456,6 +456,7 @@ deregister non-existent lab.
 import sys
 from config import *
 from hosting_program import *
+from subprocess import call
 
 def main(argv):
 
@@ -463,7 +464,7 @@ def main(argv):
         print serviceHelp
         return
 
-    if (len(argv) < 3): 
+    if (len(argv) < 3):
         print serviceHelp
         return
 
@@ -473,8 +474,10 @@ def main(argv):
             readLabFile = open(labPath, "r")
             labData = readLabFile.readlines()
             readLabFile.close()
-#            update_reg(argv[1], argv[2])
             update_reg(labData)
+            call(["ansible", "all", "-i", "localhost,", "-c", "local", "-m", "shell", "-a", "echo hello world"])
+            #call(["ansible-playbook", "-i", "hosts", "private-dns.yaml"])
+            #call(["ansible-playbook", "-i", "hosts", "reverseproxy_server.yaml"])
         else:
             sys.exit(123)
 
