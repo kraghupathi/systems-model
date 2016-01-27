@@ -768,11 +768,7 @@ def append_to_data(key, data):
     startIndex = ymlData.index(delimiters[key][0])
     endIndex = ymlData.index(delimiters[key][1])
 
-    entry = ''
-    for element in data:
-        entry+= element
-
-    newYmlData = ymlData[0:startIndex + 1] + entry + ymlData[startIndex+1:]
+    newYmlData = ymlData[0:startIndex + 1] + data + ymlData[startIndex+1:]
 
     ymlFile.close()
 
