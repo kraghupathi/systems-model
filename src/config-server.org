@@ -450,7 +450,7 @@ passed is 'register' and deregister the lab if the argument passed is
 thrown if the ads service tries to register existing lab or tries to
 deregister non-existent lab.
 
-#+BEGIN_SRC python :tangle hosting_service :eval no
+#+BEGIN_SRC python :tangle hosting_service :eval no :padline no
 #!/usr/bin/env python
 
 import sys
