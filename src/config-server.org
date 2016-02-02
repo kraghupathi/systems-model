@@ -488,9 +488,11 @@ def main(argv):
             labData = readLabFile.readlines()
             readLabFile.close()
             update_reg(labData)
-            call(["ansible", "all", "-i", "localhost,", "-c", "local", "-m", "shell", "-a", "echo hello world"])
-            #call(["ansible-playbook", "-i", "hosts", "private-dns.yaml"])
-            #call(["ansible-playbook", "-i", "hosts", "reverseproxy_server.yaml"])
+            f = open("/dev/null","w")
+            call(["sudo", "ansible-playbook", "-i", hostsPath, yaml['priv-dns']], stdout=f)
+            call(["sudo", "ansible-playbook", "-i", hostsPath, yaml['pub-dns']], stdout=f)
+            call(["sudo", "ansible-playbook", "-i", hostsPath, yaml['rp']], stdout=f)
+            f.close()
         else:
             sys.exit(123)
 
@@ -498,6 +500,11 @@ def main(argv):
         returnCode = deregister(argv[1], argv[2])
         if (returnCode != code['deregError']):
             update_dereg(argv[1], argv[2])
+            f = open("/dev/null","w")
+            call(["sudo", "ansible-playbook", "-i", hostsPath, yaml['priv-dns']], stdout=f)
+            call(["sudo", "ansible-playbook", "-i", hostsPath, yaml['pub-dns']], stdout=f)
+            call(["sudo", "ansible-playbook", "-i", hostsPath, yaml['rp']], stdout=f)
+            f.close()
         else:
             sys.exit(123)
 
@@ -524,7 +531,7 @@ def register(hostname, ip):
     else:
         hostnameIP = "%s %s\n" %(hostname, ip)
         entries.append(hostnameIP)
-	writeData(entries)
+        writeData(entries)
         return code['regSuccess']
 #+END_SRC
 
@@ -541,10 +548,10 @@ def deregister(hostname, ip):
 
     if (index >= 0):
         del entries[index]
-	writeData(entries)
-	return code['deregSuccess']
+        writeData(entries)
+        return code['deregSuccess']
     else:
-	return code['deregError']
+        return code['deregError']
 #+END_SRC
 
 **** Findentry
