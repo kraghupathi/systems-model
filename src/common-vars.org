@@ -351,6 +351,7 @@ awstats_domains:
 
 #AWS public DNS is also listing other public records of vlabs
 public_dns_entries:
+#Pub-DNS_START
   - { hostname: router, ip: "{{public_zone_address}}" } 
   - { hostname: bandwidthd, ip: "{{public_zone_address}}" }
   - { hostname: ansible, ip: "{{ansible_external_ip}}"}
@@ -363,11 +364,12 @@ public_dns_entries:
   - { hostname: ads, ip: "{{public_zone_address}}" }
   - { hostname: rsnapshot-server, ip: "{{public_zone_address}}" }
 #  - { hostname: cp, ip: "{{public_zone_address}}" }
+#Pub-DNS_END
 
 
 
 private_dns_entries:
-#DNS_START
+#Priv-DNS_START
   - { hostname: router, ip: 10.100.1.1 }
   - { hostname: bandwidthd, ip: 10.100.1.1 }
   - { hostname: ansible, ip: 10.100.1.2 }
@@ -380,8 +382,7 @@ private_dns_entries:
   - { hostname: ads, ip: 10.100.1.9 }
   - { hostname: rsnapshot-server, ip: 10.100.1.10 }
 #  - { hostname: cp, ip: 10.100.2.1 }
-#DNS_END
-
+#Priv-DNS_END
 #+END_SRC
 
 
