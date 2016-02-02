@@ -583,17 +583,21 @@ Following program reads the values from data file and updates the yml file.
    variables are defined. 
 3. *labPath* - Define lab data file path
 4. *code* - Defines various error and success code
-5. *serviceHelp* - Docstring of the service to provide help to users
+5. *yaml* - Defines ansible playbook files path for various servers
+6. *hostsPath* - Defines path to hosts file used by ansible-playbook
+7. *serviceHelp* - Docstring of the service to provide help to users
 
 #+BEGIN_SRC python :tangle config.py :eval no
 delimiters = {}
-delimiters['dns'] = ["#DNS_START\n", "#DNS_END\n"]
+delimiters['priv-dns'] = ["#Priv-DNS_START\n", "#Priv-DNS_END\n"]
+delimiters['pub-dns'] = ["#Pub-DNS_START\n", "#Pub-DNS_END\n"]
 delimiters['reverseproxy'] = ["#DOMAIN_START\n", "#DOMAIN_END\n"]
 delimiters['awstats'] = ["#AWSTATS_START\n", "#AWSTATS_END\n"]
 delimiters['nagios'] = ["#Nagios_START\n", "#Nagios_END\n"]
 
 fileLocation = {}
-fileLocation['dns'] = '/root/systems-model/build/cluster/roles/common_vars/vars/main.yml'
+fileLocation['priv-dns'] = '/root/systems-model/build/cluster/roles/common_vars/vars/main.yml'
+fileLocation['pub-dns'] = '/root/systems-model/build/cluster/roles/common_vars/vars/main.yml'
 fileLocation['nagios'] = '/root/systems-model/build/cluster/roles/common_vars/vars/main.yml'
 fileLocation['reverseproxy'] = '/root/systems-model/build/cluster/roles/common_vars/vars/main.yml'
 fileLocation['awstats'] = '/root/systems-model/build/cluster/roles/common_vars/vars/main.yml'
@@ -607,6 +611,12 @@ code['regSuccess'] = "Code 0: Success - Lab is now registered"
 code['deregSuccess'] = "Code 0: Success - Lab is now deregistered"
 code['failcall'] = "Code 1: Error - Service not invoked with proper arguments"
 
+yaml = {}
+yaml['rp'] = '/root/systems-model/build/cluster/reverseproxy_server.yaml'
+yaml['priv-dns'] = '/root/systems-model/build/cluster/private_dns.yaml'
+yaml['pub-dns'] = '/root/systems-model/build/cluster/public_dns.yaml'
+
+hostsPath = '/root/systems-model/build/cluster/hosts'
 serviceHelp = '''
 Configuration server provides service to register and deregister a lab in a
 cluster. ADS invokes service exposed by the configuration server over *ssh* as
