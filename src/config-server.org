@@ -666,7 +666,8 @@ from config import *
 def update_reg(labData):
 
     entry = {}
-    entry['dns'] = []
+    entry['priv-dns'] = []
+    entry['pub-dns'] = []
     entry['reverseproxy'] = []
 #    entries['nagios'] = []
     entry['awstats'] = []
@@ -674,7 +675,8 @@ def update_reg(labData):
         labs = labs.strip("\n")
         hostname, ip = labs.split(" ")
         line = hostname + " " + ip
-        entry['dns'].append(dns_format(line))
+        entry['priv-dns'].append(priv_dns_format(line))
+        entry['pub-dns'].append(pub_dns_format(line))
         entry['reverseproxy'].append(reverseproxy_format(line))
      #   entry['nagios'].append(nagios_format(line))
         entry['awstats'].append(awstats_format(line))
@@ -694,9 +696,10 @@ def update_dereg(hostname, ip):
     pattern = {}
     pattern['reverseproxy'] = """  - {domain: "%s.{{prefix}}virtual-labs.ac.in", alias: "%s.{{prefix}}vlabs.ac.in" }\n""" %(hostname, hostname)
     pattern['awstats'] = """  - %s."{{prefix}}"virtual-labs.ac.in\n""" %(hostname)
-    pattern['dns'] = """  - { hostname: %s, ip: %s }\n""" %(hostname, ip)
+    pattern['priv-dns'] = """  - { hostname: %s, ip: %s }\n""" %(hostname, ip)
+    pattern['pub-dns'] = """  - { hostname: %s, ip: "{{public_zone_address}}" }\n""" %(hostname)
 
-    servers = ['dns', 'reverseproxy', 'awstats']
+    servers = ['priv-dns', 'pub-dns', 'reverseproxy', 'awstats']
 
     for key in servers:
         ymlFile = open(fileLocation[key], "r")
@@ -717,9 +720,9 @@ done for this.
 #+BEGIN_SRC python :tangle hosting_program.py :eval no
 def rsnapshot_format(line):
     ''' 
-	    There is no need to do anything explicit for the lab rsnapshot-server.
-	    It reads entries from awstats-domains variables
-    '''    
+            There is no need to do anything explicit for the lab rsnapshot-server.
+            It reads entries from awstats-domains variables
+    '''
 
     return
 #+END_SRC
@@ -734,13 +737,23 @@ def nagios_format(line):
     return labidHostname
 #+END_SRC
 
-**** DNS
+**** Private DNS
 Create data in the proper format to be updated in the dns variable section.
 
 #+BEGIN_SRC python :tangle hosting_program.py :eval no
-def dns_format(line):    
+def priv_dns_format(line):
     splitLine = line.split()
     entry = "  - { hostname: %s, ip: %s }\n" %(splitLine[0], splitLine[1])
+    return entry
+#+END_SRC
+
+**** Public DNS
+Create data in the proper format to be updated in the dns variable section.
+
+#+BEGIN_SRC python :tangle hosting_program.py :eval no
+def pub_dns_format(line):
+    splitLine = line.split()
+    entry = """  - { hostname: %s, ip: "{{public_zone_address}}" }\n""" %(splitLine[0])
     return entry
 #+END_SRC
 
@@ -748,7 +761,7 @@ def dns_format(line):
 Create data in the proper format to be updated in the awstats variable section.
 
 #+BEGIN_SRC python :tangle hosting_program.py :eval no
-def awstats_format(line):  
+def awstats_format(line):
     splitLine = line.split()
     fqdn = splitLine[0] + '."{{prefix}}"virtual-labs.ac.in'
     entry = '  - %s\n' %(fqdn)
@@ -855,7 +868,6 @@ def nagios(inputFile, outputFile):
     newYmlFile.close()
 
     return
-
 #+END_SRC
 
 **** Rsnapshot entry
@@ -869,7 +881,6 @@ def rsnapshot(inputFile, outputFile):
     '''
 
     return
-
 #+END_SRC
 
 * Release
