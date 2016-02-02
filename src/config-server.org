@@ -399,7 +399,7 @@ called by ADS.
 
 #+BEGIN_EXAMPLE
  # in .ssh/authorized_keys 
- command="hooks.sh",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-rsa public_key
+ command="hooks.sh",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-rsa <public_key>
 #+END_EXAMPLE
 
 *Note:*  you need these options to secure a forced command: 
