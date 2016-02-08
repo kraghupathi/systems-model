@@ -351,13 +351,6 @@ this service as a command we will make this program executable.
   service: name=iptables state=restarted
 #+END_SRC
 
-**** Define ssh forced command
-Add ssh forced command to .ssh/authorized_keys file of vlead user. ADS server
-runs hooks service from ads server.
-#+BEGIN_SRC yaml :tangle roles/config_server/tasks/mail.yml
-- name: add ssh forced command in /home/vlead/.ssh/authorized_keys
-  lineinfile: dest=/home/vlead/.ssh/authorized_keys regexp=^command line=command="hooks.sh",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-rsa <public_key>
-#+END_SRC
 **** Main configuration file
    The configuration server is managed with all other roles. The
    implementation is done in terms of defining suitable scripts for
