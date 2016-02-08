@@ -796,6 +796,10 @@
      ssh-keygen -t rsa
      ssh-copy-id root@<base-machine-ip>
      #+END_EXAMPLE
+   - Add ssh-keys of ads machine to ansible machine.
+     #+BEGIN_EXAMPLE
+     ssh-copy-id vlead@10.100.1.2
+     #+END_EXAMPLE
    - Clone ovpl  repository
      #+BEGIN_EXAMPLE 
      git clone https://github.com/vlead/ovpl.git
@@ -939,3 +943,10 @@
       vzctl set <CTID> --nameserver 10.100.1.5 --save     
       #+END_EXAMPLE
     + Restart httpd in reverseproxy  
+
+* ADS hooks related things to do in boot strapping
+- Add ssh keys of ads server to ansible machine.
+- add firewall rule in ansible machine to accept ssh connection from ads
+  machine.
+- Add ssh forced command to /home/vlead/.ssh/authorized_keys inside ansible
+  machine.
