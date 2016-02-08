@@ -948,5 +948,4 @@
 * ADS hooks related things to do in boot strapping
 - Add ssh forced command to /home/vlead/.ssh/authorized_keys inside ansible
   machine.
-- add firewall rule in ansible machine to accept ssh connection from ads
-  machine.
+- PATH environment variable.
