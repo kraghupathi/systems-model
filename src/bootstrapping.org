@@ -168,6 +168,10 @@
        10. *Reference Link* :
            https://www.sbarjatiya.com/notes_wiki/index.php/Modifying_openVZ_templates
      + Reboot the machine and choose openvz kernel from boot menu.
+     + Enable automated addition to create interface to bridge using:
+#+BEGIN_EXAMPLE
+echo 'EXTERNAL_SCRIPT="/usr/sbin/vznetaddbr"' >> /etc/vz/vznet.conf
+#+END_EXAMPLE
      + Download the latest centos template from below link and place at =/vz/template/cache=
        http://download.openvz.org/template/precreated/centos-6-x86_64.tar.gz
 *** Move /vz to a partition where there is enough space
@@ -270,7 +274,7 @@
      chmod +x cluster.sh
      ./cluster.sh
      #+END_EXAMPLE
-     The above shell script all containers and they would be running
+     The above shell script creates all containers and they would be in running
      state.
 ** Router
    - Configure the network on the router, it needs to be connected
