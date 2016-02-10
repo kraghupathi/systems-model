@@ -172,6 +172,11 @@
 #+BEGIN_EXAMPLE
 echo 'EXTERNAL_SCRIPT="/usr/sbin/vznetaddbr"' >> /etc/vz/vznet.conf
 #+END_EXAMPLE
+     + Enable forwarding of ip packets, by editing =/etc/sysctl.conf= file as
+       follows:
+#+BEGIN_EXAMPLE
+net.ipv4.ip_forward = 1
+#+END_EXAMPLE
      + Download the latest centos template from below link and place at =/vz/template/cache=
        http://download.openvz.org/template/precreated/centos-6-x86_64.tar.gz
 *** Move /vz to a partition where there is enough space
