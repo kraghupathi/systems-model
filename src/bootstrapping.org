@@ -409,12 +409,10 @@ NETFILTER="full"
       vzctl set 1002 --netif_add eth0,,,,br1 --save
       vzctl set 1002 --onboot yes --save
       #+END_EXAMPLE
-
     - To configure the network do the same steps as followed for
       router node [[Inside the Router]], set IPADDR and MAC addresses of
       the interfaces appropriately. Set private IP as 10.100.1.2 for
       ansible container.
-
     - Enter inside the container.
       #+BEGIN_EXAMPLE
       vzctl enter 1002
@@ -430,19 +428,18 @@ NETFILTER="full"
       su - vlead
       ssh-keygen -t rsa
       #+END_EXAMPLE
-   - Enable ssh access from localhost to localhost and router using
-     key-based authentication
-
+    - Enable ssh access from localhost to localhost and router using key-based
+      authentication
      #+BEGIN_EXAMPLE
      ssh-copy-id root@localhost  #from vlead user
      ssh-copy-id root@10.100.1.2  #from vlead user
      ssh-copy-id root@10.100.1.1  #from vlead user
      #+END_EXAMPLE
-   - Note :: If the root user's ssh keys were copied earlier then the
-     root user's private and public key can be placed inside the vlead
-     user's .ssh directory, so that from vlead user we can login to other
-     machine roots account.
-   - Setup epel-release repo on the system for installing ansible"
+    - Note :: If the root user's ssh keys were copied earlier then the root
+              user's private and public key can be placed inside the vlead
+              user's .ssh directory, so that from vlead user we can login to
+              other machine roots account.
+    - Setup epel-release repo on the system for installing ansible"
      #+BEGIN_EXAMPLE 
      yum -y install epel-release  #from root
      yum -y install ansible       #from root
@@ -463,12 +460,11 @@ NETFILTER="full"
      #+BEGIN_EXAMPLE
      yum install git -y
      #+END_EXAMPLE
-
      In this node, git command is used to pull the updates from master
      branch of the systems model. From this node we do not push the
      updated files/folders to systems-model repository.
 
-    - Create .ssh/config file with following content, make sure
+    - Create .ssh/config file in vlead user with following content, make sure
       permissions of the file are set to =400=.
       #+BEGIN_EXAMPLE
       GSSAPIAuthentication no
