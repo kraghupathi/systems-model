@@ -910,9 +910,7 @@ NETFILTER="full"
      + Set SERVICE_HOST="vlead@ansible.{cluster}.vlabs.ac.in"
    - Run services using
      #+BEGIN_EXAMPLE
-     yum -y install python-setuptools
      cd ~/ovpl
-     python setup.py install
      ./manage_services.sh start
      #+END_EXAMPLE
    - Exit from container
