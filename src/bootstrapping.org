@@ -177,6 +177,12 @@ echo 'EXTERNAL_SCRIPT="/usr/sbin/vznetaddbr"' >> /etc/vz/vznet.conf
 #+BEGIN_EXAMPLE
 net.ipv4.ip_forward = 1
 #+END_EXAMPLE
+     + Edit =/etc/vz/conf/ve-vswap-256m.conf-sample= to change value of
+       NETFILTER to
+#+BEGIN_EXAMPLE
+NETFILTER="full"
+#+END_EXAMPLE
+     + Reboot into openvz kernel.
      + Download the latest centos template from below link and place at =/vz/template/cache=
        http://download.openvz.org/template/precreated/centos-6-x86_64.tar.gz
 *** Move /vz to a partition where there is enough space
