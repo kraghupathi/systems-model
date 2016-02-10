@@ -508,7 +508,7 @@ NETFILTER="full"
       #+END_EXAMPLE
 
 *** Create hosts file
-#+BEGIN_SRC :tangle hosts 
+#+BEGIN_SRC text :tangle hosts 
 [ansible_server]
 #multiple-ok
 10.100.1.2
