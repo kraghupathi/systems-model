@@ -852,16 +852,23 @@ NETFILTER="full"
      ssh-keygen -t rsa
      ssh-copy-id root@<base-machine-ip>
      #+END_EXAMPLE
-    - This step has to be done on config-server node. Add forced command in
-      =.ssh/authorized_keys= file of vlead user. Replace <public-key> with
-      public key of ads machine.
+     - This step has to be done on config-server node. Add forced command in
+       =.ssh/authorized_keys= file of vlead user. Replace <public-key> with
+       public key of ads machine.
+      #+BEGIN_EXAMPLE
+      command="hooks.sh",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-rsa <public_key>
+      #+END_EXAMPLE
+   - Clone setup-ovpl-centos using:
      #+BEGIN_EXAMPLE
-     command="hooks.sh",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-rsa <public_key>
+     git clone https://github.com/vlead/setup-ovpl-centos.git
      #+END_EXAMPLE
-   - Clone ovpl  repository
-     #+BEGIN_EXAMPLE 
-     git clone https://github.com/vlead/ovpl.git
-     #+END_EXAMPLE
+   - Install dependencies as follows
+     #+BEGIN_EXAMPLE
+     cd setup-ovpl-centos/scripts
+     vim config.sh #set proxy settings here if network uses any proxy
+     vim centos_prepare_ovpl.sh  #Comment OpenVZ installation and git installation lines 35-41 and 52-58
+     ./centos_prepare_ovpl.sh    # Relax for 10 to 15 minutes or Go for a TEA
+     #+END_EXAMPLE 
    - Do following steps
      #+BEGIN_EXAMPLE 
      cd ovpl/config
@@ -901,17 +908,6 @@ NETFILTER="full"
        + Domain name of lab-id
      + Set ADS_USING_HOOKS to 'True', to use ads-hooks service.
      + Set SERVICE_HOST="vlead@ansible.{cluster}.vlabs.ac.in"
-   - Again clone setup-ovpl-centos using:
-     #+BEGIN_EXAMPLE
-     git clone https://github.com/vlead/setup-ovpl-centos.git
-     #+END_EXAMPLE
-   - Install dependencies as follows
-     #+BEGIN_EXAMPLE
-     cd setup-ovpl-centos/scripts
-     vim config.sh #set proxyi settings here if network uses any proxy
-     vim centos_prepare_ovpl.sh  #Comment OpenVZ installation lines 52 to 58
-     ./centos_prepare_ovpl.sh    # Relax for 10 to 15 minutes or Go for a TEA
-     #+END_EXAMPLE 
    - Run services using
      #+BEGIN_EXAMPLE
      yum -y install python-setuptools
