@@ -479,7 +479,7 @@ NETFILTER="full"
       #+END_EXAMPLE
 
     - Copy ssh public keys of vlead user to systems-model repository
-      in bitbucket.  Then clone the systems-model repository inside 'vlead'
+      in bitbucket. Then clone the systems-model repository inside 'vlead'
       user home directory.
       #+BEGIN_EXAMPLE
       git clone git@bitbucket.org:vlead/systems-model.git     #from vlead user git
@@ -501,7 +501,7 @@ NETFILTER="full"
 
       #+BEGIN_EXAMPLE
       mkdir -p ~/emacs/lisp   #as vlead user
-      cd emacs/lisp
+      cd ~/emacs/lisp
       wget http://orgmode.org/org-8.2.10.tar.gz
       tar zxvf org-8.2.10.tar.gz
       #+END_EXAMPLE
