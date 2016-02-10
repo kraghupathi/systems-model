@@ -899,6 +899,8 @@ NETFILTER="full"
          directly in lab container.
      + HOST_NAME = "{cluster}.vlabs.ac.in"
        + Domain name of lab-id
+     + Set ADS_USING_HOOKS to 'True', to use ads-hooks service.
+     + Set SERVICE_HOST="vlead@ansible.{cluster}.vlabs.ac.in"
    - Again clone setup-ovpl-centos using:
      #+BEGIN_EXAMPLE
      git clone https://github.com/vlead/setup-ovpl-centos.git
