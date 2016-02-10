@@ -1000,3 +1000,4 @@ NETFILTER="full"
 
 * ADS hooks related things to do in boot strapping
 - PATH environment variable.
+- Make service executable, give absolute path in config_server tasks.
