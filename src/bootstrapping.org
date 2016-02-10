@@ -504,6 +504,7 @@ NETFILTER="full"
       cd ~/emacs/lisp
       wget http://orgmode.org/org-8.2.10.tar.gz
       tar zxvf org-8.2.10.tar.gz
+      rm -rf org-8.2.10.tar.gz
       #+END_EXAMPLE
 
 *** Run make and check syntax of site.yaml
