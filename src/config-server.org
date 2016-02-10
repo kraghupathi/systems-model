@@ -329,17 +329,6 @@ directory.
   lineinfile: dest=/etc/environment regexp=^PATH= line=PATH=/usr/lib64/qt-3.3/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin:/root/systems-model/build/cluster
 #+END_SRC
 
-**** Make service executable
-Hooks service is run via hosting_service program. To be able to invoke
-this service as a command we will make this program executable.
-#+BEGIN_SRC yaml :tangle roles/config_server/tasks/main.yml
-- name: make service program executable
-  shell: chmod +x hosting_service
-
-- name: make hooks.sh executable
-  shell: chmod +x hooks.sh
-#+END_SRC
-
 **** Handlers
    Restart the iptables service if configuration file of iptables is
    modified. These handlers are called only when tasks notifies to
@@ -425,8 +414,9 @@ yml files of various server.
 This script is invoked via ssh forced command, when hook service is invoked from
 ads server. Script splits the arguments passed into variables and calls
 hosting_service. It also does logging of when and at what time the command was
-called.
-#+BEGIN_SRC yaml :tangle hooks.sh
+called. Set file permission by specifying =:tangle-mode (identity #o755)= while
+tangling.
+#+BEGIN_SRC yaml :tangle hooks.sh :tangle-mode (identity #o755)
 #!/bin/sh
 
 IFS=' ' read -a myarray <<< "$SSH_ORIGINAL_COMMAND"
@@ -453,7 +443,8 @@ fi
 
 *** Service Program
 Following program updates the entries in the data file with the values passed by
-the ADS service.
+the ADS service. Set file permission by specifying =:tangle-mode (identity
+#o755)= while tangling.
 
 **** Main Function
 The main function provides help to the user about the functionality of
@@ -463,7 +454,7 @@ passed is 'register' and deregister the lab if the argument passed is
 thrown if the ads service tries to register existing lab or tries to
 deregister non-existent lab.
 
-#+BEGIN_SRC python :tangle hosting_service :eval no :padline no
+#+BEGIN_SRC python :tangle hosting_service :eval no :padline no :tangle-mode (identity #o755)
 #!/usr/bin/env python
 
 import sys
@@ -521,7 +512,7 @@ data file. If the entry is not present then it appends the new entry
 in the data file. But if the entry is already present then it throws
 an error.
 
-#+BEGIN_SRC python :tangle hosting_service :eval no
+#+BEGIN_SRC python :tangle hosting_service :eval no :tangle-mode (identity #o755)
 def register(hostname, ip):
 
     index, entries = findEntry(hostname, ip)
@@ -541,7 +532,7 @@ the data file. If the entry is present then it deletes the entry from
 the data file. But if the entry is not present then it throws an
 error.
 
-#+BEGIN_SRC python :tangle hosting_service :eval no
+#+BEGIN_SRC python :tangle hosting_service :eval no :tangle-mode (identity #o755)
 def deregister(hostname, ip):
 
     index, entries = findEntry(hostname, ip)
@@ -559,7 +550,7 @@ Findentry function finds the entry of a lab in the data file.  If the
 entry exist function returns the index of the entry, if the entry is
 not found it returns -1. Existent entries are also returned.
 
-#+BEGIN_SRC python :tangle hosting_service :eval no
+#+BEGIN_SRC python :tangle hosting_service :eval no :tangle-mode (identity #o755)
 def findEntry(hostname, ip):
 
     labData = []
@@ -579,7 +570,7 @@ def findEntry(hostname, ip):
 **** WriteData
 This function writes the lab entries in the data file.
 
-#+BEGIN_SRC python :tangle hosting_service :eval no
+#+BEGIN_SRC python :tangle hosting_service :eval no :tangle-mode (identity #o755)
 def writeData(configData):
     writeLabFile = open(labPath, "w")
     for item in configData:
@@ -589,7 +580,7 @@ def writeData(configData):
 #+END_SRC
 
 **** Main function condition
-#+BEGIN_SRC python :tangle hosting_service :eval no
+#+BEGIN_SRC python :tangle hosting_service :eval no :tangle-mode (identity #o755)
 if __name__ == "__main__":
     main(sys.argv[1:])
 #+END_SRC

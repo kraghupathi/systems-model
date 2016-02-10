@@ -278,7 +278,7 @@ ossec_client_ips:
 #For some reasons {{ansible_default_ipv4.address}} on ansible and router is resolving
 #to 10.4.12.0/22 IPs and not to 10.100.0.0/22 IPs.  So those must be used for configuring
 #client
-  - "{{public_sone_address}}"
+  - "{{public_zone_address}}"
   - "{{ansible_external_ip}}"
   - 10.100.1.4
   - 10.100.1.5
