@@ -999,6 +999,4 @@ NETFILTER="full"
     + Restart httpd in reverseproxy  
 
 * ADS hooks related things to do in boot strapping
-- Add ssh forced command to /home/vlead/.ssh/authorized_keys inside ansible
-  machine.
 - PATH environment variable.
