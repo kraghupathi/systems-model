@@ -879,7 +879,7 @@ NETFILTER="full"
      + ADAPTER_TO_USE :: {"POOLID" : 1, "ADAPTERID" : 3 } 
        - In case of other types of setup use appropriate poolid or
          adapter Id.
-     + LOGSERVER_CONFIGURATION / SERVER_IP :: 10.100.1.9
+     + LOGSERVER_CONFIGURATION / SERVER_IP :: "10.100.1.9"
    - Edit authorized_users.py as follows:
      + Put bunch of gmail IDs separated by , as shown in the example
        config.  While deploying labs Gmail OpenID login will be
