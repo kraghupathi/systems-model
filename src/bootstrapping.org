@@ -875,7 +875,7 @@ NETFILTER="full"
    - Edit config.json as follows:
      + COOKIE_SECRET :: Change to some other random string
      + APP_URL :: Update app url to include FQDN
-	   *Example: ads.{cluster-name}.vlabs.ac.in*
+	   *Example: ads.{cluster-name}.vlabs.ac.in:8080*
      + ADAPTER_TO_USE :: {"POOLID" : 1, "ADAPTERID" : 3 } 
        - In case of other types of setup use appropriate poolid or
          adapter Id.
