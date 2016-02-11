@@ -334,10 +334,10 @@ of file at run time it need sudo privileges.
   lineinfile: "dest=/etc/sudoers regexp='^vlead' insertafter='^root' line='vlead   ALL=(ALL)    NOPASSWD: ALL'"
 #+END_SRC
 **** Define environment variable in /etc/environment
+Add service path to environment variable.
 #+BEGIN_SRC yaml :tangle roles/config_server/tasks/main.yml
 - name: set environment path
-  lineinfile: "dest=/home/vlead/.bashrc regexp='^export PATH=' line='export PATH=$PATH:/home/vlead/systems-model/build/cluster'"
-  tags: setenv
+  lineinfile: "dest=/home/vlead/.bashrc regexp='^export PATH=' line='export PATH=$PATH:/home/vlead/systems-model/build/{{cluster}}'"
 #+END_SRC
 **** Handlers
    Restart the iptables service if configuration file of iptables is
@@ -508,7 +508,8 @@ echo "$date::$SSH_ORIGINAL_COMMAND" >> log.txt
 
 baseDir='/home/vlead/systems-model/build/'
 cluster=$(grep "^cluster=" ../../makefile | awk -F '=' '{print $2}')
-variableFile='/roles/common_vars/main.yml'
+cluster=$cluster/
+variableFile='roles/common_vars/main.yml'
 
 sudo chmod 777 $baseDir$cluster$variableFile
 
