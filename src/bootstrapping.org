@@ -1003,15 +1003,15 @@ private_dns_zone: "{{prefix}}virtual-labs.ac.in {{prefix}}vlabs.ac.in"
     + Restart httpd in reverseproxy  
 
 * ADS hooks related things to do in boot strapping
-- Update latest code from base4 to model.
+- Comment requiretty in /etc/sudoers file. *Done*
+- Add vlead user to sudoers file and set permissions to execute all commands
+  with NOPASSWD.
 - Set environment path for root user and vlead user. This is achieved by
   appending path in /etc/environment. And then writing source /etc/environment
   in .bashrc file.
-- Add vlead user to sudoers file and set permissions to execute all commands
-  with NOPASSWD.
 - In hooks.sh change file permissions of vars.yaml to be writable by vlead user,
   run the service and then roll back file permission.
-- Comment requiretty in /etc/sudoers file.
-- Run ansible playbook as sudo user.
+- Update latest code from base4 to model. *Done*
+- Run ansible playbook as sudo user. *Done*
 - SSH forced command is to run 'hooks.sh'. *DONE*
-- Make service program executable.
+- Make service program executable. *Done*
