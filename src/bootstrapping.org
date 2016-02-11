@@ -204,8 +204,9 @@ NETFILTER="full"
       container template.  Download fresh template directly from openvz.org
       mirrors.
 ** Create all servers/nodes
-   - Create a file called =cluster.sh= and add the following shell
-     commands to it. 
+   - Create a file called =cluster.sh= and add the following shell commands to
+     it. Update *cluster* variable value based on cluster name. This shell
+     script creates all containers and they would be in running state.
    #+BEGIN_EXAMPLE 
    cluster=base5
    for i in {1001..1010}
@@ -278,15 +279,12 @@ NETFILTER="full"
    fi
    done
    #+END_EXAMPLE
-   - Update *cluster* variable value based on cluster name.
    - Add executable permission to =cluster.sh= script and run script
      as:
      #+BEGIN_EXAMPLE
      chmod +x cluster.sh
      ./cluster.sh
      #+END_EXAMPLE
-     The above shell script creates all containers and they would be in running
-     state.
 ** Router
    - Configure the network on the router, it needs to be connected
      with two bridges br0 and br1 in order to get internet connection
@@ -846,22 +844,24 @@ NETFILTER="full"
      echo "nameserver 8.8.8.8" > /etc/resolv.conf
      yum -y install git
      #+END_EXAMPLE
-   - Generate root users ssh-keys.  Setup trust based ssh from ads
-     container root user to Base machine.
+   - Generate root users ssh-keys. Setup trust based ssh from ads container root
+     user to Base machine.
      #+BEGIN_EXAMPLE
      ssh-keygen -t rsa
      ssh-copy-id root@<base-machine-ip>
      #+END_EXAMPLE
-     - This step has to be done on config-server node. Add forced command in
-       =.ssh/authorized_keys= file of vlead user. Replace <public-key> with
-       public key of ads machine.
-      #+BEGIN_EXAMPLE
-      command="hooks.sh",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-rsa <public_key>
-      #+END_EXAMPLE
+   - Add forced command in config server node inside =.ssh/authorized_keys= file
+     of vlead user. Replace <public-key> with public key of ads machine.
+     #+BEGIN_EXAMPLE
+     command="hooks.sh",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-rsa <public_key>
+     #+END_EXAMPLE
    - Make sure =/home/vlead/.ssh/authorized_keys= file has =600= permissions.
-      #+BEGIN_EXAMPLE
-      chmod 600 .ssh/authorized_keys
-      #+END_EXAMPLE
+     #+BEGIN_EXAMPLE
+     chmod 600 .ssh/authorized_keys
+     #+END_EXAMPLE
+   - Copy id_rsa.pub of ansible machine's vlead user
+     i.e. =/home/vlead/.ssh/id_rsa.pub= file to ads =/root/.ssh/known_hosts=
+     file.
    - Clone setup-ovpl-centos using:
      #+BEGIN_EXAMPLE
      git clone https://github.com/vlead/setup-ovpl-centos.git
@@ -1012,9 +1012,9 @@ private_dns_zone: "{{prefix}}virtual-labs.ac.in {{prefix}}vlabs.ac.in"
     + Restart httpd in reverseproxy  
 
 * ADS hooks related things to do in boot strapping
-- Copy id_rsa.pub of ansible machine to ads known hosts file.
-- Change /etc/resolv.conf of ads to use private dns.
-- Set cluster variable value in cluster.sh file for creating containers.
+- Copy id_rsa.pub of ansible machine to ads known hosts file. *Done*
+- Set cluster variable value in cluster.sh file for creating containers. *Done*
+- Change /etc/resolv.conf of ads to use private dns. *Done*
 - Update makefile to replace cluster variable in config_server.yml with cluster
   value. *Done*
 - Set environment path for root user and vlead user. This is achieved by
