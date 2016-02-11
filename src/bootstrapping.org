@@ -876,13 +876,13 @@ NETFILTER="full"
      cd ~/ovpl
      ./manage_services.sh start
      #+END_EXAMPLE
-   - Exit from container
-** Run site.yaml from config-server
     - Set nameserver for ads server to use private dns.
       #+BEGIN_EXAMPLE
       search <cluster>.virtual-labs.ac.in <cluster>.vlabs.ac.in
       nameserver 10.100.1.5 
       #+END_EXAMPLE
+   - Exit from container
+** Run site.yaml from config-server
     - Check management_ips in common_vars role and update them appropriately.
     - Add servers internal ips to =ossec_client_ips= variable in common_vars
       role.
