@@ -29,6 +29,7 @@ build: init write-version
 	  sed -i 's/^ansible_external.*/ansible_external_ip: ${CONFIG_SERVER}/g' ${CODE_DEST}/roles/common_vars/vars/main.yml;\
 	  sed -i 's/^smtp_smart.*/smtp_smart_host: ${SMTP_SMART_HOST}/g' ${CODE_DEST}/roles/common_vars/vars/main.yml;\
           sed -i 's/^admin_email.*/admin_email_address: ${ADMIN_EMAIL}/g' ${CODE_DEST}/roles/common_vars/vars/main.yml;\
+          sed -i 's/^cluster.*/cluster: ${CLUSTER}/g' ${CODE_DEST}/roles/common_vars/vars/main.yml;\
 	fi
 	@if [ "${CLUSTER}" != "" ] && [ "${CLUSTER}" != "aws" ]; then \
            cp -r ${CODE_DEST} ${BUILD_DEST}/${CLUSTER}; \
@@ -39,6 +40,7 @@ build: init write-version
 	   sed -i 's/^is_amazon.*/is_amazon: "no"/g' ${BUILD_DEST}/${CLUSTER}/roles/common_vars/vars/main.yml;\
 	   sed -i 's/^smtp_smart.*/smtp_smart_host: ${SMTP_SMART_HOST}/g' ${BUILD_DEST}/${CLUSTER}/roles/common_vars/vars/main.yml;\
            sed -i 's/^admin_email.*/admin_email_address: ${ADMIN_EMAIL}/g' ${BUILD_DEST}/${CLUSTER}/roles/common_vars/vars/main.yml;\
+           sed -i 's/^cluster.*/cluster: ${CLUSTER}/g' ${BUILD_DEST}/${CLUSTER}/roles/common_vars/vars/main.yml;\
 	fi
 # sed -i 's/^prefix.*/prefix: " "/g' ${CODE_DEST}/roles/common_vars/vars/main.yml;
 #	cp -r ${CODE_DEST} ${BUILD_DEST}/base1-code
