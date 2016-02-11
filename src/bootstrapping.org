@@ -858,6 +858,10 @@ NETFILTER="full"
       #+BEGIN_EXAMPLE
       command="hooks.sh",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-rsa <public_key>
       #+END_EXAMPLE
+   - Make sure =/home/vlead/.ssh/authorized_keys= file has =600= permissions.
+      #+BEGIN_EXAMPLE
+      chmod 600 .ssh/authorized_keys
+      #+END_EXAMPLE
    - Clone setup-ovpl-centos using:
      #+BEGIN_EXAMPLE
      git clone https://github.com/vlead/setup-ovpl-centos.git
@@ -915,6 +919,11 @@ NETFILTER="full"
      #+END_EXAMPLE
    - Exit from container
 ** Run site.yaml from config-server
+    - Set nameserver for ads server to use private dns.
+      #+BEGIN_EXAMPLE
+      search <cluster>.virtual-labs.ac.in <cluster>.vlabs.ac.in
+      nameserver 10.100.1.5 
+      #+END_EXAMPLE
     - Check management_ips in common_vars role and update them
       appropriately.
     - Add servers internal ips to =ossec_client_ips= variable in
@@ -1003,6 +1012,9 @@ private_dns_zone: "{{prefix}}virtual-labs.ac.in {{prefix}}vlabs.ac.in"
     + Restart httpd in reverseproxy  
 
 * ADS hooks related things to do in boot strapping
+- Copy id_rsa.pub of ansible machine to ads known hosts file.
+- Change /etc/resolv.conf of ads to use private dns.
+- Set cluster variable value in cluster.sh file for creating containers.
 - Update makefile to replace cluster variable in config_server.yml with cluster
   value. *Done*
 - Set environment path for root user and vlead user. This is achieved by
