@@ -8,6 +8,7 @@
 * Introduction
   This document describes about how to setup cluster in AWS or in any
   collge/institute.
+
 * Bootstrapping the cluster
   This bootstrapping steps are done based on ansible playbooks of the
   systems-model repository.
@@ -41,41 +42,37 @@
 
 ** Setup bridged network
 *** Connect LAN interface to Bridge (br0) 
-    Check your interfaces by running the command
+  - Check your interfaces by running the command
     #+BEGIN_EXAMPLE 
-     ifonfig -a
+    ifonfig -a
     #+END_EXAMPLE
     That gives you MAC address of interfaces(eth0, eth1, etc,.). Copy that.
-    - Create *ifcfg-br0* file in =/etc/sysconfig/network-scripts/= and
-      add the following fields
-
+  - Create *ifcfg-br0* file in =/etc/sysconfig/network-scripts/= and add the
+    following fields
     #+BEGIN_EXAMPLE 
-      DEVICE=br0
-      BOOTPROTO=dhcp
-      ONBOOT=yes
-      TYPE=Bridge
-      NM_CONTROLLED=no
+    DEVICE=br0
+    BOOTPROTO=dhcp
+    ONBOOT=yes
+    TYPE=Bridge
+    NM_CONTROLLED=no
     #+END_EXAMPLE
-    - Then create another *ifcfg-eth0* file in
-      =/etc/sysconfig/network-scripts/= and add the following fileds
+  - Then create another *ifcfg-eth0* file in =/etc/sysconfig/network-scripts/=
+    and add the following fileds
     #+BEGIN_EXAMPLE 
-     DEVICE=eth0
-     HWADDR=<<Hardware Address of eth0 interface>>
-     TYPE=Ethernet
-     ONBOOT=yes
-     NM_CONTROLLED=no
-     BOOTPROTO=none
-     BRIDGE=br0
+    DEVICE=eth0
+    HWADDR=<<Hardware Address of eth0 interface>>
+    TYPE=Ethernet
+    ONBOOT=yes
+    NM_CONTROLLED=no
+    BOOTPROTO=none
+    BRIDGE=br0
     #+END_EXAMPLE
     Paste the copied MAC address of the interface in HWADDR field
-    - Restart the network using
-
+  - Restart the network using
     #+BEGIN_EXAMPLE 
-     service network restart
+    service network restart
     #+END_EXAMPLE
-
-    - Now you can see ip assigned to br0 and you will be able to get
-      internet
+  - Now you can see ip assigned to br0 and you will be able to get internet
 *** Create bridge(br1) for private Network
     - Create *ifcfg-br1* file in =/etc/sysconfig/network-scripts/= and add
       the following fields
@@ -852,6 +849,7 @@ NETFILTER="full"
      #+END_EXAMPLE
    - Add ssh forced command in config server node inside =.ssh/authorized_keys=
      file of vlead user. Replace <public-key> with public key of ads machine.
+     *Note:* This has to be done in config server.
      #+BEGIN_EXAMPLE
      command="hooks.sh",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty <public_key>
      #+END_EXAMPLE
@@ -859,9 +857,12 @@ NETFILTER="full"
      #+BEGIN_EXAMPLE
      chmod 600 .ssh/authorized_keys
      #+END_EXAMPLE
-   - Copy id_rsa.pub of ansible machine's vlead user
-     i.e. =/home/vlead/.ssh/id_rsa.pub= file to ads =/root/.ssh/known_hosts=
-     file.
+   - Add known hosts entry of ansible machine, in =~/.ssh/known_hosts= file as
+     follows. Replace <public-key> with public key of vlead user in ansible
+     machine.
+     #+BEGIN_EXAMPLE
+     anisble.{{cluster}}.vlabs.ac.in <public-key-of-ansible-machine>
+     #+END_EXAMPLE
    - Clone setup-ovpl-centos using:
      #+BEGIN_EXAMPLE
      git clone https://github.com/vlead/setup-ovpl-centos.git
@@ -930,11 +931,11 @@ NETFILTER="full"
       common_vars role.
     - Set private dns ips and private-dns-zone as follows, and comment
       =private-dns-ips: none=, =private-dns-zone: none= in common_vars role.
-#+BEGIN_EXAMPLE
-private_dns_ips: 
-  - 10.100.1.5
-private_dns_zone: "{{prefix}}virtual-labs.ac.in {{prefix}}vlabs.ac.in"
-#+END_EXAMPLE
+      #+BEGIN_EXAMPLE
+      private_dns_ips: 
+          - 10.100.1.5
+      private_dns_zone: "{{prefix}}virtual-labs.ac.in {{prefix}}vlabs.ac.in"
+      #+END_EXAMPLE
     - Comment =ossec_client= in all servers playbook.
     - Uncomment =rsnapshot_client= in all the roles here
     - Comment =ossec_server.yaml= in =site.yaml=
@@ -984,7 +985,6 @@ private_dns_zone: "{{prefix}}virtual-labs.ac.in {{prefix}}vlabs.ac.in"
      private_dns_entries:
        - {hostname: {lab-id}, ip: <lab-ip> }
      #+END_EXAMPLE
-
    - Then run ansible-playbooks of three roles as follows:
      #+BEGIN_EXAMPLE
      ansible-playbook -i hosts reverseproxy_server.yaml
@@ -993,7 +993,7 @@ private_dns_zone: "{{prefix}}virtual-labs.ac.in {{prefix}}vlabs.ac.in"
      #+END_EXAMPLE
    - Check whether the lab page has been serving or not using provided
      lab url using any browser.
-** On Base machine 
+** On Base machine
    - Set DNS on all containers to private DNS 10.100.1.5 IP using
      #+BEGIN_EXAMPLE
      vzctl set <CTID> --nameserver 10.100.1.5 --save     
