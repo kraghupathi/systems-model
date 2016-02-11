@@ -1005,7 +1005,7 @@ private_dns_zone: "{{prefix}}virtual-labs.ac.in {{prefix}}vlabs.ac.in"
 * ADS hooks related things to do in boot strapping
 - Set environment path for root user and vlead user. This is achieved by
   appending path in /etc/environment. And then writing source /etc/environment
-  in .bashrc file.
+  in .bashrc file. *Done*
 - In hooks.sh change file permissions of vars.yaml to be writable by vlead user,
   run the service and then roll back file permission. *Done*
 - Update latest code from base4 to model. *Done*
