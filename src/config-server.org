@@ -508,7 +508,7 @@ date=`date`
 echo "$date::$SSH_ORIGINAL_COMMAND" >> log.txt
 
 baseDir='/home/vlead/systems-model/build/'
-cluster=$(grep "^cluster=" ../../makefile | awk -F '=' '{print $2}')
+cluster=$(grep "^cluster=" /home/vlead/systems-model/makefile | awk -F '=' '{print $2}')
 cluster=$cluster/
 variableFile='roles/common_vars/main.yml'
 
