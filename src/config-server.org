@@ -318,23 +318,8 @@ COMMIT
   notify: restart iptables
 #+END_SRC
 
-**** Comment requiretty from /etc/sudoers file
-Ads invokes hooks service via ssh and in order to be able to execute command as
-sudo in config server we have to disable 'requiretty'. So the ssh connection
-will not require tty.
-#+BEGIN_SRC yaml :tangle roles/config_server/tasks/main.yml
-- name: comment requiretty
-  replace: dest=/etc/sudoers regexp='^Defaults .* requiretty$' replace='#Defaults    requiretty'
-#+END_SRC
-**** Add vlead user to sudoers group
-Hooks service execute playbook as vlead user, and in order to change permissions
-of file at run time it need sudo privileges.
-#+BEGIN_SRC yaml :tangle roles/config_server/tasks/main.yml
-- name: add vlead user to sudoers group
-  lineinfile: "dest=/etc/sudoers regexp='^vlead' insertafter='^root' line='vlead   ALL=(ALL)    NOPASSWD: ALL'"
-#+END_SRC
-**** Define environment variable in /etc/environment
-Add service path to environment variable.
+**** Set environment variable
+Add hosting_service location to path environment variable.
 #+BEGIN_SRC yaml :tangle roles/config_server/tasks/main.yml
 - name: set environment path
   lineinfile: "dest=/home/vlead/.bashrc regexp='^export PATH=' line='export PATH=$PATH:/home/vlead/systems-model/build/{{cluster}}'"
