@@ -1003,6 +1003,8 @@ private_dns_zone: "{{prefix}}virtual-labs.ac.in {{prefix}}vlabs.ac.in"
     + Restart httpd in reverseproxy  
 
 * ADS hooks related things to do in boot strapping
+- Update makefile to replace cluster variable in config_server.yml with cluster
+  value. *Done*
 - Set environment path for root user and vlead user. This is achieved by
   appending path in /etc/environment. And then writing source /etc/environment
   in .bashrc file. *Done*
