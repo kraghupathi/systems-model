@@ -5,6 +5,7 @@
 #+PROPERTY: exports code
 #+SETUPFILE: org-templates/level-0.org
 #+OPTIONS: ^:nil
+
 * Introduction
   This document describes about how to setup cluster in AWS or in any
   collge/institute.
@@ -13,18 +14,16 @@
   This bootstrapping steps are done based on ansible playbooks of the
   systems-model repository.
   
-  - NOTE ::  While configuring network in servers, *HWADDR* (MAC
-             address of interface) value is an optional or this can be
-             ignored.
+  - NOTE ::  While configuring network in servers, *HWADDR* (MAC address of
+             interface) value is an optional or this can be ignored.
 
 ** Base machine Setup 
    Need a base machine to setup cluster where bootstrapping is being
-   performed. The base machine can be either physical machine or
-   VM/container based on avaible resources such as CPUs, RAM, Disk
-   Space etc.  
+   performed. The base machine can be either physical machine or VM/container
+   based on avaible resources such as CPUs, RAM, Disk Space etc.
    
-   The following basic hardware requirements are needed for base
-   machine to setup cluster
+   The following basic hardware requirements are needed for base machine to
+   setup cluster
 
    |----------------+--------------|
    | *Resource*     | *Fixed*      |
@@ -36,64 +35,61 @@
    | I/O throughput | 1000 IOPS    |
    |----------------+--------------|
 
-   Have direct internet access to base machine, Router and
-   Ansible/config-server IPs. So that, need not worry about proxy
-   settings issues if network uses any proxy.
+   Have direct internet access to base machine, Router and Ansible/config-server
+   IPs. So that, need not worry about proxy settings issues if network uses any
+   proxy.
 
 ** Setup bridged network
 *** Connect LAN interface to Bridge (br0) 
-  - Check your interfaces by running the command
-    #+BEGIN_EXAMPLE 
-    ifonfig -a
-    #+END_EXAMPLE
-    That gives you MAC address of interfaces(eth0, eth1, etc,.). Copy that.
-  - Create *ifcfg-br0* file in =/etc/sysconfig/network-scripts/= and add the
-    following fields
-    #+BEGIN_EXAMPLE 
-    DEVICE=br0
-    BOOTPROTO=dhcp
-    ONBOOT=yes
-    TYPE=Bridge
-    NM_CONTROLLED=no
-    #+END_EXAMPLE
-  - Then create another *ifcfg-eth0* file in =/etc/sysconfig/network-scripts/=
-    and add the following fileds
-    #+BEGIN_EXAMPLE 
-    DEVICE=eth0
-    HWADDR=<<Hardware Address of eth0 interface>>
-    TYPE=Ethernet
-    ONBOOT=yes
-    NM_CONTROLLED=no
-    BOOTPROTO=none
-    BRIDGE=br0
-    #+END_EXAMPLE
-    Paste the copied MAC address of the interface in HWADDR field
-  - Restart the network using
-    #+BEGIN_EXAMPLE 
-    service network restart
-    #+END_EXAMPLE
-  - Now you can see ip assigned to br0 and you will be able to get internet
-*** Create bridge(br1) for private Network
-    - Create *ifcfg-br1* file in =/etc/sysconfig/network-scripts/= and add
-      the following fields
+    - Check your interfaces by running the command
       #+BEGIN_EXAMPLE 
-       DEVICE=br1
-       TYPE=Bridge
-       ONBOOT=yes
-       NM_CONTROLLED=no
-       BOOTPROTO=none
+      ifconfig -a
       #+END_EXAMPLE
-    - Restart network again to see the created bridge(br1)
-
+      That gives you MAC address of interfaces(eth0, eth1, etc,.). Copy that.
+    - Create *ifcfg-br0* file in =/etc/sysconfig/network-scripts/= and add the
+      following fields
+      #+BEGIN_EXAMPLE 
+      DEVICE=br0
+      BOOTPROTO=dhcp
+      ONBOOT=yes
+      TYPE=Bridge
+      NM_CONTROLLED=no
+      #+END_EXAMPLE
+    - Then create another *ifcfg-eth0* file in =/etc/sysconfig/network-scripts/=
+      and add the following fields:
+      #+BEGIN_EXAMPLE 
+      DEVICE=eth0
+      HWADDR=<<Hardware Address of eth0 interface>>
+      TYPE=Ethernet
+      ONBOOT=yes
+      NM_CONTROLLED=no
+      BOOTPROTO=none
+      BRIDGE=br0
+      #+END_EXAMPLE
+      Paste the copied MAC address of the interface in HWADDR field
+    - Restart the network using
       #+BEGIN_EXAMPLE 
       service network restart
       #+END_EXAMPLE
-
+    - Now you can see ip assigned to br0 and you will be able to get internet.
+*** Create bridge(br1) for private Network
+    - Create *ifcfg-br1* file in =/etc/sysconfig/network-scripts/= and add the
+      following fields:
+      #+BEGIN_EXAMPLE 
+      DEVICE=br1
+      TYPE=Bridge
+      ONBOOT=yes
+      NM_CONTROLLED=no
+      BOOTPROTO=none
+      #+END_EXAMPLE
+    - Restart network again to see the created bridge(br1)
+      #+BEGIN_EXAMPLE 
+      service network restart
+      #+END_EXAMPLE
     - Now you can see the bridges on your machine using *brctl show*
       command. That will give you the connections between interfaces.
     - Need to set proxy for all the containers if network uses any
       proxy.
-
     *Reference Link* for bridge setup
     https://github.com/vlead/ovpl/blob/master/docs/bridge-setup.org
 
@@ -204,80 +200,79 @@ NETFILTER="full"
    - Create a file called =cluster.sh= and add the following shell commands to
      it. Update *cluster* variable value based on cluster name. This shell
      script creates all containers and they would be in running state.
-   #+BEGIN_EXAMPLE 
-   cluster=base5
-   for i in {1001..1010}
-   do
-   vzctl create $i  --ostemplate centos-6-x86_64
-   if [ $i == 1001 ]
-   then
-   vzctl set $i --hostname router.${cluster}.vlabs.ac.in --save
-   vzctl set $i --netif_add eth0,,,,br0 --save
-   vzctl set $i --netif_add eth1,,,,br1 --save
-   vzctl start $i
-   vzctl set $i --onboot yes --save
-   elif [ $i == 1002 ]
-   then 
-   vzctl set $i --hostname config-server.${cluster}.vlabs.ac.in --save
-   vzctl set $i --netif_add eth0,,,,br0 --save
-   vzctl set $i --netif_add eth1,,,,br1 --save
-   vzctl start $i
-   vzctl set $i --onboot yes --save
-   elif [ $i == 1003 ]
-   then
-   vzctl set $i --hostname ossec-server.${cluster}.vlabs.ac.in --save
-   vzctl set $i --netif_add eth1,,,,br1 --save
-   vzctl start $i
-   vzctl set $i --onboot yes --save
-   
-   elif [ $i == 1004 ]
-   then
-   vzctl set $i --hostname rsyslog.${cluster}.vlabs.ac.in --save
-   vzctl set $i --netif_add eth1,,,,br1 --save
-   vzctl start $i
-   vzctl set $i --onboot yes --save
-   elif [ $i == 1005 ]
-   then
-   vzctl set $i --hostname privatedns.${cluster}.vlabs.ac.in --save
-   vzctl set $i --netif_add eth1,,,,br1 --save
-   vzctl start $i
-   vzctl set $i --onboot yes --save
-   
-   elif [ $i == 1006 ]
-   then
-   vzctl set $i --hostname publicdns.${cluster}.vlabs.ac.in --save
-   vzctl set $i --netif_add eth1,,,,br1 --save
-   vzctl start $i
-   vzctl set $i --onboot yes --save
-   elif [ $i == 1007 ]
-   then
-   vzctl set $i --hostname reverseproxy.${cluster}.vlabs.ac.in --save
-   vzctl set $i --netif_add eth1,,,,br1 --save
-   vzctl start $i
-   vzctl set $i --onboot yes --save
-   elif [ $i == 1008 ]
-   then
-   vzctl set $i --hostname nagios.${cluster}.vlabs.ac.in --save
-   vzctl set $i --netif_add eth1,,,,br1 --save
-   vzctl start $i
-   vzctl set $i --onboot yes --save
-   elif [ $i == 1009 ]
-   then
-   vzctl set $i --hostname ads.${cluster}.vlabs.ac.in --save
-   vzctl set $i --netif_add eth1,,,,br1 --diskpace 20G --save
-   vzctl start $i
-   vzctl set $i --onboot yes --save
-   elif [ $i == 1010 ]
-   then
-   vzctl set $i --hostname rsnapshot.${cluster}.vlabs.ac.in --save
-   vzctl set $i --netif_add eth1,,,,br1 --save
-   vzctl start $i
-   vzctl set $i --onboot yes --save
-   fi
-   done
-   #+END_EXAMPLE
-   - Add executable permission to =cluster.sh= script and run script
-     as:
+     #+BEGIN_EXAMPLE 
+     cluster=base5
+     for i in {1001..1010}
+     do
+     vzctl create $i  --ostemplate centos-6-x86_64
+     if [ $i == 1001 ]
+     then
+     vzctl set $i --hostname router.${cluster}.vlabs.ac.in --save
+     vzctl set $i --netif_add eth0,,,,br0 --save
+     vzctl set $i --netif_add eth1,,,,br1 --save
+     vzctl start $i
+     vzctl set $i --onboot yes --save
+     elif [ $i == 1002 ]
+     then 
+     vzctl set $i --hostname config-server.${cluster}.vlabs.ac.in --save
+     vzctl set $i --netif_add eth0,,,,br0 --save
+     vzctl set $i --netif_add eth1,,,,br1 --save
+     vzctl start $i
+     vzctl set $i --onboot yes --save
+     elif [ $i == 1003 ]
+     then
+     vzctl set $i --hostname ossec-server.${cluster}.vlabs.ac.in --save
+     vzctl set $i --netif_add eth1,,,,br1 --save
+     vzctl start $i
+     vzctl set $i --onboot yes --save
+     
+     elif [ $i == 1004 ]
+     then
+     vzctl set $i --hostname rsyslog.${cluster}.vlabs.ac.in --save
+     vzctl set $i --netif_add eth1,,,,br1 --save
+     vzctl start $i
+     vzctl set $i --onboot yes --save
+     elif [ $i == 1005 ]
+     then
+     vzctl set $i --hostname privatedns.${cluster}.vlabs.ac.in --save
+     vzctl set $i --netif_add eth1,,,,br1 --save
+     vzctl start $i
+     vzctl set $i --onboot yes --save
+     
+     elif [ $i == 1006 ]
+     then
+     vzctl set $i --hostname publicdns.${cluster}.vlabs.ac.in --save
+     vzctl set $i --netif_add eth1,,,,br1 --save
+     vzctl start $i
+     vzctl set $i --onboot yes --save
+     elif [ $i == 1007 ]
+     then
+     vzctl set $i --hostname reverseproxy.${cluster}.vlabs.ac.in --save
+     vzctl set $i --netif_add eth1,,,,br1 --save
+     vzctl start $i
+     vzctl set $i --onboot yes --save
+     elif [ $i == 1008 ]
+     then
+     vzctl set $i --hostname nagios.${cluster}.vlabs.ac.in --save
+     vzctl set $i --netif_add eth1,,,,br1 --save
+     vzctl start $i
+     vzctl set $i --onboot yes --save
+     elif [ $i == 1009 ]
+     then
+     vzctl set $i --hostname ads.${cluster}.vlabs.ac.in --save
+     vzctl set $i --netif_add eth1,,,,br1 --diskpace 20G --save
+     vzctl start $i
+     vzctl set $i --onboot yes --save
+     elif [ $i == 1010 ]
+     then
+     vzctl set $i --hostname rsnapshot.${cluster}.vlabs.ac.in --save
+     vzctl set $i --netif_add eth1,,,,br1 --save
+     vzctl start $i
+     vzctl set $i --onboot yes --save
+     fi
+     done
+     #+END_EXAMPLE
+   - Add executable permission to =cluster.sh= script and run script as:
      #+BEGIN_EXAMPLE
      chmod +x cluster.sh
      ./cluster.sh
@@ -307,21 +302,17 @@ NETFILTER="full"
      passwd
      #+END_EXAMPLE
 *** Inside the Router 
-    Now you may not get internet to the router. To get that do the
-    following steps.
+    Now you may not get internet to the router. To get that do the following
+    steps.
 
-    We need two IPs to setup router machine one is for accessing labs
-    and servers over http, https and dns and another is for private
-    network ip. This private ip is for gateway to all the nodes and
-    lab containers.
+    We need two IPs to setup router machine one is for accessing labs and
+    servers over http, https and dns and another is for private network ip. This
+    private ip is for gateway to all the nodes and lab containers.
     
-    - Find one available ip in your network using ping command, to
-      assign it to the router eth0 interface. This ip will become
-      public ip for router.
-    
-    - Create *ifcfg-eth0* file in =/etc/sysconfig/network-scripts/=
-      and add the following fields. In place of HWADDR add MAC address
-      of eth0 interface.
+    - Find one available ip in your network using ping command, to assign it to
+      the router eth0 interface. This ip will become public ip for router.
+    - Create *ifcfg-eth0* file in =/etc/sysconfig/network-scripts/= and add the
+      following fields. In place of HWADDR add MAC address of eth0 interface.
       #+BEGIN_EXAMPLE 
       DEVICE=eth0
       TYPE=Ethernet
@@ -335,11 +326,9 @@ NETFILTER="full"
       DNS1=<external-dns1>
       DNS2=<external-dns2>
       #+END_EXAMPLE
-
-    - Create another =ifcfg-eth1= file in
-      =/etc/sysconfig/network-scripts/=.  This one is actually for
-      creating private network. It acts like a Gateway to all other
-      containers
+    - Create another =ifcfg-eth1= file in =/etc/sysconfig/network-scripts/=.
+      This one is actually for creating private network. It acts like a Gateway
+      to all other containers
       #+BEGIN_EXAMPLE 
       DEVICE=eth1
       HWADDR=<<Hardware address of eth1 interface>>
@@ -371,14 +360,13 @@ NETFILTER="full"
 
 *** Add  NAT rule and Edit =/etc/sysctl.conf= file
     - Write a temporary NATing rule to get internet in private network
-      containers and This rule will be used to run playbooks of
-      private and public dns nodes and router nodes smoothly.
+      containers and This rule will be used to run playbooks of private and
+      public dns nodes and router nodes smoothly.
       #+BEGIN_EXAMPLE 
       iptables -t nat -A POSTROUTING ! -d 10.100.0.0/22 -o eth0 -j SNAT --to-source <router_public_ip>
       iptables-save > /etc/sysconfig/iptables
       #+END_EXAMPLE
-    - Edit/open the file =/etc/sysctl.conf= and modify the following
-      line
+    - Edit/open the file =/etc/sysctl.conf= and modify the following line:
       #+BEGIN_EXAMPLE 
       net.ipv4.ip_forward = 1
       #+END_EXAMPLE
@@ -391,10 +379,9 @@ NETFILTER="full"
       https://openvz.org/Using_NAT_for_container_with_private_IPs
 ** Config-server node
 *** Setup container
-    - We need two IPs to setup ansible machine one is for public
-      access over ssh and another is for private network ip. Private
-      ip is for configuring other nodes as well as itself and internal
-      connections.
+    - We need two IPs to setup ansible machine one is for public access over ssh
+      and another is for private network ip. Private ip is for configuring other
+      nodes as well as itself and internal connections.
       + NOTE :: *No need to do below steps again here. These steps*
                 *already taken care by =cluster.sh= script. Just for
                 *understanding we gave examples.*
@@ -404,10 +391,9 @@ NETFILTER="full"
       vzctl set 1002 --netif_add eth0,,,,br1 --save
       vzctl set 1002 --onboot yes --save
       #+END_EXAMPLE
-    - To configure the network do the same steps as followed for
-      router node [[Inside the Router]], set IPADDR and MAC addresses of
-      the interfaces appropriately. Set private IP as 10.100.1.2 for
-      ansible container.
+    - To configure the network do the same steps as followed for router node
+      [[Inside the Router]], set IPADDR and MAC addresses of the interfaces
+      appropriately. Set private IP as 10.100.1.2 for ansible container.
     - Enter inside the container.
       #+BEGIN_EXAMPLE
       vzctl enter 1002
@@ -440,60 +426,53 @@ NETFILTER="full"
      yum -y install ansible       #from root
      #+END_EXAMPLE
 *** Install openssh if not installed
-    By default some distro comes with openssh. If the package is not
-    installed, install it using
+    By default some distro comes with openssh. If the package is not installed
+    and restart the ssh service.
     #+BEGIN_EXAMPLE 
     yum install openssh -y
-    #+END_EXAMPLE
-    and restart the ssh service 
-    #+BEGIN_EXAMPLE 
     service sshd start
     chkconfig sshd on
     #+END_EXAMPLE
+
 *** Version control setup
-    - Setup version control on ansible machine using:
+    - Setup version control on ansible machine. In this node, git command is
+      used to pull the updates from master branch of the systems model. From
+      this node we do not push the updated files/folders to systems-model
+      repository.
      #+BEGIN_EXAMPLE
      yum install git -y
      #+END_EXAMPLE
-     In this node, git command is used to pull the updates from master
-     branch of the systems model. From this node we do not push the
-     updated files/folders to systems-model repository.
-
     - Create .ssh/config file in vlead user with following content, make sure
       permissions of the file are set to =400=.
       #+BEGIN_EXAMPLE
       GSSAPIAuthentication no
       #+END_EXAMPLE
-    - If machine does not have direct internet access then you may
-      need to add following lines also in .ssh/config file.
+    - If machine does not have direct internet access then you may need to add
+      following lines also in .ssh/config file.
       #+BEGIN_EXAMPLE
       Host bitbucket.org
       HostName altssh.bitbucket.org
       Port 443
       User git
       #+END_EXAMPLE
-
-    - Copy ssh public keys of vlead user to systems-model repository
-      in bitbucket. Then clone the systems-model repository inside 'vlead'
-      user home directory.
+    - Copy ssh public keys of vlead user to systems-model repository in
+      bitbucket. Then clone the systems-model repository inside 'vlead' user
+      home directory.
       #+BEGIN_EXAMPLE
       git clone git@bitbucket.org:vlead/systems-model.git     #from vlead user git
       #+END_EXAMPLE
-
     - Checkout develop or other appropriate branch.
       #+BEGIN_EXAMPLE
       git checkout <branch-name>
       #+END_EXAMPLE
-     
 *** Setup Emacs and org-mode-8
-    - Install emacs from vlead user only without becoming root by
-      issuing following command.
+    - Install emacs from vlead user only without becoming root by issuing
+      following command.
       #+BEGIN_EXAMPLE
       ssh root@localhost yum -y install emacs 
       #+END_EXAMPLE
    
     - Setup org-mode using (for VLEAD user):
-
       #+BEGIN_EXAMPLE
       mkdir -p ~/emacs/lisp   #as vlead user
       cd ~/emacs/lisp
@@ -503,80 +482,76 @@ NETFILTER="full"
       #+END_EXAMPLE
 
 *** Create hosts file
-#+BEGIN_SRC text :tangle hosts 
-[ansible_server]
-#multiple-ok
-10.100.1.2
-
-[ossec_server]
-#Only one allowed
-10.100.1.3
-
-[public_dns]
-#multiple ok
-10.100.1.6
-
-[private_dns]
-#multiple ok
-10.100.1.5
-
-[rsyslog_server]
-#multiple ok
-10.100.1.4
-
-[reverseproxy_server]
-#multiple ok
-10.100.1.7
-
-[router]
-10.100.1.1
-
-[nagios_server]
-10.100.1.8
-
-[ads_server]
-10.100.1.9
-
-[rsnapshot_server]
-10.100.1.10
-
-[lab_rsnapshot_server]
-10.100.1.11
-#+END_SRC
+    Create hosts file that is used by ansible to run playbooks.
+    #+BEGIN_SRC text :tangle hosts 
+    [ansible_server]
+    #multiple-ok
+    10.100.1.2
+    
+    [ossec_server]
+    #Only one allowed
+    10.100.1.3
+    
+    [public_dns]
+    #multiple ok
+    10.100.1.6
+    
+    [private_dns]
+    #multiple ok
+    10.100.1.5
+    
+    [rsyslog_server]
+    #multiple ok
+    10.100.1.4
+    
+    [reverseproxy_server]
+    #multiple ok
+    10.100.1.7
+    
+    [router]
+    10.100.1.1
+    
+    [nagios_server]
+    10.100.1.8
+    
+    [ads_server]
+    10.100.1.9
+    
+    [rsnapshot_server]
+    10.100.1.10
+    
+    [lab_rsnapshot_server]
+    10.100.1.11
+    #+END_SRC
 *** Run make and check syntax of site.yaml
-    - Change directory to cloned repository systems-model and change
-      the values of following variables in makefile
+    - Change directory to cloned repository systems-model and change the values
+      of following variables in makefile
       + *ROUTER_IP* - Router's public IP.
       + *CONFIG_SERVER* - Ansible/Config server'e public IP.
       + *CLUSTER* - Name of the cluster
       + *SMTP_SMART_HOST* - Domain name of mail server/SMTP server.
-    - And then run make 
+    - And then run make
       #+BEGIN_EXAMPLE 
       cd ~/systems-model/
       make
       #+END_EXAMPLE
-    - Good to have Copy of generated cluster code =build/{cluster}= to
-      another location. This is important as otherwise running make
-      again will overwrite all changes since last time.
-
-      For example, cluster name is cluster, then copy the
-      =build/cluster= directory to =~/root/=
+    - Good to have Copy of generated cluster code =build/{cluster}= to another
+      location. This is important as otherwise running make again will overwrite
+      all changes since last time. For example, cluster name is cluster, then
+      copy the =build/cluster= directory to =~/root/=
       #+BEGIN_EXAMPLE
       cp -r build/cluster ~/root/
       #+END_EXAMPLE
     - Check syntax of ansible playbooks.
-
       #+BEGIN_EXAMPLE
       cd ~/systems-model/build/{cluster}
       ansible-playbook -i hosts --list-tasks --syntax-check site.yaml
       #+END_EXAMPLE
     - Exit from container
 ** DNS servers and Configure
-   - Enter into the containers one after the other and do the
-     following steps
+   - Enter into the containers one after the other and do the following steps
      + Configure the network-interface in
-       =/etc/sysconfig/network-scripts/ifcfg-eth1= with the following
-       fields
+       =/etc/sysconfig/network-scripts/ifcfg-eth1= with the following fields
        #+BEGIN_EXAMPLE 
         DEVICE=eth1
         HWADDR=<<Hardware address of eth1 interface>>
@@ -597,54 +572,46 @@ NETFILTER="full"
        #+END_EXAMPLE
      + Enable ssh access from ansible using key-based authentication
        (=ssh-copy-id= from vlead user)
-    - We need working DNS in new containers.  If working DNS are
-      obtained due to inherit feature of OpenVZ then it is fine.
-
-      Otherwise we should use temporary external dns server's IP
-      other than cluster's dns server to configure these nodes using
-      ansible playbooks.  
-
-      For example edit /etc/resolv.conf file as follows:
-      #+BEGIN_EXAMPLE
-      nameserver 4.2.2.2
-      nameserver 8.8.8.8
-      #+END_EXAMPLE
-    - Comment =rsnapshot_client= and =ossec_client= roles in
-      private-dns.yaml and public-dns.yaml
-    - Run *public_dns.yaml* and *private_dns.yaml* play books on
-      config-server.
+   - We need working DNS in new containers.  If working DNS are obtained due to
+     inherit feature of OpenVZ then it is fine. Otherwise we should use
+     temporary external dns server's IP other than cluster's dns server to
+     configure these nodes using ansible playbooks.  For example edit
+     /etc/resolv.conf file as follows:
+     #+BEGIN_EXAMPLE
+     nameserver 4.2.2.2
+     nameserver 8.8.8.8
+     #+END_EXAMPLE
+   - Comment =rsnapshot_client= and =ossec_client= roles in private-dns.yaml and
+     public-dns.yaml
+   - Run *public_dns.yaml* and *private_dns.yaml* play books on config-server.
       #+BEGIN_EXAMPLE 
       ansible-playbook -i hosts public-dns.yaml
       #+END_EXAMPLE
       #+BEGIN_EXAMPLE 
       ansible-playbook -i hosts private-dns.yaml
       #+END_EXAMPLE
-    - Once the nodes are configured using playbooks, test whether the
-      dns nodes are functioning properly or not from both private and
-      public DNS nodes by issuing the following commands:
+   - Once the nodes are configured using playbooks, test whether the dns nodes
+     are functioning properly or not from both private and public DNS nodes by
+     issuing the following commands:
       #+BEGIN_EXAMPLE
       nslookup www.google.co.in 10.100.1.5
       nslookup router.[{cluster}.]vlabs.ac.in 10.100.1.6
       nslookup router.[{cluster}.]vlabs.ac.in 10.100.1.5
       #+END_EXAMPLE
-    - Exit from container
+   - Exit from container
 ** Configure Router 
-   - In order to apply proper firewall rules for our cluster we need
-     to configure router after dns servers are configured.
+   - In order to apply proper firewall rules for our cluster we need to
+     configure router after dns servers are configured.
    - Comment =ossec_client= and =rsnapshot_client= roles in router.yaml
    - Enable ssh access from config-server node
      #+BEGIN_EXAMPLE
       ansible-playbook -i hosts router.yaml
      #+END_EXAMPLE
-# COMMENT:      - NOTE :: Reason to run router.yaml play book here is: We added
-               NATing rule as temporary firewall rule. So in common
-               role there is task which restarts iptables service,
-               temporary rule will be no more.
-	      
-	      If we set POSTROUTING firewall rule as permanent rule
-              then no need to run router.yaml file after dns servers
-              are configured. 
-
+     - NOTE :: Reason to run router.yaml play book here is: We added NATing rule
+               as temporary firewall rule. So in common role there is task which
+               restarts iptables service, temporary rule will be no more. If we
+               set POSTROUTING firewall rule as permanent rule then no need to
+               run router.yaml file after dns servers are configured.
    - Test the router by issuing following command from router node itself.
      #+BEGIN_EXAMPLE
      nslookup router.[{cluster}.].vlabs.ac.in <router-public-ip>
@@ -657,8 +624,7 @@ NETFILTER="full"
      vzctl enter 1003
      #+END_EXAMPLE
    - Configure the network-interface in
-     =/etc/sysconfig/network-scripts/ifcfg-eth1= with the following
-     fields
+     =/etc/sysconfig/network-scripts/ifcfg-eth1= with the following fields
      #+BEGIN_EXAMPLE 
      DEVICE=eth1
      HWADDR=<<Hardware address of eth1 interface>>
@@ -669,12 +635,12 @@ NETFILTER="full"
      GATEWAY=10.100.1.1
      NETMASK=255.255.252.0
      #+END_EXAMPLE
-   - Restart the network 
+   - Restart the network
      #+BEGIN_EXAMPLE 
      service network restart
      #+END_EXAMPLE
-   - Set root password and enable ssh access from ansible using
-     key-based authentication
+   - Set root password and enable ssh access from ansible using key-based
+     authentication
    - Exit from container
 ** rsyslog server
    - Enter into the rsyslog container
@@ -682,8 +648,7 @@ NETFILTER="full"
      vzctl enter 1004
      #+END_EXAMPLE
    - Configure the network-interface in
-     =/etc/sysconfig/network-scripts/ifcfg-eth1= with the following
-     fields
+     =/etc/sysconfig/network-scripts/ifcfg-eth1= with the following fields
      #+BEGIN_EXAMPLE 
      DEVICE=eth1
      HWADDR=<<Hardware address of eth1 interface>>
@@ -698,8 +663,8 @@ NETFILTER="full"
      #+BEGIN_EXAMPLE 
      service network restart
      #+END_EXAMPLE
-   - Set root password and enable ssh access from ansible using
-     key-based authentication.
+   - Set root password and enable ssh access from ansible using key-based
+     authentication.
    - Exit from container
 ** Reverse-proxy server
    - Enter into the reverseproxy container
@@ -707,8 +672,7 @@ NETFILTER="full"
      vzctl enter 1007
      #+END_EXAMPLE
    - Configure the network-interface in
-     =/etc/sysconfig/network-scripts/ifcfg-eth1= with the following
-     fields
+     =/etc/sysconfig/network-scripts/ifcfg-eth1= with the following fields
       #+BEGIN_EXAMPLE 
       DEVICE=eth1
       HWADDR=<<Hardware address of eth1 interface>>
@@ -723,16 +687,14 @@ NETFILTER="full"
      #+BEGIN_EXAMPLE 
      service network restart
      #+END_EXAMPLE
-   - Set root password and enable ssh access from ansible using
-     key-based authentication
-   - Private DNS must be setup completely before reverseproxy is
-     created.
+   - Set root password and enable ssh access from ansible using key-based
+     authentication
+   - Private DNS must be setup completely before reverseproxy is created.
 *** OPTIONAL ::  Enable secure connections(ssl/443)
 **** Purchased ssl certificate 
-     - If already have purchased ssl certificates, configure
+     - If you already have purchased ssl certificates, configure
        =/etc/httpd/conf.d/ssl.conf= file with appropriate path for
-       =SSLCertificateFile= and =SSLCertificateKeyFile=
-       directives/fields
+       =SSLCertificateFile= and =SSLCertificateKeyFile= directives/fields
      - Restart httpd service if apache syntax is correct
        #+BEGIN_EXAMPLE
        apachectl -S         # Apache configuration syntax check
@@ -740,7 +702,7 @@ NETFILTER="full"
        #+END_EXAMPLE
    - Exit from container      
 **** Self signed ssl certificates
-     Use self signed certificates if no purchased ssl certificates are
+     Use self signed certificates if purchased ssl certificates are not
      available.
      - Create a directory called =ssl= in =/etc/httpd/=
        #+BEGIN_EXAMPLE
@@ -750,26 +712,24 @@ NETFILTER="full"
        #+BEGIN_EXAMPLE
        openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/httpd/ssl/apache.key -out /etc/httpd/ssl/apache.crt
        #+END_EXAMPLE
-     - Open the file =/etc/httpd/conf.d/ssl.conf=. Look for
-       =SSLCertificateFile= and =SSLCertificateKeyFile=
-       directives/fields and provide full path of certificates
-       created above to those directives.
-    - Restart httpd service if apache syntax is correct
-      #+BEGIN_EXAMPLE
-      apachectl -S         # Apache configuration syntax check
-      service httpd restart
-      #+END_EXAMPLE
-   - Exit from container      
+     - Open the file =/etc/httpd/conf.d/ssl.conf=. Look for =SSLCertificateFile=
+       and =SSLCertificateKeyFile= directives/fields and provide full path of
+       certificates created above to those directives.
+     - Restart httpd service if apache syntax is correct
+       #+BEGIN_EXAMPLE
+       apachectl -S         # Apache configuration syntax check
+       service httpd restart
+       #+END_EXAMPLE
+     - Exit from container      
 ** Rsnapshot server
-   Rnsapshot server is for taking backup of necessary files and
-   folders from required nodes of the cluster.
+   Rnsapshot server is for taking backup of necessary files and folders from
+   required nodes of the cluster.
    - Enter into the rsnapshot container
      #+BEGIN_EXAMPLE 
      vzctl enter 1010
      #+END_EXAMPLE
    - Configure the network-interface in
-     =/etc/sysconfig/network-scripts/ifcfg-eth1= with the following
-     fields
+     =/etc/sysconfig/network-scripts/ifcfg-eth1= with the following fields
      #+BEGIN_EXAMPLE 
      DEVICE=eth1
      HWADDR=<<Hardware address of eth1 interface>>
@@ -784,17 +744,16 @@ NETFILTER="full"
      #+BEGIN_EXAMPLE 
      service network restart
      #+END_EXAMPLE
-   - set root password and enable ssh access from ansible using
-     key-based authentication
+   - set root password and enable ssh access from ansible using key-based
+     authentication
    - Exit from container
 ** Monitoring Server (Nagios)
-   - Enter into the nagios container 
+   - Enter into the nagios container
      #+BEGIN_EXAMPLE 
      vzctl enter 1008
      #+END_EXAMPLE
    - Configure the network-interface in
-     =/etc/sysconfig/network-scripts/ifcfg-eth1= with the following
-     fields
+     =/etc/sysconfig/network-scripts/ifcfg-eth1= with the following fields
       #+BEGIN_EXAMPLE 
       DEVICE=eth1
       HWADDR=<<Hardware address of eth1 interface>>
@@ -805,21 +764,20 @@ NETFILTER="full"
       GATEWAY=10.100.1.1
       NETMASK=255.255.252.0
       #+END_EXAMPLE
-   - Restart the network 
+   - Restart the network
      #+BEGIN_EXAMPLE 
      service network restart
      #+END_EXAMPLE
-   - Set root password and enable ssh access from ansible using
-     key-based authentication
-   - Exit from container     
+   - Set root password and enable ssh access from ansible using key-based
+     authentication
+   - Exit from container
 ** ADS server
    - Enter into ADS node
      #+BEGIN_EXAMPLE 
      vzctl enter 1009
      #+END_EXAMPLE
    - Configure the network-interface in
-     =/etc/sysconfig/network-scripts/ifcfg-eth1= with the following
-     fields
+     =/etc/sysconfig/network-scripts/ifcfg-eth1= with the following fields
      #+BEGIN_EXAMPLE 
      DEVICE=eth1
      HWADDR=<<Hardware address of eth1 interface>>
@@ -834,8 +792,8 @@ NETFILTER="full"
      #+BEGIN_EXAMPLE 
      service network restart
      #+END_EXAMPLE
-   - Set root passwd and enable ssh access from ansible using
-     key-based authentication
+   - Set root passwd and enable ssh access from ansible using key-based
+     authentication
    - Install git
      #+BEGIN_EXAMPLE
      echo "nameserver 8.8.8.8" > /etc/resolv.conf
@@ -925,10 +883,9 @@ NETFILTER="full"
       search <cluster>.virtual-labs.ac.in <cluster>.vlabs.ac.in
       nameserver 10.100.1.5 
       #+END_EXAMPLE
-    - Check management_ips in common_vars role and update them
-      appropriately.
-    - Add servers internal ips to =ossec_client_ips= variable in
-      common_vars role.
+    - Check management_ips in common_vars role and update them appropriately.
+    - Add servers internal ips to =ossec_client_ips= variable in common_vars
+      role.
     - Set private dns ips and private-dns-zone as follows, and comment
       =private-dns-ips: none=, =private-dns-zone: none= in common_vars role.
       #+BEGIN_EXAMPLE
@@ -936,96 +893,54 @@ NETFILTER="full"
           - 10.100.1.5
       private_dns_zone: "{{prefix}}virtual-labs.ac.in {{prefix}}vlabs.ac.in"
       #+END_EXAMPLE
-    - Comment =ossec_client= in all servers playbook.
-    - Uncomment =rsnapshot_client= in all the roles here
+    - Comment =ossec_client= and uncomment =rsnapshot_client= in all servers
+      playbook.
     - Comment =ossec_server.yaml= in =site.yaml=
     - Check syntax before running the =site.yaml=
       #+BEGIN_EXAMPLE
       ansible-playbook -i hosts --list-tasks --syntax-check site.yaml
       #+END_EXAMPLE
-    - Run site.yaml file. If you get any error try to run it again,
-      the error may resolve.
+    - Run site.yaml file. If you get any error try to run it again, the error
+      may resolve.
       #+BEGIN_EXAMPLE 
       ansible-playbook -i hosts site.yaml
       #+END_EXAMPLE
 ** Host labs using ads service
    - Deploy a few labs using ads service to test the whole setup. Open
-     http://ads.{cluster}.vlabs.ac.in:8080 and provide required
-     fields.
+     http://ads.{cluster}.vlabs.ac.in:8080 and provide required fields.
      - How to host a lab :: 
        1. Open the browser (Preferably latest Firefox)
        2. Browse the link http://ads.{cluster}.vlabs.ac.in:8080
        3. Provide persona account details and log in 
        4. After logged in you will see the web page showing with
-          three fileds:
-	  + *Lab ID* - In this field provide lab_d(e.g cse03-iiith,
-            ccnsb03-iitk etc.)
-
-	  + *Repo URL* - Provide lab GitHub repository URL. 
-			  Example:
-                          https://github.com/Virtual-Labs/problem-solving-iiith.git 
+          three fields:
+	  + *Lab ID* - In this field provide lab_d(e.g cse03-iiith, ccnsb03-iitk
+            etc.)
+	  + *Repo URL* - Provide lab GitHub repository URL.  Example:
+            https://github.com/Virtual-Labs/problem-solving-iiith.git
 	  + *Tag* - This is optional field, we can ignore.
        5. Then click on *Submit* button to host the lab in cluster
        6. If everything goes well, you will get an IP of lab where
           lab has been hosted.
-	  - Note :: You can see the logs of lab hosting process in ads
-                    server using
+	  - Note :: You can see the logs of lab hosting process in ads server
+                    using
 		    #+BEGIN_EXAMPLE
 		    tail -f /root/logs/ovpl.log
 		    #+END_EXAMPLE
-   - After deploying the lab, update the entries in common_vars of
-     following variables appropriately.
-     #+BEGIN_EXAMPLE
-     proxy_domains:
-       - {domain: "{lab-id}.{cluster}.virtual-labs.ac.in", alias: {lab-id}.{cluster}.vlabs.ac.in }
-     awstats_domains:
-       - {lab-id}.{cluster}.virtual-labs.ac.in
-     public_dns_entries:
-       - {hostname: {lab-id}, ip: <router-public-ip> }
-     private_dns_entries:
-       - {hostname: {lab-id}, ip: <lab-ip> }
-     #+END_EXAMPLE
-   - Then run ansible-playbooks of three roles as follows:
-     #+BEGIN_EXAMPLE
-     ansible-playbook -i hosts reverseproxy_server.yaml
-     ansible-playbook -i hosts public-dns.yaml
-     ansible-playbook -i hosts private-dns.yaml
-     #+END_EXAMPLE
-   - Check whether the lab page has been serving or not using provided
-     lab url using any browser.
+   - Check whether the lab page has been serving or not using provided lab url
+     using any browser.
 ** On Base machine
    - Set DNS on all containers to private DNS 10.100.1.5 IP using
      #+BEGIN_EXAMPLE
      vzctl set <CTID> --nameserver 10.100.1.5 --save     
      #+END_EXAMPLE
    - Stop all containers and reboot base machine.  Verify that things
-     automatically work after reboot. If nameserver is not set to
-     10.100.1.5 in all the containers, we have to do the *Reboot
-     related steps*.
-
+     automatically work after reboot. If nameserver is not set to 10.100.1.5 in
+     all the containers, we have to do the *Reboot related steps*.
 *** Reboot related steps
     After every full reboot we need to do following to make cluster work
     + Set private DNS to 10.100.1.5 in all containers
      #+BEGIN_EXAMPLE
       vzctl set <CTID> --nameserver 10.100.1.5 --save     
       #+END_EXAMPLE
-    + Restart httpd in reverseproxy  
-
-* ADS hooks related things to do in boot strapping
-- Copy id_rsa.pub of ansible machine to ads known hosts file. *Done*
-- Set cluster variable value in cluster.sh file for creating containers. *Done*
-- Change /etc/resolv.conf of ads to use private dns. *Done*
-- Update makefile to replace cluster variable in config_server.yml with cluster
-  value. *Done*
-- Set environment path for root user and vlead user. This is achieved by
-  appending path in /etc/environment. And then writing source /etc/environment
-  in .bashrc file. *Done*
-- In hooks.sh change file permissions of vars.yaml to be writable by vlead user,
-  run the service and then roll back file permission. *Done*
-- Update latest code from base4 to model. *Done*
-- Comment requiretty in /etc/sudoers file. *Done*
-- Add vlead user to sudoers file and set permissions to execute all commands
-  with NOPASSWD. *Done*
-- Run ansible playbook as sudo user. *Done*
-- SSH forced command is to run 'hooks.sh'. *DONE*
-- Make service program executable. *Done*
+    + Restart httpd in reverseproxy
