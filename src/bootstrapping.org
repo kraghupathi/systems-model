@@ -917,6 +917,8 @@ NETFILTER="full"
 ** Run site.yaml from config-server
     - Check management_ips in common_vars role and update them
       appropriately.
+    - Add servers internal ips to =ossec_client_ips= variable in
+      common_vars role.
     - Set private dns ips and private-dns-zone as follows, and comment
       =private-dns-ips: none=, =private-dns-zone: none= in common_vars role.
 #+BEGIN_EXAMPLE
@@ -924,8 +926,6 @@ private_dns_ips:
   - 10.100.1.5
 private_dns_zone: "{{prefix}}virtual-labs.ac.in {{prefix}}vlabs.ac.in"
 #+END_EXAMPLE
-    - Add servers internal ips to =ossec_client_ips= variable in
-      common_vars role.
     - Comment =ossec_client= in all servers playbook.
     - Uncomment =rsnapshot_client= in all the roles here
     - Comment =ossec_server.yaml= in =site.yaml=
