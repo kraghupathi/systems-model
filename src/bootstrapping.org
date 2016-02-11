@@ -214,7 +214,7 @@ NETFILTER="full"
      vzctl set $i --onboot yes --save
      elif [ $i == 1002 ]
      then 
-     vzctl set $i --hostname config-server.${cluster}.vlabs.ac.in --save
+     vzctl set $i --hostname ansible.${cluster}.vlabs.ac.in --save
      vzctl set $i --netif_add eth0,,,,br0 --save
      vzctl set $i --netif_add eth1,,,,br1 --save
      vzctl start $i
@@ -893,9 +893,9 @@ NETFILTER="full"
           - 10.100.1.5
       private_dns_zone: "{{prefix}}virtual-labs.ac.in {{prefix}}vlabs.ac.in"
       #+END_EXAMPLE
+    - Comment =ossec_server.yaml= in =site.yaml=
     - Comment =ossec_client= and uncomment =rsnapshot_client= in all servers
       playbook.
-    - Comment =ossec_server.yaml= in =site.yaml=
     - Check syntax before running the =site.yaml=
       #+BEGIN_EXAMPLE
       ansible-playbook -i hosts --list-tasks --syntax-check site.yaml
