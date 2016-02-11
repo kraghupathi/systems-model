@@ -329,6 +329,11 @@ directory.
   lineinfile: dest=/etc/environment regexp=^PATH= line=PATH=/usr/lib64/qt-3.3/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin:/root/systems-model/build/cluster
 #+END_SRC
 
+**** Comment requiretty from /etc/sudoers file
+#+BEGIN_SRC yaml :tangle roles/config_server/tasks/main.yml
+- name: comment requiretty
+  lineinfile: dest=/etc/sudoers regexp='^Defaults .* requiretty$' line='#Defaults    requiretty'
+#+END_SRC
 **** Handlers
    Restart the iptables service if configuration file of iptables is
    modified. These handlers are called only when tasks notifies to
@@ -410,12 +415,70 @@ lab2 10.100.1.12
 
 Service then reads the data from the data file and updates the entries in the
 yml files of various server.
+*** Configuration file
+1. *delimiters* - Defines the delimiters used by various sections in the yml files
+2. *fileLocation* - Defines the file location of the various yml files where
+   variables are defined. 
+3. *labPath* - Define lab data file path
+4. *code* - Defines various error and success code
+5. *yaml* - Defines ansible playbook files path for various servers
+6. *hostsPath* - Defines path to hosts file used by ansible-playbook
+7. *serviceHelp* - Docstring of the service to provide help to users
+
+#+BEGIN_SRC python :tangle config.py :eval no
+delimiters = {}
+delimiters['priv-dns'] = ["#Priv-DNS_START\n", "#Priv-DNS_END\n"]
+delimiters['pub-dns'] = ["#Pub-DNS_START\n", "#Pub-DNS_END\n"]
+delimiters['reverseproxy'] = ["#DOMAIN_START\n", "#DOMAIN_END\n"]
+delimiters['awstats'] = ["#AWSTATS_START\n", "#AWSTATS_END\n"]
+delimiters['nagios'] = ["#Nagios_START\n", "#Nagios_END\n"]
+
+fileLocation = {}
+fileLocation['priv-dns'] = '/root/systems-model/build/cluster/roles/common_vars/vars/main.yml'
+fileLocation['pub-dns'] = '/root/systems-model/build/cluster/roles/common_vars/vars/main.yml'
+fileLocation['nagios'] = '/root/systems-model/build/cluster/roles/common_vars/vars/main.yml'
+fileLocation['reverseproxy'] = '/root/systems-model/build/cluster/roles/common_vars/vars/main.yml'
+fileLocation['awstats'] = '/root/systems-model/build/cluster/roles/common_vars/vars/main.yml'
+
+labPath = "/home/vlead/lab.txt"
+
+code = {}
+code['regError'] = "Code 1: Error - Lab is already registered"
+code['deregError'] = "Code 1: Error - Lab is not registered"
+code['regSuccess'] = "Code 0: Success - Lab is now registered"
+code['deregSuccess'] = "Code 0: Success - Lab is now deregistered"
+code['failcall'] = "Code 1: Error - Service not invoked with proper arguments"
+
+yaml = {}
+yaml['rp'] = '/root/systems-model/build/cluster/reverseproxy_server.yaml'
+yaml['priv-dns'] = '/root/systems-model/build/cluster/private_dns.yaml'
+yaml['pub-dns'] = '/root/systems-model/build/cluster/public_dns.yaml'
+
+hostsPath = '/root/systems-model/build/cluster/hosts'
+serviceHelp = '''
+Configuration server provides service to register and deregister a lab in a
+cluster. ADS invokes service exposed by the configuration server over *ssh* as
+follows:
+
+"ssh vlead@ansible.vlabs.ac.in service <register/deregister> <hostname> <ipaddress>"
+
+Input Arguments:
+The program takes the following three arguments as input:
+1. A keyword - (register or deregister)
+2. Hostname
+3. Ipaddress of the lab
+
+To know more type: "pydoc hosting_service"
+'''
+#+END_SRC
+
 *** Hooks bash script
 This script is invoked via ssh forced command, when hook service is invoked from
 ads server. Script splits the arguments passed into variables and calls
 hosting_service. It also does logging of when and at what time the command was
-called.
-#+BEGIN_SRC yaml :tangle roles/config_servers/templates/hooks.sh
+called. Set file permission by specifying =:tangle-mode (identity #o755)= while
+tangling.
+#+BEGIN_SRC yaml :tangle hooks.sh :eval no :padline no :tangle-mode (identity #o755)
 #!/bin/sh
 
 IFS=' ' read -a myarray <<< "$SSH_ORIGINAL_COMMAND"
@@ -438,11 +501,6 @@ echo "Status::Success::$?" >> log.txt
 else
 echo "Status::Fail::$?" >> log.txt
 fi
-#+END_SRC
-
-#+BEGIN_SRC yml :tangle roles/config_server/tasks/main.yml
-- name: Copy hooks.sh file to config server
-  template: src=hooks.sh dest=/etc/resolv.conf owner=root group=root mode=755
 #+END_SRC
 
 *** Service Program
@@ -628,63 +686,6 @@ if __name__ == "__main__":
 
 *** Update Program
 Following program reads the values from data file and updates the yml file.
-
-**** Define Variables
-1. *delimiters* - Defines the delimiters used by various sections in the yml files
-2. *fileLocation* - Defines the file location of the various yml files where
-   variables are defined. 
-3. *labPath* - Define lab data file path
-4. *code* - Defines various error and success code
-5. *yaml* - Defines ansible playbook files path for various servers
-6. *hostsPath* - Defines path to hosts file used by ansible-playbook
-7. *serviceHelp* - Docstring of the service to provide help to users
-
-#+BEGIN_SRC python :tangle config.py :eval no
-delimiters = {}
-delimiters['priv-dns'] = ["#Priv-DNS_START\n", "#Priv-DNS_END\n"]
-delimiters['pub-dns'] = ["#Pub-DNS_START\n", "#Pub-DNS_END\n"]
-delimiters['reverseproxy'] = ["#DOMAIN_START\n", "#DOMAIN_END\n"]
-delimiters['awstats'] = ["#AWSTATS_START\n", "#AWSTATS_END\n"]
-delimiters['nagios'] = ["#Nagios_START\n", "#Nagios_END\n"]
-
-fileLocation = {}
-fileLocation['priv-dns'] = '/root/systems-model/build/cluster/roles/common_vars/vars/main.yml'
-fileLocation['pub-dns'] = '/root/systems-model/build/cluster/roles/common_vars/vars/main.yml'
-fileLocation['nagios'] = '/root/systems-model/build/cluster/roles/common_vars/vars/main.yml'
-fileLocation['reverseproxy'] = '/root/systems-model/build/cluster/roles/common_vars/vars/main.yml'
-fileLocation['awstats'] = '/root/systems-model/build/cluster/roles/common_vars/vars/main.yml'
-
-labPath = "/home/vlead/lab.txt"
-
-code = {}
-code['regError'] = "Code 1: Error - Lab is already registered"
-code['deregError'] = "Code 1: Error - Lab is not registered"
-code['regSuccess'] = "Code 0: Success - Lab is now registered"
-code['deregSuccess'] = "Code 0: Success - Lab is now deregistered"
-code['failcall'] = "Code 1: Error - Service not invoked with proper arguments"
-
-yaml = {}
-yaml['rp'] = '/root/systems-model/build/cluster/reverseproxy_server.yaml'
-yaml['priv-dns'] = '/root/systems-model/build/cluster/private_dns.yaml'
-yaml['pub-dns'] = '/root/systems-model/build/cluster/public_dns.yaml'
-
-hostsPath = '/root/systems-model/build/cluster/hosts'
-serviceHelp = '''
-Configuration server provides service to register and deregister a lab in a
-cluster. ADS invokes service exposed by the configuration server over *ssh* as
-follows:
-
-"ssh vlead@ansible.vlabs.ac.in service <register/deregister> <hostname> <ipaddress>"
-
-Input Arguments:
-The program takes the following three arguments as input:
-1. A keyword - (register or deregister)
-2. Hostname
-3. Ipaddress of the lab
-
-To know more type: "pydoc hosting_service"
-'''
-#+END_SRC
 
 **** Update Register
 This function constructs data in the proper format for dns,
