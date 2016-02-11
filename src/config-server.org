@@ -510,7 +510,7 @@ echo "$date::$SSH_ORIGINAL_COMMAND" >> log.txt
 baseDir='/home/vlead/systems-model/build/'
 cluster=$(grep "^CLUSTER=" /home/vlead/systems-model/makefile | awk -F '=' '{print $2}')
 cluster=$cluster/
-variableFile='roles/common_vars/vars/main.yml'
+variableFile='/roles/common_vars/vars/main.yml'
 
 sudo chmod 777 $baseDir$cluster$variableFile
 
