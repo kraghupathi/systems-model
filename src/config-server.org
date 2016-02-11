@@ -512,11 +512,11 @@ cluster=$(grep "^CLUSTER=" /home/vlead/systems-model/makefile | awk -F '=' '{pri
 cluster=$cluster/
 variableFile='/roles/common_vars/vars/main.yml'
 
-sudo chmod 777 $baseDir$cluster$variableFile
+#sudo chmod 777 $baseDir$cluster$variableFile
 
 hosting_service $arg2 $arg3 $arg4
 
-sudo chmod 644 $baseDir$cluster$variableFile
+#sudo chmod 644 $baseDir$cluster$variableFile
 
 if [[ "$?"=="0" ]]  
 then
@@ -569,9 +569,9 @@ def main(argv):
             readLabFile.close()
             update_reg(labData)
             with open("/dev/null","w") as f:
-                call(["sudo", "ansible-playbook", "-i", hostsPath, yaml['priv-dns']], stdout=f)
-                call(["sudo", "ansible-playbook", "-i", hostsPath, yaml['pub-dns']], stdout=f)
-                call(["sudo", "ansible-playbook", "-i", hostsPath, yaml['rp']], stdout=f)
+                call(["ansible-playbook", "-i", hostsPath, yaml['priv-dns']], stdout=f)
+                call(["ansible-playbook", "-i", hostsPath, yaml['pub-dns']], stdout=f)
+                call(["ansible-playbook", "-i", hostsPath, yaml['rp']], stdout=f)
         else:
             sys.exit(123)
 
@@ -584,9 +584,9 @@ def main(argv):
         if (returnCode != code['deregError']):
             update_dereg(argv[1], argv[2])
             with open("/dev/null","w") as f:
-                call(["sudo", "ansible-playbook", "-i", hostsPath, yaml['priv-dns']], stdout=f)
-                call(["sudo", "ansible-playbook", "-i", hostsPath, yaml['pub-dns']], stdout=f)
-                call(["sudo", "ansible-playbook", "-i", hostsPath, yaml['rp']], stdout=f)
+                call(["ansible-playbook", "-i", hostsPath, yaml['priv-dns']], stdout=f)
+                call(["ansible-playbook", "-i", hostsPath, yaml['pub-dns']], stdout=f)
+                call(["ansible-playbook", "-i", hostsPath, yaml['rp']], stdout=f)
         else:
             sys.exit(123)
 
