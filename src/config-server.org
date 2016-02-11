@@ -433,9 +433,10 @@ yml files of various server.
 #+BEGIN_SRC python :tangle config.py :eval no
 import re
 
-baseDir='/home/vlead/systems-model/build'
+baseDir='/home/vlead/systems-model/build/'
+varFile='/roles/common_vars/vars/main.yml'
 
-with open('../../makefile', 'r') as f:
+with open('/home/vlead/systems-model/makefile', 'r') as f:
     for line in f.readlines():
         if re.match('^CLUSTER=', line):
             line=line.strip('\n ')
@@ -450,11 +451,11 @@ delimiters['awstats'] = ["#AWSTATS_START\n", "#AWSTATS_END\n"]
 delimiters['nagios'] = ["#Nagios_START\n", "#Nagios_END\n"]
 
 fileLocation = {}
-fileLocation['priv-dns'] = '/root/systems-model/build/cluster/roles/common_vars/vars/main.yml'
-fileLocation['pub-dns'] = '/root/systems-model/build/cluster/roles/common_vars/vars/main.yml'
-fileLocation['nagios'] = '/root/systems-model/build/cluster/roles/common_vars/vars/main.yml'
-fileLocation['reverseproxy'] = '/root/systems-model/build/cluster/roles/common_vars/vars/main.yml'
-fileLocation['awstats'] = '/root/systems-model/build/cluster/roles/common_vars/vars/main.yml'
+fileLocation['priv-dns'] = baseDir + cluster + varFile
+fileLocation['pub-dns'] = baseDir + cluster + varFile
+fileLocation['nagios'] = baseDir + cluster + varFile
+fileLocation['reverseproxy'] = baseDir + cluster + varFile
+fileLocation['awstats'] = baseDir + cluster + varFile
 
 labPath = "/home/vlead/lab.txt"
 
@@ -466,11 +467,11 @@ code['deregSuccess'] = "Code 0: Success - Lab is now deregistered"
 code['failcall'] = "Code 1: Error - Service not invoked with proper arguments"
 
 yaml = {}
-yaml['rp'] = '/root/systems-model/build/cluster/reverseproxy_server.yaml'
-yaml['priv-dns'] = '/root/systems-model/build/cluster/private_dns.yaml'
-yaml['pub-dns'] = '/root/systems-model/build/cluster/public_dns.yaml'
+yaml['rp'] = baseDir + cluster + '/reverseproxy_server.yaml'
+yaml['priv-dns'] = baseDir + cluster + '/private_dns.yaml'
+yaml['pub-dns'] = baseDir + cluster + '/public_dns.yaml'
 
-hostsPath = '/root/systems-model/build/cluster/hosts'
+hostsPath = baseDir + cluster + '/hosts'
 serviceHelp = '''
 Configuration server provides service to register and deregister a lab in a
 cluster. ADS invokes service exposed by the configuration server over *ssh* as
