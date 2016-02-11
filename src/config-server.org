@@ -333,6 +333,11 @@ of file at run time it need sudo privileges.
 - name: add vlead user to sudoers group
   lineinfile: "dest=/etc/sudoers regexp='^vlead' insertafter='^root' line='vlead   ALL=(ALL)    NOPASSWD: ALL'"
 #+END_SRC
+**** Define environment variable in /etc/environment
+#+BEGIN_SRC yaml :tangle roles/config_server/tasks/main.yml
+#- name: add vlead user to sudoers group
+#  lineinfile: "dest=/home/vlead/.bashrc regexp='^vlead' insertafter='^root' line='export PATH=$PATH:'"
+#+END_SRC
 **** Handlers
    Restart the iptables service if configuration file of iptables is
    modified. These handlers are called only when tasks notifies to
