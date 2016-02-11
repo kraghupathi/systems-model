@@ -335,8 +335,9 @@ of file at run time it need sudo privileges.
 #+END_SRC
 **** Define environment variable in /etc/environment
 #+BEGIN_SRC yaml :tangle roles/config_server/tasks/main.yml
-#- name: add vlead user to sudoers group
-#  lineinfile: "dest=/home/vlead/.bashrc regexp='^vlead' insertafter='^root' line='export PATH=$PATH:'"
+- name: set environment path
+  lineinfile: "dest=/home/vlead/.bashrc regexp='^export PATH=' line='export PATH=$PATH:/home/vlead/systems-model/build/cluster'"
+  tags: setenv
 #+END_SRC
 **** Handlers
    Restart the iptables service if configuration file of iptables is
