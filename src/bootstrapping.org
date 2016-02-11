@@ -896,7 +896,7 @@ NETFILTER="full"
     - Comment =ossec_server.yaml= in =site.yaml=
     - Comment =ossec_client= and uncomment =rsnapshot_client= in all servers
       playbook.
-    - Check syntax before running the =site.yaml=
+    - Check syntax before running the =site.yaml=.
       #+BEGIN_EXAMPLE
       ansible-playbook -i hosts --list-tasks --syntax-check site.yaml
       #+END_EXAMPLE
