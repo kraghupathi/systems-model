@@ -414,9 +414,8 @@ yml files of various server.
 This script is invoked via ssh forced command, when hook service is invoked from
 ads server. Script splits the arguments passed into variables and calls
 hosting_service. It also does logging of when and at what time the command was
-called. Set file permission by specifying =:tangle-mode (identity #o755)= while
-tangling.
-#+BEGIN_SRC yaml :tangle hooks.sh :tangle-mode (identity #o755)
+called.
+#+BEGIN_SRC yaml :tangle roles/config_servers/templates/hooks.sh
 #!/bin/sh
 
 IFS=' ' read -a myarray <<< "$SSH_ORIGINAL_COMMAND"
@@ -433,12 +432,17 @@ hosting_service $arg2 $arg3 $arg4
 
 sudo chmod 644 /root/systems-model/build/cluster/roles/common_vars/vars/main.yml
 
-if [[ "$?"=="0" ]]
+if [[ "$?"=="0" ]]  
 then
 echo "Status::Success::$?" >> log.txt
 else
 echo "Status::Fail::$?" >> log.txt
 fi
+#+END_SRC
+
+#+BEGIN_SRC yml :tangle roles/config_server/tasks/main.yml
+- name: Copy hooks.sh file to config server
+  template: src=hooks.sh dest=/etc/resolv.conf owner=root group=root mode=755
 #+END_SRC
 
 *** Service Program
@@ -473,6 +477,10 @@ def main(argv):
         return
 
     if (str(argv[0]) == "register"):
+        validation = validate(argv[1], argv[2])
+        if validation!=True:
+            returnCode = code['failcall']
+            sys.exit(123)
         returnCode = register(argv[1], argv[2])
         if (returnCode != code['regError']):
             readLabFile = open(labPath, "r")
@@ -480,6 +488,7 @@ def main(argv):
             readLabFile.close()
             update_reg(labData)
             f = open("/dev/null","w")
+            #call(["ansible", "all", "-i", "localhost,", "-c", "local", "-m", "shell", "-a", "echo hello world"])
             call(["sudo", "ansible-playbook", "-i", hostsPath, yaml['priv-dns']], stdout=f)
             call(["sudo", "ansible-playbook", "-i", hostsPath, yaml['pub-dns']], stdout=f)
             call(["sudo", "ansible-playbook", "-i", hostsPath, yaml['rp']], stdout=f)
@@ -488,6 +497,10 @@ def main(argv):
             sys.exit(123)
 
     elif (str(argv[0]) == "deregister"):
+        validation = validate(argv[1], argv[2])
+        if validation!=True:
+            returnCode = code['failcall']
+            sys.exit(123)
         returnCode = deregister(argv[1], argv[2])
         if (returnCode != code['deregError']):
             update_dereg(argv[1], argv[2])
@@ -545,6 +558,34 @@ def deregister(hostname, ip):
         return code['deregError']
 #+END_SRC
 
+**** Validate data
+Validate data at the interface between ads and ads-hooks. Check for valid Ipv4
+address and valid hostname.
+#+BEGIN_SRC python :tangle hosting_service :eval no :tangle-mode (identity #o755)
+def validateIP(ip):
+    try:
+        numbers = ip.split(".")
+        length = len(numbers)
+        if (length != 4):
+            return False
+        numbers[:] = [int(element) for element in numbers]
+        if numbers[0] == 0:
+            return False
+        for element in numbers:
+            if element >= 0 and element <= 255:
+                continue
+            else:
+                return False
+    except:
+        return False
+    return True
+
+def validate(arg1, arg2):
+    if isinstance(arg1, str)!=True:
+        return False
+    result = validateIP(arg2)
+    return result
+#+END_SRC
 **** Findentry
 Findentry function finds the entry of a lab in the data file.  If the
 entry exist function returns the index of the entry, if the entry is
