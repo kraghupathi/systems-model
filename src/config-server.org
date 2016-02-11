@@ -568,12 +568,10 @@ def main(argv):
             labData = readLabFile.readlines()
             readLabFile.close()
             update_reg(labData)
-            f = open("/dev/null","w")
-            #call(["ansible", "all", "-i", "localhost,", "-c", "local", "-m", "shell", "-a", "echo hello world"])
-            call(["sudo", "ansible-playbook", "-i", hostsPath, yaml['priv-dns']], stdout=f)
-            call(["sudo", "ansible-playbook", "-i", hostsPath, yaml['pub-dns']], stdout=f)
-            call(["sudo", "ansible-playbook", "-i", hostsPath, yaml['rp']], stdout=f)
-            f.close()
+            with open("/dev/null","w") as f:
+                call(["sudo", "ansible-playbook", "-i", hostsPath, yaml['priv-dns']], stdout=f)
+                call(["sudo", "ansible-playbook", "-i", hostsPath, yaml['pub-dns']], stdout=f)
+                call(["sudo", "ansible-playbook", "-i", hostsPath, yaml['rp']], stdout=f)
         else:
             sys.exit(123)
 
@@ -585,11 +583,10 @@ def main(argv):
         returnCode = deregister(argv[1], argv[2])
         if (returnCode != code['deregError']):
             update_dereg(argv[1], argv[2])
-            f = open("/dev/null","w")
-            call(["sudo", "ansible-playbook", "-i", hostsPath, yaml['priv-dns']], stdout=f)
-            call(["sudo", "ansible-playbook", "-i", hostsPath, yaml['pub-dns']], stdout=f)
-            call(["sudo", "ansible-playbook", "-i", hostsPath, yaml['rp']], stdout=f)
-            f.close()
+            with open("/dev/null","w") as f:
+                call(["sudo", "ansible-playbook", "-i", hostsPath, yaml['priv-dns']], stdout=f)
+                call(["sudo", "ansible-playbook", "-i", hostsPath, yaml['pub-dns']], stdout=f)
+                call(["sudo", "ansible-playbook", "-i", hostsPath, yaml['rp']], stdout=f)
         else:
             sys.exit(123)
 
