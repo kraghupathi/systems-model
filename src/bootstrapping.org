@@ -107,9 +107,12 @@
        #+BEGIN_EXAMPLE 
 	cd setup-ovpl-centos/scripts/
        #+END_EXAMPLE
-     + Comment installation of mongodb in =centos_prepare_ovpl.sh= file - (line
-       60-66 ), as we do not need it on host machine.
-     + Run =centos_prepare_ovpl.sh=.  
+     + Now we will setup base machine using =centos_prepare_ovpl.sh=
+       file. Comment installation of following packages:
+       -  git (line 35-41)
+       -  mongodb (line 60-66)
+     + In =install_dependencies.sh= file comment lines from 10 to 27.
+     + After commenting run =centos_prepare_ovpl.sh=.
         #+BEGIN_EXAMPLE
         ./centos_prepare_ovpl.sh 
         #+END_EXAMPLE 
@@ -162,19 +165,19 @@
            https://www.sbarjatiya.com/notes_wiki/index.php/Modifying_openVZ_templates
      + Reboot the machine and choose openvz kernel from boot menu.
      + Enable automated addition to create interface to bridge using:
-#+BEGIN_EXAMPLE
-echo 'EXTERNAL_SCRIPT="/usr/sbin/vznetaddbr"' >> /etc/vz/vznet.conf
-#+END_EXAMPLE
+       #+BEGIN_EXAMPLE
+       echo 'EXTERNAL_SCRIPT="/usr/sbin/vznetaddbr"' >> /etc/vz/vznet.conf
+       #+END_EXAMPLE
      + Enable forwarding of ip packets, by editing =/etc/sysctl.conf= file as
        follows:
-#+BEGIN_EXAMPLE
-net.ipv4.ip_forward = 1
-#+END_EXAMPLE
+       #+BEGIN_EXAMPLE
+       net.ipv4.ip_forward = 1
+       #+END_EXAMPLE
      + Edit =/etc/vz/conf/ve-vswap-256m.conf-sample= to change value of
        NETFILTER to
-#+BEGIN_EXAMPLE
-NETFILTER="full"
-#+END_EXAMPLE
+       #+BEGIN_EXAMPLE
+       NETFILTER="full"
+       #+END_EXAMPLE
      + Reboot into openvz kernel.
      + Download the latest centos template from below link and place at =/vz/template/cache=
        http://download.openvz.org/template/precreated/centos-6-x86_64.tar.gz
@@ -358,7 +361,7 @@ NETFILTER="full"
      If this approach does not work then download the fresh centos
      template from openvz and create router again.
 
-*** Add  NAT rule and Edit =/etc/sysctl.conf= file
+*** Add NAT rule and Edit =/etc/sysctl.conf= file
     - Write a temporary NATing rule to get internet in private network
       containers and This rule will be used to run playbooks of private and
       public dns nodes and router nodes smoothly.
@@ -439,9 +442,9 @@ NETFILTER="full"
       used to pull the updates from master branch of the systems model. From
       this node we do not push the updated files/folders to systems-model
       repository.
-     #+BEGIN_EXAMPLE
-     yum install git -y
-     #+END_EXAMPLE
+      #+BEGIN_EXAMPLE
+      yum install git -y
+      #+END_EXAMPLE
     - Create .ssh/config file in vlead user with following content, make sure
       permissions of the file are set to =400=.
       #+BEGIN_EXAMPLE
