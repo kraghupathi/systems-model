@@ -50,10 +50,15 @@
       following fields
       #+BEGIN_EXAMPLE 
       DEVICE=br0
-      BOOTPROTO=dhcp
+      BOOTPROTO=static
       ONBOOT=yes
       TYPE=Bridge
       NM_CONTROLLED=no
+      IPADDR=<ip>
+      NETMASK=255.255.252.0
+      GATEWAY=<ip>
+      DNS1=<ip>
+      DNS2=<ip>
       #+END_EXAMPLE
     - Then create another *ifcfg-eth0* file in =/etc/sysconfig/network-scripts/=
       and add the following fields:
