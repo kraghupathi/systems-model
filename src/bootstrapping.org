@@ -944,3 +944,6 @@ NETFILTER="full"
       vzctl set <CTID> --nameserver 10.100.1.5 --save     
       #+END_EXAMPLE
     + Restart httpd in reverseproxy
+* To Do
+- Add bootstrapping steps for creating vlabs.ac.in landing page, analytics
+  server and lab-rsyslog server.
