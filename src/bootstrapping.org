@@ -827,6 +827,8 @@
      machine.
      #+BEGIN_EXAMPLE
      anisble.{{cluster}}.vlabs.ac.in <public-key-of-ansible-machine>
+     10.100.1.2 <public-key-of-ansible-machine>
+     anisble.{{cluster}}.virtual-labs.ac.in <public-key-of-ansible-machine>
      #+END_EXAMPLE
    - Clone setup-ovpl-centos using:
      #+BEGIN_EXAMPLE
