@@ -839,6 +839,7 @@
      vim centos_prepare_ovpl.sh  #Comment OpenVZ installation and git installation lines 35-41 and 52-58
      ./centos_prepare_ovpl.sh    # Relax for 10 to 15 minutes or Go for a TEA
      #+END_EXAMPLE 
+   - Terminate the starting of mongodb service process by pressing "ctrl+c".
    - Do following steps
      #+BEGIN_EXAMPLE 
      cd ovpl/config
