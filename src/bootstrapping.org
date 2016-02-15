@@ -884,7 +884,8 @@
      cd ~/ovpl
      ./manage_services.sh start
      #+END_EXAMPLE
-    - Set nameserver for ads server to use private dns.
+    - Set nameserver for ads server to use private dns. Edit =/etc/resolv.conf=
+      file as follows:
       #+BEGIN_EXAMPLE
       search <cluster>.virtual-labs.ac.in <cluster>.vlabs.ac.in
       nameserver 10.100.1.5 
