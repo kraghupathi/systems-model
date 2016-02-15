@@ -268,7 +268,7 @@
      elif [ $i == 1009 ]
      then
      vzctl set $i --hostname ads.${cluster}.vlabs.ac.in --save
-     vzctl set $i --netif_add eth1,,,,br1 --diskpace 20G --save
+     vzctl set $i --netif_add eth1,,,,br1 --diskspace 20G --save
      vzctl start $i
      vzctl set $i --onboot yes --save
      elif [ $i == 1010 ]
