@@ -205,9 +205,12 @@
       container template.  Download fresh template directly from openvz.org
       mirrors.
 ** Create all servers/nodes
-   - Create a file called =cluster.sh= and add the following shell commands to
-     it. Update *cluster* variable value based on cluster name. This shell
-     script creates all containers and they would be in running state.
+   - Create a file called =cluster.sh= and add the following shell
+     commands to it. Update *cluster* variable value based on cluster
+     name. Also update bridges names *br0* and *br1*
+     accordingly. Bridge "br0" is for public interface and bridge
+     "br1" is for private interface. This shell script creates all
+     containers and they would be in running state.
      #+BEGIN_EXAMPLE 
      cluster=base5
      for i in {1001..1010}
