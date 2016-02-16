@@ -828,9 +828,8 @@
      #+BEGIN_EXAMPLE
      chmod 600 .ssh/authorized_keys
      #+END_EXAMPLE
-   - Add known hosts entry of ansible machine, in =~/.ssh/known_hosts= file as
-     follows. Replace <public-key> with public key of vlead user in ansible
-     machine.
+   - Edit =~/.ssh/known_hosts= file and known hosts entry for ansible machine.
+     Replace <public-key> with public key of vlead user in ansible machine.
      #+BEGIN_EXAMPLE
      ansible.{{cluster}}.vlabs.ac.in <public-key-of-ansible-machine>
      10.100.1.2 <public-key-of-ansible-machine>
