@@ -415,6 +415,10 @@ proxy_domains:
   - {domain: "feedback.virtual-labs.ac.in", alias: "feedback.vlabs.ac.in"}
   - {domain: "eil-iitg.virtual-labs.ac.in", alias: "eil-iitg.vlabs.ac.in"}
   - {domain: "vlsi-iitg.virtual-labs.ac.in", alias: "vlsi-iitg.vlabs.ac.in"}
+  - {domain: "emv-au.virtual-labs.ac.in", alias: "emv-au.vlabs.ac.in"}
+  - {domain: "cbII-au.virtual-labs.ac.in", alias: "cbII-au.vlabs.ac.in"}
+  - {domain: "cbI-au.virtual-labs.ac.in", alias: "cbI-au.vlabs.ac.in"}
+  - {domain: "ov-au.virtual-labs.ac.in", alias: "ov-au.vlabs.ac.in"}
 awstats_domains:
   - cse01-iiith.virtual-labs.ac.in
   - cse02-iiith.virtual-labs.ac.in
@@ -493,7 +497,10 @@ awstats_domains:
   - feedback.virtual-labs.ac.in
   - eil-iitg.virtual-labs.ac.in
   - vlsi-iitg.virtual-labs.ac.in
-  
+  - emv-au.virtual-labs.ac.in
+  - cbII-au.virtual-labs.ac.in
+  - cbI-au.virtual-labs.ac.in
+  - ov-au.virtual-labs.ac.in
 
 public_dns_entries:
   - { hostname: router, ip: 54.85.93.7 }
@@ -585,8 +592,10 @@ public_dns_entries:
   - { hostname: feedback, ip: 54.85.93.7}  
   - { hostname: eil-iitg, ip: 54.85.93.7}
   - { hostname: vlsi-iitg, ip: 54.85.93.7}
-  
-
+  - { hostname: emv-au, ip: 54.85.93.7}
+  - { hostname: cbII-au, ip: 54.85.93.7}
+  - { hostname: cbI-au, ip: 54.85.93.7}
+  - { hostname: ov-au, ip: 54.85.93.7}
 private_dns_entries:
   - { hostname: router, ip: 10.100.1.1 }
   - { hostname: bandwidthd, ip: 10.100.1.1 }
@@ -676,6 +685,10 @@ private_dns_entries:
   - { hostname: eil-iitg, ip: 10.100.1.213}
   - { hostname: vlsi-iitg, ip: 10.100.3.148}
   - { hostname: outreach, ip: 10.100.3.176}
+  - { hostname: emv-au, ip: 10.100.2.216}
+  - { hostname: cbII-au, ip: 10.100.2.232}
+  - { hostname: cbI-au, ip: 10.100.0.159}
+  - { hostname: ov-au, ip: 10.100.2.135}
 
 #Used by private-dns ans public dns to set their zone file names
 prefix: ""
