@@ -425,6 +425,8 @@ proxy_domains:
   - {domain: "htv-au.virtual-labs.ac.in", alias: "htv-au.vlabs.ac.in"}
   - {domain: "fmc-nitk.virtual-labs.ac.in", alias: "fmc-nitk.vlabs.ac.in"}
   - {domain: "vmt-iitg.virtual-labs.ac.in", alias: "vmt-iitg.vlabs.ac.in"}
+  - {domain: "mfts-iitg.virtual-labs.ac.in", alias: "mfts-iitg.vlabs.ac.in"}
+  - {domain: "mv-iitg.virtual-labs.ac.in", alias: "mv-iitg.vlabs.ac.in"}
 awstats_domains:
   - cse01-iiith.virtual-labs.ac.in
   - cse02-iiith.virtual-labs.ac.in
@@ -510,6 +512,8 @@ awstats_domains:
   - htv-au.virtual-labs.ac.in
   - fmc-nitk.virtual-labs.ac.in  
   - vmt-iitg.virtual-labs.ac.in
+  - mfts-iitg.virtual-labs.ac.in
+  - mv-iitg.virtual-labs.ac.in
 
 public_dns_entries:
   - { hostname: router, ip: 54.85.93.7 }
@@ -611,6 +615,8 @@ public_dns_entries:
   - { hostname: htv-au, ip: 54.85.93.7}
   - { hostname: fmc-nitk, ip: 54.85.93.7}
   - { hostname: vmt-iitg, ip: 54.85.93.7}
+  - { hostname: mfts-iitg, ip: 54.85.93.7}
+  - { hostname: mv-iitg, ip: 54.85.93.7}
 private_dns_entries:
   - { hostname: router, ip: 10.100.1.1 }
   - { hostname: bandwidthd, ip: 10.100.1.1 }
@@ -710,6 +716,8 @@ private_dns_entries:
   - { hostname: htv-au, ip: 10.100.1.239}
   - { hostname: fmc-nitk, ip: 10.100.3.86}
   - { hostname: vmt-iitg, ip: 10.100.2.47}
+  - { hostname: mfts-iitg, ip: 10.100.3.0}
+  - { hostname: mv-iitg, ip: 10.100.2.24}
 
 #Used by private-dns ans public dns to set their zone file names
 prefix: ""
