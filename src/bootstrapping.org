@@ -91,6 +91,11 @@
       #+BEGIN_EXAMPLE 
       service network restart
       #+END_EXAMPLE
+    - Perform the following steps
+      #+BEGIN_EXAMPLE
+      chkconfig NetworkManager off
+      chkconfig network on
+      #+END_EXAMPLE
     - Now you can see the bridges on your machine using *brctl show*
       command. That will give you the connections between interfaces.
     - Need to set proxy for all the containers if network uses any
@@ -186,7 +191,7 @@
      + Reboot into openvz kernel.
      + Download the latest centos template from below link and place at =/vz/template/cache=
        http://download.openvz.org/template/precreated/centos-6-x86_64.tar.gz
-*** Move /vz to a partition where there is enough space
+*** (OPTIONAL) Move /vz to a partition where there is enough space
     + By default all OpenVZ container information will go into =/vz= partition.
     + Some times we may not have enough space for =/vz= partition, so it is good
       to move this partition to where enough space available. Then symlink from
@@ -390,6 +395,11 @@
     - *Reference Link* :
       https://openvz.org/Using_NAT_for_container_with_private_IPs
 ** Config-server node
+*** Enter Into the container
+    #+BEGIN_EXAMPLE
+    vzctl enter 1002
+    #+END_EXAMPLE
+*** 
 *** Setup container
     - We need two IPs to setup ansible machine one is for public access over ssh
       and another is for private network ip. Private ip is for configuring other
@@ -409,6 +419,14 @@
     - Enter inside the container.
       #+BEGIN_EXAMPLE
       vzctl enter 1002
+      #+END_EXAMPLE
+    - Install openssh if not installed. By default some distro comes
+      with openssh. If the package is not installed and restart the
+      ssh service.
+      #+BEGIN_EXAMPLE 
+      yum install openssh -y
+      service sshd start
+      chkconfig sshd on
       #+END_EXAMPLE
     - Set root passwd
       #+BEGIN_EXAMPLE
@@ -437,14 +455,6 @@
      yum -y install epel-release  #from root
      yum -y install ansible       #from root
      #+END_EXAMPLE
-*** Install openssh if not installed
-    By default some distro comes with openssh. If the package is not installed
-    and restart the ssh service.
-    #+BEGIN_EXAMPLE 
-    yum install openssh -y
-    service sshd start
-    chkconfig sshd on
-    #+END_EXAMPLE
 
 *** Version control setup
     - Setup version control on ansible machine. In this node, git command is
@@ -468,14 +478,21 @@
       User git
       #+END_EXAMPLE
     - Copy ssh public keys of vlead user to systems-model repository in
-      bitbucket. Then clone the systems-model repository inside 'vlead' user
-      home directory.
+      bitbucket. 
+      + Steps to add vlead user's public key to systems-model on BitBucket
+	1.login as admin in bitbucket 
+        2. Go to sytems-model repo 
+        3. Go to settings 
+        4. Add vlead user's public key in the deployment keys section.
+        5. Then clone the systems-model repository inside 'vlead' user
+           home directory by using the following command.
       #+BEGIN_EXAMPLE
       git clone git@bitbucket.org:vlead/systems-model.git     #from vlead user git
       #+END_EXAMPLE
     - Checkout develop or other appropriate branch.
       #+BEGIN_EXAMPLE
-      git checkout <branch-name>
+      git checkout develop   or  git checkout <branch-name> # Currently full updates are in develop only
+      #Need to merge these changes to master very soon
       #+END_EXAMPLE
 *** Setup Emacs and org-mode-8
     - Install emacs from vlead user only without becoming root by issuing
@@ -598,10 +615,10 @@
      public-dns.yaml
    - Run *public_dns.yaml* and *private_dns.yaml* play books on config-server.
       #+BEGIN_EXAMPLE 
-      ansible-playbook -i hosts public-dns.yaml
+      ansible-playbook -i hosts public_dns.yaml
       #+END_EXAMPLE
       #+BEGIN_EXAMPLE 
-      ansible-playbook -i hosts private-dns.yaml
+      ansible-playbook -i hosts private_dns.yaml
       #+END_EXAMPLE
    - Once the nodes are configured using playbooks, test whether the dns nodes
      are functioning properly or not from both private and public DNS nodes by
@@ -822,14 +839,15 @@
      file of vlead user. Replace <public-key> with public key of ads machine.
      *Note:* This has to be done in config server.
      #+BEGIN_EXAMPLE
-     command="hooks.sh",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty <public_key>
+     command="hooks.sh",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty <public-key>
      #+END_EXAMPLE
    - Make sure =/home/vlead/.ssh/authorized_keys= file has =600= permissions.
      #+BEGIN_EXAMPLE
      chmod 600 .ssh/authorized_keys
      #+END_EXAMPLE
-   - Edit =~/.ssh/known_hosts= file and known hosts entry for ansible machine.
-     Replace <public-key> with public key of vlead user in ansible machine.
+   - Edit =~/.ssh/known_hosts= file and known hosts entry for ansible
+     machine.  Replace <public-key-of-ansible-machine> with public key
+     of vlead user in ansible machine.
      #+BEGIN_EXAMPLE
      ansible.{{cluster}}.vlabs.ac.in <public-key-of-ansible-machine>
      10.100.1.2 <public-key-of-ansible-machine>
