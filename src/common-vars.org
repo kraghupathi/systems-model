@@ -433,6 +433,15 @@ proxy_domains:
   - {domain: "vm-dei.virtual-labs.ac.in", alias: "vm-dei.vlabs.ac.in"}
   - {domain: "idte-dei.virtual-labs.ac.in", alias: "idte-dei.vlabs.ac.in"}
   - {domain: "icv-au.virtual-labs.ac.in", alias: "icv-au.vlabs.ac.in"}
+  - {domain: "biotech01.virtual-labs.ac.in", alias: "biotech01.vlabs.ac.in"}
+  - {domain: "mbvII-au.virtual-labs.ac.in", alias: "mbvII-au.vlabs.ac.in"}
+  - {domain: "phy-sc22-au.virtual-labs.ac.in", alias: "phy-sc22-au.vlabs.ac.in"}
+  - {domain: "pcv-au.virtual-labs.ac.in", alias: "pcv-au.vlabs.ac.in"}
+  - {domain: "aacv-au.virtual-labs.ac.in", alias: "aacv-au.vlabs.ac.in"}
+  - {domain: "ocv-au.virtual-labs.ac.in", alias: "ocv-au.vlabs.ac.in"}
+  - {domain: "vlabs-analytics.virtual-labs.ac.in", alias: "vlabs-analytics.vlabs.ac.in"}
+  - {domain: "analytics-api.virtual-labs.ac.in", alias: "analytics-api.vlabs.ac.in"}
+
 awstats_domains:
   - cse01-iiith.virtual-labs.ac.in
   - cse02-iiith.virtual-labs.ac.in
@@ -526,6 +535,14 @@ awstats_domains:
   - vm-dei.virtual-labs.ac.in
   - idte-dei.virtual-labs.ac.in
   - icv-au.virtual-labs.ac.in
+  - biotech01.virtual-labs.ac.in
+  - mbvII-au.virtual-labs.ac.in
+  - phy-sc22-au.virtual-labs.ac.in
+  - pcv-au.virtual-labs.ac.in
+  - aacv-au.virtual-labs.ac.in
+  - ocv-au.virtual-labs.ac.in
+  - vlabs-analytics.virtual-labs.ac.in
+  - analytics-api.virtual-labs.ac.in
 
 public_dns_entries:
   - { hostname: router, ip: 54.85.93.7 }
@@ -635,6 +652,15 @@ public_dns_entries:
   - { hostname: vm-dei, ip: 54.85.93.7}
   - { hostname: idte-dei, ip: 54.85.93.7}
   - { hostname: icv-au, ip: 54.85.93.7}
+  - { hostname: biotech01, ip: 54.85.93.7}
+  - { hostname: mbvII-au, ip: 54.85.93.7}
+  - { hostname: phy-sc22-au, ip: 54.85.93.7}
+  - { hostname: pcv-au, ip: 54.85.93.7}
+  - { hostname: aacv-au, ip: 54.85.93.7}
+  - { hostname: ocv-au, ip: 54.85.93.7}
+  - { hostname: vlabs-analytics, ip: 54.85.93.7}
+  - { hostname: analytics-api, ip: 54.85.93.7}
+
 private_dns_entries:
   - { hostname: router, ip: 10.100.1.1 }
   - { hostname: bandwidthd, ip: 10.100.1.1 }
@@ -742,7 +768,15 @@ private_dns_entries:
   - { hostname: vm-dei, ip: 10.100.0.254}
   - { hostname: idte-dei, ip: 10.100.1.200}
   - { hostname: icv-au, ip: 10.100.3.234}
-  
+  - { hostname: biotech01, ip: 10.100.2.252}
+  - { hostname: mbvII-au, ip: 10.100.0.166}
+  - { hostname: phy-sc22-au, ip: 10.100.0.49}
+  - { hostname: pcv-au, ip: 10.100.0.23}
+  - { hostname: aacv-au, ip: 10.100.1.38}
+  - { hostname: ocv-au, ip: 10.100.0.137}
+  - { hostname: vlabs-analytics, ip: 10.100.2.224}
+  - { hostname: analytics-api, ip: 10.100.3.222}
+
 #Used by private-dns ans public dns to set their zone file names
 prefix: ""
 
