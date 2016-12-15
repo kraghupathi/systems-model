@@ -24,7 +24,7 @@
   8. [[./security-groups-on-amazon/reverse-proxy-security-group.png][Reverse-Proxy]]
   9. [[./security-groups-on-amazon/rsnapshot-security-group.png][Rsnapshot]]
   10. [[./security-groups-on-amazon/rsyslog-security-group.png][Rsyslog-server]]
-
+  11. [[./security-groups-on-amazon/production-lab.png][Production-lab]]
 * Bootstrapping the cluster
   This bootstrapping steps are done based on ansible playbooks of the
   systems-model repository.
