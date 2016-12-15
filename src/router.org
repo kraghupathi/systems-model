@@ -89,25 +89,35 @@ TCP and UDP for the communication.
    during task execution for creating necessary configuration files.
   
 ** Building the Firewall rules
-The description of NAT (Network Address Translation) rules are as follows:\\
-Default policy for prerouting, postrouting and output is set to be as ACCEPT. If the packet
-does not match any rule then the default action is applied to the packet.
-Packet counters are set to [0:0].First counter represents the number of
-packets that matched the rule for the chain, and second counter represents the
-total size of the packets that matched the rule.\\
-In NAT rules, the forwarding rules and SNAT (Source Network Address Translation) rules are described as:\\
-The nat rule forwards the incoming DNS requests via UDP port 53
-to public dns.This is done in the PREROUTING chain, just as the packet comes in;
-this means that anything else on the routing will see the packet going to its `real' destination.
-Here the `-i' (incoming interface) option can be used. Destination NAT is specified using `-j DNAT', 
-and the `--to-destination' option specifies an IP address, a range of IP addresses, and an optional 
-port or range of ports (for UDP and TCP protocols only).\\
-The SNAT rule will route all packets going outside to router public IP. 
-Source NAT (SNAT) changes the source address in IP header of a packet. It may also change 
-the source port in the TCP/UDP headers. The typical usage is to change the private 
-address/port into a public address/port for packets leaving your network.This is done in the 
-POSTROUTING chain, just before it is finally sent out. It also means that the `-o' (outgoing interface)
-option can be used.\\
+   The description of NAT (Network Address Translation) rules are as
+   follows:
+   
+   Default policy for prerouting, postrouting and output is set to be
+   as ACCEPT. If the packet does not match any rule then the default
+   action is applied to the packet.  Packet counters are set to [0:0].
+   First counter represents the number of packets that matched the
+   rule for the chain, and second counter represents the total size of
+   the packets that matched the rule.
+
+   In NAT rules, the forwarding rules and SNAT (Source Network Address
+   Translation) rules are described as: 
+
+   The nat rule forwards the incoming DNS requests via UDP port 53 to
+   public dns.This is done in the PREROUTING chain, just as the packet
+   comes in; this means that anything else on the routing will see the
+   packet going to its `real' destination.  Here the `-i' (incoming
+   interface) option can be used. Destination NAT is specified using
+   `-j DNAT', and the `--to-destination' option specifies an IP
+   address, a range of IP addresses, and an optional port or range of
+   ports (for UDP and TCP protocols only).
+   The SNAT rule will route all packets going outside to router public
+   IP.  Source NAT (SNAT) changes the source address in IP header of a
+   packet. It may also change the source port in the TCP/UDP
+   headers. The typical usage is to change the private address/port
+   into a public address/port for packets leaving your network.This is
+   done in the POSTROUTING chain, just before it is finally sent
+   out. It also means that the `-o' (outgoing interface) option can be
+   used.
 
 The common firewall rules are the ones which are described in common.
 #+BEGIN_SRC yml :tangle roles/router/templates/router_iptables :eval no
