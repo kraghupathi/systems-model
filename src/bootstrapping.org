@@ -10,6 +10,21 @@
   This document describes about how to setup cluster in AWS or in any
   collge/institute.
 
+* IMPORTANT - Security Groups on amazon
+  If you are working on AWS cluster, we have to create *Security
+  group* for each server node.
+  Security groups are as follows:
+  1. [[./security-groups-on-amazon/Router-security-group.png][Router]]
+  2. [[./security-groups-on-amazon/ansible-security-group.png][Config-server]]
+  3. [[./security-groups-on-amazon/ads-security-group.png][ADS( Auto deployment Service)]]
+  4. [[./security-groups-on-amazon/nagios-security-group.png][Nagios]]
+  5. [[./security-groups-on-amazon/ossec-security-group.png][Ossec-server]]
+  6. [[./security-groups-on-amazon/public-dns-security-group.png][Public DNS]]
+  7. [[./security-groups-on-amazon/private-dns-security-group.png][Private DNS]]
+  8. [[./security-groups-on-amazon/reverse-proxy-security-group.png][Reverse-Proxy]]
+  9. [[./security-groups-on-amazon/rsnapshot-security-group.png][Rsnapshot]]
+  10. [[./security-groups-on-amazon/rsyslog-security-group.png][Rsyslog-server]]
+
 * Bootstrapping the cluster
   This bootstrapping steps are done based on ansible playbooks of the
   systems-model repository.
@@ -1031,6 +1046,7 @@
       vzctl set <CTID> --nameserver 10.100.1.5 --save     
       #+END_EXAMPLE
     + Restart httpd in reverseproxy
+
 * To Do
 - Add bootstrapping steps for creating vlabs.ac.in landing page, analytics
   server and lab-rsyslog server.
