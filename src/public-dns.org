@@ -332,7 +332,7 @@ $TTL 3600
 #+BEGIN_SRC YAML :tangle roles/named_server/tasks/main.yaml
 - name: Copy zone forward files for all zones to /var/named
   template: src="zone.forward" dest="/var/named/{{item}}forward" owner=root group=named mode=640
-  with_items: zone_names
+  with_items: "{{zone_names}}"
   notify:
     - restart bind
 #+END_SRC
