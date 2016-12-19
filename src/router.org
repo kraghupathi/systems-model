@@ -132,7 +132,7 @@ The common firewall rules are the ones which are described in common.
 -A PREROUTING -d {{router_interface_ip}} -p tcp -m tcp --dport 80 -j DNAT --to-destination {{reverseproxy_ip}}:80
 -A PREROUTING -d {{router_interface_ip}} -p tcp -m tcp --dport 443 -j DNAT --to-destination {{reverseproxy_ip}}:443
 #Forward incoming http request on tcp port 8080 to ADS server
--A PREROUTING -d {{router_interface_ip}} -p tcp -m tcp --dport 8080 -j DNAT --to-destination {{ads_ip}}:80
+-A PREROUTING -d {{router_interface_ip}} -p tcp -m tcp --dport 8080 -j DNAT --to-destination {{ads_ip}}:8080
 #Forward incoming SSH connection on TCP port 2222 to Analytics server
 -A PREROUTING -d {{router_interface_ip}} -p tcp -m tcp --dport 2222 -j DNAT --to-destination {{analytics_server_ip}}:22
 #
