@@ -441,6 +441,8 @@ proxy_domains:
   - {domain: "ocv-au.virtual-labs.ac.in", alias: "ocv-au.vlabs.ac.in"}
   - {domain: "vlabs-analytics.virtual-labs.ac.in", alias: "vlabs-analytics.vlabs.ac.in"}
   - {domain: "analytics-api.virtual-labs.ac.in", alias: "analytics-api.vlabs.ac.in"}
+  - {domain: "experiment-server.virtual-labs.ac.in", alias: "experiment-server.vlabs.ac.in"}
+  - {domain: "civ02.virtual-labs.ac.in", alias: "civ02.vlabs.ac.in"}
 
 awstats_domains:
   - cse01-iiith.virtual-labs.ac.in
@@ -543,6 +545,8 @@ awstats_domains:
   - ocv-au.virtual-labs.ac.in
   - vlabs-analytics.virtual-labs.ac.in
   - analytics-api.virtual-labs.ac.in
+  - experiment-server.virtual-labs.ac.in
+  - civ02.virtual-labs.ac.in
 
 public_dns_entries:
   - { hostname: router, ip: 54.85.93.7 }
@@ -660,6 +664,8 @@ public_dns_entries:
   - { hostname: ocv-au, ip: 54.85.93.7}
   - { hostname: vlabs-analytics, ip: 54.85.93.7}
   - { hostname: analytics-api, ip: 54.85.93.7}
+  - { hostname: experiment-server, ip: 54.85.93.7}
+  - { hostname: civ02, ip: 54.85.93.7}
 
 private_dns_entries:
   - { hostname: router, ip: 10.100.1.1 }
@@ -776,6 +782,8 @@ private_dns_entries:
   - { hostname: ocv-au, ip: 10.100.0.137}
   - { hostname: vlabs-analytics, ip: 10.100.2.224}
   - { hostname: analytics-api, ip: 10.100.3.222}
+  - { hostname: experiment-server, ip: 10.100.2.253}
+  - { hostname: civ02, ip: 10.100.1.152}
 
 #Used by private-dns ans public dns to set their zone file names
 prefix: ""
@@ -1017,7 +1025,6 @@ awstats_domains:
   - ssl-iitg.base1.virtual-labs.ac.in
   - outreach.base1.virtual-labs.ac.in
 
-
 public_dns_entries:
   - { hostname: router, ip: 10.4.14.150 }
   - { hostname: bandwidthd, ip: 10.4.14.150 }
@@ -1028,7 +1035,7 @@ public_dns_entries:
   - { hostname: public-dns, ip: 10.4.14.150 }
   - { hostname: reverseproxy, ip: 10.4.14.150 }
   - { hostname: nagios, ip: 10.4.14.150 }
-  -  { hostname: ads, ip: 10.4.14.150 }
+  - { hostname: ads, ip: 10.4.14.150 }
   - { hostname: rsnapshot-server, ip: 10.4.14.150 }
   - { hostname: cse01-iiith, ip: 10.4.14.150 }
   - { hostname: cse02-iiith, ip: 10.4.14.150 }
