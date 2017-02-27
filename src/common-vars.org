@@ -443,6 +443,7 @@ proxy_domains:
   - {domain: "analytics-api.virtual-labs.ac.in", alias: "analytics-api.vlabs.ac.in"}
   - {domain: "experiment-server.virtual-labs.ac.in", alias: "experiment-server.vlabs.ac.in"}
   - {domain: "civ02.virtual-labs.ac.in", alias: "civ02.vlabs.ac.in"}
+  - {domain: "lds.virtual-labs.ac.in", alias: "lds.vlabs.ac.in"}
 
 awstats_domains:
   - cse01-iiith.virtual-labs.ac.in
@@ -547,6 +548,7 @@ awstats_domains:
   - analytics-api.virtual-labs.ac.in
   - experiment-server.virtual-labs.ac.in
   - civ02.virtual-labs.ac.in
+  - lds.virtual-labs.ac.in
 
 public_dns_entries:
   - { hostname: router, ip: 54.85.93.7 }
@@ -666,6 +668,7 @@ public_dns_entries:
   - { hostname: analytics-api, ip: 54.85.93.7}
   - { hostname: experiment-server, ip: 54.85.93.7}
   - { hostname: civ02, ip: 54.85.93.7}
+  - { hostname: lds, ip: 54.85.93.7}
 
 private_dns_entries:
   - { hostname: router, ip: 10.100.1.1 }
@@ -784,6 +787,7 @@ private_dns_entries:
   - { hostname: analytics-api, ip: 10.100.3.222}
   - { hostname: experiment-server, ip: 10.100.2.253}
   - { hostname: civ02, ip: 10.100.1.152}
+  - { hostname: lds, ip: 10.100.0.228}
 
 #Used by private-dns ans public dns to set their zone file names
 prefix: ""
