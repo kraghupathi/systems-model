@@ -252,9 +252,9 @@ COMMIT
 ---
  - name: restart iptables
    service: name=iptables state=restarted
-#+END_SRC
+#+END_SEC
 
-** Installing and configuring =bandwidthd=
+** COMMENT Installing and configuring =bandwidthd=
 - =bandiwdthd= is an application to monitor bandwidth usage of
   different hosts. It depends on =hhtp= server to display the
   statistics.
