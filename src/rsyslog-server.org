@@ -50,7 +50,7 @@
    The functional and security requirements of the Rsyslog Server are
    mentioned in the following sections. Only the Rsyslog Server
    specific requirements which differ from the generic requirements
-   specified in the [[common%20role][common role]] are mentioned here.
+   specified in the [[./common.org][common role]] are mentioned here.
 
 ** Functional Requirements
    Rsyslog service should run on UDP port 514 to accept log messages
@@ -58,7 +58,7 @@
    directories / files per client for easy reference.
 
 ** Security Requirements
-   All common security requirements as described in [[file:common.org::*Security Requirements][common role]] are
+   All common security requirements as described in [[file:common.org::*Security%20Requirements][common role]] are
    applicable to rsyslog node with an exception for allowing incoming
    connections to UDP port 514.
 
@@ -121,10 +121,10 @@
    Handlers are described in detail at [[Building ansible handlers for configuring rsyslog server][Building ansible handlers for
    configuring rsyslog server]]
    
-   The handlers are only called when tasks described at [[Building ansible tasks for configuring rsyslog server][Building
-   ansible tasks for configuring rsyslog server]] are called as part of
+   The handlers are only called when tasks described at Building
+   ansible tasks for configuring rsyslog server are called as part of
    the rsyslog_server role.  Various templates and files are used
-   during task execution for creating necessary configuration files.  
+   during task execution for creating necessary configuration files.
 
 ** Firewall rules for rsyslog server
    The firewall rules applied to the rsyslog server are mentioned here
@@ -137,7 +137,7 @@
 *** Firewall Rules
     Following ansible template is created in
     =roles/rsyslog_server/templates/iptables= file which is later
-    installed by ansible task [[Set iptables firewall rules using template][Set iptables firewall rules using template]].
+    installed by ansible task Set iptables firewall rules using template.
 #+BEGIN_SRC yml -n :tangle roles/rsyslog_server/templates/iptables :eval no
 *filter
 :INPUT ACCEPT [0:0]
@@ -350,12 +350,12 @@ authpriv.*      ?TmplAuth
 
 #+END_SRC
 
-    This configuration file is installed on rsyslog server using [[Set Rsyslog service][Set
-    Rsyslog service]] ansible task described later.
+    This configuration file is installed on rsyslog server using Set
+    Rsyslog service ansible task described later.
 
 ** Tasks
 *** Install rsyslog package
-    Rsyslog package is installed on the node using [[./yum_ansible_module.org][Yum ansible module]].
+    Rsyslog package is installed on the node using Yum ansible module
 
 #+BEGIN_SRC yml :tangle roles/rsyslog_server/tasks/main.yml :eval no
 - name: Install rsyslog package
@@ -390,8 +390,9 @@ authpriv.*      ?TmplAuth
 
 *** Configure iptables firewall rules using template
     Firewall rules are set by following steps:
-    1. Copy iptables jinja2 template created in section [[Firewall rules for rsyslog server][Firewall rules
-       for rsyslog server]] from the ansible node to the rsyslog node.
+    1. Copy iptables jinja2 template created in section [[Firewall
+       Rules][Firewall rules]] from the ansible
+       node to the rsyslog node.
     2. Restart iptables service using [[Restart iptables handler][Restart iptables handler]] to
        enforce the configuration.
 

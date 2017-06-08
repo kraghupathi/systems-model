@@ -303,8 +303,10 @@ COMMIT
 ---
 - name: installing ansible
   yum: name=ansible state=present
+  environment: "{{proxy_env}}"
 - name: Installing bind-utils
   yum: name=bind-utils state=present
+  environment: "{{proxy_env}}"
 #+END_SRC
 **** Apply firewall rules to Configuration server
     Firewall rules are applied by following steps:

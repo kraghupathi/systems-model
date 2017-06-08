@@ -285,6 +285,7 @@ COMMIT
 ---
 - name: Install httpd, awstats, mod_ssl
   yum: name="{{item}}" state=present
+  environment: "{{proxy_env}}"
   with_items:
     - httpd
     - awstats

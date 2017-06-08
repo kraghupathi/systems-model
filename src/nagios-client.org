@@ -194,23 +194,23 @@ includedir /etc/xinetd.d
 #+BEGIN_SRC yml :tangle roles/nagios_client/tasks/main.yml :eval no
 - name: Installing nagios
   yum: name=nagios state=installed
-#  environment: proxy_env
+  environment: proxy_env
 
 - name: Installing all nagios plugins 
   yum: name=nagios-plugins-all state=installed
-#  environment: proxy_env
+  environment: proxy_env
 
 - name: Installing nrpe on client
   yum: name=nrpe state=installed
-#  environment: proxy_env
+  environment: proxy_env
 
 - name: Installing nrpe nagios plugins
   yum: name=nagios-plugins-nrpe state=installed
-#  environment: proxy_env
+  environment: proxy_env
 
 - name: Installing xinetd
   yum: name=xinetd state=installed
-#  environment: proxy_env
+  environment: proxy_env
 #+END_SRC 
 
 *** Copy configuration file

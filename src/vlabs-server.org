@@ -22,7 +22,7 @@ cluster.
 
 ** Security Requirements
   1) Common security measured defined in common role are applied. Requirements
-     are defined in the [[common.org][common role]].
+     are defined in the [[./common.org][common role]].
  
 * Design
  Node serves the html pages, via httpd server.
@@ -87,7 +87,7 @@ COMMIT
 #+END_SRC
 
 *** Configuring firewall rules
-- The following task copies =iptables= template created at [[Firewall rules]] to the
+- The following task copies =iptables= template created at [[Firewall%20Rules][Firewall Rules]] to the
   server and notifies to restart the iptables service if there are any
   modifications in the configuration.
 
