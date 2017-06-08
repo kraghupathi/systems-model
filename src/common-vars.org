@@ -235,8 +235,8 @@ Variables for cluster are defined in the following section
 #Proxy configuration in case direct access to Internet is not available
 proxy_env:
   none: none
-# http_proxy: http://proxy.iiit.ac.in:8080/
-# https_proxy: http://proxy.iiit.ac.in:8080/
+##  http_proxy: http://proxy.iiit.ac.in:8080/
+##  https_proxy: http://proxy.iiit.ac.in:8080/
 
 #Release number used in common task to add it to the target
 release_no:
