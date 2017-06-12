@@ -257,7 +257,7 @@ analytics_server_ip: 10.100.1.12
 
 #Ads Ip used by lab role
 ads_ip: 10.100.1.9
-
+proxy_port: 8080
 #List of rsnapshot servers.
 rsnapshot_server_ips: 
   - 10.100.1.10

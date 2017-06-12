@@ -216,6 +216,8 @@ COMMIT
 -A OUTPUT -p udp -m udp --dport 1514 -j ACCEPT
 #Allow outgoing connection from backup server to aws-backup(secondary backup)
 -A OUTPUT -p tcp -m tcp -d {{aws_backup}} --dport 2222 -j ACCEPT
+# Allow proxy requests 
+-A OUTPUT -p tcp -m tcp --dport {{proxy_port}} -j ACCEPT
 #Log all other "blocked_output_" attempts
 -A OUTPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_output_"
 #Reply with proper ICMP error message and reject the connection
