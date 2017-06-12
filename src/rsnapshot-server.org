@@ -680,8 +680,8 @@ link_dest	1
         day={{ item.get('day', '*') }}
         hour={{ item.get('hour', '*') }}
         minute={{ item.get('minute', '*') }}
-        job="{{ item.get('job', '*') }}" 
-  with_items: rsnapshot_crontab
+        job="{{ item.get('job', '*') }}"
+  with_items: "{{rsnapshot_crontab}}"
 #+END_SRC
 
 ** Handlers
