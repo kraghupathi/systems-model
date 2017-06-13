@@ -180,6 +180,10 @@
 -A OUTPUT -p tcp -m tcp --dport 443 -j ACCEPT
 #Allow outgoing connections to rsyslog server
 -A OUTPUT -p udp -m udp --dport 514 -j ACCEPT
+
+#Allow outgoing packets over proxy 
+-A OUTPUT -p tcp -m tcp --dport {{proxy_port}} -j ACCEPT
+
 #Allow outgoing connections to OSSEC server
 -A OUTPUT -p udp -m udp --dport 1514 -j ACCEPT
 #Allow outgoing ping requests
