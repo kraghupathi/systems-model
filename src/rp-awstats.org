@@ -2280,19 +2280,19 @@ service httpd restart
  5) =nagios-client=
 #+BEGIN_SRC yaml :tangle reverseproxy_server.yaml
 ---
-  - name: This file configures reverseproxy server
-    hosts: reverseproxy_server 
-    remote_user: root
-    
-    vars:
-     host_name: "reverseproxy.{{prefix}}vlabs.ac.in"
-    roles:
-      - common
-      - reverseproxy_server
-      - ossec_client
-      - rsyslog_client
-      - nagios_client
-      - rsnapshot_client
+- name: This file configures reverseproxy server
+  hosts: reverseproxy_server 
+  remote_user: root
+  
+  vars:
+   host_name: "reverseproxy.{{prefix}}vlabs.ac.in"
+  roles:
+    - common
+    - reverseproxy_server
+    - ossec_client
+    - rsyslog_client
+    - nagios_client
+    - rsnapshot_client
 
 #+END_SRC
 * Test Cases

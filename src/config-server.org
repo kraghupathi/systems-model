@@ -359,7 +359,7 @@ Add hosting_service location to path environment variable.
     - common
     - config_server
     - rsyslog_client
-#    - ossec_client
+    - ossec_client
     - nagios_client
     - rsnapshot_client
 
