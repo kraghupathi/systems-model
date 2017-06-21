@@ -248,19 +248,21 @@ COMMIT
 #+END_SRC
    
 ** Applying Firewall rules 
-- Any changes in the iptables configuration file to update the firewall is enforced
-  by restarting the iptables service.
+   - Any changes in the iptables configuration file to update the
+     firewall is enforced by restarting the iptables service.
 #+BEGIN_SRC yml :tangle roles/router/handlers/main.yml
 ---
  - name: restart iptables
    service: name=iptables state=restarted
-#+END_SEC
+  #+END_SRC
+
 
 ** COMMENT Installing and configuring =bandwidthd=
-- =bandiwdthd= is an application to monitor bandwidth usage of
-  different hosts. It depends on =hhtp= server to display the
+   - =bandiwdthd= is an application to monitor bandwidth usage of
+   different hosts. It depends on =hhtp= server to display the
   statistics.
-#+BEGIN_SRC yml :tangle roles/router/tasks/main.yml
+
+  #+BEGIN_SRC yml :tangle roles/router/tasks/main.yml
 - name: install bandwidthd
   yum: name=bandwidthd state=installed
 
@@ -275,7 +277,7 @@ COMMIT
 
 - name: restart apache to start bandwidthd monitoring
   service: name=httpd state=restarted enabled=yes
-#+END_SRC
+  #+END_SRC
 
 - =bandwidthd= is configured to listen on the internal ethernet device
   =eth0= and monitor the internal/private subnet on which all other
@@ -343,6 +345,8 @@ dev "eth0"
 #Set META REFRESH seconds (default 150, use 0 to disable).
 #meta_refresh 150
 #+END_SRC
+
+
 ** Variables Definition
 - Variables are used by the ansible scripts to configure router. Values of these
   variables are fetched from the "common_vars" role.
