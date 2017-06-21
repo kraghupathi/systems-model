@@ -374,12 +374,12 @@ dependencies:
    host_name: "router.{{prefix}}vlabs.ac.in"
 
   roles:
-   - common
-   - router
-   - ossec_client
-   - rsyslog_client
-   - rsnapshot_client
-   - nagios_client
+    - common
+    - router
+    - ossec_client
+    - rsyslog_client
+    - rsnapshot_client
+    - nagios_client
 
 #+END_SRC
 
