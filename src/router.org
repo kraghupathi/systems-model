@@ -262,6 +262,7 @@ COMMIT
    different hosts. It depends on =hhtp= server to display the
   statistics.
 
+  #+BEGIN_SRC yml :tangle no
   #+BEGIN_SRC yml :tangle roles/router/tasks/main.yml
 - name: install bandwidthd
   yum: name=bandwidthd state=installed
@@ -282,6 +283,7 @@ COMMIT
 - =bandwidthd= is configured to listen on the internal ethernet device
   =eth0= and monitor the internal/private subnet on which all other
   machines are bound to communicate, except the config server.
+#+BEGIN_SRC yml :tangle no
 #+BEGIN_SRC yml :tangle roles/router/templates/bandwidthd.conf
 ####################################################
 # Bandwidthd.conf
