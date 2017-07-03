@@ -182,7 +182,7 @@ To know further about these please refer [[Appendix][Appendix]].
 
 - include: install_clients_in_config_server.yaml
 
-- include: install_clients_in_router.yaml
+- include: install_clients_in_router_server.yaml
 
 - include: install_clients_in_public_dns.yaml
 
