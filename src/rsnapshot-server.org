@@ -840,7 +840,10 @@ rsnapshot_crontab:
    Rsnapshot server is configured by using following roles:
    1) =common=
    2) =rsnapshot_server=
-
+*** Configure rsnapshot-server
+    Configure only rsnapshot-Server without installing other clients
+    ossec_client,rsyslog_client,nagios_client.
+    
 #+BEGIN_SRC yaml :tangle rsnapshot_server.yaml :eval no
 ---
 - name: This yml script configures rsnapshot server
@@ -852,7 +855,20 @@ rsnapshot_crontab:
   roles:
     - common
     - rsnapshot_server
-    - ossec_client
+
+#+END_SRC
+*** Install clients in rsnapshot-server
+    Install ossec_client,rsyslog_client,nagios_client in
+    rsnapshot-server server.
+    
+#+BEGIN_SRC yaml :tangle install_clients_in_rsnapshot_server.yaml :eval no
+---
+- name: This yml script configures rsnapshot server
+  hosts: rsnapshot_server
+  remote_user: root
+
+  roles:
+#    - ossec_client
     - rsyslog_client
     - rsnapshot_client
 

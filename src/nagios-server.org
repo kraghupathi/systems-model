@@ -650,12 +650,16 @@ nagios_commands:
 
 #+END_SRC
 ** Nagios server configuration script
+
+
    Nagios server is configured by using following roles:
    1) =common=
    2) =ossec_client=
    3) =rsyslog_client=
    4) =nagios_server=
-
+*** Configure nagios server
+    Configure only nagios-Server without installing other clients
+    ossec_client,rsyslog_client,nagios_client.
 #+BEGIN_SRC yaml :tangle nagios_server.yaml
 ---
 - name: This yml script configures nagios server
@@ -667,11 +671,26 @@ nagios_commands:
   roles:
     - common
     - nagios_server
-    - ossec_client
+
+#+END_SRC
+
+*** Install clients in  nagios server
+    Install ossec_client,rsyslog_client,nagios_client in Nagios
+    server.
+
+#+BEGIN_SRC yaml :tangle install_clients_in_nagios_server.yaml
+---
+- name: This yml script configures nagios server
+  hosts: nagios_server
+  remote_user: root
+  
+  roles:
+#    - ossec_client
     - rsyslog_client
     - rsnapshot_client
 
 #+END_SRC
+
 
 * Test Cases
 ** Test Case-1

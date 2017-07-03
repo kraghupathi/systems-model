@@ -344,6 +344,9 @@ Add hosting_service location to path environment variable.
    The configuration server is managed with all other roles. The
    implementation is done in terms of defining suitable scripts for
    each role.  The top level script is =build/code/config_server.yml=
+***** Configure Only config-server
+    - Configure only Config-Server without installing other clients
+      ossec_client,rsyslog_client,nagios_client.
 
 #+BEGIN_SRC yaml :tangle config_server.yaml
 ---
@@ -358,12 +361,30 @@ Add hosting_service location to path environment variable.
   roles:
     - common
     - config_server
+
+#+END_SRC
+***** Install Clients in Config server
+      Install ossec_client,rsyslog_client,nagios_client in Config-server
+      server.
+
+#+BEGIN_SRC yaml :tangle install_clients_in_config_server.yaml
+---
+- name: This file configures ansible server
+  hosts: ansible_server
+  remote_user: root
+
+  vars:
+    i_ans: yes
+    host_name: "ansible.{{prefix}}vlabs.ac.in"
+
+  roles:
     - rsyslog_client
-    - ossec_client
+#    - ossec_client
     - nagios_client
     - rsnapshot_client
 
 #+END_SRC
+      
 
 ** Services
 Configuration server provides service to register and deregister a lab in a

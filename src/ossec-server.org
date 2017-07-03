@@ -6,6 +6,7 @@
 #+OPTIONS: ^nil
 
 * ossec-server.yml
+** Configure only ossec-server
 #+BEGIN_SRC YAML :tangle ossec_server.yaml
 ---
 - name: This file configures ossec server
@@ -18,6 +19,20 @@
   roles:
     - common
     - ossec_server
+
+
+#+END_SRC
+** Install clients in ossec-server
+#+BEGIN_SRC YAML :tangle install_clients_in_ossec_server.yaml
+---
+- name: This file configures ossec server
+  hosts: ossec_server
+  remote_user: root
+
+  vars:
+   host_name: "ossec-server.{{prefix}}vlabs.ac.in"
+
+  roles:
     - rsyslog_client
     - nagios_client
     - rsnapshot_client

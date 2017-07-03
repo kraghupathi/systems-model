@@ -389,6 +389,9 @@ $TTL 3600
    All the steps mentioned above in the [[Tasks]] and [[Handlers]] sections
    need to be implemented. This is done by the script below, which
    calls all the steps above in the required sequence.
+*** Configure Public DNS server
+    Configure public-dns without installing other clients
+    ossec_client,rsyslog_client,nagios_client.
 
 #+BEGIN_SRC YAML :tangle public_dns.yaml 
 ---
@@ -410,8 +413,22 @@ $TTL 3600
   roles:
     - common
     - named_server
+
+#+END_SRC
+
+*** Install clients in  Public DNS server
+    Install ossec_client,rsyslog_client,nagios_client in Public-dns-server
+    server.
+    
+#+BEGIN_SRC YAML :tangle install_clients_in_public_dns.yaml 
+---
+- name: This file configures public dns server
+  hosts: public_dns
+  remote_user: root
+
+  roles:
     - rsyslog_client
-    - ossec_client
+#    - ossec_client
     - nagios_client
     - rsnapshot_client
 

@@ -2278,6 +2278,10 @@ service httpd restart
  3) =common_vars=
  4) =rsyslog-client=
  5) =nagios-client=
+*** Configure Reverese proxy server 
+    Configure only reverse-proxy-server without installing other clients
+    ossec_client,rsyslog_client,nagios_client.
+    
 #+BEGIN_SRC yaml :tangle reverseproxy_server.yaml
 ---
 - name: This file configures reverseproxy server
@@ -2289,7 +2293,18 @@ service httpd restart
   roles:
     - common
     - reverseproxy_server
-    - ossec_client
+#+END_SRC
+*** Install clients in Reverese proxy server 
+    Install ossec_client,rsyslog_client,nagios_client in
+    reverse-proxy-server.
+    
+#+BEGIN_SRC yaml :tangle install_clients_in_reverseproxy_server.yaml
+---
+- name: This file configures reverseproxy server
+  hosts: reverseproxy_server 
+  remote_user: root
+  roles:
+#    - ossec_client
     - rsyslog_client
     - nagios_client
     - rsnapshot_client

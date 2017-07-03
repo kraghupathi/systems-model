@@ -139,7 +139,7 @@ To know further about these please refer [[Appendix][Appendix]].
   will bring up all the nodes one after another with the required
   roles.
 
-#+BEGIN_SRC YAML :tangle site.yaml 
+#+BEGIN_SRC YAML :tangle configure_servers.yaml 
 ---
 #Complete site configuration file
 #One yaml file for each server is included here
@@ -148,7 +148,7 @@ To know further about these please refer [[Appendix][Appendix]].
 
 - include: rsnapshot_server.yaml
 
-- include: ossec_server.yaml
+#- include: ossec_server.yaml
 
 - include: config_server.yaml
 
@@ -166,7 +166,37 @@ To know further about these please refer [[Appendix][Appendix]].
 
 #- include: ads_server.yaml
 
-- include: lab_rsnapshot_server.yaml
+#- include: lab_rsnapshot_server.yaml
+
+#+END_SRC 
+#+BEGIN_SRC YAML :tangle install_clients_in_servers.yaml 
+---
+#Complete site configuration file
+#One yaml file for each server is included here
+#Server yaml file matches server FQDN
+
+
+- include: install_clients_in_rsnapshot_server.yaml
+
+#- include: install_clients_in_ossec_server.yaml
+
+- include: install_clients_in_config_server.yaml
+
+- include: install_clients_in_router.yaml
+
+- include: install_clients_in_public_dns.yaml
+
+- include: install_clients_in_private_dns.yaml
+
+- include: install_clients_in_rsyslog_server.yaml
+
+- include: install_clients_in_reverseproxy_server.yaml
+
+- include: install_clients_in_nagios_server.yaml
+
+#- include: ads_server.yaml
+
+#- include: lab_rsnapshot_server.yaml
 
 #+END_SRC 
 * AWS compliance

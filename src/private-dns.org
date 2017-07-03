@@ -413,6 +413,10 @@ $TTL 3600
    All the steps mentioned above in the [[Tasks]] and [[Handlers]] sections
    need to be implemented. This is done by the script below, which
    calls all the steps above in the required sequence.
+*** Configure only private dns server
+    Configure only Private DNS without installing other clients
+    ossec_client,rsyslog_client,nagios_client.
+
 #+BEGIN_SRC YAML :tangle private_dns.yaml 
 ---
 - name: This file configures private dns server
@@ -433,8 +437,22 @@ $TTL 3600
   roles:
     - common
     - named_server
+
+#+END_SRC
+   
+*** Install clients in  private dns server
+    Install ossec_client,rsyslog_client,nagios_client in
+    Private-DNS-server.
+
+#+BEGIN_SRC YAML :tangle install_clients_in_private_dns.yaml 
+---
+- name: This file configures private dns server
+  hosts: private_dns
+  remote_user: root
+
+  roles:
     - rsyslog_client
-    - ossec_client
+ #   - ossec_client
     - nagios_client
     - rsnapshot_client
 

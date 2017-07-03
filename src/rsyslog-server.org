@@ -441,7 +441,10 @@ authpriv.*      ?TmplAuth
 ** Building rsyslog server hosts file with appropriate roles
    Rsyslog server is configured using =common= and =rsyslog_server=
    role.
-
+*** Configure only rsyslog-server
+    - Configure only rsyslog-Server without installing other clients
+      ossec_client,rsyslog_client,nagios_client.
+   
 #+BEGIN_SRC yaml -n :tangle rsyslog_server.yaml
 ---
 - name: Configure rsyslog server
@@ -453,11 +456,24 @@ authpriv.*      ?TmplAuth
   roles:
     - common
     - rsyslog_server
-    - ossec_client
+#+END_SRC
+
+*** Install clients in rsyslog-server
+    Install ossec_client,rsyslog_client,nagios_client in
+    rsyslog-server.
+    
+#+BEGIN_SRC yaml -n :tangle install_clients_in_rsyslog_server.yaml
+---
+- name: Configure rsyslog server
+  hosts: rsyslog_server
+  remote_user: root
+  roles:
+#    - ossec_client
     - nagios_client
     - rsnapshot_client
 
 #+END_SRC
+
 
 * Test Cases for testing rsyslog server soundness and completeness
 ** Test Case-1 - Receiving sudo logs from client
