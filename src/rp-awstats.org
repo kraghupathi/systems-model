@@ -2304,6 +2304,7 @@ service httpd restart
   hosts: reverseproxy_server 
   remote_user: root
   roles:
+    - common_vars
 #    - ossec_client
     - rsyslog_client
     - nagios_client

@@ -398,6 +398,7 @@ dependencies:
 
   roles:
 #    - ossec_client
+    - common_vars
     - rsyslog_client
     - rsnapshot_client
     - nagios_client

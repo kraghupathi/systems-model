@@ -378,6 +378,7 @@ Add hosting_service location to path environment variable.
     host_name: "ansible.{{prefix}}vlabs.ac.in"
 
   roles:
+    - common_vars
     - rsyslog_client
 #    - ossec_client
     - nagios_client

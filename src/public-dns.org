@@ -427,6 +427,7 @@ $TTL 3600
   remote_user: root
 
   roles:
+    - common_vars
     - rsyslog_client
 #    - ossec_client
     - nagios_client

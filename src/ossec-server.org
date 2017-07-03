@@ -33,6 +33,7 @@
    host_name: "ossec-server.{{prefix}}vlabs.ac.in"
 
   roles:
+    - common_vars
     - rsyslog_client
     - nagios_client
     - rsnapshot_client

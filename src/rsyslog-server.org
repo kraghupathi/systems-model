@@ -468,6 +468,7 @@ authpriv.*      ?TmplAuth
   hosts: rsyslog_server
   remote_user: root
   roles:
+    - common_vars
 #    - ossec_client
     - nagios_client
     - rsnapshot_client
