@@ -367,7 +367,7 @@ dependencies:
 *** Router server configuration
     - Configure only router without installing other clients
       ossec_client,rsyslog_client,nagios_client
-#+BEGIN_SRC yaml :tangle config_router_server.yaml
+#+BEGIN_SRC yaml :tangle router.yaml
 ---
 - name: This file configures machine as router  
   hosts: router
