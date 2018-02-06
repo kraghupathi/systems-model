@@ -465,6 +465,46 @@ ProxyPassReverse http://{{domain.domain}}/
 {% endif %}
 
 {% endfor %}
+
+{% for domain in clubbed_labs %}
+
+<VirtualHost *:80>
+ServerAdmin engg@vlabs.ac.in
+#DocumentRoot /var/www/html
+ServerName {{domain.domain}}
+ServerAlias {{domain.alias}}
+ErrorLog logs/{{domain.domain}}-error_log
+ErrorLog "||/usr/bin/logger -t {{domain.domain}}-elog"
+CustomLog logs/{{domain.domain}}-access_log combined
+CustomLog "||/usr/bin/logger -t {{domain.domain}}-alog" combined
+<Location />
+ProxyPass http://{{domain.domain}}/{{domain.domain.split(".")[0]}}/
+ProxyPassReverse http://{{domain.domain}}/{{domain.domain.split(".")[0]}}/
+#ProxyPass http://{{domain.domain}}/
+#ProxyPassReverse http://{{domain.domain}}/
+</Location>
+</VirtualHost>
+
+<VirtualHost *:443>
+ServerAdmin engg@vlabs.ac.in
+#DocumentRoot /var/www/html
+ServerName {{domain.domain}}
+ServerAlias {{domain.alias}}
+ErrorLog logs/{{domain.domain}}-error_log
+ErrorLog "||/usr/bin/logger -t {{domain.domain}}-elog"
+CustomLog logs/{{domain.domain}}-access_log combined
+CustomLog "||/usr/bin/logger -t {{domain.domain}}-alog" combined
+<Location />
+ProxyPass http://{{domain.domain}}/{{domain.domain.split(".")[0]}}/
+ProxyPassReverse http://{{domain.domain}}/{{domain.domain.split(".")[0]}}/
+</Location>
+</VirtualHost>
+
+
+{% endfor %}
+
+
+
 #+END_SRC  
 *** Configuring virualhosts
     Copy =virtualhosts.conf= template to reverse proxy server's apache
