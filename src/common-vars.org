@@ -330,13 +330,13 @@ forwarders: "{ }"
 prefix: ""
 
 public_zone_address: 54.85.93.7
-
+experiment_server: 10.100.2.253
 #List of domains to pass through reverseproxy
+
 proxy_domains:
   - {domain: "reverseproxy.virtual-labs.ac.in", alias: "reverseproxy.vlabs.ac.in", alias2: "rp.virtual-labs.ac.in"}
   - {domain: "bandwidthd.virtual-labs.ac.in", alias: "bandwidthd.vlabs.ac.in", alias2: "bwd.virtual-labs.ac.in"}
   - {domain: "ossec-server.virtual-labs.ac.in", alias: "ossec-server.vlabs.ac.in"}
-  - {domain: "cse01-iiith.virtual-labs.ac.in", alias: "cse01-iiith.vlabs.ac.in"}
   - {domain: "cse02-iiith.virtual-labs.ac.in", alias: "cse02-iiith.vlabs.ac.in"}
   - {domain: "cse15-iiith.virtual-labs.ac.in", alias: "cse15-iiith.vlabs.ac.in"}
   - {domain: "cse19-iiith.virtual-labs.ac.in", alias: "cse19-iiith.vlabs.ac.in"}
@@ -345,7 +345,6 @@ proxy_domains:
   - {domain: "emt-iiith.virtual-labs.ac.in", alias: "emt-iiith.vlabs.ac.in"}
   - {domain: "cse29-iiith.virtual-labs.ac.in", alias: "cse29-iiith.vlabs.ac.in"}
   - {domain: "cse22-iiith.virtual-labs.ac.in", alias: "cse22-iiith.vlabs.ac.in"}
-  - {domain: "cse11-iiith.virtual-labs.ac.in", alias: "cse11-iiith.vlabs.ac.in"}
   - {domain: "cse14-iiith.virtual-labs.ac.in", alias: "cse14-iiith.vlabs.ac.in"}
   - {domain: "eerc03-iiith.virtual-labs.ac.in", alias: "eerc03-iiith.vlabs.ac.in"}
   - {domain: "phy14-iiith.virtual-labs.ac.in", alias: "phy14-iiith.vlabs.ac.in"}
@@ -358,39 +357,17 @@ proxy_domains:
   - {domain: "bmsip-iitr.virtual-labs.ac.in", alias: "bmsip-iitr.vlabs.ac.in"}
   - {domain: "em-iitr.virtual-labs.ac.in", alias: "em-iitr.vlabs.ac.in"}
   - {domain: "sl-iitr.virtual-labs.ac.in", alias: "sl-iitr.vlabs.ac.in"}
-  - {domain: "mrmsmtbs-iitk.virtual-labs.ac.in", alias: "mrmsmtbs-iitk.vlabs.ac.in"}
   - {domain: "va-iitk.virtual-labs.ac.in", alias: "va-iitk.vlabs.ac.in"}
   - {domain: "ufls-iitk.virtual-labs.ac.in", alias: "ufls-iitk.vlabs.ac.in"}
   - {domain: "vlae-iitk.virtual-labs.ac.in", alias: "vlae-iitk.vlabs.ac.in"}
   - {domain: "vcal-iitk.virtual-labs.ac.in", alias: "vcal-iitk.vlabs.ac.in"}
   - {domain: "pev-au.virtual-labs.ac.in", alias: "pev-au.vlabs.ac.in"}
   - {domain: "pevii-au.virtual-labs.ac.in", alias: "pevii-au.vlabs.ac.in"}
-  - {domain: "anthropology-iitg.virtual-labs.ac.in", alias: "anthropology-iitg.vlabs.ac.in"}
-  - {domain: "ergonomics-iitg.virtual-labs.ac.in", alias: "ergonomics-iitg.vlabs.ac.in"}
-  - {domain: "vem-iitg.virtual-labs.ac.in", alias: "vem-iitg.vlabs.ac.in"}
-  - {domain: "ve-iitg.virtual-labs.ac.in", alias: "ve-iitg.vlabs.ac.in"}
-  - {domain: "sl-coep.virtual-labs.ac.in", alias: "sl-coep.vlabs.ac.in"}
-  - {domain: "plc-coep.virtual-labs.ac.in", alias: "plc-coep.vlabs.ac.in"}
-  - {domain: "em-coep.virtual-labs.ac.in", alias: "em-coep.vlabs.ac.in" }
-  - {domain: "va-coep.virtual-labs.ac.in", alias: "va-coep.vlabs.ac.in" }
-  - {domain: "mm-coep.virtual-labs.ac.in", alias: "mm-coep.vlabs.ac.in" }
-  - {domain: "fab-coep.virtual-labs.ac.in", alias: "fab-coep.vlabs.ac.in" }
-  - {domain: "bmsp-coep.virtual-labs.ac.in", alias: "bmsp-coep.vlabs.ac.in"}
   - {domain: "ial-coep.virtual-labs.ac.in", alias: "ial-coep.vlabs.ac.in"}
-  - {domain: "ied-nitk.virtual-labs.ac.in", alias: "ied-nitk.vlabs.ac.in"}
-  - {domain: "sa-nitk.virtual-labs.ac.in", alias: "sa-nitk.vlabs.ac.in"}
-  - {domain: "fm-nitk.virtual-labs.ac.in", alias: "fm-nitk.vlabs.ac.in"}
-  - {domain: "sm-nitk.virtual-labs.ac.in", alias: "sm-nitk.vlabs.ac.in"}
-  - {domain: "mm-nitk.virtual-labs.ac.in", alias: "mm-nitk.vlabs.ac.in"}
-  - {domain: "mdmv-nitk.virtual-labs.ac.in", alias: "mdmv-nitk.vlabs.ac.in"}
-  - {domain: "uorepc-nitk.virtual-labs.ac.in", alias: "uorepc-nitk.vlabs.ac.in"}
-  - {domain: "vssd-iitd.virtual-labs.ac.in", alias: "vssd-iitd.vlabs.ac.in"} 
   - {domain: "qnm-iitd.virtual-labs.ac.in", alias: "qnm-iitd.vlabs.ac.in"}
   - {domain: "msvs-dei.virtual-labs.ac.in", alias: "msvs-dei.vlabs.ac.in"}
   - {domain: "vp-dei.virtual-labs.ac.in", alias: "vp-dei.vlabs.ac.in"}
-  - {domain: "he-coep.virtual-labs.ac.in", alias: "he-coep.vlabs.ac.in"}
   - {domain: "eem-iitd.virtual-labs.ac.in", alias: "eem-iitd.vlabs.ac.in"}
-  - {domain: "pe-iitb.virtual-labs.ac.in", alias: "pe-iitb.vlabs.ac.in"}
   - {domain: "ce-iitb.virtual-labs.ac.in", alias: "ce-iitb.vlabs.ac.in"}
   - {domain: "ee-iitb.virtual-labs.ac.in", alias: "ee-iitb.vlabs.ac.in"}
   - {domain: "vc-dei.virtual-labs.ac.in", alias: "vc-dei.vlabs.ac.in"}
@@ -403,8 +380,6 @@ proxy_domains:
   - {domain: "cl-iiith.virtual-labs.ac.in", alias: "cl-iiith.vlabs.ac.in"}
   - {domain: "ge-iiith.virtual-labs.ac.in", alias: "ge-iiith.vlabs.ac.in"}
   - {domain: "mi-iiith.virtual-labs.ac.in", alias: "mi-iiith.vlabs.ac.in"}
-  - {domain: "mas-iiith.virtual-labs.ac.in", alias: "mas-iiith.vlabs.ac.in"}
-  - {domain: "mfs-iiith.virtual-labs.ac.in", alias: "mfs-iiith.vlabs.ac.in"}
   - {domain: "nlp-iiith.virtual-labs.ac.in", alias: "nlp-iiith.vlabs.ac.in"}
   - {domain: "virtual-labs.ac.in", alias: "vlabs.ac.in"}
   - {domain: "www.virtual-labs.ac.in", alias: "www.vlabs.ac.in"}
@@ -416,22 +391,17 @@ proxy_domains:
   - {domain: "old-outreach.virtual-labs.ac.in", alias: "old-outreach.vlabs.ac.in"}
   - {domain: "data.virtual-labs.ac.in", alias: "data.vlabs.ac.in"}
   - {domain: "feedback.virtual-labs.ac.in", alias: "feedback.vlabs.ac.in"}
+  - {domain: "feedback-old.virtual-labs.ac.in", alias: "feedback-old.vlabs.ac.in"}
   - {domain: "eil-iitg.virtual-labs.ac.in", alias: "eil-iitg.vlabs.ac.in"}
-  - {domain: "vlsi-iitg.virtual-labs.ac.in", alias: "vlsi-iitg.vlabs.ac.in"}
   - {domain: "emv-au.virtual-labs.ac.in", alias: "emv-au.vlabs.ac.in"}
   - {domain: "cbII-au.virtual-labs.ac.in", alias: "cbII-au.vlabs.ac.in"}
   - {domain: "cbI-au.virtual-labs.ac.in", alias: "cbI-au.vlabs.ac.in"}
   - {domain: "ov-au.virtual-labs.ac.in", alias: "ov-au.vlabs.ac.in"}
   - {domain: "htv-au.virtual-labs.ac.in", alias: "htv-au.vlabs.ac.in"}
-  - {domain: "fmc-nitk.virtual-labs.ac.in", alias: "fmc-nitk.vlabs.ac.in"}
-  - {domain: "vmt-iitg.virtual-labs.ac.in", alias: "vmt-iitg.vlabs.ac.in"}
-  - {domain: "mfts-iitg.virtual-labs.ac.in", alias: "mfts-iitg.vlabs.ac.in"}
-  - {domain: "mv-iitg.virtual-labs.ac.in", alias: "mv-iitg.vlabs.ac.in"}
   - {domain: "hci-iitg.virtual-labs.ac.in", alias: "hci-iitg.vlabs.ac.in"}
-  - {domain: "tel-iitb.virtual-labs.ac.in", alias: "tel-iitb.vlabs.ac.in"}
-  - {domain: "ml-iitb.virtual-labs.ac.in", alias: "ml-iitb.vlabs.ac.in"}
   - {domain: "vm-dei.virtual-labs.ac.in", alias: "vm-dei.vlabs.ac.in"}
   - {domain: "idte-dei.virtual-labs.ac.in", alias: "idte-dei.vlabs.ac.in"}
+  - {domain: "outreach-demo.virtual-labs.ac.in", alias: "outreach-demo.vlabs.ac.in"}
   - {domain: "icv-au.virtual-labs.ac.in", alias: "icv-au.vlabs.ac.in"}
   - {domain: "biotech01.virtual-labs.ac.in", alias: "biotech01.vlabs.ac.in"}
   - {domain: "mbvII-au.virtual-labs.ac.in", alias: "mbvII-au.vlabs.ac.in"}
@@ -443,7 +413,62 @@ proxy_domains:
   - {domain: "analytics-api.virtual-labs.ac.in", alias: "analytics-api.vlabs.ac.in"}
   - {domain: "experiment-server.virtual-labs.ac.in", alias: "experiment-server.vlabs.ac.in"}
   - {domain: "civ02.virtual-labs.ac.in", alias: "civ02.vlabs.ac.in"}
+  - {domain: "bmsp-coep.virtual-labs.ac.in", alias: "bmsp-coep.vlabs.ac.in"}
+  - {domain: "vssd-iitd.virtual-labs.ac.in", alias: "vssd-iitd.vlabs.ac.in"} 
+  - {domain: "cse11-iiith.virtual-labs.ac.in", alias: "cse11-iiith.vlabs.ac.in"}
+  - {domain: "civil11-iitb.virtual-labs.ac.in", alias: "civil11-iitb.vlabs.ac.in"}
+  - {domain: "aero04-iitb.virtual-labs.ac.in", alias: "aero04-iitb.vlabs.ac.in"}
+  - {domain: "ee32-iitb.virtual-labs.ac.in", alias: "ee32-iitb.vlabs.ac.in"}
+  - {domain: "mddl-iitb.virtual-labs.ac.in", alias: "mddl-iitb.vlabs.ac.in"}
+  - {domain: "civil13-iitb.virtual-labs.ac.in", alias: "civil13-iitb.vlabs.ac.in"}
+  - {domain: "information.virtual-labs.ac.in", alias: "information.vlabs.ac.in"}
   - {domain: "lds.virtual-labs.ac.in", alias: "lds.vlabs.ac.in"}
+  - {domain: "footer.virtual-labs.ac.in", alias: "footer.vlabs.ac.in"}
+  - {domain: "landingpage.virtual-labs.ac.in", alias: "landingpage.vlabs.ac.in"}
+  - {domain: "beta.virtual-labs.ac.in", alias: "beta.vlabs.ac.in"}
+  - {domain: "mvI-au.virtual-labs.ac.in", alias: "mvI-au.vlabs.ac.in"}
+  - {domain: "hmw-au.virtual-labs.ac.in", alias: "hmw-au.vlabs.ac.in"}
+  - {domain: "lo-au.virtual-labs.ac.in", alias: "lo-au.vlabs.ac.in"}
+  - {domain: "mbvI-au.virtual-labs.ac.in", alias: "mbvI-au.vlabs.ac.in"}
+  - {domain: "amv-au.virtual-labs.ac.in", alias: "amv-au.vlabs.ac.in"}
+  - {domain: "mpv-au.virtual-labs.ac.in", alias: "mpv-au.vlabs.ac.in"}
+  - {domain: "vlabs-about.virtual-labs.ac.in", alias: "vlabs-about.vlabs.ac.in"}
+  - {domain: "vlabs-test.virtual-labs.ac.in", alias: "vlabs-test.vlabs.ac.in"}
+  - {domain: "analytics.virtual-labs.ac.in", alias: "analytics.vlabs.ac.in"}
+  - {domain: "analytics-db.virtual-labs.ac.in", alias: "analytics-db.vlabs.ac.in"}
+
+clubbed_labs:
+  - {domain: "fm-nitk.virtual-labs.ac.in", alias: "fm-nitk.vlabs.ac.in"}
+  - {domain: "fmc-nitk.virtual-labs.ac.in", alias: "fmc-nitk.vlabs.ac.in"}
+  - {domain: "mfts-iitg.virtual-labs.ac.in", alias: "mfts-iitg.vlabs.ac.in"}
+  - {domain: "mv-iitg.virtual-labs.ac.in", alias: "mv-iitg.vlabs.ac.in"}
+  - {domain: "vmt-iitg.virtual-labs.ac.in", alias: "vmt-iitg.vlabs.ac.in"}
+  - {domain: "ve-iitg.virtual-labs.ac.in", alias: "ve-iitg.vlabs.ac.in"}
+  - {domain: "ergonomics-iitg.virtual-labs.ac.in", alias: "ergonomics-iitg.vlabs.ac.in"}
+  - {domain: "vlsi-iitg.virtual-labs.ac.in", alias: "vlsi-iitg.vlabs.ac.in"}
+  - {domain: "ssl-iitg.virtual-labs.ac.in", alias: "ssl-iitg.vlabs.ac.in"}
+  - {domain: "vem-iitg.virtual-labs.ac.in", alias: "vem-iitg.vlabs.ac.in"}
+  - {domain: "anthropology-iitg.virtual-labs.ac.in", alias: "anthropology-iitg.vlabs.ac.in"}
+  - {domain: "he-coep.virtual-labs.ac.in", alias: "he-coep.vlabs.ac.in"}
+  - {domain: "sl-coep.virtual-labs.ac.in", alias: "sl-coep.vlabs.ac.in"}
+  - {domain: "va-coep.virtual-labs.ac.in", alias: "va-coep.vlabs.ac.in" }
+  - {domain: "plc-coep.virtual-labs.ac.in", alias: "plc-coep.vlabs.ac.in"}
+  - {domain: "em-coep.virtual-labs.ac.in", alias: "em-coep.vlabs.ac.in" }
+  - {domain: "mm-coep.virtual-labs.ac.in", alias: "mm-coep.vlabs.ac.in" }
+  - {domain: "fab-coep.virtual-labs.ac.in", alias: "fab-coep.vlabs.ac.in" }
+  - {domain: "sm-nitk.virtual-labs.ac.in", alias: "sm-nitk.vlabs.ac.in"}
+  - {domain: "ied-nitk.virtual-labs.ac.in", alias: "ied-nitk.vlabs.ac.in"}
+  - {domain: "mm-nitk.virtual-labs.ac.in", alias: "mm-nitk.vlabs.ac.in"}
+  - {domain: "mdmv-nitk.virtual-labs.ac.in", alias: "mdmv-nitk.vlabs.ac.in"}
+  - {domain: "sa-nitk.virtual-labs.ac.in", alias: "sa-nitk.vlabs.ac.in"}
+  - {domain: "mrmsmtbs-iitk.virtual-labs.ac.in", alias: "mrmsmtbs-iitk.vlabs.ac.in"}
+  - {domain: "uorepc-nitk.virtual-labs.ac.in", alias: "uorepc-nitk.vlabs.ac.in"}
+  - {domain: "tel-iitb.virtual-labs.ac.in", alias: "tel-iitb.vlabs.ac.in"}
+  - {domain: "mfs-iiith.virtual-labs.ac.in", alias: "mfs-iiith.vlabs.ac.in"}
+  - {domain: "cse01-iiith.virtual-labs.ac.in", alias: "cse01-iiith.vlabs.ac.in"}
+  - {domain: "mas-iiith.virtual-labs.ac.in", alias: "mas-iiith.vlabs.ac.in"}
+  - {domain: "ml-iitb.virtual-labs.ac.in", alias: "ml-iitb.vlabs.ac.in"}
+  - {domain: "pe-iitb.virtual-labs.ac.in", alias: "pe-iitb.vlabs.ac.in"}
 
 awstats_domains:
   - cse01-iiith.virtual-labs.ac.in
@@ -528,7 +553,7 @@ awstats_domains:
   - cbI-au.virtual-labs.ac.in
   - ov-au.virtual-labs.ac.in
   - htv-au.virtual-labs.ac.in
-  - fmc-nitk.virtual-labs.ac.in  
+  - fmc-nitk.virtual-labs.ac.in
   - vmt-iitg.virtual-labs.ac.in
   - mfts-iitg.virtual-labs.ac.in
   - mv-iitg.virtual-labs.ac.in
@@ -536,7 +561,8 @@ awstats_domains:
   - tel-iitb.virtual-labs.ac.in
   - ml-iitb.virtual-labs.ac.in
   - vm-dei.virtual-labs.ac.in
-  - idte-dei.virtual-labs.ac.in
+  - outreach-stage.virtual-labs.ac.in
+  - outreach-demo.virtual-labs.ac.in
   - icv-au.virtual-labs.ac.in
   - biotech01.virtual-labs.ac.in
   - mbvII-au.virtual-labs.ac.in
@@ -548,7 +574,24 @@ awstats_domains:
   - analytics-api.virtual-labs.ac.in
   - experiment-server.virtual-labs.ac.in
   - civ02.virtual-labs.ac.in
+  - civil11-iitb.virtual-labs.ac.in
+  - aero04-iitb.virtual-labs.ac.in
+  - ee32-iitb.virtual-labs.ac.in
+  - mddl-iitb.virtual-labs.ac.in
+  - civil13-iitb.virtual-labs.ac.in
+  - information.virtual-labs.ac.in
   - lds.virtual-labs.ac.in
+  - footer.virtual-labs.ac.in
+  - landingpage.virtual-labs.ac.in
+  - beta.virtual-labs.ac.in
+  - mvI-au.virtual-labs.ac.in
+  - hmw-au.virtual-labs.ac.in
+  - lo-au.virtual-labs.ac.in
+  - mbvI-au.virtual-labs.ac.in
+  - amv-au.virtual-labs.ac.in
+  - mpv-au.virtual-labs.ac.in
+  - vlabs-about.virtual-labs.ac.in
+  - vlabs-test.virtual-labs.ac.in
 
 public_dns_entries:
   - { hostname: router, ip: 54.85.93.7 }
@@ -630,16 +673,18 @@ public_dns_entries:
   - { hostname: mas-iiith, ip: 54.85.93.7}
   - { hostname: mfs-iiith, ip: 54.85.93.7}
   - { hostname: nlp-iiith, ip: 54.85.93.7}
+ # - { hostname: www, ip: 54.85.93.7}
+#  - { hostname: www, ip: 54.183.30.65}
   - { hostname: www, ip: 54.85.93.7}
   - { hostname: ps-iiith, ip: 54.85.93.7}
   - { hostname: ssl-iitg, ip: 54.85.93.7}  
+  - { hostname: outreach-old, ip: 54.85.93.7}
   - { hostname: outreach, ip: 54.85.93.7}
-  - { hostname: outreach-staging, ip: 54.85.93.7}
-  - { hostname: outreach-vlead1, ip: 54.85.93.7}
   - { hostname: old-outreach, ip: 54.85.93.7}
   - { hostname: t4e2015, ip: 52.26.141.190 }  #Added by Saurabh for T4E
   - { hostname: test.t4e2015, ip: 196.12.53.130 }  #Added by Saurabh for T4E
-  - { hostname: data, ip: 54.85.93.7}  
+  - { hostname: data, ip: 54.85.93.7} 
+  - { hostname: feedback-old, ip: 54.85.93.7}
   - { hostname: feedback, ip: 54.85.93.7}  
   - { hostname: eil-iitg, ip: 54.85.93.7}
   - { hostname: vlsi-iitg, ip: 54.85.93.7}
@@ -656,7 +701,7 @@ public_dns_entries:
   - { hostname: tel-iitb, ip: 54.85.93.7}
   - { hostname: ml-iitb, ip: 54.85.93.7}
   - { hostname: vm-dei, ip: 54.85.93.7}
-  - { hostname: idte-dei, ip: 54.85.93.7}
+  - { hostname: outreach-demo, ip: 54.85.93.7}
   - { hostname: icv-au, ip: 54.85.93.7}
   - { hostname: biotech01, ip: 54.85.93.7}
   - { hostname: mbvII-au, ip: 54.85.93.7}
@@ -666,9 +711,28 @@ public_dns_entries:
   - { hostname: ocv-au, ip: 54.85.93.7}
   - { hostname: vlabs-analytics, ip: 54.85.93.7}
   - { hostname: analytics-api, ip: 54.85.93.7}
+  - { hostname: analytics, ip: 54.85.93.7}
+  - { hostname: analytics-db, ip: 54.85.93.7}
   - { hostname: experiment-server, ip: 54.85.93.7}
   - { hostname: civ02, ip: 54.85.93.7}
+  - { hostname: civil11-iitb, ip: 54.85.93.7}
+  - { hostname: aero04-iitb, ip: 54.85.93.7}
+  - { hostname: ee32-iitb, ip: 54.85.93.7}
+  - { hostname: mddl-iitb, ip: 54.85.93.7}
+  - { hostname: civil13-iitb, ip: 54.85.93.7}
+  - { hostname: information, ip: 54.85.93.7}
   - { hostname: lds, ip: 54.85.93.7}
+  - { hostname: footer, ip: 54.85.93.7}
+  - { hostname: landingpage, ip: 54.85.93.7}
+  - { hostname: beta, ip: 54.85.93.7}
+  - { hostname: mvI-au, ip: 54.85.93.7}
+  - { hostname: hmw-au, ip: 54.85.93.7}
+  - { hostname: lo-au, ip: 54.85.93.7}
+  - { hostname: mbvI-au, ip: 54.85.93.7}
+  - { hostname: amv-au, ip: 54.85.93.7}
+  - { hostname: mpv-au, ip: 54.85.93.7}
+  - { hostname: vlabs-about, ip: 54.85.93.7}
+  - { hostname: vlabs-test, ip: 54.85.93.7}
 
 private_dns_entries:
   - { hostname: router, ip: 10.100.1.1 }
@@ -682,7 +746,8 @@ private_dns_entries:
   - { hostname: nagios, ip: 10.100.1.8 }
   - { hostname: ads, ip: 10.100.1.9 }
   - { hostname: rsnapshot-server, ip: 10.100.1.10 }
-  - { hostname: cse01-iiith, ip: 10.100.1.248 }
+#  - { hostname: cse01-iiith, ip: 10.100.1.248 }
+  - { hostname: cse01-iiith, ip: "{{experiment_server}}" }
   - { hostname: cse02-iiith, ip: 10.100.2.13 }
   - { hostname: cse15-iiith, ip: 10.100.0.83 }
   - { hostname: cse18-iiith, ip: 10.100.0.202 }
@@ -690,8 +755,9 @@ private_dns_entries:
   - { hostname: cse20-iiith, ip: 10.100.0.61 }
   - { hostname: emt-iiith, ip: 10.100.0.157 }
   - { hostname: cse29-iiith, ip: 10.100.0.238 }
-  - { hostname: cse22-iiith, ip: 10.100.2.142 }
+  - { hostname: cse22-iiith, ip: 10.100.2.228 }
   - { hostname: cse11-iiith, ip: 10.100.2.184 }
+#  - { hostname: cse11-iiith, ip: "{{experiment_server}}" }
   - { hostname: cse14-iiith, ip: 10.100.2.152 }
   - { hostname: eerc03-iiith, ip: 10.100.0.84 }
   - { hostname: phy14-iiith, ip: 10.100.3.212 }
@@ -703,39 +769,61 @@ private_dns_entries:
   - { hostname: bmsip-iitr, ip: 10.100.1.236 }
   - { hostname: em-iitr, ip: 10.100.2.133 }
   - { hostname: sl-iitr, ip: 10.100.1.36 }
-  - { hostname: mrmsmtbs-iitk, ip: 10.100.3.14 }
+#  - { hostname: mrmsmtbs-iitk, ip: 10.100.3.14 }
+  - { hostname: mrmsmtbs-iitk, ip: "{{experiment_server}}" }
   - { hostname: va-iitk, ip: 10.100.0.111 }
   - { hostname: ufls-iitk, ip: 10.100.0.205 }
   - { hostname: vlae-iitk, ip: 10.100.1.171 }
   - { hostname: vcal-iitk, ip: 10.100.2.55 }
   - { hostname: pev-au, ip: 10.100.0.218 }
   - { hostname: pevii-au, ip: 10.100.3.177 }
-  - { hostname: anthropology-iitg, ip: 10.100.1.66 }
-  - { hostname: ergonomics-iitg, ip: 10.100.1.54 }
-  - { hostname: vem-iitg, ip: 10.100.0.174 }
-  - { hostname: ve-iitg, ip: 10.100.1.112 }
-  - { hostname: sl-coep, ip: 10.100.0.168 }
-  - { hostname: plc-coep, ip: 10.100.0.142 }
-  - { hostname: em-coep, ip: 10.100.0.203 }
-  - { hostname: va-coep, ip: 10.100.1.20 }
-  - { hostname: mm-coep, ip: 10.100.3.250 }
-  - { hostname: fab-coep, ip: 10.100.0.25 }
+#  - { hostname: anthropology-iitg, ip: 10.100.1.66 }
+  - { hostname: anthropology-iitg, ip: "{{experiment_server}}" }
+#  - { hostname: ergonomics-iitg, ip: 10.100.1.54 }
+  - { hostname: ergonomics-iitg, ip: "{{experiment_server}}" }
+#  - { hostname: vem-iitg, ip: 10.100.0.174 }
+  - { hostname: vem-iitg, ip: "{{experiment_server}}" }
+ # - { hostname: ve-iitg, ip: 10.100.1.112 }
+  - { hostname: ve-iitg, ip: "{{experiment_server}}" }
+#  - { hostname: sl-coep, ip: 10.100.0.168 }
+  - { hostname: sl-coep, ip: "{{experiment_server}}" }
+#  - { hostname: plc-coep, ip: 10.100.0.142 }
+  - { hostname: plc-coep, ip: "{{experiment_server}}" }
+#  - { hostname: em-coep, ip: 10.100.0.203 }
+  - { hostname: em-coep, ip: "{{experiment_server}}" }
+#  - { hostname: va-coep, ip: 10.100.1.20 }
+  - { hostname: va-coep, ip: "{{experiment_server}}" }
+#  - { hostname: mm-coep, ip: 10.100.3.250 }
+#  - { hostname: fab-coep, ip: 10.100.0.25 }
+  - { hostname: mm-coep, ip: "{{experiment_server}}" }
+  - { hostname: fab-coep, ip: "{{experiment_server}}" }
   - { hostname: bmsp-coep, ip: 10.100.2.18 }
+#  - { hostname: bmsp-coep, ip: "{{experiment_server}}" }
   - { hostname: ial-coep, ip: 10.100.2.140 }
-  - { hostname: ied-nitk, ip: 10.100.2.98 }
-  - { hostname: sa-nitk, ip: 10.100.2.78 }
-  - { hostname: fm-nitk, ip: 10.100.2.107 }
-  - { hostname: sm-nitk, ip: 10.100.2.146 }
-  - { hostname: mm-nitk, ip: 10.100.2.190 }
-  - { hostname: mdmv-nitk, ip: 10.100.1.254 }
-  - { hostname: uorepc-nitk, ip: 10.100.2.176 }
+#  - { hostname: ied-nitk, ip: 10.100.2.98 }
+  - { hostname: ied-nitk, ip: "{{experiment_server}}" }
+#  - { hostname: sa-nitk, ip: 10.100.2.78 }
+  - { hostname: sa-nitk, ip: "{{experiment_server}}" }
+  #- { hostname: fm-nitk, ip: 10.100.2.107 }
+  - { hostname: fm-nitk, ip: "{{experiment_server}}" }
+ # - { hostname: sm-nitk, ip: 10.100.2.146 }
+  - { hostname: sm-nitk, ip: "{{experiment_server}}" }
+#  - { hostname: mm-nitk, ip: 10.100.2.190 }
+  - { hostname: mm-nitk, ip: "{{experiment_server}}" }
+#  - { hostname: mdmv-nitk, ip: 10.100.1.254 }
+  - { hostname: mdmv-nitk, ip: "{{experiment_server}}" }
+#  - { hostname: uorepc-nitk, ip: 10.100.2.176 }
+  - { hostname: uorepc-nitk, ip: "{{experiment_server}}" }
   - { hostname: vssd-iitd, ip: 10.100.1.126 }
+#  - { hostname: vssd-iitd, ip: "{{experiment_server}}" }
   - { hostname: qnm-iitd, ip: 10.100.3.88 }
   - { hostname: msvs-dei, ip: 10.100.0.18 }
   - { hostname: vp-dei, ip: 10.100.3.12 }
-  - { hostname: he-coep, ip: 10.100.3.55 }
+#  - { hostname: he-coep, ip: 10.100.3.55 }
+  - { hostname: he-coep, ip: "{{experiment_server}}" }
   - { hostname: eem-iitd, ip: 10.100.3.37}
-  - { hostname: pe-iitb, ip: 10.100.3.158}
+#  - { hostname: pe-iitb, ip: 10.100.3.158}
+  - { hostname: pe-iitb, ip: "{{experiment_server}}"}
   - { hostname: ee-iitb, ip: 10.100.3.141}
   - { hostname: ce-iitb, ip: 10.100.1.133}
   - { hostname: vc-dei, ip: 10.100.0.163}
@@ -748,34 +836,47 @@ private_dns_entries:
   - { hostname: cl-iiith, ip: 10.100.1.24}
   - { hostname: ge-iiith, ip: 10.100.0.86}
   - { hostname: mi-iiith, ip: 10.100.1.118}
-  - { hostname: mas-iiith, ip: 10.100.1.187}
-  - { hostname: mfs-iiith, ip: 10.100.1.149}
+ # - { hostname: mas-iiith, ip: 10.100.1.187}
+  - { hostname: mas-iiith, ip: "{{experiment_server}}"}
+#  - { hostname: mfs-iiith, ip: 10.100.1.149}
+  - { hostname: mfs-iiith, ip: "{{experiment_server}}" }
   - { hostname: nlp-iiith, ip: 10.100.3.184}
-  - { hostname: www, ip: 10.100.1.13}
+ # - { hostname: www, ip: 10.100.1.13}
+  - { hostname: www, ip: 10.100.2.101}
   - { hostname: ps-iiith, ip: 10.100.2.21}
-  - { hostname: ssl-iitg, ip: 10.100.1.221}
+#  - { hostname: ssl-iitg, ip: 10.100.1.221}
+  - { hostname: ssl-iitg, ip: "{{experiment_server}}"}
   - { hostname: data, ip: 10.100.1.67}
-  - { hostname: feedback, ip: 10.100.1.150}
+  - { hostname: feedback-old, ip: 10.100.3.164}
+  - { hostname: feedback, ip: 10.100.3.144}
   - { hostname: eil-iitg, ip: 10.100.1.213}
-  - { hostname: vlsi-iitg, ip: 10.100.3.148}
-  - { hostname: old-outreach, ip: 10.100.3.176}
-  - { hostname: outreach-vlead1, ip: 10.100.3.154}
-  - { hostname: outreach, ip: 10.100.3.151}
-  - { hostname: outreach-staging, ip: 10.100.1.182}
+#  - { hostname: vlsi-iitg, ip: 10.100.3.148}
+  - { hostname: vlsi-iitg, ip: "{{experiment_server}}"}
+#  - { hostname: outreach, ip: 10.100.3.151}
+#  - { hostname: outreach, ip: 10.100.1.48}
   - { hostname: emv-au, ip: 10.100.2.216}
   - { hostname: cbII-au, ip: 10.100.2.232}
   - { hostname: cbI-au, ip: 10.100.0.159}
   - { hostname: ov-au, ip: 10.100.2.135}
   - { hostname: htv-au, ip: 10.100.1.239}
-  - { hostname: fmc-nitk, ip: 10.100.3.86}
-  - { hostname: vmt-iitg, ip: 10.100.2.47}
-  - { hostname: mfts-iitg, ip: 10.100.3.0}
-  - { hostname: mv-iitg, ip: 10.100.2.24}
+#  - { hostname: fmc-nitk, ip: 10.100.3.86}
+  - { hostname: fmc-nitk, ip: "{{experiment_server}}"}
+#  - { hostname: vmt-iitg, ip: 10.100.2.47}
+  - { hostname: vmt-iitg, ip: "{{experiment_server}}"}
+#  - { hostname: mfts-iitg, ip: 10.100.3.0}
+  - { hostname: mfts-iitg, ip: "{{experiment_server}}"}
+#  - { hostname: mv-iitg, ip: 10.100.2.24}
+  - { hostname: mv-iitg, ip: "{{experiment_server}}"}
   - { hostname: hci-iitg, ip: 10.100.1.70}
-  - { hostname: tel-iitb, ip: 10.100.0.229}
-  - { hostname: ml-iitb, ip: 10.100.2.19}
-  - { hostname: vm-dei, ip: 10.100.0.254}
-  - { hostname: idte-dei, ip: 10.100.1.200}
+#  - { hostname: tel-iitb, ip: 10.100.0.229}
+  - { hostname: tel-iitb, ip: "{{experiment_server}}" }
+#  - { hostname: ml-iitb, ip: 10.100.2.19}
+  - { hostname: ml-iitb, ip: "{{experiment_server}}"}
+  - { hostname: vm-dei, ip: "{{experiment_server}}"}
+#  - { hostname: idte-dei, ip: 10.100.1.200}
+  - { hostname: outreach-demo, ip: 10.100.1.62}
+  - { hostname: outreach-old, ip: 10.100.2.248}
+  - { hostname: outreach, ip: 10.100.3.13}
   - { hostname: icv-au, ip: 10.100.3.234}
   - { hostname: biotech01, ip: 10.100.2.252}
   - { hostname: mbvII-au, ip: 10.100.0.166}
@@ -785,9 +886,28 @@ private_dns_entries:
   - { hostname: ocv-au, ip: 10.100.0.137}
   - { hostname: vlabs-analytics, ip: 10.100.2.224}
   - { hostname: analytics-api, ip: 10.100.3.222}
-  - { hostname: experiment-server, ip: 10.100.2.253}
+  - { hostname: analytics, ip: 10.100.1.173}
+  - { hostname: analytics-db, ip: 10.100.2.162}
+  - { hostname: experiment-server, ip: "{{experiment_server}}"}
   - { hostname: civ02, ip: 10.100.1.152}
-  - { hostname: lds, ip: 10.100.0.228}
+  - { hostname: civil11-iitb, ip: 10.100.3.21}
+  - { hostname: aero04-iitb, ip: 10.100.2.204}
+  - { hostname: ee32-iitb, ip: 10.100.0.170}
+  - { hostname: civil13-iitb, ip: 10.100.1.144}
+  - { hostname: mddl-iitb, ip: 10.100.3.114}
+  - { hostname: information, ip: 10.100.3.208}
+  - { hostname: lds, ip: 10.100.0.7}
+#  - { hostname: footer, ip: 10.100.2.208}
+  - { hostname: footer, ip: 10.100.0.133}
+  - { hostname: landingpage, ip: 10.100.2.33}
+  - { hostname: beta, ip: 10.100.3.53}
+  - { hostname: mvI-au, ip: 10.100.2.44}
+  - { hostname: hmw-au, ip: 10.100.0.195}
+  - { hostname: lo-au, ip: 10.100.1.166}
+  - { hostname: mbvI-au, ip: 10.100.0.127}
+  - { hostname: amv-au, ip: 10.100.1.161}
+  - { hostname: mpv-au, ip: 10.100.3.109}
+  - { hostname: vlabs-about, ip: 10.100.3.26}
 
 #Used by private-dns ans public dns to set their zone file names
 prefix: ""
