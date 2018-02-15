@@ -433,6 +433,29 @@ ProxyPassReverse  http://{{domain.domain}}:8000/bandwidthd/
 </Location>
 </Virtualhost>
 
+{% elif domain.domain == prefix+"virtual-labs.ac.in" or domain.domain == "wwww."+prefix+"virtual-labs.ac.in" %}
+<Virtualhost *:80>
+ServerAdmin engg@vlabs.ac.in
+ServerName {{domain.domain}}
+ServerAlias {{domain.alias}}
+ErrorLog logs/{{domain.domain}}--error_log
+CustomLog logs/{{domain.domain}}--access_log combined
+Redirect / https://{{domain.domain}}/
+</Virtualhost>
+
+<Virtualhost *:443>
+ServerAdmin engg@vlabs.ac.in
+ServerName {{domain.domain}}
+ServerAlias {{domain.alias}}
+ErrorLog logs/{{domain.domain}}--error_log
+CustomLog logs/{{domain.domain}}--access_log combined
+<Location />
+ProxyPass http://{{domain.domain}}/
+ProxyPassReverse  http://{{domain.domain}}/
+</Location>
+</Virtualhost>
+
+
 {% else %}
 
 <VirtualHost *:80>
