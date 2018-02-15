@@ -500,7 +500,6 @@ ProxyPassReverse http://{{domain.domain}}/{{domain.domain.split(".")[0]}}/
 </Location>
 </VirtualHost>
 
-
 {% endfor %}
 
 

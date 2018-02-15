@@ -594,145 +594,145 @@ awstats_domains:
   - vlabs-test.virtual-labs.ac.in
 
 public_dns_entries:
-  - { hostname: router, ip: 54.85.93.7 }
-  - { hostname: bandwidthd, ip: 54.85.93.7 }
+  - { hostname: router, ip: "{{public_zone_address}}" }
+  - { hostname: bandwidthd, ip: "{{public_zone_address}}" }
   - { hostname: ansible, ip: 52.4.150.142 }
-  - { hostname: ossec-server, ip: 54.85.93.7 }
-  - { hostname: rsyslog-server, ip: 54.85.93.7 }
-  - { hostname: private-dns, ip: 54.85.93.7 }
-  - { hostname: public-dns, ip: 54.85.93.7 }
-  - { hostname: reverseproxy, ip: 54.85.93.7 }
-  - { hostname: nagios, ip: 54.85.93.7 }
-  - { hostname: ads, ip: 54.85.93.7 }
-  - { hostname: rsnapshot-server, ip: 54.85.93.7 }
-  - { hostname: cse01-iiith, ip: 54.85.93.7 }
-  - { hostname: cse02-iiith, ip: 54.85.93.7 }
-  - { hostname: cse15-iiith, ip: 54.85.93.7 }
-  - { hostname: cse18-iiith, ip: 54.85.93.7 }
-  - { hostname: cse19-iiith, ip: 54.85.93.7 }
-  - { hostname: cse20-iiith, ip: 54.85.93.7 }
-  - { hostname: emt-iiith, ip: 54.85.93.7 }
-  - { hostname: cse29-iiith, ip: 54.85.93.7 }
-  - { hostname: cse22-iiith, ip: 54.85.93.7 }
-  - { hostname: cse11-iiith, ip: 54.85.93.7 }
-  - { hostname: cse14-iiith, ip: 54.85.93.7 }
-  - { hostname: eerc03-iiith, ip: 54.85.93.7 }
-  - { hostname: phy14-iiith, ip: 54.85.93.7 }
-  - { hostname: ccnsb06-iiith, ip: 54.85.93.7 }
-  - { hostname: eerc01-iiith, ip: 54.85.93.7 }
-  - { hostname: csc-iiith, ip: 54.85.93.7 }
-  - { hostname: bmi-iitr, ip: 54.85.93.7 }
-  - { hostname: bmsip-iitr, ip: 54.85.93.7 }
-  - { hostname: em-iitr, ip: 54.85.93.7 }
-  - { hostname: sl-iitr, ip: 54.85.93.7 }
-  - { hostname: mrmsmtbs-iitk, ip: 54.85.93.7 }
-  - { hostname: va-iitk, ip: 54.85.93.7 }
-  - { hostname: ufls-iitk, ip: 54.85.93.7 }
-  - { hostname: vlae-iitk, ip: 54.85.93.7 }
-  - { hostname: vcal-iitk, ip: 54.85.93.7 }
-  - { hostname: pev-au, ip: 54.85.93.7 }
-  - { hostname: pevii-au, ip: 54.85.93.7 }
-  - { hostname: anthropology-iitg, ip: 54.85.93.7 }
-  - { hostname: ergonomics-iitg, ip: 54.85.93.7 }
-  - { hostname: vem-iitg, ip: 54.85.93.7 }
-  - { hostname: ve-iitg, ip: 54.85.93.7 }
-  - { hostname: sl-coep, ip: 54.85.93.7 }
-  - { hostname: plc-coep, ip: 54.85.93.7 }
-  - { hostname: em-coep, ip: 54.85.93.7 }
-  - { hostname: va-coep, ip: 54.85.93.7 }
-  - { hostname: mm-coep, ip: 54.85.93.7 }
-  - { hostname: fab-coep, ip: 54.85.93.7 }
-  - { hostname: bmsp-coep, ip: 54.85.93.7 }
-  - { hostname: ial-coep, ip: 54.85.93.7 }
-  - { hostname: ied-nitk, ip: 54.85.93.7 }
-  - { hostname: sa-nitk, ip: 54.85.93.7 }
-  - { hostname: fm-nitk, ip: 54.85.93.7 }
-  - { hostname: sm-nitk, ip: 54.85.93.7 }
-  - { hostname: mm-nitk, ip: 54.85.93.7 }
-  - { hostname: mdmv-nitk, ip: 54.85.93.7 }
-  - { hostname: uorepc-nitk, ip: 54.85.93.7 }
-  - { hostname: vssd-iitd, ip: 54.85.93.7 }
-  - { hostname: qnm-iitd, ip: 54.85.93.7 }
-  - { hostname: msvs-dei, ip: 54.85.93.7 }
-  - { hostname: vp-dei, ip: 54.85.93.7 }
-  - { hostname: he-coep, ip: 54.85.93.7 }
-  - { hostname: eem-iitd, ip: 54.85.93.7 }
-  - { hostname: pe-iitb, ip: 54.85.93.7 }
-  - { hostname: ee-iitb, ip: 54.85.93.7 }
-  - { hostname: ce-iitb, ip: 54.85.93.7 }    
-  - { hostname: vc-dei, ip: 54.85.93.7 }
-  - { hostname: stats, ip: 54.85.93.7 }
-  - { hostname: bsa-iiith, ip: 54.85.93.7}
-  - { hostname: cds-iiith, ip: 54.85.93.7}
-  - { hostname: smfe-iiith, ip: 54.85.93.7}
-  - { hostname: ssp-iiith, ip: 54.85.93.7}
-  - { hostname: sd-iiith, ip: 54.85.93.7}
-  - { hostname: cl-iiith, ip: 54.85.93.7}
-  - { hostname: ge-iiith, ip: 54.85.93.7}
-  - { hostname: mi-iiith, ip: 54.85.93.7}
-  - { hostname: mas-iiith, ip: 54.85.93.7}
-  - { hostname: mfs-iiith, ip: 54.85.93.7}
-  - { hostname: nlp-iiith, ip: 54.85.93.7}
- # - { hostname: www, ip: 54.85.93.7}
+  - { hostname: ossec-server, ip: "{{public_zone_address}}" }
+  - { hostname: rsyslog-server, ip: "{{public_zone_address}}" }
+  - { hostname: private-dns, ip: "{{public_zone_address}}" }
+  - { hostname: public-dns, ip: "{{public_zone_address}}" }
+  - { hostname: reverseproxy, ip: "{{public_zone_address}}" }
+  - { hostname: nagios, ip: "{{public_zone_address}}" }
+  - { hostname: ads, ip: "{{public_zone_address}}" }
+  - { hostname: rsnapshot-server, ip: "{{public_zone_address}}" }
+  - { hostname: cse01-iiith, ip: "{{public_zone_address}}" }
+  - { hostname: cse02-iiith, ip: "{{public_zone_address}}" }
+  - { hostname: cse15-iiith, ip: "{{public_zone_address}}" }
+  - { hostname: cse18-iiith, ip: "{{public_zone_address}}" }
+  - { hostname: cse19-iiith, ip: "{{public_zone_address}}" }
+  - { hostname: cse20-iiith, ip: "{{public_zone_address}}" }
+  - { hostname: emt-iiith, ip: "{{public_zone_address}}" }
+  - { hostname: cse29-iiith, ip: "{{public_zone_address}}" }
+  - { hostname: cse22-iiith, ip: "{{public_zone_address}}" }
+  - { hostname: cse11-iiith, ip: "{{public_zone_address}}" }
+  - { hostname: cse14-iiith, ip: "{{public_zone_address}}" }
+  - { hostname: eerc03-iiith, ip: "{{public_zone_address}}" }
+  - { hostname: phy14-iiith, ip: "{{public_zone_address}}" }
+  - { hostname: ccnsb06-iiith, ip: "{{public_zone_address}}" }
+  - { hostname: eerc01-iiith, ip: "{{public_zone_address}}" }
+  - { hostname: csc-iiith, ip: "{{public_zone_address}}" }
+  - { hostname: bmi-iitr, ip: "{{public_zone_address}}" }
+  - { hostname: bmsip-iitr, ip: "{{public_zone_address}}" }
+  - { hostname: em-iitr, ip: "{{public_zone_address}}" }
+  - { hostname: sl-iitr, ip: "{{public_zone_address}}" }
+  - { hostname: mrmsmtbs-iitk, ip: "{{public_zone_address}}" }
+  - { hostname: va-iitk, ip: "{{public_zone_address}}" }
+  - { hostname: ufls-iitk, ip: "{{public_zone_address}}" }
+  - { hostname: vlae-iitk, ip: "{{public_zone_address}}" }
+  - { hostname: vcal-iitk, ip: "{{public_zone_address}}" }
+  - { hostname: pev-au, ip: "{{public_zone_address}}" }
+  - { hostname: pevii-au, ip: "{{public_zone_address}}" }
+  - { hostname: anthropology-iitg, ip: "{{public_zone_address}}" }
+  - { hostname: ergonomics-iitg, ip: "{{public_zone_address}}" }
+  - { hostname: vem-iitg, ip: "{{public_zone_address}}" }
+  - { hostname: ve-iitg, ip: "{{public_zone_address}}" }
+  - { hostname: sl-coep, ip: "{{public_zone_address}}" }
+  - { hostname: plc-coep, ip: "{{public_zone_address}}" }
+  - { hostname: em-coep, ip: "{{public_zone_address}}" }
+  - { hostname: va-coep, ip: "{{public_zone_address}}" }
+  - { hostname: mm-coep, ip: "{{public_zone_address}}" }
+  - { hostname: fab-coep, ip: "{{public_zone_address}}" }
+  - { hostname: bmsp-coep, ip: "{{public_zone_address}}" }
+  - { hostname: ial-coep, ip: "{{public_zone_address}}" }
+  - { hostname: ied-nitk, ip: "{{public_zone_address}}" }
+  - { hostname: sa-nitk, ip: "{{public_zone_address}}" }
+  - { hostname: fm-nitk, ip: "{{public_zone_address}}" }
+  - { hostname: sm-nitk, ip: "{{public_zone_address}}" }
+  - { hostname: mm-nitk, ip: "{{public_zone_address}}" }
+  - { hostname: mdmv-nitk, ip: "{{public_zone_address}}" }
+  - { hostname: uorepc-nitk, ip: "{{public_zone_address}}" }
+  - { hostname: vssd-iitd, ip: "{{public_zone_address}}" }
+  - { hostname: qnm-iitd, ip: "{{public_zone_address}}" }
+  - { hostname: msvs-dei, ip: "{{public_zone_address}}" }
+  - { hostname: vp-dei, ip: "{{public_zone_address}}" }
+  - { hostname: he-coep, ip: "{{public_zone_address}}" }
+  - { hostname: eem-iitd, ip: "{{public_zone_address}}" }
+  - { hostname: pe-iitb, ip: "{{public_zone_address}}" }
+  - { hostname: ee-iitb, ip: "{{public_zone_address}}" }
+  - { hostname: ce-iitb, ip: "{{public_zone_address}}" }    
+  - { hostname: vc-dei, ip: "{{public_zone_address}}" }
+  - { hostname: stats, ip: "{{public_zone_address}}" }
+  - { hostname: bsa-iiith, ip: "{{public_zone_address}}"}
+  - { hostname: cds-iiith, ip: "{{public_zone_address}}"}
+  - { hostname: smfe-iiith, ip: "{{public_zone_address}}"}
+  - { hostname: ssp-iiith, ip: "{{public_zone_address}}"}
+  - { hostname: sd-iiith, ip: "{{public_zone_address}}"}
+  - { hostname: cl-iiith, ip: "{{public_zone_address}}"}
+  - { hostname: ge-iiith, ip: "{{public_zone_address}}"}
+  - { hostname: mi-iiith, ip: "{{public_zone_address}}"}
+  - { hostname: mas-iiith, ip: "{{public_zone_address}}"}
+  - { hostname: mfs-iiith, ip: "{{public_zone_address}}"}
+  - { hostname: nlp-iiith, ip: "{{public_zone_address}}"}
+ # - { hostname: www, ip: "{{public_zone_address}}"}
 #  - { hostname: www, ip: 54.183.30.65}
-  - { hostname: www, ip: 54.85.93.7}
-  - { hostname: ps-iiith, ip: 54.85.93.7}
-  - { hostname: ssl-iitg, ip: 54.85.93.7}  
-  - { hostname: outreach-old, ip: 54.85.93.7}
-  - { hostname: outreach, ip: 54.85.93.7}
-  - { hostname: old-outreach, ip: 54.85.93.7}
+  - { hostname: www, ip: "{{public_zone_address}}"}
+  - { hostname: ps-iiith, ip: "{{public_zone_address}}"}
+  - { hostname: ssl-iitg, ip: "{{public_zone_address}}"}  
+  - { hostname: outreach-old, ip: "{{public_zone_address}}"}
+  - { hostname: outreach, ip: "{{public_zone_address}}"}
+  - { hostname: old-outreach, ip: "{{public_zone_address}}"}
   - { hostname: t4e2015, ip: 52.26.141.190 }  #Added by Saurabh for T4E
   - { hostname: test.t4e2015, ip: 196.12.53.130 }  #Added by Saurabh for T4E
-  - { hostname: data, ip: 54.85.93.7} 
-  - { hostname: feedback-old, ip: 54.85.93.7}
-  - { hostname: feedback, ip: 54.85.93.7}  
-  - { hostname: eil-iitg, ip: 54.85.93.7}
-  - { hostname: vlsi-iitg, ip: 54.85.93.7}
-  - { hostname: emv-au, ip: 54.85.93.7}
-  - { hostname: cbII-au, ip: 54.85.93.7}
-  - { hostname: cbI-au, ip: 54.85.93.7}
-  - { hostname: ov-au, ip: 54.85.93.7}
-  - { hostname: htv-au, ip: 54.85.93.7}
-  - { hostname: fmc-nitk, ip: 54.85.93.7}
-  - { hostname: vmt-iitg, ip: 54.85.93.7}
-  - { hostname: mfts-iitg, ip: 54.85.93.7}
-  - { hostname: mv-iitg, ip: 54.85.93.7}
-  - { hostname: hci-iitg, ip: 54.85.93.7}
-  - { hostname: tel-iitb, ip: 54.85.93.7}
-  - { hostname: ml-iitb, ip: 54.85.93.7}
-  - { hostname: vm-dei, ip: 54.85.93.7}
-  - { hostname: outreach-demo, ip: 54.85.93.7}
-  - { hostname: icv-au, ip: 54.85.93.7}
-  - { hostname: biotech01, ip: 54.85.93.7}
-  - { hostname: mbvII-au, ip: 54.85.93.7}
-  - { hostname: phy-sc22-au, ip: 54.85.93.7}
-  - { hostname: pcv-au, ip: 54.85.93.7}
-  - { hostname: aacv-au, ip: 54.85.93.7}
-  - { hostname: ocv-au, ip: 54.85.93.7}
-  - { hostname: vlabs-analytics, ip: 54.85.93.7}
-  - { hostname: analytics-api, ip: 54.85.93.7}
-  - { hostname: analytics, ip: 54.85.93.7}
-  - { hostname: analytics-db, ip: 54.85.93.7}
-  - { hostname: experiment-server, ip: 54.85.93.7}
-  - { hostname: civ02, ip: 54.85.93.7}
-  - { hostname: civil11-iitb, ip: 54.85.93.7}
-  - { hostname: aero04-iitb, ip: 54.85.93.7}
-  - { hostname: ee32-iitb, ip: 54.85.93.7}
-  - { hostname: mddl-iitb, ip: 54.85.93.7}
-  - { hostname: civil13-iitb, ip: 54.85.93.7}
-  - { hostname: information, ip: 54.85.93.7}
-  - { hostname: lds, ip: 54.85.93.7}
-  - { hostname: footer, ip: 54.85.93.7}
-  - { hostname: landingpage, ip: 54.85.93.7}
-  - { hostname: beta, ip: 54.85.93.7}
-  - { hostname: mvI-au, ip: 54.85.93.7}
-  - { hostname: hmw-au, ip: 54.85.93.7}
-  - { hostname: lo-au, ip: 54.85.93.7}
-  - { hostname: mbvI-au, ip: 54.85.93.7}
-  - { hostname: amv-au, ip: 54.85.93.7}
-  - { hostname: mpv-au, ip: 54.85.93.7}
-  - { hostname: vlabs-about, ip: 54.85.93.7}
-  - { hostname: vlabs-test, ip: 54.85.93.7}
+  - { hostname: data, ip: "{{public_zone_address}}"} 
+  - { hostname: feedback-old, ip: "{{public_zone_address}}"}
+  - { hostname: feedback, ip: "{{public_zone_address}}"}  
+  - { hostname: eil-iitg, ip: "{{public_zone_address}}"}
+  - { hostname: vlsi-iitg, ip: "{{public_zone_address}}"}
+  - { hostname: emv-au, ip: "{{public_zone_address}}"}
+  - { hostname: cbII-au, ip: "{{public_zone_address}}"}
+  - { hostname: cbI-au, ip: "{{public_zone_address}}"}
+  - { hostname: ov-au, ip: "{{public_zone_address}}"}
+  - { hostname: htv-au, ip: "{{public_zone_address}}"}
+  - { hostname: fmc-nitk, ip: "{{public_zone_address}}"}
+  - { hostname: vmt-iitg, ip: "{{public_zone_address}}"}
+  - { hostname: mfts-iitg, ip: "{{public_zone_address}}"}
+  - { hostname: mv-iitg, ip: "{{public_zone_address}}"}
+  - { hostname: hci-iitg, ip: "{{public_zone_address}}"}
+  - { hostname: tel-iitb, ip: "{{public_zone_address}}"}
+  - { hostname: ml-iitb, ip: "{{public_zone_address}}"}
+  - { hostname: vm-dei, ip: "{{public_zone_address}}"}
+  - { hostname: outreach-demo, ip: "{{public_zone_address}}"}
+  - { hostname: icv-au, ip: "{{public_zone_address}}"}
+  - { hostname: biotech01, ip: "{{public_zone_address}}"}
+  - { hostname: mbvII-au, ip: "{{public_zone_address}}"}
+  - { hostname: phy-sc22-au, ip: "{{public_zone_address}}"}
+  - { hostname: pcv-au, ip: "{{public_zone_address}}"}
+  - { hostname: aacv-au, ip: "{{public_zone_address}}"}
+  - { hostname: ocv-au, ip: "{{public_zone_address}}"}
+  - { hostname: vlabs-analytics, ip: "{{public_zone_address}}"}
+  - { hostname: analytics-api, ip: "{{public_zone_address}}"}
+  - { hostname: analytics, ip: "{{public_zone_address}}"}
+  - { hostname: analytics-db, ip: "{{public_zone_address}}"}
+  - { hostname: experiment-server, ip: "{{public_zone_address}}"}
+  - { hostname: civ02, ip: "{{public_zone_address}}"}
+  - { hostname: civil11-iitb, ip: "{{public_zone_address}}"}
+  - { hostname: aero04-iitb, ip: "{{public_zone_address}}"}
+  - { hostname: ee32-iitb, ip: "{{public_zone_address}}"}
+  - { hostname: mddl-iitb, ip: "{{public_zone_address}}"}
+  - { hostname: civil13-iitb, ip: "{{public_zone_address}}"}
+  - { hostname: information, ip: "{{public_zone_address}}"}
+  - { hostname: lds, ip: "{{public_zone_address}}"}
+  - { hostname: footer, ip: "{{public_zone_address}}"}
+  - { hostname: landingpage, ip: "{{public_zone_address}}"}
+  - { hostname: beta, ip: "{{public_zone_address}}"}
+  - { hostname: mvI-au, ip: "{{public_zone_address}}"}
+  - { hostname: hmw-au, ip: "{{public_zone_address}}"}
+  - { hostname: lo-au, ip: "{{public_zone_address}}"}
+  - { hostname: mbvI-au, ip: "{{public_zone_address}}"}
+  - { hostname: amv-au, ip: "{{public_zone_address}}"}
+  - { hostname: mpv-au, ip: "{{public_zone_address}}"}
+  - { hostname: vlabs-about, ip: "{{public_zone_address}}"}
+  - { hostname: vlabs-test, ip: "{{public_zone_address}}"}
 
 private_dns_entries:
   - { hostname: router, ip: 10.100.1.1 }
