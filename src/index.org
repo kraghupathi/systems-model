@@ -1,6 +1,5 @@
 #+TITLE:     The Cluster Model
-#+AUTHOR:    M.S.Soumya
-#+EMAIL:     ms@ms
+#+AUTHOR:    VLEAD Systems
 #+DATE:      2015-03-25 Wed
 #+PROPERTY: session *scratch*
 #+PROPERTY: results output
