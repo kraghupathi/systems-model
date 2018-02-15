@@ -433,7 +433,7 @@ ProxyPassReverse  http://{{domain.domain}}:8000/bandwidthd/
 </Location>
 </Virtualhost>
 
-{% elif domain.domain == prefix+"virtual-labs.ac.in" or domain.domain == "wwww."+prefix+"virtual-labs.ac.in" %}
+{% elif domain.domain == prefix+"virtual-labs.ac.in" or domain.domain == "www."+prefix+"virtual-labs.ac.in" %}
 <Virtualhost *:80>
 ServerAdmin engg@vlabs.ac.in
 ServerName {{domain.domain}}
