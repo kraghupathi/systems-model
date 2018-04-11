@@ -479,6 +479,7 @@ the variables used by the ansible playbooks.
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 - name:  stop the nfs service onboot 
   service: name=nfs enabled=no
+  ignore_errors: yes
 
 - name: stop RPC service on boot
   service: name=rpcbind enabled=no
@@ -2128,8 +2129,6 @@ the variables used by the ansible playbooks.
    Hostname is set inside each node in the cluster. Hostname represent
    the name of the main server that is installed in the node.
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
----
-
 #This will use the variables defined in the role sepcific yaml file, works only on CentOS
 - name: Set the hostname of the target if host_name is defined
   lineinfile: dest=/etc/sysconfig/network regexp="HOSTNAME=" line="HOSTNAME={{host_name}}" state=present
