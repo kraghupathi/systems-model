@@ -598,6 +598,7 @@ the variables used by the ansible playbooks.
    regexp: '.*SELINUX=disabled.*'
    line: 'SELINUX=enforcing'
    state: present
+  ignore_errors: yes
 #+END_SRC
 **** Set SELinux policy to targeted
    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/315][Associated issue on gitlab]]
@@ -622,6 +623,7 @@ the variables used by the ansible playbooks.
     line: SELINUXTYPE=targeted
     insertafter: SELINUXTYPE=targeted.*
     state: present
+  ignore_errors: yes
 #+END_SRC
 
 *** SSH Configurations
@@ -1648,13 +1650,7 @@ the variables used by the ansible playbooks.
     line: '{{ item }}'
   with_items:
    - 'net.ipv4.icmp_echo_ignore_broadcasts = 1'
-
-- name: set the active kernel parameters
-  command: "{{ item }}"
-  with_items:
-  - sysctl -w net.ipv4.icmp_echo_ignore_broadcasts=1
-  - sysctl -w net.ipv4.route.flush=1
-
+   - 'net.ipv4.route.flush = 1'
 #+END_SRC
 *** NTP service
 **** Set Time synchronization
@@ -2082,9 +2078,6 @@ the variables used by the ansible playbooks.
    line: '{{ item }}'
   with_items:
    - 'fs.suid_dumpable = 0'
-
-- name: set the active kernel parameter
-  command: "sysctl -w fs.suid_dumpable=0"
 #+END_SRC
 *** Daemon service like xinetd is setup in listed in start-up conditions.
 
