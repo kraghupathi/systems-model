@@ -368,6 +368,1762 @@ the variables used by the ansible playbooks.
     COMMIT
     #+END_EXAMPLE
 ** Tasks
+*** Installation of Aide 
+    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/86][Associated issue on gitlab]]
+    - Impact :: Malicious misconfigurations of the file
+               system. 
+
+     - About AIDE ::  Advanced Intrusion Detection Environment
+		      (AIDE) is a utility that creates a
+		      database of files on the system, and
+		      then uses that database to ensure file
+		      integrity and detect system intrusions.
+     - Reference links
+
+       1. [[https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/security_guide/sec-using-aide][https://access.redhat.com]]
+       2. [[https://www.howtoforge.com/linux-security-notes-aide-file-integrity][www.howtoforge.com]]
+
+     - Recommendations :: Install aide on centos
+	  #+BEGIN_EXAMPLE
+	  $ yum install aide
+	  $ aide --init
+	  $ mv /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz
+	  #+END_EXAMPLE
+     - Implementation :: 
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+---
+- name: install the latest version of Aide
+  yum:
+      name: aide
+      state: latest
+  ignore_errors: yes
+- name: initialize aide
+  command: "aide --init"
+  ignore_errors: yes
+
+- name: rename aide file
+  command: mv /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz
+  ignore_errors: yes
+
+
+#+END_SRC
+   
+*** Disable/remove Telnet serverx
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/105][Associated issue on GitLab]]
+   - Impact :: Vulnerable to sniff the network
+
+   - Recommendations :: Run the following command to disable telnet:
+
+        #+BEGIN_EXAMPLE
+        #chkconfig telnet off
+        #+END_EXAMPLE
+   - Implementation ::
+		      The ssh package provides an encrypted
+                      session and stronger security
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Disable telnet service
+  command: /sbin/chkconfig telnet off
+  ignore_errors: yes
+#+END_SRC
+*** Remove/uninstall talk
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/100][Associated issue on GitLab]]
+   - Impact :: The software presents a security risk as it uses
+               unencrypted protocols for communication.
+
+   - Recommendations :: Run the following command to uninstall talk
+
+        #+BEGIN_EXAMPLE
+        #yum remove talk
+        #+END_EXAMPLE
+
+    - Implementation ::
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: remove the talk package
+  yum: name=talk state=absent 
+  ignore_errors: yes
+
+#+END_SRC
+
+*** HTTP server is enabled, disable it.
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/206][Associated issue on GitLab]]
+   - Impact :: Unless there is a need to run the system as a
+               web server, it is recommended that the
+               service be disabled to reduce the potential
+               attack surface.
+   - Recommendations :: Run the following command to disable
+        httpd
+  	#+BEGIN_EXAMPLE
+	#chkconfig httpd off	
+	#+END_EXAMPLE
+   - Implementation ::  
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: stop httpd service on boot
+  service: name=httpd enabled=no
+  ignore_errors: yes
+#+END_SRC
+*** Disable NFS and RPC services
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/205][Associated issue on GitLab]]
+   - Impact ::  If the system does not export NFS shares or
+                act as an NFS client, it is recommended that
+                these services be disabled to reduce remote
+                attack surface.
+
+   - Recommendations :: Run the following commands to
+        disable nfs and rpcbind.
+	#+BEGIN_EXAMPLE
+	chkconfig nfs off
+	chkconfig rpcbind off
+	#+END_EXAMPLE
+   - Implementation ::
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name:  stop the nfs service onboot 
+  service: name=nfs enabled=no
+
+- name: stop RPC service on boot
+  service: name=rpcbind enabled=no
+#+END_SRC
+*** Disable xinetd service
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/204][Associated issue on GitLab]]   
+   - Impact :: If there are no xinetd services required, it
+               is recommended that the daemon be disabled.
+	       
+   - Recommendations :: Run one of the following command to
+        disable xinetd.
+	#+BEGIN_EXAMPLE
+	#chkconfig xinetd off
+	#+END_EXAMPLE
+   - Implementation ::
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: stop xinetd service on boot
+  service: name=xinetd enabled=no
+  ignore_errors: yes
+#+END_SRC
+*** IPv6 router advertisements are accepted with server
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/211][Associated issue on GitLab]]
+   - Impact :: It is recommended that servers not accept
+               router advertisements as they could be
+               tricked into routing traffic to compromised
+               machines.
+	       
+   - Recommendations :: Set the following parameters in the
+        /etc/sysctl.conf file.
+	#+BEGIN_EXAMPLE
+	net.ipv6.conf.all.accept_ra = 0
+	net.ipv6.conf.default.accept_ra = 0
+	#+END_EXAMPLE
+	Run the following commands to set the active kernel
+        parameters.
+	#+BEGIN_EXAMPLE
+	#sysctl -w net.ipv6.conf.all.accept_ra=0
+	#sysctl -w net.ipv6.conf.default.accept_ra=0 
+	#sysctl -w net.ipv6.route.flush=1
+	#+END_EXAMPLE
+   - Implementation ::
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name:  Do not accept router advertisements
+  sysctl:
+     name: net.ipv6.conf.all.accept_ra
+     value: 0
+     state: present
+  ignore_errors: yes
+
+- name:  Do not accept router advertisements
+  sysctl:
+     name: net.ipv6.conf.default.accept_ra
+     value: 0
+     state: present
+  ignore_errors: yes
+
+- name:  Do not accept router advertisements
+  sysctl:
+      name: net.ipv6.route.flush
+      value: 1
+      state: present
+  ignore_errors: yes
+
+#+END_SRC
+
+*** Permissions on boot loader
+
+   - Impact :: Non-root users who read the boot parameters may be able
+               to identify weaknesses in security upon boot and be
+               able to exploit them.
+
+   - Recommendations :: Run the following commands to set permissions
+        on your grub configuration:
+
+        #+BEGIN_EXAMPLE
+        #chown root:root /boot/grub/grub.conf 
+	#chmod og-rwx /boot/grub/grub.conf
+        #+END_EXAMPLE
+   - Implementation ::
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Owner permissions on boot loader configuration file
+  command: chown root:root /boot/grub/grub.conf
+
+- name: Permissions on boot loader configuration file
+  command: chmod og-rwx /boot/grub/grub.conf
+  
+#+END_SRC
+
+*** SELinux 
+**** Install libselinux-python package
+    In order to execute following tasks, =libselinux-python= package
+    is needed.
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Install libselinux-python
+  yum: name=libselinux-python state=installed
+#+END_SRC
+**** Enable SELinux state to enforcing
+
+   - Impact :: Set SELinux to enable when the system is booted.
+
+   - Recommendations :: Edit the /etc/selinux/config file to set the
+        SELINUX parameter:
+
+        #+BEGIN_EXAMPLE
+	SELINUX=enforcing
+        #+END_EXAMPLE
+   - Implementation ::
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Set SELinux to enable when the system is booted
+  lineinfile: 
+   dest: /etc/selinux/config
+   regexp: '.*SELINUX=disabled.*'
+   line: 'SELINUX=enforcing'
+   state: present
+#+END_SRC
+**** Set SELinux policy to targeted
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/315][Associated issue on gitlab]]
+   - Impact :: Configure SELinux to meet or exceed the default
+               targeted policy, which constrains daemons and system
+               software only.
+
+   - Recommendations :: Edit the =/etc/selinux/config= file to set the
+        SELINUXTYPE parameter: policy.
+	
+        #+BEGIN_EXAMPLE
+	SELINUXTYPE=targeted
+	#+END_EXAMPLE
+	If your organization requires stricter policies, ensure that
+        they are set in the =/etc/selinux/config= file.
+   - Implementation ::
+        
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: configure SELinux policy  
+  lineinfile:
+    name: /etc/selinux/config
+    line: SELINUXTYPE=targeted
+    insertafter: SELINUXTYPE=targeted.*
+    state: present
+#+END_SRC
+
+*** SSH Configurations
+**** Set SSH LoginGraceTime to one minute or less
+
+   - Impact :: SSH Server Brute Force Attacks
+
+   - Recommendations :: Edit the /etc/ssh/sshd_config file to set the
+        parameter as follows:
+
+        #+BEGIN_EXAMPLE
+	LoginGraceTime 60
+        #+END_EXAMPLE
+   - Implementation ::
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Setting SSH LoginGraceTime
+  lineinfile:
+   dest: /etc/ssh/sshd_config
+   regexp: '.*LoginGraceTime 2m.*'
+   line: 'LoginGraceTime 60'
+   state: present
+#+END_SRC
+
+**** Ensure SSH Idle Timeout Interval is set
+
+   - Impact :: Session Hijacking Attacks
+   - Reference 
+
+     [[https://www.thegeekdiary.com/centos-rhel-how-to-setup-session-idle-timeout-inactivity-timeout-for-ssh-auto-logout/][Time-out-for-ssh-auto-logout]]
+
+   - Recommendations :: Edit the =/etc/ssh/sshd_config= file
+        to set the parameters as follows:
+
+        #+BEGIN_EXAMPLE
+        ClientAliveInterval 0
+	ClientAliveCountMax 0
+        #+END_EXAMPLE
+
+   - Implementation ::
+	
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Set SSH idle time out
+  lineinfile:
+   dest: /etc/ssh/sshd_config
+   regexp: '^#ClientAliveInterval.*'
+   line: 'ClientAliveInterval 300'
+   state: present
+- name: Set Set SSH idle time out
+  lineinfile:
+   dest: /etc/ssh/sshd_config
+   regexp: '.*ClientAliveCountMax.*'
+   line: 'ClientAliveCountMax 0'
+   state: present
+#+END_SRC
+   The timeout value is calculated by multiplying
+   ClientAliveInterval with ClientAliveCountMax.
+
+   #+BEGIN_EXAMPLE
+   timeout interval = ClientAliveInterval * ClientAliveCountMax
+   #+END_EXAMPLE
+   [[https://www.thegeekdiary.com/centos-rhel-how-to-setup-session-idle-timeout-inactivity-timeout-for-ssh-auto-logout/][refer this link]]
+
+**** Enable SSH IgnoreRhosts
+
+   - Impact :: Setting this parameter forces user to enter a password
+               when authenticating with ssh.
+
+   - Recommendations :: Edit the /etc/ssh/sshd_config file to set the
+        parameter as follows:
+
+        #+BEGIN_EXAMPLE
+        IgnoreRhosts yes
+        #+END_EXAMPLE
+   - Implementation ::
+   #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: SSH IgnoreRhosts is enable
+  lineinfile: 
+   dest: /etc/ssh/sshd_config
+   regexp: '.*IgnoreRhosts yes.*'
+   line: 'IgnoreRhosts yes'
+   state: present
+   #+END_SRC
+   - Reference 
+     [[ftp://ftp.iitb.ac.in/LDP/en/solrhe/chap15sec122.html][sshd_configuration man page]]
+**** Disable SSH PermitEmptyPassword
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/229][Associated issue on gitlab]]
+   - Impact :: Disallowing remote shell access to accounts that have
+               an empty password reduces the probability of
+               unauthorized access to the system
+
+   - Recommendations :: Edit the =/etc/ssh/sshd_config= file to set the
+        parameter as follows:
+
+	#+BEGIN_EXAMPLE
+	PermitEmptyPasswords no
+	#+END_EXAMPLE
+   - Implementation ::
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: configure SELinux policy  
+  lineinfile:
+    name: /etc/ssh/sshd_config
+    line: PermitEmptyPasswords no
+    insertafter: PermitEmptyPasswords.*
+    state: present
+#+END_SRC
+
+   - Reference 
+
+     [[ftp://ftp.iitb.ac.in/LDP/en/solrhe/chap15sec122.html][sshd_configuration man page]]
+
+**** Set SSH MaxAuthTries to 4 or less
+
+   - Impact :: Password Brute Force Attacks on SSH
+
+   - Recommendations :: Edit the /etc/ssh/sshd_config file to set the
+        parameter as follows:
+
+        #+BEGIN_EXAMPLE
+	MaxAuthTries 4
+        #+END_EXAMPLE
+   - Implementation ::
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name:  set the SSH MaxAuthTries
+  lineinfile:
+   dest: /etc/ssh/sshd_config
+   regexp: '.*MaxAuthTries 6.*'
+   line: 'MaxAuthTries 4'
+   state: present
+#+END_SRC
+   - Reference 
+
+     [[ftp://ftp.iitb.ac.in/LDP/en/solrhe/chap15sec122.html][sshd_configuration man page]]
+
+**** Set SSH LogLevel to INFO
+
+   - Impact :: In many situations, such as Incident Response, it is
+               important to determine when a particular user was
+               active on a system.
+
+   - Recommendations :: Edit the /etc/ssh/sshd_config file to set the
+        parameter as follows:
+
+        #+BEGIN_EXAMPLE
+	LogLevel INFO
+        #+END_EXAMPLE
+   - Implementation ::
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name:  set SSH LogLevel
+  lineinfile:
+   dest: /etc/ssh/sshd_config
+   regexp: '.*LogLevel INFO.*'
+   line: 'LogLevel INFO'
+   state: present
+#+END_SRC
+   - Reference 
+
+     [[ftp://ftp.iitb.ac.in/LDP/en/solrhe/chap15sec122.html][sshd_configuration man page]]
+**** Configure SSH warning banner
+   - Impact :: Banners are used to warn connecting users of
+               the particular site's policy regarding
+               connection.
+
+
+               Presenting a warning message prior to the
+               normal user login may assist the prosecution
+               of trespassers on the computer.
+   - Recommendations :: Edit the /etc/ssh/sshd_config file
+        to set the parameter as follows
+	#+BEGIN_EXAMPLE
+	Banner /etc/issue.net
+	#+END_EXAMPLE
+    - Implementation ::
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: SSH login warning banner
+  lineinfile: 
+    name: /etc/ssh/sshd_config
+    insertafter: "^#Banner.*"
+    line: Banner /etc/issue.net	
+    state: present
+#+END_SRC
+   - References ::
+
+     1. https://www.cyberciti.biz/tips/change-openssh-sshd-server-login-banner.html
+
+**** Server_Limit Access via SSH
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/443][Check the issue on GitLab]]
+   - Impact :: Restricting which users can remotely access the system
+               via SSH will help ensure that only authorized users
+               access the system.
+
+    - Recommendations ::
+			Edit the =/etc/ssh/sshd_config= file to set
+                        one or more of the parameter as follows:
+
+			#+BEGIN_EXAMPLE
+			AllowUsers <userlist>
+			AllowGroups <grouplist>
+			DenyUsers <userlist>
+			DenyGroups <grouplist>
+
+			#+END_EXAMPLE
+
+     - Implementation ::
+			#+BEGIN_SRC yml :tangle  roles/common/tasks/main.yml
+- name: Limit Access via SSH
+  lineinfile: 
+    dest: /etc/ssh/sshd_config
+    line: '{{ item }}'
+  with_items:
+    - 'AllowUsers root'
+			#+END_SRC
+**** Set Lockout for Failed Password Attempts
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/439][Check the issue on GitLab]]
+   - Impact :: Vulnerable to brute force password attacks against your
+               server
+
+    - Recommendations ::
+			Edit the =/etc/pam.d/login= file and add the
+                        auth line below:
+
+			#+BEGIN_EXAMPLE
+			auth required pam_tally2.so onerr=fail
+			audit silent deny=5 unlock_time=900
+			
+			#+END_EXAMPLE
+
+     - Implementation ::
+			#+BEGIN_SRC yml :tangle  roles/common/tasks/main.yml
+- name: Set Lockout for Failed Password Attempts
+  lineinfile: 
+    dest: /etc/pam.d/login
+    line: '{{ item }}'
+  with_items:
+    - 'auth    required     pam_tally2.so onerr=fail'
+    - 'auth    silent       deny=5        unlock_time=900'
+			#+END_SRC
+*** SSH Hardening
+    All the servers in the cluster are made secure by hardening *ssh*
+    service. SSH configuration file =/etc/ssh/sshd_config= is
+    customized as per the requirement.
+    
+**** Permit Root Login without password
+     Only system administrators with ssh private key can login as Root.
+
+#+BEGIN_EXAMPLE
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Permit root login without-password(key based)
+  lineinfile: dest=/etc/ssh/sshd_config regexp='PermitRootLogin ' line='PermitRootLogin without-password' state=present
+#+END_SRC
+#+END_EXAMPLE
+
+**** Disable Password based access
+     Password based access is disabled.
+#+BEGIN_EXAMPLE
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Disable Password authentication
+  lineinfile: dest=/etc/ssh/sshd_config regexp='PasswordAuthentication ' line='PasswordAuthentication no'
+#+END_SRC
+#+END_EXAMPLE
+
+**** Enable Key based authentication
+   Only key based access is enabled.
+#+BEGIN_EXAMPLE
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Enable Public key authentication
+  lineinfile: dest=/etc/ssh/sshd_config regexp='PubkeyAuthentication ' line='PubkeyAuthentication yes'
+#+END_SRC
+#+END_EXAMPLE
+
+**** Do not permit empty passwords
+   Users are not allowed to set empty-password.
+#+BEGIN_EXAMPLE
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Do not permit empty password, also ensure proper owner, group and permissions
+  lineinfile: dest=/etc/ssh/sshd_config regexp='PermitEmptyPasswords ' line='PermitEmptyPasswords no' mode=0600 owner=root group=root
+
+#Call handler to restart sshd
+  notify:
+      - restart sshd
+#+END_SRC
+#+END_EXAMPLE
+
+*** Audit Rules/Configurations
+**** Enable Auditd service
+    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/340][Associated issue on gitlab]]
+    - Impact :: The capturing of system events provides system
+               administrators with information to allow them to
+               determine if unauthorized access to their system is
+               occurring.
+
+    - Recommendations :: 	
+	#+BEGIN_EXAMPLE
+	#chkconfig auditd on
+	#+END_EXAMPLE
+    - Implementation ::
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Install Auditd service
+  yum: name=audit state=installed
+- name: start auditd service on boot
+  service: name=auditd enabled=yes
+#+END_SRC
+**** Collect login and logout events
+    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/123][Associated issue on GitLab]]
+   - Impact :: Brute force attacks
+
+   - Recommendations :: Add the following lines to the
+        =/etc/audit/audit.rules= file:
+
+        #+BEGIN_EXAMPLE
+        -w /var/log/lastlog -p wa -k logins
+	-w /var/run/faillock/ -p wa -k logins
+        #+END_EXAMPLE
+   - Implementation ::
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: collecting login and logout events
+  lineinfile: 
+    dest: /etc/audit/audit.rules
+    line: '{{ item }}'
+  with_items:
+   - '-w /var/log/lastlog -p wa -k logins'
+   - '-w /var/run/faillock/ -p wa -k logins'
+
+#+END_SRC
+
+**** Collect the Changes to system administration scope (sudoers)
+    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/126][Associated issue on GitLab]]
+
+    - Impact :: Changes in the =/etc/sudoers= file can
+		indicate that an unauthorized change has been
+		made to scope of system administrator
+		activity.
+
+    - Recommendations :: Add the following lines to the
+         =/etc/audit/audit.rules= file:
+
+         #+BEGIN_EXAMPLE
+         -w /etc/sudoers -p wa -k scope
+	 -w /etc/sudoers.d -p wa -k scope
+         #+END_EXAMPLE
+    - Implementation ::
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: collecting Changes to system administration scope (sudoers)
+  lineinfile: 
+    dest: /etc/audit/audit.rules
+    line: '{{ item }}'
+  with_items:
+   - '-w /etc/sudoers -p wa -k scope'
+   - '-w /etc/sudoers.d -p wa -k scope'
+
+#+END_SRC
+
+**** Collect the file deletion events by users
+    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/125][Associated Issue]]
+
+    - Impact :: Monitoring these calls from non-privileged users could
+		provide a system administrator with evidence that
+		inappropriate removal of files and file attributes
+		associated with protected files is occurring.
+
+    - Recommendations :: For 64 bit systems add the following lines to
+         the /etc/audit/audit.rules file:
+
+         #+BEGIN_EXAMPLE
+         -a always,exit -F arch=b64 -S unlink -S unlinkat -S rename -S renameat -F auid>=500 -F auid!=4294967295 -k delete
+	 -a always,exit -F arch=b32 -S unlink -S unlinkat -S rename -S renameat -F auid>=500 -F auid!=4294967295 -k delete
+         #+END_EXAMPLE
+    - Implementation ::
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: collecting File deletion events by users are not
+  lineinfile: 
+    dest: /etc/audit/audit.rules
+    line: '{{ item }}'
+  with_items:
+   - '-a always,exit -F arch=b64 -S unlink -S unlinkat -S rename -S renameat -F auid>=500 -F auid!=4294967295 -k delete'
+   - '-a always,exit -F arch=b32 -S unlink -S unlinkat -S rename -S renameat -F auid>=500 -F auid!=4294967295 -k delete'
+
+#+END_SRC
+
+**** Collect Unsuccessful unauthorized file access attempts
+    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/124][Associated Issue]]
+    - Impact :: Failed attempts to open, create or truncate files could
+		be an indication that an individual or process is
+		trying to gain unauthorized access to the
+
+
+    - Recommendations :: add the following lines to the
+         /etc/audit/audit.rules file:
+
+         #+BEGIN_EXAMPLE
+	-a  always,exit -F arch=b64 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EACCES -F auid>=500 -F auid!=4294967295 -k access
+	-a always,exit -F arch=b32 -S creat -S open -S openat -S truncate -S open -S openat -S truncate -F auid>=500 -F auid!=4294967295 -k access
+	-a always,exit -F arch=b64 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EPERM -F auid>=500 -F auid!=4294967295 -k access
+	-a always,exit -F arch=b32 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EPERM -F auid>=500 -F auid!=4294967295 -k access
+         #+END_EXAMPLE
+    - Implementation ::
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Collect Unsuccessful unauthorized file access attempts
+  lineinfile: 
+    dest: /etc/audit/audit.rules
+    line: '{{ item }}'
+    state: present
+  with_items:
+   - '-a  always,exit -F arch=b64 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EACCES -F auid>=500 -F auid!=4294967295 -k access'
+   - '-a always,exit -F arch=b32 -S creat -S open -S openat -S truncate -S open -S openat -S truncate -F auid>=500 -F auid!=4294967295 -k access'
+   - '-a always,exit -F arch=b64 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EPERM -F auid>=500 -F auid!=4294967295 -k access'
+   - '-a always,exit -F arch=b32 -S creat -S open -S openat -S truncate -S ftruncate -F exit=-EPERM -F auid>=500 -F auid!=4294967295 -k access'
+
+#+END_SRC
+
+**** Collect the Events that modify the system's network environment
+    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/122][Associated Issue]]
+    - Impact :: Vulnerable to potential unauthorized changes to host
+		and domain name of a system.
+
+    - Recommendations :: add the following lines to the
+         /etc/audit/audit.rules file:
+
+         #+BEGIN_EXAMPLE
+	-a always,exit -F arch=b64 -S sethostname -S setdomainname -k system-locale
+	-a always,exit -F arch=b32 -S sethostname -S setdomainname -k system-locale
+	-w /etc/issue -p wa -k system-locale
+	-w /etc/issue.net -p wa -k system-locale
+	-w /etc/hosts -p wa -k system-locale
+	-w /etc/sysconfig/network -p wa -k system-locale
+
+         #+END_EXAMPLE
+    - Implementation ::
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Collecting Events that modify the system's network environment
+  lineinfile: 
+    dest: /etc/audit/audit.rules
+    line: '{{ item }}'
+    state: present
+  with_items:
+   - '-a always,exit -F arch=b64 -S sethostname -S setdomainname -k system-locale'
+   - '-a always,exit -F arch=b32 -S sethostname -S setdomainname -k system-locale'
+   - '-w /etc/issue -p wa -k system-locale'
+   - '-w /etc/issue.net -p wa -k system-locale'
+   - '-w /etc/hosts -p wa -k system-locale'
+   - '-w /etc/sysconfig/network -p wa -k system-locale'
+
+#+END_SRC
+
+**** Collect the unexpected changes in the system data and time
+    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/121][Associated issue on GitLab]]
+     - Impact :: Unexpected changes in system date and/or time could be
+               a sign of malicious activity on the system.
+
+     - Recommendations :: Add the following lines to the
+          /etc/audit/audit.rules file:
+
+          #+BEGIN_EXAMPLE
+	  -a always,exit -F arch=b64 -S adjtimex
+	  -S settimeofday -k time-change
+	  -a always,exit -F arch=b32 -S adjtimex
+	  -S settimeofday -S stime -k time-change
+	  -a always,exit -F arch=b64clock_settime -k time-change -S
+	  -a always,exit -F arch=b32 -s clock_settime -k time-change
+	  -w /etc/localtime -p wa -k time-change
+
+          #+END_EXAMPLE
+     - Implementation ::
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Enabling audit service
+  lineinfile: 
+    dest: /etc/audit/audit.rules
+    line: '{{ item }}'
+  with_items:
+   - '-a always,exit -F arch=b64 -S adjtimex'
+   - '-S settimeofday -k time-change'
+   - '-a always,exit -F arch=b32 -S adjtimex'
+   - '-S settimeofday -S stime -k time-change'
+   - '-a always,exit -F arch=b64 clock_settime -k time-change -S'
+   - '-a always,exit -F arch=b32 -s clock_settime -k time-change'
+   - '-w /etc/localtime -p wa -k time-change' 
+
+#+END_SRC
+
+**** Do not delete Audit logs automatically. Keep the logs
+    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/120][Associated Issue]]
+    - Impact :: In high-security contexts, the benefits of maintaining
+		a long audit history exceed the cost of storing the
+		audit history
+
+    - Recommendations :: Set the following parameter in
+         /etc/audit/auditd.conf:
+
+         #+BEGIN_EXAMPLE
+	 max_log_file_action = keep_logs
+         #+END_EXAMPLE
+    - Implementation ::
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name:  Audit logs are automatically deleted option
+  lineinfile:
+   dest: /etc/audit/auditd.conf
+   regexp: '.*max_log_file_action = ROTATE.*'
+   line: 'max_log_file_action = keep_logs'
+   state: present
+#+END_SRC
+**** Set Audit log storage size
+    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/119][Associated issue on gitlab]]
+    - Impact :: It is important that an appropriate size is
+		determined for log files so that they do not
+		impact the system and audit data is not lost.
+
+    - Recommendations :: Set the following parameter in
+         =/etc/audit/auditd.conf= in accordance with site
+         policy.
+
+	 #+BEGIN_EXAMPLE
+	 max_log_file = 
+	 #+END_EXAMPLE
+     - Implementation ::
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Audit log storage size
+  lineinfile:
+     name: /etc/audit/auditd.conf
+     backup: yes
+     regexp: "^max_log_file = *"
+     line: "max_log_file = 6"
+     state: present
+#+END_SRC
+
+**** Configure Events that modify date and time information are collected option
+    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/341][Associated issue on gitlab]]
+    - Impact :: Unexpected changes in system date and/or time could be
+		a sign of malicious activity on the system.
+
+    - Recommendations :: add the following lines to the
+         =/etc/audit/audit.rules= file: parameter as follows:
+
+
+	#+BEGIN_EXAMPLE
+	-a always,exit -F arch=b64 -S adjtimex
+	-S settimeofday -k time-change
+	-a always,exit -F arch=b32 -S adjtimex
+	-S settimeofday -S stime -k time-change
+	-a always,exit -F arch=b64 -S clock_settime -k time-change 
+	-a always,exit -F arch=b32 -S clock_settime -k time-change
+	#+END_EXAMPLE
+     - Implementation ::
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Events that modify date and time information are collected option
+  lineinfile:
+    dest: /etc/audit/audit.rules
+    line: '{{ item }}'
+    state: present
+  with_items:
+   - '-a always,exit -F arch=b64 -S adjtimex'
+   - '-S settimeofday -k time-change'
+   - '-a always,exit -F arch=b32 -S adjtimex'
+   - '-S settimeofday -S stime -k time-change'
+   - '-a always,exit -F arch=b64 -S clock_settime -k time-change'
+   - '-a always,exit -F arch=b32 -S clock_settime -k time-change'
+
+#+END_SRC
+
+**** Enable Events that modify the system's network environment are collected
+    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/342][Associated issue on gitlab]]
+    - Impact :: Vulnerable to potential unauthorized changes to host
+		and domain name of a system
+
+    - Recommendations :: add the following lines to the
+         =/etc/audit/audit.rules= file: parameter as follows:
+
+	 #+BEGIN_EXAMPLE
+	 -a always,exit -F arch=b64 -S sethostname -S setdomainname -k system-locale
+	 -a always,exit -F arch=b32 -S sethostname -S setdomainname -k system-locale
+	 -w /etc/issue -p wa -k system-locale
+	 -w /etc/issue.net -p wa -k system-locale
+	 -w /etc/hosts -p wa -k system-locale
+	 -w /etc/sysconfig/network -p wa -k system-locale
+
+	 #+END_EXAMPLE
+
+     - Implementation ::
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Events that modify date and time information are collected option
+  lineinfile:
+    dest: /etc/audit/audit.rules
+    line: '{{ item }}'
+    state: present
+  with_items:
+    - '-a always,exit -F arch=b64 -S sethostname -S setdomainname -k system-locale'
+    - '-a always,exit -F arch=b32 -S sethostname -S setdomainname -k system-locale'
+    - '-w /etc/issue -p wa -k system-locale'
+    - '-w /etc/issue.net -p wa -k system-locale'
+    - '-w /etc/hosts -p wa -k system-locale'
+    - '-w /etc/sysconfig/network -p wa -k system-locale'
+
+#+END_SRC
+**** Collect System administrator actions (sudolog)
+    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/222][Check the issue on GitLab]]
+    - Impact :: Changes in /var/log/sudo.log indicate that an
+		administrator has executed a command or the
+		log file itself has been tampered with.
+	       
+		Administrators will want to correlate the
+		events written to the audit trail with the
+		records written to/var/log/sudo.log to verify
+		if unauthorized commands have been executed.
+    - Recommendations :: Add the following lines to the
+         /etc/audit/audit.rules file:
+      #+BEGIN_EXAMPLE
+      -w /var/log/sudo.log -p wa -k actions
+      #+END_EXAMPLE
+    - Implementation ::
+#+BEGIN_SRC yml :tangle  roles/common/tasks/main.yml
+- name: Collect System administrator actions (sudolog)
+  lineinfile:
+   dest: /etc/audit/audit.rules
+   line: "-w /var/log/sudo.log -p wa -k actions"
+   backup: yes
+#+END_SRC
+    
+**** Collect Session Initiation Information
+    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/437][Check the issue on GitLab]]
+     - Impact :: Monitoring these files for changes could alert a system
+		 administrator to logins occurring at unusual hours,
+		 which could indicate intruder activity
+
+     - Recommendations ::
+			  Add the following lines to the
+			  =/etc/audit/audit.rules= file.
+
+			  #+BEGIN_EXAMPLE
+			  -w /var/run/utmp -p wa -k session
+			  -w /var/log/wtmp -p wa -k session
+			  -w /var/log/btmp -p wa -k session
+
+			  #+END_EXAMPLE
+			  Execute the following command to restart auditd
+			  #+BEGIN_EXAMPLE
+			  #pkill -HUP -P 1 auditd
+
+			  #+END_EXAMPLE
+
+       - Implementation ::
+
+#+BEGIN_SRC yml :tangle  roles/common/tasks/main.yml
+- name: Collect Session Initiation Information
+  lineinfile: 
+   dest: /etc/audit/audit.rules
+   line: '{{ item }}'
+  with_items:
+   - '-w /var/run/utmp -p wa -k session'
+   - '-w /var/log/wtmp -p wa -k session'
+   - '-w /var/log/btmp -p wa -k session'
+
+- name: Restart auditd 
+  action: shell pkill -HUP -P 1 auditd || true
+#+END_SRC
+**** Record Events That Modify User/Group Information
+    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/435][Check the issue on GitLab]]
+    - Impact :: Unexpected changes to these files could be an
+               indication that the system has been compromised and
+               that an unauthorized user is attempting to hide their
+               activities or compromise additional accounts
+
+    - Recommendations ::
+			Add the following lines to the
+                        =/etc/audit/audit.rules= file.
+
+			#+BEGIN_EXAMPLE
+			-w /etc/group -p wa -k identity
+			-w /etc/gshadow -p wa -k identity
+			-w /etc/shadow -p wa -k identity 
+			-w /etc/security/opasswd -p wa -k identity
+			
+			#+END_EXAMPLE
+			Execute the following command to restart auditd
+			#+BEGIN_EXAMPLE
+			#pkill -HUP -P 1 auditd
+
+			#+END_EXAMPLE
+
+    - Implementation ::
+
+#+BEGIN_SRC yml :tangle  roles/common/tasks/main.yml
+- name: Collect Session Initiation Information
+  lineinfile: 
+   dest: /etc/audit/audit.rules
+   line: '{{ item }}'
+  with_items:
+   - '-w /etc/group -p wa -k identity'
+   - '-w /etc/gshadow -p wa -k identity'
+   - '-w /etc/shadow -p wa -k identity'
+   - '-w /etc/security/opasswd -p wa -k identity'
+
+- name: Restart auditd 
+  action: shell pkill -HUP -P 1 auditd || true
+#+END_SRC
+
+**** Make audit configuration immutable
+    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/223][Check the issue on GitLab]]
+    - Impact :: In the immutable mode, unauthorized users
+		cannot execute changes to the audit system to
+		potentially hide malicious activity and then
+		put the audit rules back.
+
+     - Recommendations ::
+			 Add the following line to the end of
+                         the =/etc/audit/audit.rules= file.
+			 #+BEGIN_EXAMPLE
+			 -e 2
+			 #+END_EXAMPLE
+			 for more details check audit.rules
+                         man page
+      - Implementation ::
+#+BEGIN_SRC yml :tangle  roles/common/tasks/main.yml
+- name: Make audit configuration immutable
+  lineinfile:
+   dest: /etc/audit/audit.rules
+   line: "-e 2"
+#+END_SRC
+*** Configure Permissions on logfiles
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/127][Associated issue]]
+
+   - Impact :: It is important to ensure that log files have the
+               correct permissions to ensure that sensitive data is
+               archived and protected.
+
+   - Recommendations :: Run the following command to set permissions
+        on all existing log files:
+
+        #+BEGIN_EXAMPLE
+	#find /var/log -type f -exec chmod g-wx,o-rwx {} +
+        #+END_EXAMPLE
+   - Implementation ::
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Set Permissions on all logfiles
+  command: "find /var/log -type f -exec chmod g-wx,o-rwx {} +"
+
+#+END_SRC
+
+*** Sysctl Configuration
+**** Disable IPv4 Packet redirection
+    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/159][Associated issue on Gitlab]]
+    - Impact :: An attacker could use a compromised host to send
+		invalid ICMP redirects to other router devices in an
+		attempt to corrupt routing and have users access a
+		system set up by the attacker as opposed to a valid
+		system.
+
+    - Recommendations :
+      - Set the following parameters in the
+         /etc/sysctl.conf file
+         #+BEGIN_EXAMPLE
+         #sysctl -w net.ipv4.conf.all.send_redirects=0
+		 #sysctl -w net.ipv4.conf.default.send_redirects=0
+		 #sysctl -w net.ipv4.route.flush=1
+         #+END_EXAMPLE
+
+    	 #+BEGIN_EXAMPLE
+         net.ipv4.conf.all.send_redirects = 0
+		 net.ipv4.conf.default.send_redirects = 0
+         #+END_EXAMPLE
+
+      - Implementation ::
+			 Run the following commands to set
+                         the active kernel parameters
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Inserting a line 
+  lineinfile:
+    name: /etc/sysctl.conf
+    line: net.ipv4.conf.all.send_redirects = 0
+    insertafter: net.ipv4.ip_forward.*
+
+- name: Inserting a line 
+  lineinfile:
+    name: /etc/sysctl.conf
+    line: net.ipv4.conf.default.send_redirects = 0
+    insertafter: net.ipv4.ip_forward.*
+
+- name: Enable port ip forward
+  command:  "{{ item }}"
+  with_items:
+  - sysctl -w net.ipv4.conf.all.send_redirects=0
+  - sysctl -w net.ipv4.conf.default.send_redirects=0
+  - sysctl -w net.ipv4.route.flush=1
+  - sysctl -w net.ipv4.ip_forward=0
+  - sysctl -w net.ipv4.route.flush=1
+#+END_SRC
+**** Enable Reverse Path Filtering
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/110][Associated issue]]
+
+   - Impact :: Vulnerable to attackers from sending your server bogus
+               packets to respond
+
+   - Recommendations :: Set the following parameters in the
+        /etc/sysctl.conf file:
+
+        #+BEGIN_EXAMPLE
+	net.ipv4.conf.all.rp_filter = 1
+	net.ipv4.conf.default.rp_filter = 1
+        #+END_EXAMPLE
+     Run the following commands to set the active kernel parameters:
+        #+BEGIN_EXAMPLE
+        #sysctl -w net.ipv4.conf.all.rp_filter=1
+	#sysctl -w net.ipv4.conf.default.rp_filter=1
+	#sysctl -w net.ipv4.route.flush=1
+        #+END_EXAMPLE
+   - Implementation ::
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Setting the parameters in reverse path
+  lineinfile: 
+   dest: /etc/sysctl.conf
+   line: '{{ item }}'
+  with_items:
+   - 'net.ipv4.conf.all.rp_filter = 1'
+   - 'net.ipv4.conf.default.rp_filter = 1'
+
+- name: Enable reverse path filtering 
+  command: "{{ item }}"
+  with_items:
+   - sysctl -w net.ipv4.conf.all.rp_filter=1
+   - sysctl -w net.ipv4.conf.default.rp_filter=1 
+   - sysctl -w net.ipv4.route.flush=1
+
+#+END_SRC
+
+**** Log the Suspicious packets
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/109][Check the issue]]
+   - Impact :: Spoofed Packets Attack to Server is possible.
+
+   - Recommendations :: Set the following parameters in the
+        /etc/sysctl.conf file:
+
+        #+BEGIN_EXAMPLE
+	net.ipv4.conf.all.log_martians = 1
+	net.ipv4.conf.default.log_martians = 1
+        #+END_EXAMPLE
+      Run the following commands to set the active kernel parameters:
+        #+BEGIN_EXAMPLE
+        #sysctl -w net.ipv4.conf.all.log_martians=1
+	#sysctl -w net.ipv4.conf.default.log_martians =1
+	#sysctl -w net.ipv4.route.flush=1
+        #+END_EXAMPLE
+     
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Inserting a line 
+  lineinfile:
+   name: /etc/sysctl.conf
+   line: net.ipv4.conf.all.log_martians = 1
+   insertafter: net.ipv4.ip_forward.*
+   state: present
+- name: Inserting a line 
+  lineinfile:
+   name: /etc/sysctl.conf
+   line: net.ipv4.conf.default.log_martians = 1
+   insertafter: net.ipv4.ip_forward.*
+   state: present
+- name: Enable reverse path filtering 
+  command: "{{ item }}"
+  with_items:
+   - sysctl -w net.ipv4.conf.all.log_martians=1
+   - sysctl -w net.ipv4.conf.default.log_martians=1
+   - sysctl -w net.ipv4.route.flush=1
+
+#+END_SRC
+   
+**** Do not accept Secure ICMP redirects packets
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/108][Check the issue]]
+
+   - Impact :: Vulnerable to gateway compromise
+
+   - Recommendations :: Set the following parameters in the
+        /etc/sysctl.conf file:
+
+        #+BEGIN_EXAMPLE
+	net.ipv4.conf.all.secure_redirects = 0
+	net.ipv4.conf.default.secure_redirects = 0
+        #+END_EXAMPLE
+      Run the following commands to set the active kernel parameters:
+
+        #+BEGIN_EXAMPLE
+        #sysctl -w net.ipv4.conf.all.secure_redirects=0
+	#sysctl -w net.ipv4.conf.default.secure_redirects=0
+	#sysctl -w net.ipv4.route.flush=1
+        #+END_EXAMPLE
+    - Implementation ::   	
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Inserting a line 
+  lineinfile:
+    name: /etc/sysctl.conf
+    line: net.ipv4.conf.all.secure_redirects = 0
+    insertafter: net.ipv4.ip_forward.*
+    state: present
+- name: Inserting a line 
+  lineinfile:
+    name: /etc/sysctl.conf
+    line: net.ipv4.conf.default.secure_redirects = 0
+    insertafter: net.ipv4.ip_forward.*
+    state: present
+- name: Enable reverse path filtering 
+  command: "{{ item }}"
+  with_items:
+   - sysctl -w net.ipv4.conf.all.secure_redirects=0
+   - sysctl -w net.ipv4.conf.default.secure_redirects=0
+   - sysctl -w net.ipv4.route.flush=1
+
+#+END_SRC
+
+**** Do not accept ICMP redirects
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/107][Check the issue]]
+   - Impact :: Attackers could use bogus ICMP redirect messages to
+               routing tables and get them to send packets to
+               incorrect networks and allow your system packets to be
+               captured.
+
+   - Recommendations :: Set the following parameters in the
+        /etc/sysctl.conf file:
+
+        #+BEGIN_EXAMPLE
+	net.ipv4.conf.all.accept_redirects = 0
+	net.ipv4.conf.default.accept_redirect = 0
+        #+END_EXAMPLE
+      Run the following commands to set the active kernel parameters:
+
+        #+BEGIN_EXAMPLE
+        #sysctl -w net.ipv4.conf.all.accept_redirects=0
+	#sysctl -w net.ipv4.conf.default.accept_redirects=0
+	#sysctl -w net.ipv4.route.flush=1
+        #+END_EXAMPLE
+    - Implementation ::     
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Inserting a line 
+  lineinfile:
+    name: /etc/sysctl.conf
+    line: net.ipv4.conf.all.accept_redirects = 0
+    insertafter: net.ipv4.ip_forward.*
+    state: present
+
+- name: Inserting a line 
+  lineinfile:
+    name: /etc/sysctl.conf
+    line: net.ipv4.conf.default.accept_redirect = 0
+    insertafter: net.ipv4.ip_forward.*
+    state: present
+- name: Enable reverse path filtering 
+  command: "{{ item }}"
+  with_items:
+   - sysctl -w net.ipv4.conf.all.accept_redirects=0
+   - sysctl -w net.ipv4.conf.default.accept_redirects=0
+   - sysctl -w net.ipv4.route.flush=1
+
+#+END_SRC
+
+**** Bogus Messages are accepted with the server
+    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/429][Check the issue on GitLab]]
+     - Impact :: The attacker will send responses that violate and
+		 attempt to fill up a log file system with many error
+		 messages.
+
+     - Recommendations ::
+			 Set the
+			 "net.ipv4.icmp_ignore_bogus_error_responses"
+			 parameter to 1 in =/etc/sysctl.conf=
+
+			 #+BEGIN_EXAMPLE
+			 net.ipv4.icmp_ignore_bogus_error_responses=1 
+
+			 #+END_EXAMPLE
+			 Modify active kernel parameters to match:
+
+			 #+BEGIN_EXAMPLE
+			 #/sbin/sysctl -w net.ipv4.icmp_ignore_bogus_error_responses=1
+			 #/sbin/sysctl -w net.ipv4.route.flush=1
+
+			 #+END_EXAMPLE
+
+      - Implementation ::
+
+#+BEGIN_SRC yml :tangle  roles/common/tasks/main.yml
+- name: Bogus Messages are accepted with the server
+  lineinfile: 
+    dest:  /etc/sysctl.conf
+    line: '{{ item }}'
+  with_items:
+    - 'net.ipv4.icmp_ignore_bogus_error_responses=1'
+
+- name: Modify active kernel parameters to match
+  command: "{{ item }}"
+  with_items:
+    - /sbin/sysctl -w net.ipv4.icmp_ignore_bogus_error_responses=1
+    - /sbin/sysctl -w net.ipv4.route.flush=1
+
+#+END_SRC
+**** Ignore Broadcast ICMP requests
+    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/292][Check the issue on GitLab]]
+    - Impact :: Smurf Attacks: Relies on an attacker sending large
+               amounts of ICMP broadcast messages with a spoofed
+               source address.
+
+    - Recommendations ::
+			Set the following parameter in
+                        =/etc/sysctl.conf= or a =/etc/sysctl.d/*=
+                        file:
+
+			#+BEGIN_EXAMPLE
+			net.ipv4.icmp_echo_ignore_broadcasts = 1
+
+			#+END_EXAMPLE
+			Run the following commands to set the active
+                        kernel parameters:
+
+			#+BEGIN_EXAMPLE
+			#sysctl -w net.ipv4.icmp_echo_ignore_broadcasts=1
+			#sysctl -w net.ipv4.route.flush=1
+			#+END_EXAMPLE
+
+    - Implementation ::
+
+#+BEGIN_SRC yml :tangle  roles/common/tasks/main.yml
+- name: Broadcast ICMP requests are not ignored 
+  lineinfile: 
+    dest:  /etc/sysctl.conf
+    line: '{{ item }}'
+  with_items:
+   - 'net.ipv4.icmp_echo_ignore_broadcasts = 1'
+
+- name: set the active kernel parameters
+  command: "{{ item }}"
+  with_items:
+  - sysctl -w net.ipv4.icmp_echo_ignore_broadcasts=1
+  - sysctl -w net.ipv4.route.flush=1
+
+#+END_SRC
+*** NTP service
+**** Set Time synchronization
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/102][Check the issue]]
+
+   - Impact :: Time synchronization is important to support
+               time-sensitive security mechanisms like Kerberos and
+               also ensures log files have consistent time records
+               across the enterprise, which aids in forensic
+               investigations.
+
+   - Recommendations :: On physical systems or virtual systems where
+        host-based time synchronization is not available run one of
+        the following commands to install either NTP:
+
+        #+BEGIN_EXAMPLE
+	#yum install ntp
+
+        #+END_EXAMPLE
+     On virtual systems where host-based time synchronization is
+        available to consult your virtualization software
+        documentation and setup host based synchronization.
+   - Implementation ::     
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: install the latest version of ntp
+  yum:
+     name: ntp
+     state: latest
+  ignore_errors: yes
+   #+END_SRC
+**** Configure NTP service
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/103][Check the issue]]
+
+   - Impact :: It is designed to synchronize system clocks across a
+               variety of systems and use a source that is highly
+               accurate.
+
+   - Recommendations :: Add or edit restrict lines in =/etc/ntp.conf= to
+        match the following:
+
+        #+BEGIN_EXAMPLE
+	Add or edit restrict lines in /etc/ntp.conf to match the following:
+	restrict -4 default kod nomodify notrap nopeer noquery
+	restrict -6 default kod nomodify notrap nopeer noquery
+        #+END_EXAMPLE
+     Add or edit server lines /etc/ntp.conf as appropriate: server
+
+     Add or edit the OPTIONS in /etc/sysconfig/ntpd to include '-u
+        ntp:ntp': OPTIONS="-u ntp:ntp"
+   - Implementation ::     
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Install ntp 
+  yum: name=ntp state=installed
+
+- name:  configuring ntp files
+  lineinfile:
+   dest: /etc/ntp.conf
+   regexp: '.*restrict default kod nomodify notrap nopeer noquery.*'
+   line: 'restrict -4 default kod nomodify notrap nopeer noquery'
+   state: present
+- name:  configuring ntp files
+  lineinfile:
+   dest: /etc/ntp.conf
+   regexp: '.*restrict -6 default kod nomodify notrap nopeer noquery.*'
+   line: 'restrict -6 default kod nomodify notrap nopeer noquery'
+   state: present
+- name: Inserting a line 
+  lineinfile:
+    name: /etc/sysconfig/ntpd
+    line: OPTIONS="-u ntp:ntp"
+    insertafter: OPTIONS.*
+    state: present
+
+#+END_SRC
+
+*** Remove/stop/disable Talk server
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/104][Check the issue]]
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/100][Check this issue( duplicate)]]
+
+   - Impact :: The software presents a security risk as it uses
+               unencrypted protocols for communication.
+
+   - Recommendations :: Run the following command to disable talk:
+
+        #+BEGIN_EXAMPLE
+	#chkconfig talk off
+        #+END_EXAMPLE
+
+   - Implementation ::      
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name:  stop the talk service onboot 
+  action: command /sbin/chkconfig talk off
+  ignore_errors: yes
+#+END_SRC
+*** Remove/Stop/disable Telnet server
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/100][Check the issue]] and [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/104][this]]
+
+   - Impact :: The telnet protocol is insecure and unencrypted. The
+               use of an unencrypted transmission medium could allow
+               an unauthorized user to steal credentials. The ssh
+               package provides an encrypted session and stronger
+               security and is included in most Linux distributions.
+
+   - Recommendations :: Run the following command to disable telnet:
+
+        #+BEGIN_EXAMPLE
+	#yum remove telnet
+        #+END_EXAMPLE
+   - Implementation ::	
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: remove the telnet package
+  yum:
+   name: telnet
+   state: absent 
+  ignore_errors: yes
+#+END_SRC
+
+*** Configure Remote login warning banner
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/96][Associated issue on gitlab]]
+   - Impact :: Vulnerable to providing detailed system
+               information to attackers attempting to target
+               specific exploits of a system.
+   - Recommendations :: Edit the =/etc/issue.net= file with
+        the appropriate contents according to your site
+        policy, remove any instances of \m, \r, \s, or \v
+	#+BEGIN_EXAMPLE
+	#echo "Authorized uses only.\n
+        All activity may be monitored and reported." > /etc/issue.net
+	#+END_EXAMPLE
+   - Implementation :: 	
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Backup of /etc/issue.net file
+  command: 'cp /etc/issue.net /etc/issue.net-default'
+- name: Remote login warning banner
+  shell: 'echo -e "Authorized uses only.\nAll activity may be monitored and reported." > /etc/issue.net'
+#+END_SRC
+*** Local login warning banner
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/95][Associated issue on gitlab]]
+   - Impact :: Vulnerable to detailed system Vulnerable to a
+               detailed system attempting to target specific
+               exploits of a system.
+   - Recommendations :: Edit the /etc/issue file with the
+        appropriate contents according to your site policy,
+        remove any instances of \m, \r, \s, or \v.
+	#+BEGIN_EXAMPLE
+	#echo "Authorized uses only.
+	All activity may be monitored and reported." > /etc/issue
+	#+END_EXAMPLE
+    - Implementation ::
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Backup of /etc/issue  file
+  command: 'cp /etc/issue /etc/issue-default'
+
+- name: Local login warning banner
+  shell: 'echo -e "Allowed Authorized uses/users only.\nAll activity may be monitored and reported." > /etc/issue'
+#+END_SRC
+*** Set Message of the day in /etc/motd
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/94][Associated issue on gitlab]]
+   - Impact :: Vulnerable to providing detailed system
+               information to attackers attempting to target
+               specific exploits of a system.
+   - Recommendations :: Edit the =/etc/motd= file with the
+        appropriate contents according to your site policy,
+        remove any instances of \m, \r, \s, or \v.
+   - Implementation ::	
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Backup of /etc/motd file
+  command: 'cp /etc/motd /etc/motd-default'
+- name: Set Message in motd 
+  shell: 'echo -e "`date` \nIts Virtual-Labs. \nAllowed Authorized uses/users only.\nAll activity may be monitored and reported." > /etc/motd'
+#+END_SRC
+*** Configure /etc/hosts.allow
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/212][Associated issue on gitlab]]
+   - Impact :: The /etc/hosts.allow file supports access
+               control by IP and helps ensure that only
+               authorized systems can connect to the system.
+
+   - Recommendations :: Run the following command to create
+        =/etc/hosts.allow=.
+	#+BEGIN_EXAMPLE
+	#echo "ALL: /, /, ..." >/etc/hosts.allow 	
+	#+END_EXAMPLE
+   - Implementation ::
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Configure /etc/hosts.allow
+  lineinfile: 
+     name: /etc/hosts.allow
+     regexp: "^ALL"
+     line: "ALL: 10.100.0.0/255.255.252.0, 10.0.0.0/255.255.252.0, .vlabs.ac.in"
+#+END_SRC
+
+*** File Permissions
+*** Set file permissions to /etc/issue
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/98][Check the issue]]
+
+   - Impact :: If the =/etc/issue= file does not have the correct
+               ownership it could be modified by unauthorized users
+               with incorrect or misleading information.
+
+   - Recommendations :: Run the following commands to set permissions
+        on =/etc/issue=:
+
+        #+BEGIN_EXAMPLE
+	#chown root:root /etc/issue
+	#chmod 644 /etc/issue
+        #+END_EXAMPLE
+   - Implementation ::
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Permissions on /etc/issue
+  command: "{{ item }}"
+  with_items:
+   - chown root:root /etc/issue
+   - chmod 644 /etc/issue
+
+#+END_SRC
+*** Set file permissions to /etc/issue.net
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/99][Check the issue]]
+   - Impact :: Vulnerable to remote login attacks.
+
+   - Recommendations :: Run the following commands to set permissions
+        on =/etc/issue.net=:
+
+        #+BEGIN_EXAMPLE
+	#chown root:root /etc/issue.net
+	#chmod 644 /etc/issue.net
+        #+END_EXAMPLE
+   - Implementation ::
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Permissions on /etc/issue.net
+  command: "{{ item }}"
+  with_items:
+   - chown root:root /etc/issue.net
+   - chmod 644 /etc/issue.net
+#+END_SRC
+*** Set file Permissions to /etc/motd
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/97][Check the issue]]
+
+   - Impact :: If the =/etc/motd= file does not have the correct
+               ownership it could be modified by unauthorized users
+               with incorrect or misleading information.
+
+   - Recommendations :: Run the following commands to set permissions
+        on =/etc/motd=:
+
+        #+BEGIN_EXAMPLE
+	#chown root:root /etc/motd
+	#chmod 644 /etc/motd
+        #+END_EXAMPLE
+   - Implementation ::
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Permissions on /etc/motd
+  command: "{{ item }}"
+  with_items:
+   - chown root:root /etc/motd
+   - chmod 644 /etc/motd
+
+#+END_SRC
+
+*** Set file Permissions to /etc/hosts.allow
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/114][Check the issue]]
+   - Impact :: With a default accept policy the firewall will accept
+               any packet that is not configured to be denied. It is
+               easier to whitelist acceptable usage than to blacklist
+               unacceptable usage.
+
+   - Recommendations :: Run the following command to set permissions
+        on /etc/hosts.allow:
+
+        #+BEGIN_EXAMPLE
+	#chown root:root /etc/hosts.allow
+	#chmod 644 /etc/hosts.allow
+        #+END_EXAMPLE
+   - Implementation ::
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Permissions on /etc/hosts.allow
+  command: "{{ item }}"
+  with_items:
+   - chown root:root /etc/hosts.allow
+   - chmod 644 /etc/hosts.allow 
+
+#+END_SRC
+
+*** Set file Permissions to /etc/hosts.deny
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/431][Check the issue]]
+   - Impact :: With a default accept policy the firewall will accept
+               any packet that is not configured to be denied. It is
+               easier to whitelist acceptable usage than to blacklist
+               unacceptable usage.
+
+   - Recommendations :: Run the following command to set permissions
+        on /etc/hosts.allow:
+
+        #+BEGIN_EXAMPLE
+	#chown root:root /etc/hosts.deny
+	#chmod 644 /etc/hosts.deny
+        #+END_EXAMPLE
+   - Implementation ::
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Permissions on /etc/hosts.allow
+  command: "{{ item }}"
+  with_items:
+   - chown root:root /etc/hosts.deny
+   - chmod 644 /etc/hosts.deny
+
+#+END_SRC
+
+*** Set Permissions to /etc/crontab
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/171][Check the same issue on GitLab]]
+   - Impact :: 
+	       Write access to these files could provide
+               unprivileged users with the ability to
+               elevate their privileges.
+   - Recommendations :: 
+        Run the following commands to set ownership and
+        permissions on =/etc/crontab=
+        #+BEGIN_EXAMPLE
+        #chown root:root /etc/crontab
+	#chmod og-rwx /etc/crontab
+        #+END_EXAMPLE
+   - Implementation ::
+#+BEGIN_SRC  yml :tangle  roles/common/tasks/main.yml
+- name: Set Permissions to /etc/crontab
+  command: "{{ item }}"
+  with_items:
+    - "chown root:root /etc/crontab"
+    - "chmod og-rwx /etc/crontab"
+#+END_SRC
+*** Check file system integrity
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/87][Issue on GitLab]]
+   - Impact :: Vulnerable to critical files have been
+               changed in an unauthorized fashion.
+   - Recommendations ::  
+	#+BEGIN_EXAMPLE
+	#crontab -u root ¡Ve	
+	#+END_EXAMPLE
+	Add the following line to the crontab
+	#+BEGIN_EXAMPLE
+	0 5 * * * /usr/sbin/aide --check
+	#+END_EXAMPLE
+   - Implementation :: 
+#+BEGIN_SRC yml :tangle  roles/common/tasks/main.yml
+- name: Check File System integrity using AIDE
+  cron:
+   name: "Check file system integrity check"
+   minute: "0"
+   hour: "5"
+   job: "/usr/sbin/aide --check"
+#+END_SRC
+*** Limit the Password reuse
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/299][Check the issue on GitLab]]
+   - Impact :: Forcing users not to reuse their past 5 passwords make
+               it less likely that an attacker will be able to guess
+               the password
+
+    - Recommendations ::
+			Edit the =/etc/pam.d/password-auth= and
+                        =/etc/pam.d/system-auth= files to include the
+                        remember option and conform to site policy as
+                        shown:
+
+			#+BEGIN_EXAMPLE
+			Password sufficient pam_unix.so remember=5
+			
+			#+END_EXAMPLE
+
+
+     - Implementation ::
+
+#+BEGIN_SRC yml :tangle  roles/common/tasks/main.yml
+- name: Password reuse is not limited
+  lineinfile: 
+   dest: /etc/pam.d/password-auth
+   line: '{{ item }}'
+  with_items:
+    - 'password sufficient pam_unix.so remember=5'
+
+
+#+END_SRC
+*** Restrict Core dumps
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/282][Check the issue on GitLab]]
+   - Impact :: A core dump is the memory of an executable program. It
+               is generally used to determine why a program
+               aborted. It can also be used to glean confidential
+               information from a core file. The system provides the
+               ability to set a soft limit for core dumps, but this
+               can be overridden by the user.
+
+    - Recommendations ::
+			Add the following line to
+                        =/etc/security/limits.conf= or a
+                        =/etc/security/limits.d/*= file:
+
+			#+BEGIN_EXAMPLE
+			*hard core 0
+
+			#+END_EXAMPLE
+			Set the following parameter in
+                        =/etc/sysctl.conf= or a =/etc/sysctl.d/*=
+                        file:
+
+			#+BEGIN_EXAMPLE
+			fs.suid_dumpable = 0 
+
+			#+END_EXAMPLE
+			Run the following command to set the active
+                        kernel parameter:
+
+			#+BEGIN_EXAMPLE
+			#sysctl -w fs.suid_dumpable=0
+			#+END_EXAMPLE
+
+     - Implementation ::
+
+#+BEGIN_SRC yml :tangle  roles/common/tasks/main.yml
+- name: Set the core dumps
+  lineinfile: 
+   dest:  /etc/security/limits.conf
+   line: '{{ item }}'
+  with_items:
+    - '*               hard    core            0'
+
+- name: Set the core dumps
+  lineinfile: 
+   dest: /etc/sysctl.conf
+   line: '{{ item }}'
+  with_items:
+   - 'fs.suid_dumpable = 0'
+
+- name: set the active kernel parameter
+  command: "sysctl -w fs.suid_dumpable=0"
+#+END_SRC
+*** Daemon service like xinetd is setup in listed in start-up conditions.
+
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/423][Associated issue on GitLab]]   
+   - Impact :: If there are no xinetd services required, it is
+               recommended that the daemon be disabled.
+
+   - Recommendations :: Remove or comment out start lines in
+        =/etc/init/xinetd.conf=:
+
+	#+BEGIN_EXAMPLE
+	#start on runlevel [2345]
+	#+END_EXAMPLE
+   - Implementation ::
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: stop xinetd service on boot
+  service: name=xinetd enabled=yes
+  ignore_errors: yes
+#+END_SRC
+#+END_SRC
+*** Configure /etc/hosts.deny
+   - Impact ::  The =/etc/hosts.deny= file serves as a
+                failsafe so that any host not specified in
+                =/etc/hosts.allow= is denied access to the
+                system.
+
+   - Recommendations :: Run the following command to create
+        /etc/hosts.deny.
+
+	#+BEGIN_EXAMPLE
+	#echo "ALL: ALL" >> /etc/hosts.deny
+	#+END_EXAMPLE
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Configure /etc/hosts.deny
+  lineinfile: 
+    name: /etc/hosts.deny
+    regexp: "ALL: ALL"
+    line: "ALL: ALL"
+#+END_SRC
+
 *** Configure Hostname
    Hostname is set inside each node in the cluster. Hostname represent
    the name of the main server that is installed in the node.
@@ -635,53 +2391,8 @@ nameserver {{private_dns}}
     - setup_private_dns
 #+END_SRC
 
-*** COMMENT SSH Hardening
-   All the servers in the cluster are made secure by hardening *ssh*
-   service. SSH configuration file =/etc/ssh/sshd_config= is
-   customized as per the requirement.
 
-**** Permit Root Login without password
-   Only system administrators with ssh private key can login as Root.
-
-#+BEGIN_EXAMPLE
-#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
-- name: Permit root login without-password(key based)
-  lineinfile: dest=/etc/ssh/sshd_config regexp='PermitRootLogin ' line='PermitRootLogin without-password' state=present
-#+END_SRC
-#+END_EXAMPLE
-
-**** Disable Password based access
-   Password based access is disabled.
-#+BEGIN_EXAMPLE
-#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
-- name: Disable Password authentication
-  lineinfile: dest=/etc/ssh/sshd_config regexp='PasswordAuthentication ' line='PasswordAuthentication no'
-#+END_SRC
-#+END_EXAMPLE
-
-**** Enable Key based authentication
-   Only key based access is enabled.
-#+BEGIN_EXAMPLE
-#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
-- name: Enable Public key authentication
-  lineinfile: dest=/etc/ssh/sshd_config regexp='PubkeyAuthentication ' line='PubkeyAuthentication yes'
-#+END_SRC
-#+END_EXAMPLE
-
-**** Do not permit empty passwords
-   Users are not allowed to set empty-password.
-#+BEGIN_EXAMPLE
-#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
-- name: Do not permit empty password, also ensure proper owner, group and permissions
-  lineinfile: dest=/etc/ssh/sshd_config regexp='PermitEmptyPasswords ' line='PermitEmptyPasswords no' mode=0600 owner=root group=root
-
-#Call handler to restart sshd
-  notify:
-      - restart sshd
-#+END_SRC
-#+END_EXAMPLE
-
-*** COMMENT Install Bind Utilities
+*** Install Bind Utilities
    Bind utilities are installed on all the servers in the cluster. This package
    includes programs such as *nslookup*, *dig* and *host*. These utilities are
    used by system administrators to trouble shoot the network related issues.
@@ -695,7 +2406,7 @@ nameserver {{private_dns}}
 #+END_SRC
 #+END_EXAMPLE
 
-*** COMMENT Disable Root Login
+*** Disable Root Login
    Root login is disabled on all the servers in the cluster. Password
    for the root account is set to a value which matches no possible
    encrypted value, therefore nobody can login as root with
@@ -731,7 +2442,7 @@ sudo passwd root
 sudo passwd -u root
 #+END_EXAMPLE
 
-*** COMMENT Remove sudoers package
+*** Remove sudoers package
    We can do two things with sudoers package. The current scripts
    perhaps does remove it, but we can always rewrite them.
 
