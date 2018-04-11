@@ -828,14 +828,14 @@ the variables used by the ansible playbooks.
 			#+END_EXAMPLE
 
      - Implementation ::
-			#+BEGIN_SRC yml :tangle  roles/common/tasks/main.yml
+#+BEGIN_SRC yml :tangle  roles/common/tasks/main.yml
 - name: Limit Access via SSH
   lineinfile: 
     dest: /etc/ssh/sshd_config
     line: '{{ item }}'
   with_items:
-    - 'AllowUsers root'
-			#+END_SRC
+    - 'AllowUsers root, vlead'
+#+END_SRC
 **** Set Lockout for Failed Password Attempts
    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/439][Check the issue on GitLab]]
    - Impact :: Vulnerable to brute force password attacks against your
