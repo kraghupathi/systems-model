@@ -4,7 +4,7 @@
 #+PROPERTY: results output
 #+PROPERTY: exports code
 #+OPTIONS: ^:nil
-\#+SETUPFILE: org-templates/level-0.org
+#+SETUPFILE: org-templates/level-0.org
 
 * Introduction
   This document describes the requirements, design and implementation
@@ -494,16 +494,16 @@ export HISTTIMEFORMAT HISTSIZE HISTFILESIZE
 #+END_SRC
 
 *** Setup /etc/hosts file
-   Sendmail tries to lookup hostname and IP mapping through
-   =/etc/hosts=. Sendmail assumes the first line in =/etc/hosts= is
-   the nodes own FQDN to IP mapping without this sendmail takes about
-   30 seconds to timeout for host resolution. To take care of this
-   assumption of sendmail =/etc/hosts= file is configured.
-
-   Following variables are set by the ansible playbook scripts as it
-   runs on the client node. For each server in the cluster value of
-   these variables will be different and set according to the server
-   role.
+    Sendmail tries to lookup hostname and IP mapping through
+    =/etc/hosts=. Sendmail assumes the first line in =/etc/hosts= is
+    the nodes own FQDN to IP mapping without this sendmail takes about
+    30 seconds to timeout for host resolution. To take care of this
+    assumption of sendmail =/etc/hosts= file is configured.
+    
+    Following variables are set by the ansible playbook scripts as it
+    runs on the client node. For each server in the cluster value of
+    these variables will be different and set according to the server
+    role.
 
 |-------+------------------------------+-------------------------------+--------------------------|
 | S.no. | Variable Name                | Description                   | Example                  |
