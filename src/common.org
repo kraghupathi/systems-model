@@ -564,10 +564,11 @@ the variables used by the ansible playbooks.
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
 - name: Owner permissions on boot loader configuration file
   command: chown root:root /boot/grub/grub.conf
+  ignore_errors: yes
 
 - name: Permissions on boot loader configuration file
   command: chmod og-rwx /boot/grub/grub.conf
-  
+  ignore_errors: yes  
 #+END_SRC
 
 *** SELinux 
