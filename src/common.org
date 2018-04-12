@@ -1,3 +1,4 @@
+
 #+Title: Common Roles
 #+Date: April 9, 2015. Thursday
 #+PROPERTY: session *scratch*
@@ -1839,7 +1840,7 @@ the variables used by the ansible playbooks.
   lineinfile: 
      name: /etc/hosts.allow
      regexp: "^ALL"
-     line: "ALL: 10.100.0.0/255.255.252.0, 10.0.0.0/255.255.252.0, .vlabs.ac.in"
+     line: "ALL: 10.100., .vlabs.ac.in"
 #+END_SRC
 
 *** File Permissions
