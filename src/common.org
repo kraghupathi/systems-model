@@ -1824,11 +1824,11 @@ the variables used by the ansible playbooks.
   shell: 'echo -e "`date` \nIts Virtual-Labs. \nAllowed Authorized uses/users only.\nAll activity may be monitored and reported." > /etc/motd'
 #+END_SRC
 *** Configure /etc/hosts.allow
-   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/212][Associated issue on gitlab]]
+    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/212][Associated issue on gitlab]]
    - Impact :: The /etc/hosts.allow file supports access
                control by IP and helps ensure that only
                authorized systems can connect to the system.
-
+	       
    - Recommendations :: Run the following command to create
         =/etc/hosts.allow=.
 	#+BEGIN_EXAMPLE
@@ -1840,7 +1840,7 @@ the variables used by the ansible playbooks.
   lineinfile: 
      name: /etc/hosts.allow
      regexp: "^ALL"
-     line: "ALL: 10.100., .vlabs.ac.in"
+     line: "ALL: 10.100., 10.2., .vlabs.ac.in"
 #+END_SRC
 
 *** File Permissions
