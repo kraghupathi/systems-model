@@ -369,6 +369,36 @@ the variables used by the ansible playbooks.
     COMMIT
     #+END_EXAMPLE
 ** Tasks
+*** Set Default Gateway
+   In the cluster only two nodes - Router node and Ansible node, are
+   part of both public and the private network. Gateway of these two
+   nodes are set by the dhcp server, and these nodes have direct
+   internet access.
+
+   All the other nodes in the cluster are only part of the private
+   network. These nodes do not have direct internet access. These
+   nodes get internet by forwarding requests to the router node, then
+   the router does the required packet management to get internet for
+   these nodes. Router node acts as a gateway for all the private
+   servers.
+
+   To configure default gateway for private servers following actions
+   are performed:
+   1) Remove any default gateway if set already.
+   2) Set default gateway as Router.
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: setting the default gw, skips if router or ansible server
+  shell: route del default; route add default gw {{router_internal_ip}}
+  when: not ( i_ans is defined or i_router is defined )
+  ignore_errors: yes
+
+- name: make this route persistent after reboot
+  lineinfile: line="route del default; route add default gw {{router_internal_ip}}" destfile=/etc/rc.local state=present regexp="route *"
+  when: not ( i_ans is defined or i_router is defined )
+
+#+END_SRC
+
 *** Installation of Aide 
     [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/86][Associated issue on gitlab]]
     - Impact :: Malicious misconfigurations of the file
@@ -2128,36 +2158,6 @@ the variables used by the ansible playbooks.
 - name: Set the hostname of the target if host_name is defined
   lineinfile: dest=/etc/sysconfig/network regexp="HOSTNAME=" line="HOSTNAME={{host_name}}" state=present
   when: host_name is defined
-
-#+END_SRC
-
-*** Set Default Gateway
-   In the cluster only two nodes - Router node and Ansible node, are
-   part of both public and the private network. Gateway of these two
-   nodes are set by the dhcp server, and these nodes have direct
-   internet access.
-
-   All the other nodes in the cluster are only part of the private
-   network. These nodes do not have direct internet access. These
-   nodes get internet by forwarding requests to the router node, then
-   the router does the required packet management to get internet for
-   these nodes. Router node acts as a gateway for all the private
-   servers.
-
-   To configure default gateway for private servers following actions
-   are performed:
-   1) Remove any default gateway if set already.
-   2) Set default gateway as Router.
-
-#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
-- name: setting the default gw, skips if router or ansible server
-  shell: route del default; route add default gw {{router_internal_ip}}
-  when: not ( i_ans is defined or i_router is defined )
-  ignore_errors: yes
-
-- name: make this route persistent after reboot
-  lineinfile: line="route del default; route add default gw {{router_internal_ip}}" destfile=/etc/rc.local state=present regexp="route *"
-  when: not ( i_ans is defined or i_router is defined )
 
 #+END_SRC
 
