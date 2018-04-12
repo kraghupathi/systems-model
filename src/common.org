@@ -388,6 +388,7 @@ the variables used by the ansible playbooks.
    2) Set default gateway as Router.
 
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+---
 - name: setting the default gw, skips if router or ansible server
   shell: route del default; route add default gw {{router_internal_ip}}
   when: not ( i_ans is defined or i_router is defined )
@@ -422,7 +423,6 @@ the variables used by the ansible playbooks.
 	  #+END_EXAMPLE
      - Implementation :: 
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
----
 - name: install the latest version of Aide
   yum:
       name: aide
