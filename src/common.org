@@ -400,6 +400,325 @@ the variables used by the ansible playbooks.
 
 #+END_SRC
 
+*** Configure Hostname
+   Hostname is set inside each node in the cluster. Hostname represent
+   the name of the main server that is installed in the node.
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+#This will use the variables defined in the role sepcific yaml file, works only on CentOS
+- name: Set the hostname of the target if host_name is defined
+  lineinfile: dest=/etc/sysconfig/network regexp="HOSTNAME=" line="HOSTNAME={{host_name}}" state=present
+  when: host_name is defined
+
+#+END_SRC
+
+*** Block Malicious Attacks
+   Nodes in the cluster are protected against Brute-force attacks. For
+   this *Fail2ban* service is configured on all the nodes. It bans an
+   offensive host by adding rule in firewall and also sends an email
+   alerts to the system administrator. When the firewall rule for
+   offensive host is added, the attacker can not connect to the
+   cluster for a limited period of time.
+
+   To configure Fail2ban following actions are performed:
+   1) Install epel repo
+   2) Install fail2ban
+   3) Start fail2ban service
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Install epel RPM
+  yum: name=epel-release state=present
+  environment: proxy_env
+
+#Install fail2ban and enable it on startup
+- name: Install fail2ban
+  yum: name=fail2ban state=present
+
+- name: Start and enable fail2ban service
+  service: name=fail2ban state=started enabled=yes
+#+END_SRC
+
+*** Save History of Executed Commands
+   Commands executed on the servers are logged with the time
+   stamp. These logged commands can be referred by the system
+   administrator to trouble shoot any issues on the server.
+
+   To save history of commands a shell script is created and placed
+   inside =/etc/profile.d= directory. Scripts present inside the
+   =/etc/profile.d= directory gets executed at the start of every new
+   session.
+
+   Following history parameters are set:
+
+    - HISTTIMEFORMAT :: sets the time format of time stamp
+    - HISTSIZE       :: sets the number of lines or commands that are
+                        stored in memory in a history list while bash
+                        session is ongoing
+    - HISTFILESIZE   :: sets the number of lines or commands that are allowed in
+                        the history file at start up time of a session, and are
+                        stored in the history file at the end of bash session
+                        for use in future sessions.
+
+#+BEGIN_SRC shell :tangle roles/common/files/history.sh
+#!/bin/bash
+
+HISTTIMEFORMAT="%y %m %d %T"
+HISTSIZE=100000
+HISTFILESIZE=100000
+export HISTTIMEFORMAT HISTSIZE HISTFILESIZE
+#+END_SRC 
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: For below task to run it requires libselinux-python to be installed
+  yum: name=libselinux-python state=present
+#Configure history
+- name: Configure history for all users with date/time and 100,000 lines of history
+  copy: src=history.sh dest=/etc/profile.d/history.sh mode=755 owner=root group=root
+#+END_SRC 
+
+*** Start iptables service
+   While setting up the cluster, iptables service is restarted on all
+   the servers - to make sure the service is running inside each
+   server. If anyone inserts a temporary or adhoc rule using terminal
+   commands such as =iptables -A INPUT -p tcp --dport 80 -j ACCEPT=,
+   the rules will not be saved in the file. These rules we assume are
+   not necessary for the system, so restarting "iptables" will remove
+   these inserted rules.
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+#Restart iptables
+- name: Restart iptables service 
+#checking whether iptables is running is pointless
+#restart would fail if there is no /etc/sysconfig/iptables file
+  service: name=iptables state=restarted
+  ignore_errors: yes
+#+END_SRC
+
+*** Setup /etc/hosts file
+    Sendmail tries to lookup hostname and IP mapping through
+    =/etc/hosts=. Sendmail assumes the first line in =/etc/hosts= is
+    the nodes own FQDN to IP mapping without this sendmail takes about
+    30 seconds to timeout for host resolution. To take care of this
+    assumption of sendmail =/etc/hosts= file is configured.
+    
+    Following variables are set by the ansible playbook scripts as it
+    runs on the client node. For each server in the cluster value of
+    these variables will be different and set according to the server
+    role.
+
+|-------+------------------------------+-------------------------------+--------------------------|
+| S.no. | Variable Name                | Description                   | Example                  |
+|-------+------------------------------+-------------------------------+--------------------------|
+|    1. | ansible_default_ipv4.address | defines the system ip address | 10.1.100.8               |
+|-------+------------------------------+-------------------------------+--------------------------|
+|    2. | ansible_fqdn                 | define the system fqdn        | ossec.virtual-labs.ac.in |
+|-------+------------------------------+-------------------------------+--------------------------|
+|    3. | ansible_hostname             | defines the system hostnames  | ossec                    |
+|-------+------------------------------+-------------------------------+--------------------------|
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+#Setup /etc/hosts
+- name: Configure hostname and fqdn to resolve to local IP on first line of /etc/hosts
+#Necessary for containers so that they can send emails without 30 second delay
+  lineinfile: dest=/etc/hosts regexp="{{ansible_default_ipv4.address}} {{ansible_fqdn}} {{ansible_hostname}}" insertbefore="BOF" line="{{ansible_default_ipv4.address}} {{ansible_fqdn}} {{ansible_hostname}}"
+#+END_SRC
+
+*** setup aliases
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+#Setup /etc/aliases
+- name: Configure aliases in /etc/aliases
+#Necessary for containers so that they can send emails to alerts@vlabs.ac.in
+  lineinfile: "dest=/etc/aliases regexp='^root: *' line='root: alerts@vlabs.ac.in'"
+- name: update aliases database by running newaliases
+  shell: newaliases
+  notify:
+   - restart sendmail
+#+END_SRC
+
+*** Install vim
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+#Necessary for containers as a editor
+- name: installing vim
+  yum: name=vim state=present
+#+END_SRC
+
+*** Summary of Log files
+   Servers and applications create "log files" to keep track of the
+   events happening inside the system at any given time. These log
+   files are used for analysis of the system.
+
+   To generate a unified report of all log files and send to system
+   administrator *Logwatch* service is configured on all the servers
+   in the cluster.
+
+   To configure logwatch following actions are performed:
+   1) Install "logwatch" tool
+   2) Set detail of log level to "medium"
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+#Logwatch configuration
+- name: Install logwatch
+  yum: name=logwatch state=installed
+  environment: proxy_env
+
+- name: Configure detailed logging via logwatch
+  lineinfile: line="Detail = High" dest=/etc/logwatch/conf/logwatch.conf regexp="^Detail ="  
+#+END_SRC
+
+*** Configure mail service
+   Sendmail service is configured on all the servers in the
+   cluster. Services such as "logwatch" uses "sendmail" service to
+   send mail alerts to the system administrator.
+
+   To configure sendmail following actions are performed:
+   1) Install sendmail
+   2) Ensure postfix is stopped and disabled
+   3) Set smtp smart host
+   4) Start sendmail service
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+#SMTP configuration
+- name: Install sendmail SMTP server for outgoing email
+  yum: name=sendmail state=installed
+  environment: proxy_env
+
+- name: Ensure that postfix is stopped and disabled
+  service: name=postfix enabled=no state=stopped
+#if postfix is not present ignore error
+  ignore_errors: yes
+
+- name: Configure SMART_HOST if necessary
+  lineinfile: line="define(`SMART_HOST', `{{smtp_smart_host}}')dnl" regexp="SMART_HOST" dest="/etc/mail/sendmail.mc"
+  when: smtp_smart_host != "none"
+  notify:
+    - restart sendmail
+
+- name: Ensure that sendmail is running and enabled
+  service: name=sendmail enabled=yes state=started
+#+END_SRC
+
+*** Set Name Resolver
+   Nameservers are set on all the servers in the cluster. An example
+   of configuration file - =/etc/resolv.conf= is shown and described
+   below:
+
+#+BEGIN_EXAMPLE
+search localdomain.com
+nameserver 10.4.12.230
+#+END_EXAMPLE
+
+   - search :: This field allows users to type simple names instead of
+               complete 'fqdn' to reach local resources. If something
+               comes to resolver that has no dots '.' in it, the
+               resolver will try adding =localdomain.com= in it.
+   - nameserver :: This field specifies the ip address of the dns
+                   servers.
+
+   Ansible jinja2 template is copied to the all nodes from the
+   configuration server node.
+
+#+BEGIN_SRC conf :tangle roles/common/templates/resolv.conf
+{% if private_dns_zone != "none" %}
+search {{private_dns_zone}}
+{% endif %}
+{% for private_dns in private_dns_ips %}
+nameserver {{private_dns}}
+{% endfor %}
+#+END_SRC
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+#Configure private DNS if values are set 
+- name: Configure node to use private DNS (peerDNS)
+  template: src=resolv.conf dest=/etc/resolv.conf owner=root group=root mode=644
+  when: private_dns_ips != "none" 
+  tags:
+    - setup_private_dns
+#+END_SRC
+
+*** Install Bind Utilities
+   Bind utilities are installed on all the servers in the cluster. This package
+   includes programs such as *nslookup*, *dig* and *host*. These utilities are
+   used by system administrators to trouble shoot the network related issues.
+
+#+BEGIN_EXAMPLE
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: install bind-utils
+  yum: name=bind-utils state=present
+  environment:
+   proxy_env
+#+END_SRC
+#+END_EXAMPLE
+
+*** Disable Root Login
+   Root login is disabled on all the servers in the cluster. Password
+   for the root account is set to a value which matches no possible
+   encrypted value, therefore nobody can login as root with
+   password. Only system administrators with ssh private keys can
+   login to root account.
+
+**** Lock root login
+   Root account is locked using =passwd= command command in the
+   terminal.  Another way to lock account is to replace the root's
+   encrypted password with '!' in =/etc/shadow= file as follows.
+
+#+BEGIN_EXAMPLE
+root:!:12345::::::
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: lock root account
+  shell: passwd -l root
+#+END_SRC
+#+END_EXAMPLE
+
+**** Enable root login
+   Root login can be enabled by setting the root password using
+   following command
+#+BEGIN_EXAMPLE
+sudo passwd root
+#+END_EXAMPLE
+
+**** Unlock root account
+   Root login can be unlocked using following command.
+#+BEGIN_EXAMPLE
+sudo passwd -u root
+#+END_EXAMPLE
+
+*** Remove sudoers package
+   We can do two things with sudoers package. The current scripts
+   perhaps does remove it, but we can always rewrite them.
+
+**** Why Remove ?
+   Sudoers package is removed from all the servers in the
+   cluster. There are no user account created on the server. Only the
+   system administrator login as root user. There is no need of
+   maintaining sudoers file. Removing this package causes no harm to
+   the system.
+
+**** Ensure that validity of sudoers file
+   Ensure that =/etc/sudoers= file is same as it is during
+   installation and no one has added new users or groups to sudoers,
+   as backdoors to gain root access.
+
+#+BEGIN_EXAMPLE
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: remove sudo
+  yum: name=sudo state=absent
+#+END_SRC
+#+END_EXAMPLE
+
+*** Set the implementation/model release
+   Release number is set in all the nodes in the cluster. Release
+   number describes the version of the configuration applied on the
+   node.
+
+#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: setting the implementation/model release
+  lineinfile: dest=/etc/motd regexp="^Release" line="Release number {{ release_no }}" state=present create=yes
+  ignore_errors: yes
+#+END_SRC
+
 *** Installation of Aide 
     [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/86][Associated issue on gitlab]]
     - Impact :: Malicious misconfigurations of the file
@@ -2148,326 +2467,6 @@ the variables used by the ansible playbooks.
     name: /etc/hosts.deny
     regexp: "ALL: ALL"
     line: "ALL: ALL"
-#+END_SRC
-
-*** Configure Hostname
-   Hostname is set inside each node in the cluster. Hostname represent
-   the name of the main server that is installed in the node.
-#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
-#This will use the variables defined in the role sepcific yaml file, works only on CentOS
-- name: Set the hostname of the target if host_name is defined
-  lineinfile: dest=/etc/sysconfig/network regexp="HOSTNAME=" line="HOSTNAME={{host_name}}" state=present
-  when: host_name is defined
-
-#+END_SRC
-
-*** Block Malicious Attacks
-   Nodes in the cluster are protected against Brute-force attacks. For
-   this *Fail2ban* service is configured on all the nodes. It bans an
-   offensive host by adding rule in firewall and also sends an email
-   alerts to the system administrator. When the firewall rule for
-   offensive host is added, the attacker can not connect to the
-   cluster for a limited period of time.
-
-   To configure Fail2ban following actions are performed:
-   1) Install epel repo
-   2) Install fail2ban
-   3) Start fail2ban service
-
-#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
-- name: Install epel RPM
-  yum: name=epel-release state=present
-  environment: proxy_env
-
-#Install fail2ban and enable it on startup
-- name: Install fail2ban
-  yum: name=fail2ban state=present
-
-- name: Start and enable fail2ban service
-  service: name=fail2ban state=started enabled=yes
-#+END_SRC
-
-*** Save History of Executed Commands
-   Commands executed on the servers are logged with the time
-   stamp. These logged commands can be referred by the system
-   administrator to trouble shoot any issues on the server.
-
-   To save history of commands a shell script is created and placed
-   inside =/etc/profile.d= directory. Scripts present inside the
-   =/etc/profile.d= directory gets executed at the start of every new
-   session.
-
-   Following history parameters are set:
-
-    - HISTTIMEFORMAT :: sets the time format of time stamp
-    - HISTSIZE       :: sets the number of lines or commands that are
-                        stored in memory in a history list while bash
-                        session is ongoing
-    - HISTFILESIZE   :: sets the number of lines or commands that are allowed in
-                        the history file at start up time of a session, and are
-                        stored in the history file at the end of bash session
-                        for use in future sessions.
-
-#+BEGIN_SRC shell :tangle roles/common/files/history.sh
-#!/bin/bash
-
-HISTTIMEFORMAT="%y %m %d %T"
-HISTSIZE=100000
-HISTFILESIZE=100000
-export HISTTIMEFORMAT HISTSIZE HISTFILESIZE
-#+END_SRC 
-
-#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
-- name: For below task to run it requires libselinux-python to be installed
-  yum: name=libselinux-python state=present
-#Configure history
-- name: Configure history for all users with date/time and 100,000 lines of history
-  copy: src=history.sh dest=/etc/profile.d/history.sh mode=755 owner=root group=root
-#+END_SRC 
-
-*** Start iptables service
-   While setting up the cluster, iptables service is restarted on all
-   the servers - to make sure the service is running inside each
-   server. If anyone inserts a temporary or adhoc rule using terminal
-   commands such as =iptables -A INPUT -p tcp --dport 80 -j ACCEPT=,
-   the rules will not be saved in the file. These rules we assume are
-   not necessary for the system, so restarting "iptables" will remove
-   these inserted rules.
-
-#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
-#Restart iptables
-- name: Restart iptables service 
-#checking whether iptables is running is pointless
-#restart would fail if there is no /etc/sysconfig/iptables file
-  service: name=iptables state=restarted
-  ignore_errors: yes
-#+END_SRC
-
-*** Setup /etc/hosts file
-    Sendmail tries to lookup hostname and IP mapping through
-    =/etc/hosts=. Sendmail assumes the first line in =/etc/hosts= is
-    the nodes own FQDN to IP mapping without this sendmail takes about
-    30 seconds to timeout for host resolution. To take care of this
-    assumption of sendmail =/etc/hosts= file is configured.
-    
-    Following variables are set by the ansible playbook scripts as it
-    runs on the client node. For each server in the cluster value of
-    these variables will be different and set according to the server
-    role.
-
-|-------+------------------------------+-------------------------------+--------------------------|
-| S.no. | Variable Name                | Description                   | Example                  |
-|-------+------------------------------+-------------------------------+--------------------------|
-|    1. | ansible_default_ipv4.address | defines the system ip address | 10.1.100.8               |
-|-------+------------------------------+-------------------------------+--------------------------|
-|    2. | ansible_fqdn                 | define the system fqdn        | ossec.virtual-labs.ac.in |
-|-------+------------------------------+-------------------------------+--------------------------|
-|    3. | ansible_hostname             | defines the system hostnames  | ossec                    |
-|-------+------------------------------+-------------------------------+--------------------------|
-
-#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
-#Setup /etc/hosts
-- name: Configure hostname and fqdn to resolve to local IP on first line of /etc/hosts
-#Necessary for containers so that they can send emails without 30 second delay
-  lineinfile: dest=/etc/hosts regexp="{{ansible_default_ipv4.address}} {{ansible_fqdn}} {{ansible_hostname}}" insertbefore="BOF" line="{{ansible_default_ipv4.address}} {{ansible_fqdn}} {{ansible_hostname}}"
-#+END_SRC
-
-*** setup aliases
-
-#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
-#Setup /etc/aliases
-- name: Configure aliases in /etc/aliases
-#Necessary for containers so that they can send emails to alerts@vlabs.ac.in
-  lineinfile: "dest=/etc/aliases regexp='^root: *' line='root: alerts@vlabs.ac.in'"
-- name: update aliases database by running newaliases
-  shell: newaliases
-  notify:
-   - restart sendmail
-#+END_SRC
-
-*** Install vim
-#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
-#Necessary for containers as a editor
-- name: installing vim
-  yum: name=vim state=present
-#+END_SRC
-
-*** Summary of Log files
-   Servers and applications create "log files" to keep track of the
-   events happening inside the system at any given time. These log
-   files are used for analysis of the system.
-
-   To generate a unified report of all log files and send to system
-   administrator *Logwatch* service is configured on all the servers
-   in the cluster.
-
-   To configure logwatch following actions are performed:
-   1) Install "logwatch" tool
-   2) Set detail of log level to "medium"
-
-#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
-#Logwatch configuration
-- name: Install logwatch
-  yum: name=logwatch state=installed
-  environment: proxy_env
-
-- name: Configure detailed logging via logwatch
-  lineinfile: line="Detail = High" dest=/etc/logwatch/conf/logwatch.conf regexp="^Detail ="  
-#+END_SRC
-
-*** Configure mail service
-   Sendmail service is configured on all the servers in the
-   cluster. Services such as "logwatch" uses "sendmail" service to
-   send mail alerts to the system administrator.
-
-   To configure sendmail following actions are performed:
-   1) Install sendmail
-   2) Ensure postfix is stopped and disabled
-   3) Set smtp smart host
-   4) Start sendmail service
-
-#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
-#SMTP configuration
-- name: Install sendmail SMTP server for outgoing email
-  yum: name=sendmail state=installed
-  environment: proxy_env
-
-- name: Ensure that postfix is stopped and disabled
-  service: name=postfix enabled=no state=stopped
-#if postfix is not present ignore error
-  ignore_errors: yes
-
-- name: Configure SMART_HOST if necessary
-  lineinfile: line="define(`SMART_HOST', `{{smtp_smart_host}}')dnl" regexp="SMART_HOST" dest="/etc/mail/sendmail.mc"
-  when: smtp_smart_host != "none"
-  notify:
-    - restart sendmail
-
-- name: Ensure that sendmail is running and enabled
-  service: name=sendmail enabled=yes state=started
-#+END_SRC
-
-*** Set Name Resolver
-   Nameservers are set on all the servers in the cluster. An example
-   of configuration file - =/etc/resolv.conf= is shown and described
-   below:
-
-#+BEGIN_EXAMPLE
-search localdomain.com
-nameserver 10.4.12.230
-#+END_EXAMPLE
-
-   - search :: This field allows users to type simple names instead of
-               complete 'fqdn' to reach local resources. If something
-               comes to resolver that has no dots '.' in it, the
-               resolver will try adding =localdomain.com= in it.
-   - nameserver :: This field specifies the ip address of the dns
-                   servers.
-
-   Ansible jinja2 template is copied to the all nodes from the
-   configuration server node.
-
-#+BEGIN_SRC conf :tangle roles/common/templates/resolv.conf
-{% if private_dns_zone != "none" %}
-search {{private_dns_zone}}
-{% endif %}
-{% for private_dns in private_dns_ips %}
-nameserver {{private_dns}}
-{% endfor %}
-#+END_SRC
-
-#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
-#Configure private DNS if values are set 
-- name: Configure node to use private DNS (peerDNS)
-  template: src=resolv.conf dest=/etc/resolv.conf owner=root group=root mode=644
-  when: private_dns_ips != "none" 
-  tags:
-    - setup_private_dns
-#+END_SRC
-
-
-*** Install Bind Utilities
-   Bind utilities are installed on all the servers in the cluster. This package
-   includes programs such as *nslookup*, *dig* and *host*. These utilities are
-   used by system administrators to trouble shoot the network related issues.
-
-#+BEGIN_EXAMPLE
-#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
-- name: install bind-utils
-  yum: name=bind-utils state=present
-  environment:
-   proxy_env
-#+END_SRC
-#+END_EXAMPLE
-
-*** Disable Root Login
-   Root login is disabled on all the servers in the cluster. Password
-   for the root account is set to a value which matches no possible
-   encrypted value, therefore nobody can login as root with
-   password. Only system administrators with ssh private keys can
-   login to root account.
-
-**** Lock root login
-   Root account is locked using =passwd= command command in the
-   terminal.  Another way to lock account is to replace the root's
-   encrypted password with '!' in =/etc/shadow= file as follows.
-
-#+BEGIN_EXAMPLE
-root:!:12345::::::
-#+END_EXAMPLE
-
-#+BEGIN_EXAMPLE
-#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
-- name: lock root account
-  shell: passwd -l root
-#+END_SRC
-#+END_EXAMPLE
-
-**** Enable root login
-   Root login can be enabled by setting the root password using
-   following command
-#+BEGIN_EXAMPLE
-sudo passwd root
-#+END_EXAMPLE
-
-**** Unlock root account
-   Root login can be unlocked using following command.
-#+BEGIN_EXAMPLE
-sudo passwd -u root
-#+END_EXAMPLE
-
-*** Remove sudoers package
-   We can do two things with sudoers package. The current scripts
-   perhaps does remove it, but we can always rewrite them.
-
-**** Why Remove ?
-   Sudoers package is removed from all the servers in the
-   cluster. There are no user account created on the server. Only the
-   system administrator login as root user. There is no need of
-   maintaining sudoers file. Removing this package causes no harm to
-   the system.
-
-**** Ensure that validity of sudoers file
-   Ensure that =/etc/sudoers= file is same as it is during
-   installation and no one has added new users or groups to sudoers,
-   as backdoors to gain root access.
-
-#+BEGIN_EXAMPLE
-#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
-- name: remove sudo
-  yum: name=sudo state=absent
-#+END_SRC
-#+END_EXAMPLE
-
-*** Set the implementation/model release
-   Release number is set in all the nodes in the cluster. Release
-   number describes the version of the configuration applied on the
-   node.
-
-#+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
-- name: setting the implementation/model release
-  lineinfile: dest=/etc/motd regexp="^Release" line="Release number {{ release_no }}" state=present create=yes
-  ignore_errors: yes
 #+END_SRC
 
 *** Common Variables
