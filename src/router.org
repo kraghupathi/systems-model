@@ -231,8 +231,8 @@ COMMIT
 ---
 - name: Enable IP forwarding
   lineinfile: line="net.ipv4.ip_forward = 1" regexp="^net.ipv4.ip_forward" dest=/etc/sysctl.conf
-  notify:
-    - enable_ip_forwarding
+  # notify:
+  #   - enable_ip_forwarding
 #+END_SRC
 
 ** Setting Firewall rules
@@ -254,8 +254,8 @@ COMMIT
 ---
 - name: restart iptables
   service: name=iptables state=restarted
-- name: enable_ip_forwarding
-  command: sysctl --system
+# - name: enable_ip_forwarding
+#   command: sysctl --system
   #+END_SRC
 
 
