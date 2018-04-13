@@ -1742,16 +1742,23 @@ sudo passwd -u root
                          the active kernel parameters
 
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
+- name: Configure ip_forward to 0 other servers
+  lineinfile:
+    dest: /etc/sysctl.conf
+    regexp: "^net.ipv4.ip_forward.*"
+    line: 'net.ipv4.ip_forward = 0'
+    when: not router_internal_ip
+    state: present
+
 - name: Configuring sysctl entries 
   lineinfile:
-    name: /etc/sysctl.conf
+    dest: /etc/sysctl.conf
     line: "{{ item }}"
     insertafter: net.ipv4.ip_forward.*
   with_items:
   - 'net.ipv4.conf.all.send_redirects = 0'
   - 'net.ipv4.conf.default.send_redirects = 0'
   - 'net.ipv4.route.flush = 1'
-  - 'net.ipv4.ip_forward = 0'
   - 'net.ipv4.route.flush = 1'
 #+END_SRC
 **** Enable Reverse Path Filtering
