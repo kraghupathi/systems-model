@@ -252,8 +252,10 @@ COMMIT
      firewall is enforced by restarting the iptables service.
 #+BEGIN_SRC yml :tangle roles/router/handlers/main.yml
 ---
- - name: restart iptables
-   service: name=iptables state=restarted
+- name: restart iptables
+  service: name=iptables state=restarted
+- name: enable_ip_forwarding
+  command: sysctl --system
   #+END_SRC
 
 

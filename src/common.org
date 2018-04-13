@@ -1742,13 +1742,13 @@ sudo passwd -u root
                          the active kernel parameters
 
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
-- name: Configure ip_forward to 0 other servers
-  lineinfile:
-    dest: /etc/sysctl.conf
-    regexp: "^net.ipv4.ip_forward.*"
-    line: 'net.ipv4.ip_forward = 0'
-    state: present
-  when: not router_internal_ip
+# - name: Configure ip_forward to 0 other servers
+#   lineinfile:
+#     dest: /etc/sysctl.conf
+#     regexp: "^net.ipv4.ip_forward.*"
+#     line: 'net.ipv4.ip_forward = 1'
+#     state: present
+#   when: router_internal_ip is defined
 
 - name: Configuring sysctl entries 
   lineinfile:
@@ -2423,11 +2423,11 @@ sudo passwd -u root
 	#+END_EXAMPLE
 
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
-# - name: Configure /etc/hosts.deny
-#   lineinfile: 
-#     name: /etc/hosts.deny
-#     regexp: "ALL: ALL"
-#     line: "ALL: ALL"
+- name: Configure /etc/hosts.deny
+  lineinfile: 
+    name: /etc/hosts.deny
+    regexp: "ALL: ALL"
+    line: "ALL: ALL EXCEPT 10.100., 10.2."
 #+END_SRC
 
 *** Common Variables
