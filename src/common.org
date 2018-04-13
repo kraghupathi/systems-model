@@ -1817,7 +1817,7 @@ sudo passwd -u root
    line: "{{ item }}"
    insertafter: "net.ipv4.ip_forward.*"
    state: present
-   with_items:
+  with_items:
    - 'net.ipv4.conf.all.log_martians = 1'
    - 'net.ipv4.conf.default.log_martians = 1'
    - 'net.ipv4.route.flush = 1'
@@ -1851,7 +1851,7 @@ sudo passwd -u root
     line: "{{ item }}"
     insertafter: net.ipv4.ip_forward.*
     state: present
-    with_items:
+  with_items:
     - 'net.ipv4.conf.all.secure_redirects = 0'
     - 'net.ipv4.conf.default.secure_redirects = 0'
     - 'net.ipv4.route.flush = 1'
@@ -1887,7 +1887,7 @@ sudo passwd -u root
    line: "{{ item }}"
    insertafter: "net.ipv4.ip_forward.*"
    state: present
-   with_items:
+  with_items:
     - 'net.ipv4.conf.all.accept_redirects = 0'
     - 'net.ipv4.conf.default.accept_redirects = 0'
     - 'net.ipv4.route.flush = 1'
@@ -1924,7 +1924,7 @@ sudo passwd -u root
   lineinfile:
     dest:  /etc/sysctl.conf
     line: '{{ item }}' 
-    with_items:
+  with_items:
     - 'net.ipv4.icmp_ignore_bogus_error_responses = 1'
     - 'net.ipv4.route.flush = 1'
 
