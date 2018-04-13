@@ -1742,26 +1742,17 @@ sudo passwd -u root
                          the active kernel parameters
 
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
-- name: Inserting a line 
+- name: Configuring sysctl entries 
   lineinfile:
     name: /etc/sysctl.conf
-    line: net.ipv4.conf.all.send_redirects = 0
+    line: "{{ item }}"
     insertafter: net.ipv4.ip_forward.*
-
-- name: Inserting a line 
-  lineinfile:
-    name: /etc/sysctl.conf
-    line: net.ipv4.conf.default.send_redirects = 0
-    insertafter: net.ipv4.ip_forward.*
-
-- name: Enable port ip forward
-  command:  "{{ item }}"
   with_items:
-  - sysctl -w net.ipv4.conf.all.send_redirects=0
-  - sysctl -w net.ipv4.conf.default.send_redirects=0
-  - sysctl -w net.ipv4.route.flush=1
-  - sysctl -w net.ipv4.ip_forward=0
-  - sysctl -w net.ipv4.route.flush=1
+  - 'net.ipv4.conf.all.send_redirects = 0'
+  - 'net.ipv4.conf.default.send_redirects = 0'
+  - 'net.ipv4.route.flush = 1'
+  - 'net.ipv4.ip_forward = 0'
+  - 'net.ipv4.route.flush = 1'
 #+END_SRC
 **** Enable Reverse Path Filtering
    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/110][Associated issue]]
@@ -1791,53 +1782,38 @@ sudo passwd -u root
   with_items:
    - 'net.ipv4.conf.all.rp_filter = 1'
    - 'net.ipv4.conf.default.rp_filter = 1'
-
-- name: Enable reverse path filtering 
-  command: "{{ item }}"
-  with_items:
-   - sysctl -w net.ipv4.conf.all.rp_filter=1
-   - sysctl -w net.ipv4.conf.default.rp_filter=1 
-   - sysctl -w net.ipv4.route.flush=1
-
+   - 'net.ipv4.route.flush = 1'
 #+END_SRC
 
 **** Log the Suspicious packets
-   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/109][Check the issue]]
-   - Impact :: Spoofed Packets Attack to Server is possible.
+     [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/109][Check the issue]]
+    - Impact :: Spoofed Packets Attack to Server is possible.
 
-   - Recommendations :: Set the following parameters in the
-        /etc/sysctl.conf file:
+    - Recommendations :: Set the following parameters in the
+         /etc/sysctl.conf file:
 
-        #+BEGIN_EXAMPLE
-	net.ipv4.conf.all.log_martians = 1
-	net.ipv4.conf.default.log_martians = 1
-        #+END_EXAMPLE
-      Run the following commands to set the active kernel parameters:
-        #+BEGIN_EXAMPLE
-        #sysctl -w net.ipv4.conf.all.log_martians=1
-	#sysctl -w net.ipv4.conf.default.log_martians =1
-	#sysctl -w net.ipv4.route.flush=1
-        #+END_EXAMPLE
+         #+BEGIN_EXAMPLE
+	 net.ipv4.conf.all.log_martians = 1
+	 net.ipv4.conf.default.log_martians = 1
+         #+END_EXAMPLE
+       Run the following commands to set the active kernel parameters:
+         #+BEGIN_EXAMPLE
+         #sysctl -w net.ipv4.conf.all.log_martians=1
+	 #sysctl -w net.ipv4.conf.default.log_martians =1
+	 #sysctl -w net.ipv4.route.flush=1
+         #+END_EXAMPLE
      
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
-- name: Inserting a line 
+- name: Configure sysctl file to Log the suspicious packets 
   lineinfile:
-   name: /etc/sysctl.conf
-   line: net.ipv4.conf.all.log_martians = 1
-   insertafter: net.ipv4.ip_forward.*
+   dest: /etc/sysctl.conf
+   line: "{{ item }}"
+   insertafter: "net.ipv4.ip_forward.*"
    state: present
-- name: Inserting a line 
-  lineinfile:
-   name: /etc/sysctl.conf
-   line: net.ipv4.conf.default.log_martians = 1
-   insertafter: net.ipv4.ip_forward.*
-   state: present
-- name: Enable reverse path filtering 
-  command: "{{ item }}"
-  with_items:
-   - sysctl -w net.ipv4.conf.all.log_martians=1
-   - sysctl -w net.ipv4.conf.default.log_martians=1
-   - sysctl -w net.ipv4.route.flush=1
+   with_items:
+   - 'net.ipv4.conf.all.log_martians = 1'
+   - 'net.ipv4.conf.default.log_martians = 1'
+   - 'net.ipv4.route.flush = 1'
 
 #+END_SRC
    
@@ -1862,24 +1838,16 @@ sudo passwd -u root
         #+END_EXAMPLE
     - Implementation ::   	
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
-- name: Inserting a line 
+- name: Configure sysctl to do not accept secure ICMP redirect packets
   lineinfile:
     name: /etc/sysctl.conf
-    line: net.ipv4.conf.all.secure_redirects = 0
+    line: "{{ item }}"
     insertafter: net.ipv4.ip_forward.*
     state: present
-- name: Inserting a line 
-  lineinfile:
-    name: /etc/sysctl.conf
-    line: net.ipv4.conf.default.secure_redirects = 0
-    insertafter: net.ipv4.ip_forward.*
-    state: present
-- name: Enable reverse path filtering 
-  command: "{{ item }}"
-  with_items:
-   - sysctl -w net.ipv4.conf.all.secure_redirects=0
-   - sysctl -w net.ipv4.conf.default.secure_redirects=0
-   - sysctl -w net.ipv4.route.flush=1
+    with_items:
+    -'net.ipv4.conf.all.secure_redirects = 0'
+    -'net.ipv4.conf.default.secure_redirects = 0'
+    -'net.ipv4.route.flush = 1'
 
 #+END_SRC
 
@@ -1906,29 +1874,20 @@ sudo passwd -u root
         #+END_EXAMPLE
     - Implementation ::     
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
-- name: Inserting a line 
+- name: Do not accept ICMP redirects
   lineinfile:
-    name: /etc/sysctl.conf
-    line: net.ipv4.conf.all.accept_redirects = 0
-    insertafter: net.ipv4.ip_forward.*
-    state: present
-
-- name: Inserting a line 
-  lineinfile:
-    name: /etc/sysctl.conf
-    line: net.ipv4.conf.default.accept_redirect = 0
-    insertafter: net.ipv4.ip_forward.*
-    state: present
-- name: Enable reverse path filtering 
-  command: "{{ item }}"
-  with_items:
-   - sysctl -w net.ipv4.conf.all.accept_redirects=0
-   - sysctl -w net.ipv4.conf.default.accept_redirects=0
-   - sysctl -w net.ipv4.route.flush=1
+   dest: /etc/sysctl.conf
+   line: "{{ item }}"
+   insertafter: "net.ipv4.ip_forward.*"
+   state: present
+   with_items:
+    -'net.ipv4.conf.all.accept_redirects = 0'
+    -'net.ipv4.conf.default.accept_redirects = 0'
+    -'net.ipv4.route.flush = 1'
 
 #+END_SRC
 
-**** Bogus Messages are accepted with the server
+**** Ignore ICMP bogus Messages
     [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/429][Check the issue on GitLab]]
      - Impact :: The attacker will send responses that violate and
 		 attempt to fill up a log file system with many error
@@ -1954,18 +1913,13 @@ sudo passwd -u root
       - Implementation ::
 
 #+BEGIN_SRC yml :tangle  roles/common/tasks/main.yml
-- name: Bogus Messages are accepted with the server
-  lineinfile: 
+- name: Ignore Bogus Messages
+  lineinfile:
     dest:  /etc/sysctl.conf
-    line: '{{ item }}'
-  with_items:
-    - 'net.ipv4.icmp_ignore_bogus_error_responses=1'
-
-- name: Modify active kernel parameters to match
-  command: "{{ item }}"
-  with_items:
-    - /sbin/sysctl -w net.ipv4.icmp_ignore_bogus_error_responses=1
-    - /sbin/sysctl -w net.ipv4.route.flush=1
+    line: '{{ item }}' 
+    with_items:
+    - 'net.ipv4.icmp_ignore_bogus_error_responses = 1'
+    - 'net.ipv4.route.flush = 1'
 
 #+END_SRC
 **** Ignore Broadcast ICMP requests
