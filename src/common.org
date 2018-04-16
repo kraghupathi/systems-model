@@ -2423,11 +2423,11 @@ sudo passwd -u root
 	#+END_EXAMPLE
 
 #+BEGIN_SRC yml :tangle roles/common/tasks/main.yml
-# - name: Configure /etc/hosts.deny
-#   lineinfile: 
-#     name: /etc/hosts.deny
-#     regexp: "ALL: ALL"
-#     line: "ALL: ALL EXCEPT 10.100., 10.2."
+- name: Configure /etc/hosts.deny
+  lineinfile: 
+    name: /etc/hosts.deny
+    regexp: "ALL: ALL"
+    line: "ALL: ALL EXCEPT 10.100., 10.2."
 #+END_SRC
 
 *** Common Variables
