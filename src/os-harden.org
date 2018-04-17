@@ -70,7 +70,7 @@
 	  $ mv /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz
 	  #+END_EXAMPLE
      - Implementation :: 
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: install the latest version of Aide
   yum:
       name: aide
@@ -99,7 +99,7 @@
    - Implementation ::
 		      The ssh package provides an encrypted
                       session and stronger security
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: Disable telnet service
   command: /sbin/chkconfig telnet off
   ignore_errors: yes
@@ -117,7 +117,7 @@
 
     - Implementation ::
 
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: remove the talk package
   yum: name=talk state=absent 
   ignore_errors: yes
@@ -136,7 +136,7 @@
 	#chkconfig httpd off	
 	#+END_EXAMPLE
    - Implementation ::  
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: stop httpd service on boot
   service: name=httpd enabled=no
   ignore_errors: yes
@@ -155,7 +155,7 @@
 	chkconfig rpcbind off
 	#+END_EXAMPLE
    - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name:  stop the nfs service onboot 
   service: name=nfs enabled=no
   ignore_errors: yes
@@ -174,7 +174,7 @@
 	#chkconfig xinetd off
 	#+END_EXAMPLE
    - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: stop xinetd service on boot
   service: name=xinetd enabled=no
   ignore_errors: yes
@@ -201,7 +201,7 @@
 	#+END_EXAMPLE
    - Implementation ::
 
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name:  Do not accept router advertisements
   sysctl:
      name: net.ipv6.conf.all.accept_ra
@@ -240,7 +240,7 @@
         #+END_EXAMPLE
    - Implementation ::
 
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: Owner permissions on boot loader configuration file
   command: chown root:root /boot/grub/grub.conf
   ignore_errors: yes
@@ -254,7 +254,7 @@
 *** Install libselinux-python package
     In order to execute following tasks, =libselinux-python= package
     is needed.
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: Install libselinux-python
   yum: name=libselinux-python state=installed
 #+END_SRC
@@ -270,7 +270,7 @@
         #+END_EXAMPLE
    - Implementation ::
 
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: Set SELinux to enable when the system is booted
   lineinfile: 
    dest: /etc/selinux/config
@@ -295,7 +295,7 @@
         they are set in the =/etc/selinux/config= file.
    - Implementation ::
         
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: configure SELinux policy  
   lineinfile:
     name: /etc/selinux/config
@@ -317,7 +317,7 @@
 	LoginGraceTime 60
         #+END_EXAMPLE
    - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: Setting SSH LoginGraceTime
   lineinfile:
    dest: /etc/ssh/sshd_config
@@ -343,7 +343,7 @@
 
    - Implementation ::
 	
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: Set SSH idle time out
   lineinfile:
    dest: /etc/ssh/sshd_config
@@ -377,7 +377,7 @@
         IgnoreRhosts yes
         #+END_EXAMPLE
    - Implementation ::
-   #+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+   #+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: SSH IgnoreRhosts is enable
   lineinfile: 
    dest: /etc/ssh/sshd_config
@@ -400,7 +400,7 @@
 	PermitEmptyPasswords no
 	#+END_EXAMPLE
    - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: configure SELinux policy  
   lineinfile:
     name: /etc/ssh/sshd_config
@@ -424,7 +424,7 @@
 	MaxAuthTries 4
         #+END_EXAMPLE
    - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name:  set the SSH MaxAuthTries
   lineinfile:
    dest: /etc/ssh/sshd_config
@@ -450,7 +450,7 @@
         #+END_EXAMPLE
    - Implementation ::
 
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name:  set SSH LogLevel
   lineinfile:
    dest: /etc/ssh/sshd_config
@@ -476,7 +476,7 @@
 	Banner /etc/issue.net
 	#+END_EXAMPLE
     - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: SSH login warning banner
   lineinfile: 
     name: /etc/ssh/sshd_config
@@ -507,7 +507,7 @@
 			#+END_EXAMPLE
 
      - Implementation ::
-#+BEGIN_SRC yml :tangle  roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle  roles/os_harden/tasks/main.yml
 - name: Limit Access via SSH
   lineinfile: 
     dest: /etc/ssh/sshd_config
@@ -531,7 +531,7 @@
 			#+END_EXAMPLE
 
      - Implementation ::
-			#+BEGIN_SRC yml :tangle  roles/os-harden/tasks/main.yml
+			#+BEGIN_SRC yml :tangle  roles/os_harden/tasks/main.yml
 - name: Set Lockout for Failed Password Attempts
   lineinfile: 
     dest: /etc/pam.d/login
@@ -549,7 +549,7 @@
      Only system administrators with ssh private key can login as Root.
 
 #+BEGIN_EXAMPLE
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: Permit root login without-password(key based)
   lineinfile: dest=/etc/ssh/sshd_config regexp='PermitRootLogin ' line='PermitRootLogin without-password' state=present
 #+END_SRC
@@ -558,7 +558,7 @@
 *** Disable Password based access
      Password based access is disabled.
 #+BEGIN_EXAMPLE
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: Disable Password authentication
   lineinfile: dest=/etc/ssh/sshd_config regexp='PasswordAuthentication ' line='PasswordAuthentication no'
 #+END_SRC
@@ -567,7 +567,7 @@
 *** Enable Key based authentication
    Only key based access is enabled.
 #+BEGIN_EXAMPLE
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: Enable Public key authentication
   lineinfile: dest=/etc/ssh/sshd_config regexp='PubkeyAuthentication ' line='PubkeyAuthentication yes'
 #+END_SRC
@@ -576,7 +576,7 @@
 *** Do not permit empty passwords
    Users are not allowed to set empty-password.
 #+BEGIN_EXAMPLE
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: Do not permit empty password, also ensure proper owner, group and permissions
   lineinfile: dest=/etc/ssh/sshd_config regexp='PermitEmptyPasswords ' line='PermitEmptyPasswords no' mode=0600 owner=root group=root
 
@@ -599,7 +599,7 @@
 	#chkconfig auditd on
 	#+END_EXAMPLE
     - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: Install Auditd service
   yum: name=audit state=installed
 - name: start auditd service on boot
@@ -618,7 +618,7 @@
         #+END_EXAMPLE
    - Implementation ::
 
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: collecting login and logout events
   lineinfile: 
     dest: /etc/audit/audit.rules
@@ -646,7 +646,7 @@
          #+END_EXAMPLE
     - Implementation ::
 
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: collecting Changes to system administration scope (sudoers)
   lineinfile: 
     dest: /etc/audit/audit.rules
@@ -674,7 +674,7 @@
          #+END_EXAMPLE
     - Implementation ::
 
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: collecting File deletion events by users are not
   lineinfile: 
     dest: /etc/audit/audit.rules
@@ -703,7 +703,7 @@
          #+END_EXAMPLE
     - Implementation ::
 
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: Collect Unsuccessful unauthorized file access attempts
   lineinfile: 
     dest: /etc/audit/audit.rules
@@ -735,7 +735,7 @@
 
          #+END_EXAMPLE
     - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: Collecting Events that modify the system's network environment
   lineinfile: 
     dest: /etc/audit/audit.rules
@@ -770,7 +770,7 @@
 
           #+END_EXAMPLE
      - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: Enabling audit service
   lineinfile: 
     dest: /etc/audit/audit.rules
@@ -799,7 +799,7 @@
 	 max_log_file_action = keep_logs
          #+END_EXAMPLE
     - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name:  Audit logs are automatically deleted option
   lineinfile:
    dest: /etc/audit/auditd.conf
@@ -821,7 +821,7 @@
 	 max_log_file = 
 	 #+END_EXAMPLE
      - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: Audit log storage size
   lineinfile:
      name: /etc/audit/auditd.conf
@@ -849,7 +849,7 @@
 	-a always,exit -F arch=b32 -S clock_settime -k time-change
 	#+END_EXAMPLE
      - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: Events that modify date and time information are collected option
   lineinfile:
     dest: /etc/audit/audit.rules
@@ -884,7 +884,7 @@
 	 #+END_EXAMPLE
 
      - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: Events that modify date and time information are collected option
   lineinfile:
     dest: /etc/audit/audit.rules
@@ -915,7 +915,7 @@
       -w /var/log/sudo.log -p wa -k actions
       #+END_EXAMPLE
     - Implementation ::
-#+BEGIN_SRC yml :tangle  roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle  roles/os_harden/tasks/main.yml
 - name: Collect System administrator actions (sudolog)
   lineinfile:
    dest: /etc/audit/audit.rules
@@ -947,7 +947,7 @@
 
        - Implementation ::
 
-#+BEGIN_SRC yml :tangle  roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle  roles/os_harden/tasks/main.yml
 - name: Collect Session Initiation Information
   lineinfile: 
    dest: /etc/audit/audit.rules
@@ -986,7 +986,7 @@
 
     - Implementation ::
 
-#+BEGIN_SRC yml :tangle  roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle  roles/os_harden/tasks/main.yml
 - name: Collect Session Initiation Information
   lineinfile: 
    dest: /etc/audit/audit.rules
@@ -1017,7 +1017,7 @@
 			 for more details check audit.rules
                          man page
       - Implementation ::
-#+BEGIN_SRC yml :tangle  roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle  roles/os_harden/tasks/main.yml
 - name: Make audit configuration immutable
   lineinfile:
    dest: /etc/audit/audit.rules
@@ -1037,7 +1037,7 @@
 	#find /var/log -type f -exec chmod g-wx,o-rwx {} +
         #+END_EXAMPLE
    - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: Set Permissions on all logfiles
   command: "find /var/log -type f -exec chmod g-wx,o-rwx {} +"
 
@@ -1070,7 +1070,7 @@
 			 Run the following commands to set
                          the active kernel parameters
 
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 # - name: Configure ip_forward to 0 other servers
 #   lineinfile:
 #     dest: /etc/sysctl.conf
@@ -1110,7 +1110,7 @@
 	#sysctl -w net.ipv4.route.flush=1
         #+END_EXAMPLE
    - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: Setting the parameters in reverse path
   lineinfile: 
    dest: /etc/sysctl.conf
@@ -1139,7 +1139,7 @@
 	 #sysctl -w net.ipv4.route.flush=1
          #+END_EXAMPLE
      
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: Configure sysctl file to Log the suspicious packets 
   lineinfile:
    dest: /etc/sysctl.conf
@@ -1173,7 +1173,7 @@
 	#sysctl -w net.ipv4.route.flush=1
         #+END_EXAMPLE
     - Implementation ::   	
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: Configure sysctl to do not accept secure ICMP redirect packets
   lineinfile:
     name: /etc/sysctl.conf
@@ -1209,7 +1209,7 @@
 	#sysctl -w net.ipv4.route.flush=1
         #+END_EXAMPLE
     - Implementation ::     
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: Do not accept ICMP redirects
   lineinfile:
    dest: /etc/sysctl.conf
@@ -1248,7 +1248,7 @@
 
       - Implementation ::
 
-#+BEGIN_SRC yml :tangle  roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle  roles/os_harden/tasks/main.yml
 - name: Ignore Bogus Messages
   lineinfile:
     dest:  /etc/sysctl.conf
@@ -1283,7 +1283,7 @@
 
     - Implementation ::
 
-#+BEGIN_SRC yml :tangle  roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle  roles/os_harden/tasks/main.yml
 - name: Broadcast ICMP requests are not ignored 
   lineinfile: 
     dest:  /etc/sysctl.conf
@@ -1314,7 +1314,7 @@
         available to consult your virtualization software
         documentation and setup host based synchronization.
    - Implementation ::     
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: install the latest version of ntp
   yum:
      name: ntp
@@ -1341,7 +1341,7 @@
      Add or edit the OPTIONS in /etc/sysconfig/ntpd to include '-u
         ntp:ntp': OPTIONS="-u ntp:ntp"
    - Implementation ::     
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: Install ntp 
   yum: name=ntp state=installed
 
@@ -1380,7 +1380,7 @@
         #+END_EXAMPLE
 
    - Implementation ::      
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name:  stop the talk service onboot 
   action: command /sbin/chkconfig talk off
   ignore_errors: yes
@@ -1400,7 +1400,7 @@
 	#yum remove telnet
         #+END_EXAMPLE
    - Implementation ::	
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: remove the telnet package
   yum:
    name: telnet
@@ -1421,7 +1421,7 @@
         All activity may be monitored and reported." > /etc/issue.net
 	#+END_EXAMPLE
    - Implementation :: 	
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: Backup of /etc/issue.net file
   command: 'cp /etc/issue.net /etc/issue.net-default'
 - name: Remote login warning banner
@@ -1440,7 +1440,7 @@
 	All activity may be monitored and reported." > /etc/issue
 	#+END_EXAMPLE
     - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: Backup of /etc/issue  file
   command: 'cp /etc/issue /etc/issue-default'
 
@@ -1456,7 +1456,7 @@
         appropriate contents according to your site policy,
         remove any instances of \m, \r, \s, or \v.
    - Implementation ::	
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: Backup of /etc/motd file
   command: 'cp /etc/motd /etc/motd-default'
 - name: Set Message in motd 
@@ -1474,7 +1474,7 @@
 	#echo "ALL: /, /, ..." >/etc/hosts.allow 	
 	#+END_EXAMPLE
    - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: Configure /etc/hosts.allow
   lineinfile: 
      name: /etc/hosts.allow
@@ -1498,7 +1498,7 @@
 	#chmod 644 /etc/issue
         #+END_EXAMPLE
    - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: Permissions on /etc/issue
   command: "{{ item }}"
   with_items:
@@ -1518,7 +1518,7 @@
 	#chmod 644 /etc/issue.net
         #+END_EXAMPLE
    - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: Permissions on /etc/issue.net
   command: "{{ item }}"
   with_items:
@@ -1540,7 +1540,7 @@
 	#chmod 644 /etc/motd
         #+END_EXAMPLE
    - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: Permissions on /etc/motd
   command: "{{ item }}"
   with_items:
@@ -1564,7 +1564,7 @@
 	#chmod 644 /etc/hosts.allow
         #+END_EXAMPLE
    - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: Permissions on /etc/hosts.allow
   command: "{{ item }}"
   with_items:
@@ -1588,7 +1588,7 @@
 	#chmod 644 /etc/hosts.deny
         #+END_EXAMPLE
    - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: Permissions on /etc/hosts.allow
   command: "{{ item }}"
   with_items:
@@ -1611,7 +1611,7 @@
 	#chmod og-rwx /etc/crontab
         #+END_EXAMPLE
    - Implementation ::
-#+BEGIN_SRC  yml :tangle  roles/os-harden/tasks/main.yml
+#+BEGIN_SRC  yml :tangle  roles/os_harden/tasks/main.yml
 - name: Set Permissions to /etc/crontab
   command: "{{ item }}"
   with_items:
@@ -1631,7 +1631,7 @@
 	0 5 * * * /usr/sbin/aide --check
 	#+END_EXAMPLE
    - Implementation :: 
-#+BEGIN_SRC yml :tangle  roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle  roles/os_harden/tasks/main.yml
 - name: Check File System integrity using AIDE
   cron:
    name: "Check file system integrity check"
@@ -1659,7 +1659,7 @@
 
      - Implementation ::
 
-#+BEGIN_SRC yml :tangle  roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle  roles/os_harden/tasks/main.yml
 - name: Password reuse is not limited
   lineinfile: 
    dest: /etc/pam.d/password-auth
@@ -1704,7 +1704,7 @@
 
      - Implementation ::
 
-#+BEGIN_SRC yml :tangle  roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle  roles/os_harden/tasks/main.yml
 - name: Set the core dumps
   lineinfile: 
    dest:  /etc/security/limits.conf
@@ -1732,7 +1732,7 @@
 	#start on runlevel [2345]
 	#+END_EXAMPLE
    - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: stop xinetd service on boot
   service: name=xinetd enabled=yes
   ignore_errors: yes
@@ -1751,7 +1751,7 @@
 	#echo "ALL: ALL" >> /etc/hosts.deny
 	#+END_EXAMPLE
 
-#+BEGIN_SRC yml :tangle roles/os-harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
 - name: Configure /etc/hosts.deny
   lineinfile: 
     name: /etc/hosts.deny

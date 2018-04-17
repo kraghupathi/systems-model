@@ -670,6 +670,7 @@ nagios_commands:
    host_name: "nagios-server.{{prefix}}vlabs.ac.in"
   roles:
     - common
+    - os_harden
     - nagios_server
 
 #+END_SRC
@@ -686,7 +687,6 @@ nagios_commands:
   
   roles:
     - common_vars
-    - centos_harden
 #    - ossec_client
     - rsyslog_client
     - rsnapshot_client

@@ -436,6 +436,7 @@ $TTL 3600
     servers: "{{private_dns_entries}}"
   roles:
     - common
+    - os_harden
     - named_server
 
 #+END_SRC
@@ -452,7 +453,6 @@ $TTL 3600
 
   roles:
     - common_vars
-    - centos_harden
     - rsyslog_client
  #   - ossec_client
     - nagios_client
