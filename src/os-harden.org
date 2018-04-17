@@ -26,7 +26,6 @@
    organized as follows:
 
 #+BEGIN_EXAMPLE
-|-- centos-harden.yml
 |-- roles
 |   |-- os_harden
 |   |   |-- tasks
@@ -34,16 +33,7 @@
 
 #+END_EXAMPLE
 
-   Here =centos_harden.yml= file configures the os-harden with all
-   other roles. The other roles are:
-    - [[./common.org][common]]
-    - centos_harden
-    - rsyslog_client
-    - ossec_client
-    - nagios_client
-    - config_server
-
-   =roles/centos_harden/tasks/main.yml= file consist of various tasks
+   =roles/os_harden/tasks/main.yml= file consist of various tasks
    which are needed for setting up os-harden. These tasks are
    implemented and described [[Tasks][here]].
    
