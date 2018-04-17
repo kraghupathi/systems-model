@@ -469,6 +469,7 @@ authpriv.*      ?TmplAuth
   remote_user: root
   roles:
     - common_vars
+    - centos_harden
 #    - ossec_client
     - nagios_client
     - rsnapshot_client

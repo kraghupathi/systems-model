@@ -452,6 +452,7 @@ $TTL 3600
 
   roles:
     - common_vars
+    - centos_harden
     - rsyslog_client
  #   - ossec_client
     - nagios_client

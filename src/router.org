@@ -399,6 +399,7 @@ dependencies:
   roles:
 #    - ossec_client
     - common_vars
+    - centos_harden
     - rsyslog_client
     - rsnapshot_client
     - nagios_client

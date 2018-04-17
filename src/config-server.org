@@ -379,6 +379,7 @@ Add hosting_service location to path environment variable.
 
   roles:
     - common_vars
+    - centos_harden
     - rsyslog_client
 #    - ossec_client
     - nagios_client

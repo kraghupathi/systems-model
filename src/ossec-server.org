@@ -34,6 +34,7 @@
 
   roles:
     - common_vars
+    - centos_harden
     - rsyslog_client
     - nagios_client
     - rsnapshot_client
