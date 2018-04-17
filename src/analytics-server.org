@@ -161,7 +161,7 @@ WSGIScriptReloading On
     
   roles:
     - common
-    - centos_harden
+    - os_harden
     - ossec_client
     - rsyslog_client
     - nagios_client
