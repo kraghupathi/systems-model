@@ -62,14 +62,14 @@ of the *ADS Server*.
   |   |   |   |-- templates
   |   |   |   |   `--ads_iptables
 #+END_EXAMPLE
-* Tasks  
-** Building the Firewall rules
-*** Firewall rules
-- Description of firewall rules which are common across all the nodes
-  in the cluster including ads server are described in
-  [[./common.org][common role]].
+** Tasks  
+*** Building the Firewall rules
+**** Firewall rules
+     Description of firewall rules which are common across
+     all the nodes in the cluster including ads server are
+     described in [[./common.org][common role]].
 
-#+BEGIN_SRC yml :tangle roles/ads-server/templates/ads_iptables :eval no
+#+BEGIN_SRC yml :tangle roles/ads_server/templates/ads_iptables :eval no
 # Firewall configuration written by system-config-firewall
 # Manual customization of this file is not recommended.
 *filter
@@ -118,64 +118,297 @@ of the *ADS Server*.
 -A OUTPUT -j ACCEPT
 COMMIT
 #+END_SRC
-*** Configuring firewall rules 
-    The following task Copies =iptables= template created at [[Firewall%20rules][ Firewall
-    rules]] to ads and notifies to restart the iptables service if there
-    are any modifications in the configuration.
+**** Configuring firewall rules 
+     The following task Copies =iptables= template created
+     at [[Firewall%20rules][ Firewall rules]] to ads and notifies to restart the
+     iptables service if there are any modifications in the
+     configuration.
 
-#+BEGIN_SRC yaml :tangle roles/ads-server/tasks/main.yaml
+#+BEGIN_SRC yaml :tangle roles/ads_server/tasks/main.yaml
 - name: Configure iptables firewall
   template: src=iptables dest=/etc/sysconfig/iptables owner=root group=root mode=600
   notify:
    - restart iptables
 #+END_SRC
+*** Install ADS dependencies
+    #+BEGIN_SRC yml :tangle roles/ads_server/tasks/configure-ads-server.yml
+- name: installing epel-release and sshpass
+  yum: name="{{item}}" state=installed
+  environment: "{{proxy_env}}"
+  with_items:
+   - epel-release
+   - sshpass
 
-** Install ADS dependencies and Configure ADS
+- name: installing git
+  yum: name=git state=installed
+  environment: "{{proxy_env}}"
+  register: out
+- debug: var=out.stdout_lines
+
+- name: Cloning setup-ovpl-centos repo
+  git:
+   repo: http://github.com/vlead/setup-ovpl-centos.git
+   dest: ~/setup-ovpl-centos
+  ignore_errors: true
+  environment: "{{proxy_env}}"
+
+- name: Setting proxy in config.sh to install MongoDB
+  replace: 
+       path: ~/setup-ovpl-centos/scripts/config.sh
+       regexp: 'export http_proxy=""'
+       replace: 'export http_proxy="{{proxy_env.http_proxy}}"'
+
+- name: Settiing proxy in config.sh to install openvz
+  replace: 
+       path: ~/setup-ovpl-centos/scripts/config.sh
+       regexp: 'export https_proxy=""'
+       replace: 'export https_proxy="{{proxy_env.https_proxy}}"'
+
+- name: Comment install_openvz.sh
+  command: 'sed -i "/install_openvz/s/^/#/g" ~/setup-ovpl-centos/scripts/centos_prepare_ovpl.sh'
+  register: out
+- debug: var=out.stdout_lines
+
+
+- name: Running centos-prepare-ovpl shell script to install mongodb and other required packages for ADS
+  command: ./centos_prepare_ovpl.sh
+  environment: "{{proxy_env}}"
+  args:
+   chdir: setup-ovpl-centos/scripts/
+  register: out  
+- debug: var=out.stdout_lines
+
+- name: Install certifi dependecy for tornado-4.3
+  get_url: url=https://pypi.python.org/packages/20/d0/3f7a84b0c5b89e94abbd073a5f00c7176089f526edb056686751d5064cbd/certifi-2017.7.27.1.tar.gz#md5=48e8370da8b370a16e223ee9c7b6b063 dest=~/certifi.tar.gz
+  environment: "{{proxy_env}}"
+
+- name: Un-taring certifi
+  unarchive:  src=~/certifi.tar.gz  dest=~/ remote_src=yes
+
+- name: Install certifi
+  command: python setup.py install
+  environment: "{{proxy_env}}"
+  args:
+   chdir: ~/certifi-2017.7.27.1/
+
+- name: Installing python2-backports_abc,python-singledispatch,python-backports-ssl_match_hostname(tornado dependencies)
+  yum: name="{{item}}" state=installed
+  with_items:
+    - python2-backports_abc 
+    - python-singledispatch 
+    - python-backports-ssl_match_hostname
+  environment: "{{proxy_env}}"
+
+- name: Installing epel-release dependencies
+  yum: name=epel-release state=installed
+  environment: "{{proxy_env}}"
+
+- name: Installing mod_wsgi dependencies
+  yum: name=mod_wsgi state=installed
+  environment: "{{proxy_env}}"
+
+- name: Installing python-pip dependencies
+  yum: name=python-pip state=installed
+  environment: "{{proxy_env}}"
+
+- name: Installing flask
+  pip: name=flask
+  environment: "{{proxy_env}}"
+
+- name: Installing oauthlib
+  pip: name=oauthlib
+  environment: "{{proxy_env}}"
+
+- name: Installing flask-oauthlib
+  pip: name=flask-oauthlib
+  environment: "{{proxy_env}}"
+
+- name: Installing sh
+  pip: name=sh
+  environment: "{{proxy_env}}"
+
+- name: Installing netaddr
+  pip: name=netaddr
+  environment: "{{proxy_env}}"
+
+- name: Installing pymongo
+  pip: name=pymongo
+  environment: "{{proxy_env}}"
+
+- name: Downloading python tornado-4.3 file 
+  get_url: url=https://pypi.python.org/packages/source/t/tornado/tornado-4.3.tar.gz dest=~/
+  environment: "{{proxy_env}}"
+
+- name: Extracting torando-4.3tar.gz file
+  unarchive:  src=~/tornado-4.3.tar.gz  dest=~/ remote_src=yes
+
+
+- name: Running setu.py file from tornado-4.3 directory.
+  command: python setup.py install
+  environment: "{{proxy_env}}"
+  register: out
+  args:
+   chdir: ~/tornado-4.3
+- debug: var=out.stdout_lines
+
+#+END_SRC
+
+*** Configure ADS 
+#+BEGIN_SRC yml :tangle roles/ads_server/tasks/install-ads-dependencies.yml
+- name: Copy sample_config.json to config.json
+  command: cp sample_config.json config.json
+  args:
+   chdir: ~/ovpl/config/
+
+- name: Set HTTP_PROXY proxy in config.json file
+  replace: 
+   path: ovpl/config/config.json
+   regexp: '"HTTP_PROXY":.*'
+   replace: '"HTTP_PROXY": "{{proxy_env.http_proxy}}",'
+
+- name: Set HTTPS_PROXY proxy in config.json file
+  replace: 
+   path: ovpl/config/config.json
+   regexp: '"HTTPS_PROXY":.*'
+   replace: '"HTTPS_PROXY": "{{proxy_env.https_proxy}}"'
+  
+- name: COOKIE UPDATE
+  replace: 
+    path: ovpl/config/config.json
+    regexp: '"COOKIE_SECRET.*"'
+    replace: '"COOKIE_SECRET": "jgsjdhgfcjgsdjgfvjhsdfhkjsdgk"'
+- name: Set SERVER_IP in ADS config.json file
+  replace: 
+    path: ovpl/config/config.json
+    regexp: '"SERVER_IP":.*"'
+    replace: '"SERVER_IP": "10.100.1.9"'
+
+- name: Set POOLID and ADAPTER_TO_USE
+  replace: 
+   path: ovpl/config/config.json
+   regexp: '"ADAPTER_TO_USE" : {"POOLID" : 1, "ADAPTERID" : 2}'
+   replace: '"ADAPTER_TO_USE" : {"POOLID" : 1, "ADAPTERID" : 3}'
+
+- name: Copy sample_base_config.py base_config.py
+  command: cp sample_base_config.py base_config.py
+  args: 
+    chdir: ovpl/config/adapters/
+- name: set BASE_IP_ADDRESS
+  lineinfile: 
+    path: ovpl/config/adapters/base_config.py
+    regexp: "^BASE_IP_ADDRESS =.*"
+    line: 'BASE_IP_ADDRESS = "root@{{ipaddress.hostmachine}}"'
+    state: present
+- name: ADS_ON_CONTAINER to true
+  lineinfile: 
+     path: ovpl/config/adapters/base_config.py
+     regexp: "^ADS_ON_CONTAINER =.*"
+     line: "ADS_ON_CONTAINER = True"
+     state: present
+
+- name: Set ADS_SERVER_VM_ID to CTID of container running ADS
+  lineinfile: 
+   path: ovpl/config/adapters/base_config.py
+   regexp: "^ADS_SERVER_VM_ID*"
+   line: 'ADS_SERVER_VM_ID = "1009"'
+   state: present
+- name: Set SUBNET
+  lineinfile: 
+    path: ovpl/config/adapters/base_config.py
+    regexp: "SUBNET = .*" 
+    line: 'SUBNET = ["10.100.0.0/16"]'
+    state: present
+- name: Set host name
+  lineinfile: 
+   path: ovpl/config/adapters/base_config.py
+   regexp: "HOST_NAME = .*"
+   line: 'HOST_NAME = "{{clustername}}.vlabs.ac.in"'
+   state: present
+- name: Set SERVICE_HOST 
+  lineinfile: 
+   path: ovpl/config/adapters/base_config.py
+   regexp: "^SERVICE_HOST = .*"
+   line: 'SERVICE_HOST = "vlead@ansible.{{clustername}}.vlabs.ac.in"'
+   state: present
+
+- name: Settings for centos_bridged_adapter
+  command: cp sample_centos_bridged_config.py centos_bridged_config.py 
+  args: 
+   chdir: ~/ovpl/config/adapters/
+
+- name: Set SUBNET_BRIDGE in ADS configuration file
+  lineinfile:
+   path: ovpl/config/adapters/centos_bridged_config.py
+   regexp: "SUBNET_BRIDGE = .*"  
+   line: 'SUBNET_BRIDGE = "br1"'
+   state: present
+        
+- name: Google keys
+  replace:
+     path: ovpl/src/ads-web-app/config.py
+     regexp: "CONSUMER_KEY.*"
+     replace: 'CONSUMER_KEY = "{{consumer_key}}"'
+- name: Comment out not needed line in ADS server
+  command: sed -i '3{s/^/#/}' ~/ovpl/src/ads-web-app/config.py
+
+- name: Adding Google Consumer secrete key
+  replace:
+     path: ovpl/src/ads-web-app/config.py
+     regexp: "CONSUMER_SECRET.*"
+     replace: 'CONSUMER_SECRET = "{{consumer_secret}}"'
+
+- name: Replace ADS_SECRET_KEY
+  lineinfile:
+     path: ovpl/src/ads-web-app/config.py
+     regexp: "^ADS_SECRET_KEY.*"
+     line: 'ADS_SECRET_KEY = "placethekeyhere"'
+     state: present
+
+- name: Replace APP_URL
+  lineinfile:
+     path: ovpl/src/ads-web-app/config.py
+     regexp: "^APP_URL .*"
+     line: 'APP_URL = "http://ads.{{clustername}}.virtual-labs.ac.in:8080"'
+     state: present
+
+- name: Update bashrc with export http_proxy
+  lineinfile: 
+    path: ~/.bashrc
+    insertafter: EOF 
+    line: 'export http_proxy="{{proxy_env.http_proxy}}"'
+    state: present
+
+- name: Update bashrc with export https_proxy
+  lineinfile: 
+    path: ~/.bashrc
+    insertafter: EOF 
+    line: 'export https_proxy="{{proxy_env.http_proxy}}"'
+    state: present
+- name: Run source ~/.bashrc file to update proxy( Above tasks)
+  shell: source ~/.bashrc
+
+#+END_SRC
+*** Include above files in main.yml
   :PROPERTIES:
   :CUSTOM_ID: ads_server
   :END:      
-
-   Configures ads-server.
-#+begin_src yml :tangle roles/ads-server/tasks/ads.yaml  
-
----
-- name: Adding ADS server configuration file into Systems model
-  copy: src=install-ads-dependencies.yml dest=systems-model/build/{{clustername}}/
-
-
-- name: Adding ADS server configuration template into Systems model, so that it becomes one of the server nodes
-  template: src=configure-ads-server.yml  dest=systems-model/build/{{clustername}}/
-
-
-- name: Install ADS server required packages from ansible container
-  command: ansible-playbook -i hosts install-ads-dependencies.yml
-  register: out
-  args: 
-   chdir: systems-model/build/{{clustername}}/
-- debug: var=out.stdout_lines  
-
-- name: Configuring ads server from ansible container
-  command: ansible-playbook -i hosts configure-ads-server.yml 
-  register: out
-  args: 
-   chdir: systems-model/build/{{clustername}}/
-- debug: var=out.stdout_lines  
-
+#+BEGIN_SRC yml :tangle roles/ads_server/tasks/main.yml
+- include install-ads-dependencies.yml
+- include configure-ads-server.yml 
 - name: Generating sshkeys
-  command: ssh root@10.100.1.9 "ssh-keygen -t rsa -f ~/.ssh/id_rsa| echo no"
+  command: "ssh-keygen -t rsa -f ~/.ssh/id_rsa| echo no"
   register: out
 - debug: var=out.stdout_lines
 
 - name: Getting public key from ADS server from root account
-  command: ssh root@10.100.1.9 "cat ~/.ssh/id_rsa.pub"
+  command: "cat ~/.ssh/id_rsa.pub"
   register: ssh_keys
 
-
 - name: Setting StrictHostKeyChecking to  no
-  command: ssh root@10.100.1.9 'sed -i "/^StrictHostKeyChecking.*/d" /etc/ssh/ssh_config && echo StrictHostKeyChecking=no >> /etc/ssh/ssh_config'
+  command: 'sed -i "/^StrictHostKeyChecking.*/d" /etc/ssh/ssh_config && echo StrictHostKeyChecking=no >> /etc/ssh/ssh_config'
 
 - name: Copying public key of ADS server to Host machine
-  command: ssh root@10.100.1.9 'sshpass -p "{{hostmachine_password}}" ssh-copy-id root@"{{ipaddress.hostmachine}}"'
+  command: 'sshpass -p "{{hostmachine_password}}" ssh-copy-id root@"{{ipaddress.hostmachine}}"'
   register: out
 - debug: var=out.stdout_lines
 
@@ -190,20 +423,35 @@ COMMIT
    - 'command="hooks.sh",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty {{ ssh_keys.stdout }}'
 
 
-#+end_src
+#+END_SRC
+*** Configure ADS server with ads_server
+    #+BEGIN_SRC yml :tangle ads_server.yml
+---
+- name: This file configures reverseproxy server
+  hosts: ads_server 
+  remote_user: root
+  
+  vars:
+   host_name: "ads.{{prefix}}vlabs.ac.in"
+  roles:
+    - common
+    - os_harden
+    - ads_server
+    #+END_SRC
 
 *** Handlers
 **** Restart the services
-    Restart the services httpd and iptables if there are any changes
-    in the configuration. These handlers are called when associated
-    tasks in =tasks/main.yaml= notifies to restart the services.
+    Restart the service iptables if there are any changes in
+    the configuration. These handlers are called when
+    associated tasks in =tasks/main.yaml= notifies to
+    restart the services.
 
-#+BEGIN_SRC yaml :tangle roles/ads-server/handlers/main.yaml 
+#+BEGIN_SRC yaml :tangle roles/ads_server/handlers/main.yaml 
 ---
 - name: restart iptables
   service: name=iptables state=restarted
 #+END_SRC
-**** Install clients in ADS server 
+*** Install clients in ADS server 
     Install ossec_client,rsyslog_client,nagios_client in
     reverse-proxy-server.
     
@@ -220,6 +468,7 @@ COMMIT
     - rsnapshot_client
 
 #+END_SRC
+
 * Test Cases
 ** Test Case ID: Reverseproxy test Without internal(Private) DNS  
    This test is done without internal (private)DNS configuration.  For
