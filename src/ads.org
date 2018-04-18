@@ -1,0 +1,467 @@
+#+TITLE:     ADS- Design Model and Implementation
+#+DATE:      2018-04-18 Wed
+#+PROPERTY: session *scratch*
+#+PROPERTY: results output
+#+PROPERTY: exports code
+#+SETUPFILE: org-templates/level-0.org
+#+DESCRIPTION: Router Design and  Documentation
+#+OPTIONS: ^:nil
+
+* Introduction
+This document describes the requirements, design and implementation
+of the *ADS Server*. 
+
+* Requirements
+The functional and security requirements of router are:
+
+** Functional Requirements
+  The router acts as a gateway for all other servers to reach the internet. Hence the functional
+  requirements of the router are to allow forwarding of packets to reverse proxy on TCP port 80/443
+  and also to public DNS on UDP port 53. Every request from any external lab user would be accepted
+  on TCP port 80/443 and UDP port 53.
+ 
+  The router also allows outgoing SSH/Rsync over TCP port 2222 from
+  [[./rsnapshot-server.org][Rsnapshot server]] to [[https://vlead.virtual-labs.ac.in/wiki/index.php/Aws-backup.virtual-labs.ac.in][aws-backup.vlabs.ac.in]]
+
+** Security Requirements
+  All common security requirements and general server hardening as
+  described in [[file:common.org::*Security Requirements][common role]] are applicable to router with an exception
+  that TCP port 80/443 and UDP port 53 are open for all lab users. And
+  TCP port 2222 is allowed for rsnapshot node/backup node.
+ 
+* Design
+** Overall Network diagram of the router
+The following network diagram represents the interaction of the router server with the other machines in the cluster.
+It shows the connections from router to other servers and also vice versa, such as DNS,reverse-proxy and the lab users who
+would access the network.The major functionality of the router is of the packet forwarding from the outside network into the 
+network to the various other devices via different ports i.e. 80,443 and 53 and also using the different network protocols like
+TCP and UDP for the communication.
+#+CAPTION: Router Configuration diagram
+#+LABEL: router-configuration-diagram
+[[./diagrams/router-config.png]]
+
+** Source file for the network diagram
+   Created using Libreoffice/OpenOffice, with VRT extensions.
+   [[./diagrams/router-config.odg][Download-source-file]]
+
+** Important configuration and data files and folders
+|------+----------+------------------------------+------------------------|
+| Sno. | Service  | File                         | File Type              |
+|------+----------+------------------------------+------------------------|
+|  1.  | iptables | /etc/sysconfig/iptables      | Firewall Configuration |                                                                      
+|------+----------+------------------------------+------------------------|
+* Implementation
+** Structure of Scripts
+- The implementation of this system is in terms of a collection of ads
+  scripts which configures the node. These scripts are organized as
+  follows:
+
+#+BEGIN_EXAMPLE
+  |-code
+  |   |-- ads.yml
+  |   |-- roles
+  |   |   |-- ads-server
+  |   |   |   |-- handlers
+  |   |   |   |   `--main.yml
+  |   |   |   |-- tasks
+  |   |   |   |   `--main.yml
+  |   |   |   |-- templates
+  |   |   |   |   `--ads_iptables
+#+END_EXAMPLE
+  
+** Building the Firewall rules
+*** Firewall rules
+- Description of firewall rules which are common across all the nodes
+  in the cluster including ads server are described in
+  [[./common.org][common role]].
+
+#+BEGIN_SRC yml :tangle roles/ads-server/templates/ads_iptables :eval no
+# Firewall configuration written by system-config-firewall
+# Manual customization of this file is not recommended.
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+-A INPUT -p icmp -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+
+#Allow incoming ads from router
+-A INPUT -s {{ router_internal_ip }}/32 -p tcp -m state --state NEW -m tcp --dport 8080 -j ACCEPT
+
+# Allow incoming http packets from local subnet
+-A INPUT -m state --state NEW -p tcp -m tcp --dport 80 -j ACCEPT  
+-A INPUT -s {{local_subnet}} -p tcp -m tcp --dport 80 -j ACCEPT
+
+#Allow incoming https packets from local subnet
+-A INPUT -m state --state NEW -p tcp -m tcp --dport 443 -j ACCEPT
+-A INPUT -s {{local_subnet}} -p tcp -m tcp --dport 443 -j ACCEPT
+
+###### END specific nagios #######
+#Allow incoming NRPE queries for nagios from nagios servers
+-A INPUT -m state --state NEW -p tcp -m tcp --dport 5666 -j ACCEPT
+#Log all other "blocked_input_" attempts with rate limiting
+-A INPUT -m state --state NEW -m limit --limit 2/min -j LOG --log-prefix "blocked_input_"
+
+#Reply with proper ICMP error message and reject the connection
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+#Do not allow any packet to be forwarded
+-A FORWARD -j REJECT 
+##Output rules
+
+#Allow outgoing connections to localhost
+-A OUTPUT -s 127.0.0.0/8 -o lo -j ACCEPT
+
+#Allow ongoing connections
+-A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+
+#Allow DNS queries
+-A OUTPUT -p udp -m udp --dport 53 -j ACCEPT
+
+#Allow outgoing connections on tcp port 8000 to router, this is for bandwidthd on router
+-A OUTPUT -p tcp -m tcp -d {{router_internal_ip}} --dport 8000 -j ACCEPT
+-A OUTPUT -j ACCEPT
+COMMIT
+#+END_SRC
+*** Configuring firewall rules 
+    The following task Copies =iptables= template created at [[Firewall%20rules][ Firewall
+    rules]] to ads and notifies to restart the iptables service if there
+    are any modifications in the configuration.
+
+#+BEGIN_SRC yaml :tangle roles/ads-server/tasks/main.yaml
+- name: Configure iptables firewall
+  template: src=iptables dest=/etc/sysconfig/iptables owner=root group=root mode=600
+  notify:
+   - restart iptables
+#+END_SRC
+
+** ADS
+     :PROPERTIES:
+     :CUSTOM_ID: ads_server
+     :END:      
+
+     Configures ads-server.
+#+begin_src yml :tangle roles/ads-server/tasks/ads.yaml  
+
+---
+- name: Adding ADS server configuration file into Systems model
+  copy: src=install-ads-dependencies.yml dest=systems-model/build/{{clustername}}/
+
+
+- name: Adding ADS server configuration template into Systems model, so that it becomes one of the server nodes
+  template: src=configure-ads-server.yml  dest=systems-model/build/{{clustername}}/
+
+
+- name: Install ADS server required packages from ansible container
+  command: ansible-playbook -i hosts install-ads-dependencies.yml
+  register: out
+  args: 
+   chdir: systems-model/build/{{clustername}}/
+- debug: var=out.stdout_lines  
+
+- name: Configuring ads server from ansible container
+  command: ansible-playbook -i hosts configure-ads-server.yml 
+  register: out
+  args: 
+   chdir: systems-model/build/{{clustername}}/
+- debug: var=out.stdout_lines  
+
+- name: Generating sshkeys
+  command: ssh root@10.100.1.9 "ssh-keygen -t rsa -f ~/.ssh/id_rsa| echo no"
+  register: out
+- debug: var=out.stdout_lines
+
+- name: Getting public key from ADS server from root account
+  command: ssh root@10.100.1.9 "cat ~/.ssh/id_rsa.pub"
+  register: ssh_keys
+
+
+- name: Setting StrictHostKeyChecking to  no
+  command: ssh root@10.100.1.9 'sed -i "/^StrictHostKeyChecking.*/d" /etc/ssh/ssh_config && echo StrictHostKeyChecking=no >> /etc/ssh/ssh_config'
+
+- name: Copying public key of ADS server to Host machine
+  command: ssh root@10.100.1.9 'sshpass -p "{{hostmachine_password}}" ssh-copy-id root@"{{ipaddress.hostmachine}}"'
+  register: out
+- debug: var=out.stdout_lines
+
+- name: Enabling ADS hooks between ADS and config servers. Appends the ads public key in the vlead user of config-server
+  lineinfile:
+    path: ~/.ssh/authorized_keys
+    regexp: '^command="hook"*'
+    line: "{{item}}"
+    state: present
+    create: yes
+  with_items:
+   - 'command="hooks.sh",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty {{ ssh_keys.stdout }}'
+
+
+#+end_src
+
+** Handlers
+*** Restart the services
+    Restart the services httpd and iptables if there are any changes
+    in the configuration. These handlers are called when associated
+    tasks in =tasks/main.yaml= notifies to restart the services.
+
+#+BEGIN_SRC yaml :tangle roles/ads-server/handlers/main.yaml 
+---
+- name: restart iptables
+  service: name=iptables state=restarted
+#+END_SRC
+*** Install clients in ADS server 
+    Install ossec_client,rsyslog_client,nagios_client in
+    reverse-proxy-server.
+    
+#+BEGIN_SRC yaml :tangle install_clients_in_ads.yaml
+---
+- name: This file configures reverseproxy server
+  hosts: ads_server 
+  remote_user: root
+  roles:
+    - common_vars
+#    - ossec_client
+    - rsyslog_client
+    - nagios_client
+    - rsnapshot_client
+
+#+END_SRC
+* Test Cases
+** Test Case ID: Reverseproxy test Without internal(Private) DNS  
+   This test is done without internal (private)DNS configuration.  For
+   internal name resolving =/etc/hosts/= file is used.
+
+*** Objective
+    Test to check whether the client requests are going via
+    reverseproxy and particular lab is served.
+*** Apparatus 
+            - Three containers ::
+              1) reverseproxy server 
+              2) lab1 container 
+              3) lab2 container 
+            - Reverseproxy ::
+              1) To add hostnames of the labs. These labs points to
+                 corresponding lab ips and 
+	      2) For internal name resolution.
+            - PC/extra container ::
+              1) To add hostname of the labs to =/etc/hosts= file. So
+                 that labs points to reverseproxy ip.
+             
+*** Procedure 
++ Follow the bellow steps to test the reverseproxy 
+  1) Reverse proxy server is already setup by running the ansible
+     playbooks from config_server and IP of reverse proxy server is
+     172.172.172.92
+
+  2) Create two new containers lab1 and lab2 and install dependencies
+     + lab1 details
+       IP: 172.172.172.250
+       hostname: lab1.virtual-labs.ac.in
+     + lab2 details
+       IP: 172.172.172.81
+       hostname: lab2.virtual-labs.ac.in
+     + Dependencies ::
+         a) httpd
+         b) php(if needed)
+  3) Add virtual host entries in reverse proxy.
+     + Adding virtual host entries is taken care by ansible scripts
+       of reverseproxy_server.
+  4) create an index.html file just for testing in each lab container  
+     + These files are used to test whether the reverse proxy is
+       forwarding the http and https packets to corresponding lab or
+       not, based on virtualhost entry.
+  5) Add hostname of each lab in =/etc/hosts= by giving ip of lab in
+     reverseproxy and for internal name resolution.
+  6) Use command line commands such as wget, curl, ping etc to test
+     reverseproxy and do the following experiments
+*** Experiments 
+  - From command line :: To test whether the reverseproxy is working
+       or not from command line , follow the steps shown below: 
+    + Add hostnames of the labs to =etc/hosts= of reverseproxy server.
+      This is because the testing is done without using the
+      internal(Private) DNS.
+      #+BEGIN_SRC example
+      172.172.172.250 lab1.virtual-labs.ac.in
+      172.172.172.81 lab2.virtual-labs.ac.in
+      #+END_SRC
+    + Add hostnames of the labs to =/etc/hosts= to PC.  This is
+      because the testing is done without using the internal(Private)
+      DNS.
+      #+BEGIN_SRC example
+      172.172.172.96 lab1.virtual-labs.ac.in
+      172.172.172.96 lab2.virtual-labs.ac.in
+      #+END_SRC
+    + Use *wget* command to get the content of each lab
+      #+BEGIN_SRC example
+      $wget --no-proxy lab1.virtual-labs.ac.in
+      $wget --no-proxy lab2.virtual-labs.ac.in
+      #+END_SRC
+    The above two commands passes through reverseproxy and gives
+    you *index.html* file content of each lab
+    + ping from reverseproxy container :: Bellow command gives actual
+         lab IP
+      #+BEGIN_SRC example
+      $ping lab1.virtual-labs.ac.in        
+      #+END_SRC
+      *Result*
+      #+BEGIN_SRC example
+      PING lab1.virtual-labs.ac.in (172.172.172.250) 56(84) bytes of data.
+      64 bytes from lab1.virtual-labs.ac.in (172.172.172.250): icmp_seq=1 ttl=64 time=0.093 ms
+      #+END_SRC
+      
+    + ping from PC :: Below command gives reverseproxy server IP ,
+                      because the lab has to go to actual lab
+                      container via reverseproxy server.
+      #+BEGIN_SRC example
+      $ping lab1.virtual-labs.ac.in
+      #+END_SRC
+      *Result*
+      #+BEGIN_SRC example
+      PING lab1.virtual-labs.ac.in (172.172.172.96) 56(84) bytes of data.
+      64 bytes from lab1.virtual-labs.ac.in (172.172.172.96): icmp_seq=1 ttl=64 time=0.061 ms
+      #+END_SRC
+ - From Browser ::
+    + Add hostnames to =/etc/hosts= in your PC like below:
+      #+BEGIN_SRC example
+      172.172.172.96 lab1.virtual-labs.ac.in
+      172.172.172.96 lab2.virtual-labs.ac.in
+      #+END_SRC
+    + Set no proxy for *.virtual-labs.ac.in(if you want to use domain
+      name), 172.172.172.0/24 (if you want to use IP) in the browser if your
+      network uses any proxy server.
+    + Browse the lab URLs http://lab1.virtual-labs.ac.in and
+      http://lab2.virtual-labs.ac.in from your browser and you may get
+      the following result in log file at =/var/log/httpd/lab1.virtual-labs.ac.in-access-log=
+      #+BEGIN_SRC example
+      172.172.172.1 - - [26/Mar/2015:05:50:20 -0400] "GET /awstats/awstats.pl?config=lab1.virtual-labs.ac.in HTTP/1.1" 404 305 "-" "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:36.0) Gecko/20100101 Firefox/36.0"
+      172.172.172.1 - - [26/Mar/2015:05:50:21 -0400] "GET /awstats/awstats.pl?config=lab1.virtual-labs.ac.in HTTP/1.1" 404 305 "-" "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:36.0) Gecko/20100101 Firefox/36.0"
+      #+END_SRC
+  
+*** Observation 
+  - Absence of --no-proxy (if network uses any proxy server), throws
+    the follwoing error.
+
+   #+BEGIN_SRC example
+   Proxy request sent, awaiting response... 503 Service Unavailable
+   2015-03-26 02:06:09 ERROR 503: Service Unavailable.
+   #+END_SRC
+  - Logs are being stored in reverseproxy    
+*** Result 
+ Reverse Proxy is working
+*** Conclusion 
+    Reverse proxy server is able to forward requests to corresponding
+    labs.
+** Test Case ID : Reverseproxy test using internal(private) DNS, Public DNS and Router 
+
+*** Objective 
+Test to check the reverseproxy function using private DNS and Public DN
+  - Note :: Here Public DNS is not yet configured on AWS. So we are
+            using existing public DNS(ns1-pub.virtual-labs.ac.in)
+            which is configured in BASE2 machine.
+*** Apparatus 
+  1) *Router*: 
+     To forward HTTP(80), HTTPS(443) and DNS(53) packets to specific servers. 
+  2) *Revereproxy server*:
+     To add virtual host entries to web server configuration file.
+  3) *Public DNS*:
+     To Add DNS entries so that labs can be accessible from outside
+     using lab's hostname 
+  4) *Private DNS*: 
+     To add DNS entries, so that labs can be accessible anywhere
+     within in the internal network using host name of the lab
+*** Procedure  
+  - Assume private DNS and public DNS are configured and DNS
+    entries of each lab are added properly. 
+  - Now browse the Lab URL from browser. Then the next procedure
+    takes place as follows:
+
+  - Router accepts HTTP and HTTPS packets from external world (lab
+    user)and router forwards the requests to reverseproxy server since
+    router has the forwarding functionality. And then reverseproxy
+    accepts the HTTP and HTTPS packets from router and from internal
+    network, based on ServerName directive in virtualhost,
+    reverseproxy sends these packets to internal web servers and
+    returns reply to internal network and to the router. Router then
+    gives the reply to lab user with the requested web pages for
+    external lab users.
+*** Experiment 
+  - Add lab1's ip to private DNS by giving the sub-domain as lab1.
+  - Add router's public ip to public DNS by giving the sub-domain as lab1.
+  - Using browser ::
+   Browse the following lab URL 
+   #+BEGIN_SRC example
+   lab1.virtual-labs.ac.in
+   #+END_SRC
+  Then it gives you the lab content.
+*** Observation 
+ Displaying lab's content and logs are being stored at reverseproxy
+ server.
+*** Result 
+Reverse proxy working.
+*** Conclusion 
+Reverse proxy is setup properly, lab users are able to access the lab
+using domain name of the lab and logs are being stored for analytics.
+
+** Test Case ID : AWStats test
+*** Objective 
+Test to check the AWStats for virtual hosts
+*** Apparatus 
+     1) Reverse proxy : To store analytics and serve awstats from the
+        browser
+     2) A workstation : To access the analytics/awstats from reverse
+        proxy using the browser.
+*** Procedure  
+     - Run the following command to update analytics of all the labs
+       at a time     
+       #+BEGIN_SRC example
+       $perl /usr/share/awstats/tools/awstats_updateall.pl now
+       #+END_SRC
+       or
+     - Run the following command to update analytics of individual
+       lab.
+       #+BEGIN_SRC example
+       $perl /usr/share/awstats/wwwroot/cgi-bin/awstats.pl -config=lab1.virtual-labs.ac.in -update
+       #+END_SRC
+
+*** Experiments 
+    - From Command Line ::
+       Run following command from your workstation/PC
+      #+BEGIN_SRC example
+      wget --no-proxy  lab1.virtual-labs.ac.in
+      #+END_SRC
+      + Result on reverseproxy  ::
+	 look at the lab associated log file by running 
+         #+BEGIN_SRC example
+         tail -f /var/log/http/lab1.virtual-labs.ac.in-access-log* and    
+	 #+END_SRC
+         and you may get the following output
+         #+BEGIN_SRC example
+         172.172.172.1 - - [26/Mar/2015:06:27:34 -0400] "GET / HTTP/1.1" 200 43 "-" "Wget/1.15 (linux-gnu)"
+         172.172.172.1 - - [26/Mar/2015:06:27:49 -0400] "GET / HTTP/1.1" 200 43 "-" "Wget/1.15 (linux-gnu)"
+         #+END_SRC              
+    - From browser ::   
+      +	Browse the lab URL from any browser and see the log file by
+        running the following command in reverseproxy server.
+        example:
+        #+BEGIN_SRC example
+	$tail -f /var/log/httpd/lab1.virtual-labs.ac.in.access-log
+	#+END_SRC
+	You may get the result as follows 
+	#+BEGIN_SRC example
+        172.172.172.1 - - [26/Mar/2015:05:50:20 -0400] "GET /awstats/awstats.pl?config=lab1.virtual-labs.ac.in HTTP/1.1" 404 305 "-" "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:36.0) Gecko/20100101 Firefox/36.0"
+        172.172.172.1 - - [26/Mar/2015:05:50:21 -0400] "GET /awstats/awstats.pl?config=lab1.virtual-labs.ac.in HTTP/1.1" 404 305 "-" "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:36.0) Gecko/20100101 Firefox/36.0"
+	#+END_SRC
+	This means, logs are being stored.
+    -  Access the analytics of the labs from browser ::
+      + To access the analytics of each lab from the browser use the
+        following link
+        http://reverseproxy_server_IP_or_Hostname_name/awsstats/awstats.pl?config=labURL
+        example:
+        http://172.172.172.92/awstats/awstats.pl?config=lab1.virtual-labs.ac.in
+*** Observation 
+ Analytics are being stored 
+*** Result 
+    Awstats are running fine
+*** Conclusion 
+  Awstats ( analytics of each lab ) are storing and able to access the
+  analytics from browser
