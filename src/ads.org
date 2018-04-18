@@ -12,49 +12,43 @@ This document describes the requirements, design and implementation
 of the *ADS Server*. 
 
 * Requirements
-The functional and security requirements of router are:
+  The functional and security requirements of router are:
 
 ** Functional Requirements
-  The router acts as a gateway for all other servers to reach the internet. Hence the functional
-  requirements of the router are to allow forwarding of packets to reverse proxy on TCP port 80/443
-  and also to public DNS on UDP port 53. Every request from any external lab user would be accepted
-  on TCP port 80/443 and UDP port 53.
- 
-  The router also allows outgoing SSH/Rsync over TCP port 2222 from
-  [[./rsnapshot-server.org][Rsnapshot server]] to [[https://vlead.virtual-labs.ac.in/wiki/index.php/Aws-backup.virtual-labs.ac.in][aws-backup.vlabs.ac.in]]
+   Auto Deployment Service(ADS) is a service. The main job
+   of the service is to deploy applications inside the
+   cluster.
 
 ** Security Requirements
-  All common security requirements and general server hardening as
-  described in [[file:common.org::*Security Requirements][common role]] are applicable to router with an exception
-  that TCP port 80/443 and UDP port 53 are open for all lab users. And
-  TCP port 2222 is allowed for rsnapshot node/backup node.
+   All common security requirements and general server
+   hardening rules are described in [[file:common.org::*Security Requirements][common role]]. ADS
+   specific tasks are updated [[Implementation][here]].
  
 * Design
-** Overall Network diagram of the router
-The following network diagram represents the interaction of the router server with the other machines in the cluster.
-It shows the connections from router to other servers and also vice versa, such as DNS,reverse-proxy and the lab users who
-would access the network.The major functionality of the router is of the packet forwarding from the outside network into the 
-network to the various other devices via different ports i.e. 80,443 and 53 and also using the different network protocols like
-TCP and UDP for the communication.
+** Overall Network diagram of the Auto Deployment Service(ADS)
+   The following network diagram represents the interaction
+   of the ADS server with the other machines in the cluster.
+   It shows the connections from router to ADS server.The
+   major functionality of the ADS service is deploying web
+   applications in the cluster. 
 #+CAPTION: Router Configuration diagram
 #+LABEL: router-configuration-diagram
 [[./diagrams/router-config.png]]
 
 ** Source file for the network diagram
-   Created using Libreoffice/OpenOffice, with VRT extensions.
-   [[./diagrams/router-config.odg][Download-source-file]]
+   Update google diagram link here
 
 ** Important configuration and data files and folders
-|------+----------+------------------------------+------------------------|
-| Sno. | Service  | File                         | File Type              |
-|------+----------+------------------------------+------------------------|
-|  1.  | iptables | /etc/sysconfig/iptables      | Firewall Configuration |                                                                      
-|------+----------+------------------------------+------------------------|
+|------+----------+-------------------------+------------------------|
+| Sno. | Service  | File                    | File Type              |
+|------+----------+-------------------------+------------------------|
+|   1. | iptables | /etc/sysconfig/iptables | Firewall Configuration |
+|------+----------+-------------------------+------------------------|
 * Implementation
 ** Structure of Scripts
-- The implementation of this system is in terms of a collection of ads
-  scripts which configures the node. These scripts are organized as
-  follows:
+  - The implementation of this system is in terms of a
+    collection of ads scripts which configures the
+    node. These scripts are organized as follows:
 
 #+BEGIN_EXAMPLE
   |-code
@@ -68,7 +62,7 @@ TCP and UDP for the communication.
   |   |   |   |-- templates
   |   |   |   |   `--ads_iptables
 #+END_EXAMPLE
-  
+* Tasks  
 ** Building the Firewall rules
 *** Firewall rules
 - Description of firewall rules which are common across all the nodes
@@ -136,12 +130,12 @@ COMMIT
    - restart iptables
 #+END_SRC
 
-** ADS
-     :PROPERTIES:
-     :CUSTOM_ID: ads_server
-     :END:      
+** Install ADS dependencies and Configure ADS
+  :PROPERTIES:
+  :CUSTOM_ID: ads_server
+  :END:      
 
-     Configures ads-server.
+   Configures ads-server.
 #+begin_src yml :tangle roles/ads-server/tasks/ads.yaml  
 
 ---
@@ -198,8 +192,8 @@ COMMIT
 
 #+end_src
 
-** Handlers
-*** Restart the services
+*** Handlers
+**** Restart the services
     Restart the services httpd and iptables if there are any changes
     in the configuration. These handlers are called when associated
     tasks in =tasks/main.yaml= notifies to restart the services.
@@ -209,7 +203,7 @@ COMMIT
 - name: restart iptables
   service: name=iptables state=restarted
 #+END_SRC
-*** Install clients in ADS server 
+**** Install clients in ADS server 
     Install ossec_client,rsyslog_client,nagios_client in
     reverse-proxy-server.
     
