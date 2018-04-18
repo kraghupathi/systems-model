@@ -124,14 +124,14 @@ COMMIT
      iptables service if there are any modifications in the
      configuration.
 
-#+BEGIN_SRC yaml :tangle roles/ads_server/tasks/main.yaml
+#+BEGIN_SRC yaml :tangle roles/ads_server/tasks/main.yml
 - name: Configure iptables firewall
   template: src=iptables dest=/etc/sysconfig/iptables owner=root group=root mode=600
   notify:
    - restart iptables
 #+END_SRC
 *** Install ADS dependencies
-    #+BEGIN_SRC yml :tangle roles/ads_server/tasks/configure-ads-server.yml
+    #+BEGIN_SRC yml :tangle roles/ads_server/tasks/install-ads-dependencies.yml
 - name: installing epel-release and sshpass
   yum: name="{{item}}" state=installed
   environment: "{{proxy_env}}"
@@ -254,7 +254,7 @@ COMMIT
 #+END_SRC
 
 *** Configure ADS 
-#+BEGIN_SRC yml :tangle roles/ads_server/tasks/install-ads-dependencies.yml
+#+BEGIN_SRC yml :tangle roles/ads_server/tasks/configure-ads-server.yml
 - name: Copy sample_config.json to config.json
   command: cp sample_config.json config.json
   args:
