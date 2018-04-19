@@ -248,6 +248,12 @@ prefix: ""
 #Define cluster name to be used by hooks service to set environment path
 cluster: ""
 
+#Ip adress of host-machine
+ipaddress.hostmachine: 10.2.56.103
+
+#Password of hostmachine
+hostmachine_password: password
+
 #List of ansible servers.  Mutliple ansible servers are fine
 ansible_server_ips: 
   - 10.100.1.2
