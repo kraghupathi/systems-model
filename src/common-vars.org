@@ -252,7 +252,7 @@ cluster: ""
 ipaddress.hostmachine: 10.2.56.103
 
 #Password of hostmachine
-hostmachine_password: password
+hostmachine_password: "password"
 
 #List of ansible servers.  Mutliple ansible servers are fine
 ansible_server_ips: 
