@@ -362,7 +362,6 @@ Add hosting_service location to path environment variable.
     - common
     - os_harden
     - config_server
-    - ads_server
 #+END_SRC
 ***** Install Clients in Config server
       Install ossec_client,rsyslog_client,nagios_client in Config-server
