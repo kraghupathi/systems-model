@@ -396,6 +396,7 @@ COMMIT
 
 - name: Copying public key of ADS server to Host machine
   command: 'sshpass -p "{{hostmachine_password}}" ssh-copy-id root@"{{hostmachine_ip}}"'
+  when: hostmachine_password is defined and hostmachine_ip is defined
   register: out
 - debug: var=out.stdout_lines
 
