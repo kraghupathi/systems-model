@@ -254,6 +254,10 @@ hostmachine_ip: <IP-ADDRESS-OF-THE-HOSTMACHINE>
 #Password of hostmachine
 hostmachine_password: "password"
 
+#ADS server related variables
+consumer_key: "692236489889-a83u80r7u2oh2ng9u67d0411ao3o4ric.apps.googleusercontent.com"
+consumer_secret: "QzZkM8ciJweOtvzx-93qkX4z"
+
 #List of ansible servers.  Mutliple ansible servers are fine
 ansible_server_ips: 
   - 10.100.1.2

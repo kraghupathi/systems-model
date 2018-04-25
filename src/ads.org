@@ -389,7 +389,10 @@ COMMIT
   register: ssh_keys
 
 - name: Setting StrictHostKeyChecking to  no
-  command: 'sed -i "/^StrictHostKeyChecking.*/d" /etc/ssh/ssh_config && echo StrictHostKeyChecking=no >> /etc/ssh/ssh_config'
+  shell: "{{item}}"
+  with_items:
+    - 'sed -i "/^StrictHostKeyChecking.*/d" /etc/ssh/ssh_config'
+    - 'echo "StrictHostKeyChecking=no" >> /etc/ssh/ssh_config'
 
 - name: Copying public key of ADS server to Host machine
   command: 'sshpass -p "{{hostmachine_password}}" ssh-copy-id root@"{{hostmachine_ip}}"'
