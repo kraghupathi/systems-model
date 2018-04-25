@@ -412,6 +412,7 @@ $TTL 3600
     servers: "{{public_dns_entries}}"
   roles:
     - common
+    - os_harden
     - named_server
 
 #+END_SRC

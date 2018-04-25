@@ -360,6 +360,7 @@ Add hosting_service location to path environment variable.
 
   roles:
     - common
+    - os_harden
     - config_server
     - ads_server
 #+END_SRC

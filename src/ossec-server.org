@@ -18,6 +18,7 @@
 
   roles:
     - common
+    - os_harden
     - ossec_server
 
 

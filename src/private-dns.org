@@ -436,6 +436,7 @@ $TTL 3600
     servers: "{{private_dns_entries}}"
   roles:
     - common
+    - os_harden
     - named_server
 
 #+END_SRC
