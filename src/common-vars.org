@@ -249,7 +249,7 @@ prefix: ""
 cluster: ""
 
 #Ip adress of host-machine
-ipaddress.hostmachine: 10.2.56.103
+hostmachine_ip: <IP-ADDRESS-OF-THE-HOSTMACHINE>
 
 #Password of hostmachine
 hostmachine_password: "password"

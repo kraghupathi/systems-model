@@ -127,7 +127,7 @@ COMMIT
 #+BEGIN_SRC yaml :tangle roles/ads_server/tasks/main.yml
 ---
 - name: Configure iptables firewall
-  template: src=iptables dest=/etc/sysconfig/iptables owner=root group=root mode=600
+  template: src=ads_iptables dest=/etc/sysconfig/iptables owner=root group=root mode=600
   notify:
    - restart iptables
 #+END_SRC
@@ -394,8 +394,8 @@ COMMIT
   :CUSTOM_ID: ads_server
   :END:      
 #+BEGIN_SRC yml :tangle roles/ads_server/tasks/main.yml
-- include install-ads-dependencies.yml
-- include configure-ads-server.yml 
+- include: install-ads-dependencies.yml
+- include: configure-ads-server.yml 
 - name: Generating sshkeys
   command: "ssh-keygen -t rsa -f ~/.ssh/id_rsa| echo no"
   register: out
@@ -409,7 +409,7 @@ COMMIT
   command: 'sed -i "/^StrictHostKeyChecking.*/d" /etc/ssh/ssh_config && echo StrictHostKeyChecking=no >> /etc/ssh/ssh_config'
 
 - name: Copying public key of ADS server to Host machine
-  command: 'sshpass -p "{{hostmachine_password}}" ssh-copy-id root@"{{ipaddress.hostmachine}}"'
+  command: 'sshpass -p "{{hostmachine_password}}" ssh-copy-id root@"{{hostmachine_ip}}"'
   register: out
 - debug: var=out.stdout_lines
 
@@ -428,7 +428,7 @@ COMMIT
 *** Configure ADS server with ads_server
     #+BEGIN_SRC yml :tangle ads_server.yml
 ---
-- name: This file configures reverseproxy server
+- name: This file configures ADS server
   hosts: ads_server 
   remote_user: root
   
