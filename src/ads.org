@@ -300,7 +300,7 @@ COMMIT
     regexp: "^BASE_IP_ADDRESS =.*"
     line: 'BASE_IP_ADDRESS = "root@{{hostmachine_ip}}"'
     state: present
-    - name: ADS_ON_CONTAINER to true
+- name: ADS_ON_CONTAINER to true
   lineinfile: 
      path: ovpl/config/adapters/base_config.py
      regexp: "^ADS_ON_CONTAINER =.*"
