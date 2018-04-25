@@ -298,9 +298,9 @@ COMMIT
   lineinfile: 
     path: ovpl/config/adapters/base_config.py
     regexp: "^BASE_IP_ADDRESS =.*"
-    line: 'BASE_IP_ADDRESS = "root@{{ipaddress.hostmachine}}"'
+    line: 'BASE_IP_ADDRESS = "root@{{hostmachine_ip}}"'
     state: present
-- name: ADS_ON_CONTAINER to true
+    - name: ADS_ON_CONTAINER to true
   lineinfile: 
      path: ovpl/config/adapters/base_config.py
      regexp: "^ADS_ON_CONTAINER =.*"
@@ -323,13 +323,13 @@ COMMIT
   lineinfile: 
    path: ovpl/config/adapters/base_config.py
    regexp: "HOST_NAME = .*"
-   line: 'HOST_NAME = "{{clustername}}.vlabs.ac.in"'
+   line: 'HOST_NAME = "{{prefix}}vlabs.ac.in"'
    state: present
 - name: Set SERVICE_HOST 
   lineinfile: 
    path: ovpl/config/adapters/base_config.py
    regexp: "^SERVICE_HOST = .*"
-   line: 'SERVICE_HOST = "vlead@ansible.{{clustername}}.vlabs.ac.in"'
+   line: 'SERVICE_HOST = "vlead@ansible.{{prefix}}vlabs.ac.in"'
    state: present
 
 - name: Settings for centos_bridged_adapter
@@ -369,25 +369,8 @@ COMMIT
   lineinfile:
      path: ovpl/src/ads-web-app/config.py
      regexp: "^APP_URL .*"
-     line: 'APP_URL = "http://ads.{{clustername}}.virtual-labs.ac.in:8080"'
+     line: 'APP_URL = "http://ads.{{prefix}}virtual-labs.ac.in:8080"'
      state: present
-
-- name: Update bashrc with export http_proxy
-  lineinfile: 
-    path: ~/.bashrc
-    insertafter: EOF 
-    line: 'export http_proxy="{{proxy_env.http_proxy}}"'
-    state: present
-
-- name: Update bashrc with export https_proxy
-  lineinfile: 
-    path: ~/.bashrc
-    insertafter: EOF 
-    line: 'export https_proxy="{{proxy_env.http_proxy}}"'
-    state: present
-- name: Run source ~/.bashrc file to update proxy( Above tasks)
-  shell: source ~/.bashrc
-
 #+END_SRC
 *** Include above files in main.yml
   :PROPERTIES:
