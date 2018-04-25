@@ -248,13 +248,13 @@ prefix: ""
 #Define cluster name to be used by hooks service to set environment path
 cluster: ""
 
-#Ip adress of host-machine
-hostmachine_ip: <IP-ADDRESS-OF-THE-HOSTMACHINE>
+#Set the IP adress of host-machine. This is needed only when using OpenVZ  as Virtualization.
+hostmachine_ip: ""
 
-#Password of hostmachine
-hostmachine_password: "password"
+#Set the password of hostmachine. This is needed only when using OpenVZ  as Virtualization.
+hostmachine_password: ""
 
-#ADS server related variables
+#ADS server related variables. 
 consumer_key: "692236489889-a83u80r7u2oh2ng9u67d0411ao3o4ric.apps.googleusercontent.com"
 consumer_secret: "QzZkM8ciJweOtvzx-93qkX4z"
 
