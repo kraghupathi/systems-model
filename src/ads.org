@@ -416,7 +416,7 @@ COMMIT
 
 #+END_SRC
 *** Configure ADS server with ads_server
-    #+BEGIN_SRC yml :tangle ads_server.yml
+    #+BEGIN_SRC yml :tangle ads_server.yaml
 ---
 - name: This file configures ADS server
   hosts: ads_server 
