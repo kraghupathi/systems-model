@@ -380,13 +380,16 @@ COMMIT
 - include: install-ads-dependencies.yml
 - include: configure-ads-server.yml 
 - name: Generating sshkeys
-  command: "ssh-keygen -t rsa -f ~/.ssh/id_rsa| echo no"
+  command: "ssh-keygen -t rsa -f ~/.ssh/id_rsa -q -N ""
+  args:
+     creates: /root/.ssh/id_rsa
   register: out
 - debug: var=out.stdout_lines
 
 - name: Getting public key from ADS server from root account
   command: "cat ~/.ssh/id_rsa.pub"
   register: ssh_keys
+- debug: var=ssh_keys.stdout_lines
 
 - name: Setting StrictHostKeyChecking to  no
   shell: "{{item}}"
