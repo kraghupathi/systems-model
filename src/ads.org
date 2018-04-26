@@ -382,7 +382,7 @@ COMMIT
 - name: Generating sshkeys
   command: ssh-keygen -t rsa -f ~/.ssh/id_rsa -q -N ""
   args:
-     creates: /root/.ssh/id_rsa
+     creates: ~/.ssh/id_rsa
   register: out
 - debug: var=out.stdout_lines
 
@@ -402,17 +402,6 @@ COMMIT
   when: hostmachine_password is defined and hostmachine_ip is defined
   register: out
 - debug: var=out.stdout_lines
-
-# - name: Enabling ADS hooks between ADS and config servers. Appends the ads public key in the vlead user of config-server
-#   lineinfile:
-#     path: ~/.ssh/authorized_keys
-#     regexp: '^command="hook"*'
-#     line: "{{item}}"
-#     state: present
-#     create: yes
-#   with_items:
-#    - 'command="hooks.sh",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty {{ ssh_keys.stdout }}'
-
 
 #+END_SRC
 **** Configure ADS server with ads_server
