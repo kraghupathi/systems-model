@@ -24,26 +24,7 @@ of the *ADS Server*.
    hardening rules are described in [[file:common.org::*Security Requirements][common role]]. ADS
    specific tasks are updated [[Implementation][here]].
  
-* Design
-** Overall Network diagram of the Auto Deployment Service(ADS)
-   The following network diagram represents the interaction
-   of the ADS server with the other machines in the cluster.
-   It shows the connections from router to ADS server.The
-   major functionality of the ADS service is deploying web
-   applications in the cluster. 
-#+CAPTION: Router Configuration diagram
-#+LABEL: router-configuration-diagram
-[[./diagrams/router-config.png]]
-
-** Source file for the network diagram
-   Update google diagram link here
-
-** Important configuration and data files and folders
-|------+----------+-------------------------+------------------------|
-| Sno. | Service  | File                    | File Type              |
-|------+----------+-------------------------+------------------------|
-|   1. | iptables | /etc/sysconfig/iptables | Firewall Configuration |
-|------+----------+-------------------------+------------------------|
+* TODO Design
 * Implementation
 ** Structure of Scripts
   - The implementation of this system is in terms of a
@@ -51,16 +32,19 @@ of the *ADS Server*.
     node. These scripts are organized as follows:
 
 #+BEGIN_EXAMPLE
-  |-code
-  |   |-- ads.yml
-  |   |-- roles
-  |   |   |-- ads-server
-  |   |   |   |-- handlers
-  |   |   |   |   `--main.yml
-  |   |   |   |-- tasks
-  |   |   |   |   `--main.yml
-  |   |   |   |-- templates
-  |   |   |   |   `--ads_iptables
+ads_server.yaml
+roles/ads_server/
+|-- handlers
+|   `-- main.yaml
+|-- meta
+|   `-- main.yml
+|-- tasks
+|   |-- configure-ads-server.yml
+|   |-- install-ads-dependencies.yml
+|   `-- main.yml
+`-- templates
+    `-- ads_iptables
+
 #+END_EXAMPLE
 ** Tasks  
 *** Building the Firewall rules
@@ -404,8 +388,8 @@ COMMIT
 - debug: var=out.stdout_lines
 
 #+END_SRC
-**** Configure ADS server with ads_server
-    #+BEGIN_SRC yml :tangle ads_server.yml
+*** Configure ADS server with ads_server
+    #+BEGIN_SRC yml :tangle ads_server.yaml
 ---
 - name: This file configures ADS server
   hosts: ads_server 
