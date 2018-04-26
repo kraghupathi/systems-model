@@ -380,7 +380,7 @@ COMMIT
 - include: install-ads-dependencies.yml
 - include: configure-ads-server.yml 
 - name: Generating sshkeys
-  command: "ssh-keygen -t rsa -f ~/.ssh/id_rsa -q -N ""
+  command: ssh-keygen -t rsa -f ~/.ssh/id_rsa -q -N ""
   args:
      creates: /root/.ssh/id_rsa
   register: out
@@ -415,8 +415,8 @@ COMMIT
 
 
 #+END_SRC
-*** Configure ADS server with ads_server
-    #+BEGIN_SRC yml :tangle ads_server.yaml
+**** Configure ADS server with ads_server
+    #+BEGIN_SRC yml :tangle ads_server.yml
 ---
 - name: This file configures ADS server
   hosts: ads_server 
