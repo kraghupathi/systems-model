@@ -37,45 +37,6 @@
    implemented and described [[Tasks][here]].
    
 ** Tasks
-*** Installation of Aide 
-    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/86][Associated issue on gitlab]]
-    - Impact :: Malicious misconfigurations of the file
-               system. 
-
-     - About AIDE ::  Advanced Intrusion Detection Environment
-		      (AIDE) is a utility that creates a
-		      database of files on the system, and
-		      then uses that database to ensure file
-		      integrity and detect system intrusions.
-     - Reference links
-
-       1. [[https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/security_guide/sec-using-aide][https://access.redhat.com]]
-       2. [[https://www.howtoforge.com/linux-security-notes-aide-file-integrity][www.howtoforge.com]]
-
-     - Recommendations :: Install aide on centos
-	  #+BEGIN_EXAMPLE
-	  $ yum install aide
-	  $ aide --init
-	  $ mv /var/lib/aide/aide.db.new /var/lib/aide/aide.db
-	  #+END_EXAMPLE
-     - Implementation :: 
-#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
-- name: install the latest version of Aide
-  apt:
-      name: aide
-      state: latest
-  ignore_errors: yes
-- name: initialize aide
-  command: "aide --init"
-  ignore_errors: yes
-
-- name: rename aide file
-  command: mv /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz
-  ignore_errors: yes
-
-
-#+END_SRC
-
 *** HTTP server is enabled, disable it.
    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/206][Associated issue on GitLab]]
    - Impact :: Unless there is a need to run the system as a
@@ -1272,6 +1233,7 @@
 
 - name: stop RPC service on boot
   service: name=rpcbind enabled=no
+  ignore_errors: yes
 #+END_SRC
 
 *** Configure Remote login warning banner
@@ -1444,27 +1406,6 @@
   with_items:
     - "chown root:root /etc/crontab"
     - "chmod og-rwx /etc/crontab"
-#+END_SRC
-*** Check file system integrity
-   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/87][Issue on GitLab]]
-   - Impact :: Vulnerable to critical files have been
-               changed in an unauthorized fashion.
-   - Recommendations ::  
-	#+BEGIN_EXAMPLE
-	#crontab -u root ¡Ve	
-	#+END_EXAMPLE
-	Add the following line to the crontab
-	#+BEGIN_EXAMPLE
-	0 5 * * * /usr/sbin/aide --check
-	#+END_EXAMPLE
-   - Implementation :: 
-#+BEGIN_SRC yml :tangle  roles/ubuntu_harden/tasks/main.yml
-- name: Check File System integrity using AIDE
-  cron:
-   name: "Check file system integrity check"
-   minute: "0"
-   hour: "5"
-   job: "/usr/sbin/aide --check"
 #+END_SRC
 *** Restrict Core dumps
    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/282][Check the issue on GitLab]]
