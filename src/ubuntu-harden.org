@@ -6,11 +6,11 @@
 #+options: ^:nil
  
 * Introduction
-  This document contains automation scripts for ubuntu-Hardening.
+  This document contains automation scripts for ubuntu-os-Hardening.
 
   CDAC Team has done with Phase1 network_audit on our VLEAD
-  infrastructure, in result, they have found some issues in
-  the infrastructure and raised issues. 
+  infrastructure, in result, they have found some issues in the
+  infrastructure and raised issues.
 
   In fact, all these issues are (in a way) OS_security
   audit.  
@@ -21,8 +21,8 @@
 * Implementation
 ** Structure of the scripts
    The implementation of this system is in terms of a collection of
-   os-harden scripts that configures the machine. The scripts are
-   organized as follows:
+   ubuntu-os-harden scripts that configures the machine. The scripts
+   are organized as follows:
 
 #+BEGIN_EXAMPLE
 |-- roles
@@ -338,7 +338,7 @@
 #+END_EXAMPLE
 
 *** Enable Key based authentication
-   Only key based access is enabled.
+    Only key based access is enabled.
 #+BEGIN_EXAMPLE
 #+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: Enable Public key authentication
@@ -1096,8 +1096,8 @@
   ignore_errors: yes
    #+END_SRC
 *** Configure NTP service
-   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/103][Check the issue]]
-
+    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/103][Check the issue]]
+    
    - Impact :: It is designed to synchronize system clocks across a
                variety of systems and use a source that is highly
                accurate.
@@ -1387,7 +1387,7 @@
 #+END_SRC
 
 *** Set Permissions to /etc/crontab
-   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/171][Check the same issue on GitLab]]
+    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/171][Check the same issue on GitLab]]
    - Impact :: 
 	       Write access to these files could provide
                unprivileged users with the ability to
@@ -1494,15 +1494,17 @@
   lineinfile: 
     name: /etc/hosts.deny
     regexp: "ALL: ALL"
-    line: "ALL: ALL EXCEPT 10.100., 10.2."
+    line: "ALL: ALL EXCEPT 10.100."
 #+END_SRC
 ** Create application service hosts
-   create following service hosts file:
+   Replace following services with ip address, Ex:
+   <analytics-db-ip-address> = 10.100.2.3
 #+BEGIN_SRC text :tangle service-hosts
 [services]
-10.100.
-10.100.1.3
-10.100.1.6
+<analytics-db-ip-address>
+<vlabs-analytics-ip-address>
+<feedback-ip-address>
+<outreach-ip-address>
 #+END_SRC
 ** Confgure os hardening in application services
 #+BEGIN_SRC yaml :tangle ubuntu_hardening.yaml
