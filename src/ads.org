@@ -124,30 +124,33 @@ COMMIT
   with_items:
    - epel-release
    - sshpass
+
 - name: Check git is installed
   stat: path=/usr/local/git
   register: git_exist
+
 - debug: 
-   msg: "git already installed at /usr/local/git. Next task will be skipped" 
-  when: git_exist.stat.exists
+   msg: "Next task will be skipped if git already installed at /usr/local/git."  
+  when: git_exist.stat.exists is defined 
+
 - name: installing git
   yum: name=git state=present
   environment: "{{proxy_env}}"
-  when: git_exist.stat.exists is not defined
+  when: not git_exist.stat.exists
 
-- name: setup-ovpl-centos repo exist
+- name: Check setup-ovpl-centos repo exist
   stat: path=~/setup-ovpl-centos
   register: ovpl
 - debug:
-   msg: "setup-ovpl-centos repo already cloned and next task will be skipped"
-  when: ovpl.stat.exists
+   msg: "Next task will be skipped if setup-ovpl-centos repo is cloned"
+  when: ovpl.stat.exists is defined
 
 - name: Cloning setup-ovpl-centos repo
   git:
    repo: http://github.com/vlead/setup-ovpl-centos.git
    dest: ~/setup-ovpl-centos
   environment: "{{proxy_env}}"
-  when: ovpl.stat.exists is not defined
+  when: not ovpl.stat.exists
 
 - name: Setting proxy in config.sh to install MongoDB
   replace: 
@@ -238,12 +241,13 @@ COMMIT
   stat: path=~/tornado-4.3.tar.gz
   register: tornado
 - debug:
-    msg: "tornado is already downloaded, next task will be skipped"
-  when: tornado.stat.exists
+    msg: "Next task will be skipped if tornado is already dowloaded"
+  when: tornado.stat.exists is defined
+
 - name: Downloading python tornado-4.3 file 
   get_url: url=https://pypi.python.org/packages/source/t/tornado/tornado-4.3.tar.gz dest=~/ force=no
   environment: "{{proxy_env}}"
-  when: tornado.stat.exists is not defined
+  when: not tornado.stat.exists
 
 - name: Extracting torando-4.3tar.gz file
   unarchive:  src=~/tornado-4.3.tar.gz  dest=~/ remote_src=yes
@@ -255,7 +259,6 @@ COMMIT
   args:
    chdir: ~/tornado-4.3
 - debug: var=out.stdout_lines
-
 #+END_SRC
 
 *** Configure ADS 
