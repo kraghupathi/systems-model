@@ -117,26 +117,37 @@ COMMIT
 #+END_SRC
 *** Install ADS dependencies
     #+BEGIN_SRC yml :tangle roles/ads_server/tasks/install-ads-dependencies.yml
+---
 - name: installing epel-release and sshpass
   yum: name="{{item}}" state=present
   environment: "{{proxy_env}}"
   with_items:
    - epel-release
    - sshpass
-
+- name: Check git is installed
+  stat: path=/usr/local/git
+  register: git_exist
+- debug: 
+   msg: "git already installed at /usr/local/git. Next task will be skipped" 
+  when: git_exist.stat.exists
 - name: installing git
   yum: name=git state=present
   environment: "{{proxy_env}}"
-  register: out
-  ignore_errors: yes
-- debug: var=out.stdout_lines
+  when: git_exist.stat.exists is not defined
+
+- name: setup-ovpl-centos repo exist
+  stat: path=~/setup-ovpl-centos
+  register: ovpl
+- debug:
+   msg: "setup-ovpl-centos repo already cloned and next task will be skipped"
+  when: ovpl.stat.exists
 
 - name: Cloning setup-ovpl-centos repo
   git:
    repo: http://github.com/vlead/setup-ovpl-centos.git
    dest: ~/setup-ovpl-centos
-  ignore_errors: true
   environment: "{{proxy_env}}"
+  when: ovpl.stat.exists is not defined
 
 - name: Setting proxy in config.sh to install MongoDB
   replace: 
@@ -223,13 +234,19 @@ COMMIT
   pip: name=pymongo
   environment: "{{proxy_env}}"
 
+- name: Check tornado-4.3 is already downloaded
+  stat: path=~/tornado-4.3.tar.gz
+  register: tornado
+- debug:
+    msg: "tornado is already downloaded, next task will be skipped"
+  when: tornado.stat.exists
 - name: Downloading python tornado-4.3 file 
-  get_url: url=https://pypi.python.org/packages/source/t/tornado/tornado-4.3.tar.gz dest=~/
+  get_url: url=https://pypi.python.org/packages/source/t/tornado/tornado-4.3.tar.gz dest=~/ force=no
   environment: "{{proxy_env}}"
+  when: tornado.stat.exists is not defined
 
 - name: Extracting torando-4.3tar.gz file
   unarchive:  src=~/tornado-4.3.tar.gz  dest=~/ remote_src=yes
-
 
 - name: Running setu.py file from tornado-4.3 directory.
   command: python setup.py install
