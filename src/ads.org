@@ -176,7 +176,7 @@ COMMIT
   command: ./centos_prepare_ovpl.sh
   environment: "{{proxy_env}}"
   args:
-   chdir: setup-ovpl-centos/scripts/
+   chdir: ~/setup-ovpl-centos/scripts/
   register: out  
 - debug: var=out.stdout_lines
 
@@ -270,37 +270,37 @@ COMMIT
 
 - name: Set HTTP_PROXY proxy in config.json file
   replace: 
-   path: ovpl/config/config.json
+   path: ~/ovpl/config/config.json
    regexp: '"HTTP_PROXY":.*'
    replace: '"HTTP_PROXY": "{{proxy_env.http_proxy}}",'
 
 - name: Set HTTPS_PROXY proxy in config.json file
   replace: 
-   path: ovpl/config/config.json
+   path: ~/ovpl/config/config.json
    regexp: '"HTTPS_PROXY":.*'
    replace: '"HTTPS_PROXY": "{{proxy_env.https_proxy}}"'
   
 - name: COOKIE UPDATE
   replace: 
-    path: ovpl/config/config.json
+    path: ~/ovpl/config/config.json
     regexp: '"COOKIE_SECRET.*"'
     replace: '"COOKIE_SECRET": "jgsjdhgfcjgsdjgfvjhsdfhkjsdgk"'
 - name: Set SERVER_IP in ADS config.json file
   replace: 
-    path: ovpl/config/config.json
+    path: ~/ovpl/config/config.json
     regexp: '"SERVER_IP":.*"'
     replace: '"SERVER_IP": "10.100.1.9"'
 
 - name: Set POOLID and ADAPTER_TO_USE
   replace: 
-   path: ovpl/config/config.json
+   path: ~/ovpl/config/config.json
    regexp: '"ADAPTER_TO_USE" : {"POOLID" : 1, "ADAPTERID" : 2}'
    replace: '"ADAPTER_TO_USE" : {"POOLID" : 1, "ADAPTERID" : 3}'
 
 - name: Copy sample_base_config.py base_config.py
   command: cp sample_base_config.py base_config.py
   args: 
-    chdir: ovpl/config/adapters/
+    chdir: ~/ovpl/config/adapters/
 - name: set BASE_IP_ADDRESS
   lineinfile: 
     path: ovpl/config/adapters/base_config.py
@@ -316,19 +316,19 @@ COMMIT
 
 - name: Set ADS_SERVER_VM_ID to CTID of container running ADS
   lineinfile: 
-   path: ovpl/config/adapters/base_config.py
+   path: ~/ovpl/config/adapters/base_config.py
    regexp: "^ADS_SERVER_VM_ID*"
    line: 'ADS_SERVER_VM_ID = "1009"'
    state: present
 - name: Set SUBNET
   lineinfile: 
-    path: ovpl/config/adapters/base_config.py
+    path: ~/ovpl/config/adapters/base_config.py
     regexp: "SUBNET = .*" 
     line: 'SUBNET = ["10.100.0.0/16"]'
     state: present
 - name: Set host name
   lineinfile: 
-   path: ovpl/config/adapters/base_config.py
+   path: ~/ovpl/config/adapters/base_config.py
    regexp: "HOST_NAME = .*"
    line: 'HOST_NAME = "{{prefix}}vlabs.ac.in"'
    state: present
@@ -346,14 +346,14 @@ COMMIT
 
 - name: Set SUBNET_BRIDGE in ADS configuration file
   lineinfile:
-   path: ovpl/config/adapters/centos_bridged_config.py
+   path: ~/ovpl/config/adapters/centos_bridged_config.py
    regexp: "SUBNET_BRIDGE = .*"  
    line: 'SUBNET_BRIDGE = "br1"'
    state: present
         
 - name: Google keys
   replace:
-     path: ovpl/src/ads-web-app/config.py
+     path: ~/ovpl/src/ads-web-app/config.py
      regexp: "CONSUMER_KEY.*"
      replace: 'CONSUMER_KEY = "{{consumer_key}}"'
 - name: Comment out not needed line in ADS server
@@ -361,20 +361,20 @@ COMMIT
 
 - name: Adding Google Consumer secrete key
   replace:
-     path: ovpl/src/ads-web-app/config.py
+     path: ~/ovpl/src/ads-web-app/config.py
      regexp: "CONSUMER_SECRET.*"
      replace: 'CONSUMER_SECRET = "{{consumer_secret}}"'
 
 - name: Replace ADS_SECRET_KEY
   lineinfile:
-     path: ovpl/src/ads-web-app/config.py
+     path: ~/ovpl/src/ads-web-app/config.py
      regexp: "^ADS_SECRET_KEY.*"
      line: 'ADS_SECRET_KEY = "placethekeyhere"'
      state: present
 
 - name: Replace APP_URL
   lineinfile:
-     path: ovpl/src/ads-web-app/config.py
+     path: ~/ovpl/src/ads-web-app/config.py
      regexp: "^APP_URL .*"
      line: 'APP_URL = "http://ads.{{prefix}}virtual-labs.ac.in:8080"'
      state: present
