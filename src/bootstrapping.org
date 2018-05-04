@@ -575,9 +575,6 @@
       
       [rsnapshot_server]
       10.100.1.10
-      
-      [lab_rsnapshot_server]
-      10.100.1.11
       #+END_SRC
 
     - Good to have Copy of generated cluster code =build/{cluster}= to another
