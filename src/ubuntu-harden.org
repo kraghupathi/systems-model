@@ -1515,6 +1515,26 @@
    - chown root:root /etc/shadow
    - chmod o-rwx,g-wx /etc/shadow
 #+END_SRC
+*** Permissions on /etc/ssh/sshd_config
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/576][Associated issue on GitLab]]   
+   - Impact :: Vulnerable to unauthorized changes by non-privileged
+               users.
+
+   - Recommendations :: Run the following commands to set ownership
+        and permissions on =/etc/ssh/sshd_config=
+
+	#+BEGIN_EXAMPLE
+	#chown root:root /etc/ssh/sshd_config
+	#chmod og-rwx /etc/ssh/sshd_config
+	#+END_EXAMPLE
+   - Implementation ::
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
+- name: Permissions on /etc/ssh/sshd_config
+  command: "{{ item }}"
+  with_items:
+   - chown root:root /etc/ssh/sshd_config
+   - chmod og-rwx /etc/ssh/sshd_config
+#+END_SRC
 *** Configure /etc/hosts.deny
    - Impact ::  The =/etc/hosts.deny= file serves as a
                 failsafe so that any host not specified in
