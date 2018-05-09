@@ -455,7 +455,7 @@ authpriv.*      ?TmplAuth
    host_name: "rsyslog-server.{{prefix}}vlabs.ac.in"
   roles:
     - common
-    - os_harden
+    - centos_harden
     - rsyslog_server
 #+END_SRC
 

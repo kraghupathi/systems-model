@@ -360,7 +360,7 @@ Add hosting_service location to path environment variable.
 
   roles:
     - common
-    - os_harden
+    - centos_harden
     - config_server
 
 #+END_SRC
