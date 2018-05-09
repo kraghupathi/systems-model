@@ -1555,36 +1555,24 @@
   apt: name=ldap-utils state=absent 
   ignore_errors: yes
 #+END_SRC
-*** Configure mail transfer agent for local-only mode
-   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/564][Associated issue on GitLab]]   
-   - Impact :: Network-based attacks
+*** Disable samba service
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/563][Associated issue on GitLab]]   
+   - Impact :: Vulnerable to Ransomware attacks
 
-   - Recommendations :: Edit =/etc/postfix/main.cf= and add the
-        following line to the RECEIVING MAIL section.
+   - Recommendations :: Remove or comment out start lines in
+        =/etc/init/smbd.conf=:
 
-     If the line already exists, change it to look like the line
-        below:
-
-     inet_interfaces = loopback-only
-
-     Restart postfix:
-     
 	#+BEGIN_EXAMPLE
-	#service postfix restart
+	#start on (local-filesystems and net-device-up)
 	#+END_EXAMPLE
    - Implementation ::
 #+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
-- name: Configuring mail transfer agent for local-only mode
+- name: Disable samba service 
   lineinfile:
-   dest: /etc/postfix/main.cf 
-   regexp: '^inet_interfaces =*'
-   line: 'inet_interfaces = loopback-only'
+   dest: /etc/init/smbd.conf 
+   regexp: '^start on.*'
+   line: '#start on (local-filesystems and net-device-up)'
    state: present
-
-- name: Restart service postfix
-  service:
-    name: postfix
-    state: restarted
 #+END_SRC
 *** Configure /etc/hosts.deny
    - Impact ::  The =/etc/hosts.deny= file serves as a
