@@ -1574,6 +1574,23 @@
    line: '#start on (local-filesystems and net-device-up)'
    state: present
 #+END_SRC
+*** MAC algorithms
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/578][Associated issue on GitLab]]   
+   - Impact :: Man-in-the-Middle Attacks
+
+   - Recommendations :: Edit the =/etc/ssh/sshd_config= file to set
+        the parameter as follows:
+
+	#+BEGIN_EXAMPLE
+	MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512,hmac-sha2-256,umac-128@openssh.com
+	#+END_EXAMPLE
+   - Implementation ::
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
+- name: Using MAC algorithms
+  lineinfile:
+   dest: /etc/ssh/sshd_config
+   line: MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512,hmac-sha2-256,umac-128@openssh.com
+#+END_SRC
 *** Configure /etc/hosts.deny
    - Impact ::  The =/etc/hosts.deny= file serves as a
                 failsafe so that any host not specified in
