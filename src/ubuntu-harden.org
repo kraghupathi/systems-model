@@ -1535,6 +1535,26 @@
    - chown root:root /etc/ssh/sshd_config
    - chmod og-rwx /etc/ssh/sshd_config
 #+END_SRC
+*** Remove LDAP client
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/566][Associated issue on GitLab]]   
+   - Impact :: It is a service that provides a method for looking up
+               information from a central database.
+
+   - Recommendations :: If not required it can be removed from the
+        server:
+
+     Uninstall ldap-utils using the appropriate package manager or
+        manual installation:
+     
+	#+BEGIN_EXAMPLE
+	#apt-get remove ldap-utils
+	#+END_EXAMPLE
+   - Implementation ::
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
+- name: remove the LDAP client
+  apt: name=ldap-utils state=absent 
+  ignore_errors: yes
+#+END_SRC
 *** Configure /etc/hosts.deny
    - Impact ::  The =/etc/hosts.deny= file serves as a
                 failsafe so that any host not specified in
