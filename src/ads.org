@@ -422,7 +422,7 @@ COMMIT
    host_name: "ads.{{prefix}}vlabs.ac.in"
   roles:
     - common
-    - os_harden
+    - centos_harden
     - ads_server
     #+END_SRC
 
