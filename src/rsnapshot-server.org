@@ -854,7 +854,7 @@ rsnapshot_crontab:
    host_name: "rsnapshot-server.{{prefix}}vlabs.ac.in"
   roles:
     - common
-    - os_harden
+    - centos_harden
     - rsnapshot_server
 
 #+END_SRC

@@ -378,7 +378,7 @@ dependencies:
 
   roles:
     - common
-    - os_harden
+    - centos_harden
     - router
 #+END_SRC
 *** Install clients in Router server

@@ -1,4 +1,4 @@
-#+TITLE:  OS Hardening
+#+TITLE:  Ubuntu Hardening
 #+PROPERTY: session *scratch*
 #+PROPERTY: results output
 #+PROPERTY: exports code
@@ -6,114 +6,37 @@
 #+options: ^:nil
  
 * Introduction
-  This document contains automation scripts for
-  OS-Hardening.
+  This document contains automation scripts for ubuntu-os-Hardening.
 
   CDAC Team has done with Phase1 network_audit on our VLEAD
-  infrastructure, in result, they have found some issues in
-  the infrastructure and raised issues. 
+  infrastructure, in result, they have found some issues in the
+  infrastructure and raised issues.
 
   In fact, all these issues are (in a way) OS_security
   audit.  
 * Requirements
-  1. Harden OS by configuring certain operating system
-     files.  This hardening makes the OS more secure.
+  1. Harden Ubuntu-OS by configuring certain operating system files.
+     This hardening makes the OS more secure.
   2. Automation script for the above(1) requirement.
 * Implementation
 ** Structure of the scripts
    The implementation of this system is in terms of a collection of
-   os-harden scripts that configures the machine. The scripts are
-   organized as follows:
+   ubuntu-os-harden scripts that configures the machine. The scripts
+   are organized as follows:
 
 #+BEGIN_EXAMPLE
 |-- roles
-|   |-- os_harden
+|   |-- ubuntu_harden
 |   |   |-- tasks
 |   |   |   |-- main.yml
 
 #+END_EXAMPLE
 
-   =roles/os_harden/tasks/main.yml= file consist of various tasks
+   =roles/ubuntu_harden/tasks/main.yml= file consist of various tasks
    which are needed for setting up os-harden. These tasks are
    implemented and described [[Tasks][here]].
    
 ** Tasks
-*** Installation of Aide 
-    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/86][Associated issue on gitlab]]
-    - Impact :: Malicious misconfigurations of the file
-               system. 
-
-     - About AIDE ::  Advanced Intrusion Detection Environment
-		      (AIDE) is a utility that creates a
-		      database of files on the system, and
-		      then uses that database to ensure file
-		      integrity and detect system intrusions.
-     - Reference links
-
-       1. [[https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/security_guide/sec-using-aide][https://access.redhat.com]]
-       2. [[https://www.howtoforge.com/linux-security-notes-aide-file-integrity][www.howtoforge.com]]
-
-     - Recommendations :: Install aide on centos
-	  #+BEGIN_EXAMPLE
-	  $ yum install aide
-	  $ aide --init
-	  $ mv /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz
-	  #+END_EXAMPLE
-     - Implementation :: 
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
-- name: install the latest version of Aide
-  yum:
-      name: aide
-      state: latest
-  ignore_errors: yes
-- name: initialize aide
-  command: "aide --init"
-  ignore_errors: yes
-
-- name: rename aide file
-  command: mv /var/lib/aide/aide.db.new.gz /var/lib/aide/aide.db.gz
-  ignore_errors: yes
-
-
-#+END_SRC
-   
-*** Disable/remove Telnet serverx
-   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/105][Associated issue on GitLab]]
-   - Impact :: Vulnerable to sniff the network
-
-   - Recommendations :: Run the following command to disable telnet:
-
-        #+BEGIN_EXAMPLE
-        #chkconfig telnet off
-        #+END_EXAMPLE
-   - Implementation ::
-		      The ssh package provides an encrypted
-                      session and stronger security
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
-- name: Disable telnet service
-  command: /sbin/chkconfig telnet off
-  ignore_errors: yes
-#+END_SRC
-*** Remove/uninstall talk
-   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/100][Associated issue on GitLab]]
-   - Impact :: The software presents a security risk as it uses
-               unencrypted protocols for communication.
-
-   - Recommendations :: Run the following command to uninstall talk
-
-        #+BEGIN_EXAMPLE
-        #yum remove talk
-        #+END_EXAMPLE
-
-    - Implementation ::
-
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
-- name: remove the talk package
-  yum: name=talk state=absent 
-  ignore_errors: yes
-
-#+END_SRC
-
 *** HTTP server is enabled, disable it.
    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/206][Associated issue on GitLab]]
    - Impact :: Unless there is a need to run the system as a
@@ -126,32 +49,10 @@
 	#chkconfig httpd off	
 	#+END_EXAMPLE
    - Implementation ::  
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: stop httpd service on boot
   service: name=httpd enabled=no
   ignore_errors: yes
-#+END_SRC
-*** Disable NFS and RPC services
-   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/205][Associated issue on GitLab]]
-   - Impact ::  If the system does not export NFS shares or
-                act as an NFS client, it is recommended that
-                these services be disabled to reduce remote
-                attack surface.
-
-   - Recommendations :: Run the following commands to
-        disable nfs and rpcbind.
-	#+BEGIN_EXAMPLE
-	chkconfig nfs off
-	chkconfig rpcbind off
-	#+END_EXAMPLE
-   - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
-- name:  stop the nfs service onboot 
-  service: name=nfs enabled=no
-  ignore_errors: yes
-
-- name: stop RPC service on boot
-  service: name=rpcbind enabled=no
 #+END_SRC
 *** Disable xinetd service
    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/204][Associated issue on GitLab]]   
@@ -164,137 +65,19 @@
 	#chkconfig xinetd off
 	#+END_EXAMPLE
    - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: stop xinetd service on boot
   service: name=xinetd enabled=no
   ignore_errors: yes
 #+END_SRC
-*** IPv6 router advertisements are accepted with server
-   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/211][Associated issue on GitLab]]
-   - Impact :: It is recommended that servers not accept
-               router advertisements as they could be
-               tricked into routing traffic to compromised
-               machines.
-	       
-   - Recommendations :: Set the following parameters in the
-        /etc/sysctl.conf file.
-	#+BEGIN_EXAMPLE
-	net.ipv6.conf.all.accept_ra = 0
-	net.ipv6.conf.default.accept_ra = 0
-	#+END_EXAMPLE
-	Run the following commands to set the active kernel
-        parameters.
-	#+BEGIN_EXAMPLE
-	#sysctl -w net.ipv6.conf.all.accept_ra=0
-	#sysctl -w net.ipv6.conf.default.accept_ra=0 
-	#sysctl -w net.ipv6.route.flush=1
-	#+END_EXAMPLE
-   - Implementation ::
-
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
-- name:  Do not accept router advertisements
-  sysctl:
-     name: net.ipv6.conf.all.accept_ra
-     value: 0
-     state: present
-  ignore_errors: yes
-
-- name:  Do not accept router advertisements
-  sysctl:
-     name: net.ipv6.conf.default.accept_ra
-     value: 0
-     state: present
-  ignore_errors: yes
-
-- name:  Do not accept router advertisements
-  sysctl:
-      name: net.ipv6.route.flush
-      value: 1
-      state: present
-  ignore_errors: yes
-
-#+END_SRC
-
-*** Permissions on boot loader
-
-   - Impact :: Non-root users who read the boot parameters may be able
-               to identify weaknesses in security upon boot and be
-               able to exploit them.
-
-   - Recommendations :: Run the following commands to set permissions
-        on your grub configuration:
-
-        #+BEGIN_EXAMPLE
-        #chown root:root /boot/grub/grub.conf 
-	#chmod og-rwx /boot/grub/grub.conf
-        #+END_EXAMPLE
-   - Implementation ::
-
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
-- name: Owner permissions on boot loader configuration file
-  command: chown root:root /boot/grub/grub.conf
-  ignore_errors: yes
-
-- name: Permissions on boot loader configuration file
-  command: chmod og-rwx /boot/grub/grub.conf
-  ignore_errors: yes  
-#+END_SRC
-
 *** SELinux 
 *** Install libselinux-python package
     In order to execute following tasks, =libselinux-python= package
     is needed.
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: Install libselinux-python
-  yum: name=libselinux-python state=installed
+  apt: name=python-selinux state=installed
 #+END_SRC
-*** Enable SELinux state to enforcing
-
-   - Impact :: Set SELinux to enable when the system is booted.
-
-   - Recommendations :: Edit the /etc/selinux/config file to set the
-        SELINUX parameter:
-
-        #+BEGIN_EXAMPLE
-	SELINUX=enforcing
-        #+END_EXAMPLE
-   - Implementation ::
-
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
-- name: Set SELinux to enable when the system is booted
-  lineinfile: 
-   dest: /etc/selinux/config
-   regexp: '.*SELINUX=disabled.*'
-   line: 'SELINUX=enforcing'
-   state: present
-  ignore_errors: yes
-#+END_SRC
-*** Set SELinux policy to targeted
-   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/315][Associated issue on gitlab]]
-   - Impact :: Configure SELinux to meet or exceed the default
-               targeted policy, which constrains daemons and system
-               software only.
-
-   - Recommendations :: Edit the =/etc/selinux/config= file to set the
-        SELINUXTYPE parameter: policy.
-	
-        #+BEGIN_EXAMPLE
-	SELINUXTYPE=targeted
-	#+END_EXAMPLE
-	If your organization requires stricter policies, ensure that
-        they are set in the =/etc/selinux/config= file.
-   - Implementation ::
-        
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
-- name: configure SELinux policy  
-  lineinfile:
-    name: /etc/selinux/config
-    line: SELINUXTYPE=targeted
-    insertafter: SELINUXTYPE=targeted.*
-    state: present
-  ignore_errors: yes
-#+END_SRC
-
 *** SSH Configurations
 *** Set SSH LoginGraceTime to one minute or less
 
@@ -307,11 +90,11 @@
 	LoginGraceTime 60
         #+END_EXAMPLE
    - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: Setting SSH LoginGraceTime
   lineinfile:
    dest: /etc/ssh/sshd_config
-   regexp: '.*LoginGraceTime 2m.*'
+   regexp: '^LoginGraceTime 2m.*'
    line: 'LoginGraceTime 60'
    state: present
 #+END_SRC
@@ -333,17 +116,17 @@
 
    - Implementation ::
 	
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: Set SSH idle time out
   lineinfile:
    dest: /etc/ssh/sshd_config
-   regexp: '^#ClientAliveInterval.*'
+   regexp: '^ClientAliveInterval.*'
    line: 'ClientAliveInterval 300'
    state: present
 - name: Set Set SSH idle time out
   lineinfile:
    dest: /etc/ssh/sshd_config
-   regexp: '.*ClientAliveCountMax.*'
+   regexp: '^ClientAliveCountMax.*'
    line: 'ClientAliveCountMax 0'
    state: present
 #+END_SRC
@@ -367,11 +150,11 @@
         IgnoreRhosts yes
         #+END_EXAMPLE
    - Implementation ::
-   #+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+   #+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: SSH IgnoreRhosts is enable
   lineinfile: 
    dest: /etc/ssh/sshd_config
-   regexp: '.*IgnoreRhosts yes.*'
+   regexp: '^IgnoreRhosts yes.*'
    line: 'IgnoreRhosts yes'
    state: present
    #+END_SRC
@@ -390,7 +173,7 @@
 	PermitEmptyPasswords no
 	#+END_EXAMPLE
    - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: configure SELinux policy  
   lineinfile:
     name: /etc/ssh/sshd_config
@@ -414,11 +197,11 @@
 	MaxAuthTries 4
         #+END_EXAMPLE
    - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name:  set the SSH MaxAuthTries
   lineinfile:
    dest: /etc/ssh/sshd_config
-   regexp: '.*MaxAuthTries 6.*'
+   regexp: '^MaxAuthTries 6.*'
    line: 'MaxAuthTries 4'
    state: present
 #+END_SRC
@@ -440,11 +223,11 @@
         #+END_EXAMPLE
    - Implementation ::
 
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name:  set SSH LogLevel
   lineinfile:
    dest: /etc/ssh/sshd_config
-   regexp: '.*LogLevel INFO.*'
+   regexp: '^LogLevel INFO.*'
    line: 'LogLevel INFO'
    state: present
 #+END_SRC
@@ -466,12 +249,12 @@
 	Banner /etc/issue.net
 	#+END_EXAMPLE
     - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: SSH login warning banner
   lineinfile: 
     name: /etc/ssh/sshd_config
     insertafter: "^#Banner.*"
-    line: Banner /etc/issue.net	
+    line: Banner /etc/issue.net
     state: present
 #+END_SRC
    - References ::
@@ -497,7 +280,7 @@
 			#+END_EXAMPLE
 
      - Implementation ::
-#+BEGIN_SRC yml :tangle  roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle  roles/ubuntu_harden/tasks/main.yml
 - name: Limit Access via SSH
   lineinfile: 
     dest: /etc/ssh/sshd_config
@@ -521,7 +304,7 @@
 			#+END_EXAMPLE
 
      - Implementation ::
-			#+BEGIN_SRC yml :tangle  roles/os_harden/tasks/main.yml
+			#+BEGIN_SRC yml :tangle  roles/ubuntu_harden/tasks/main.yml
 - name: Set Lockout for Failed Password Attempts
   lineinfile: 
     dest: /etc/pam.d/login
@@ -539,7 +322,7 @@
      Only system administrators with ssh private key can login as Root.
 
 #+BEGIN_EXAMPLE
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: Permit root login without-password(key based)
   lineinfile: dest=/etc/ssh/sshd_config regexp='PermitRootLogin ' line='PermitRootLogin without-password' state=present
 #+END_SRC
@@ -548,16 +331,16 @@
 *** Disable Password based access
      Password based access is disabled.
 #+BEGIN_EXAMPLE
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: Disable Password authentication
   lineinfile: dest=/etc/ssh/sshd_config regexp='PasswordAuthentication ' line='PasswordAuthentication no'
 #+END_SRC
 #+END_EXAMPLE
 
 *** Enable Key based authentication
-   Only key based access is enabled.
+    Only key based access is enabled.
 #+BEGIN_EXAMPLE
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: Enable Public key authentication
   lineinfile: dest=/etc/ssh/sshd_config regexp='PubkeyAuthentication ' line='PubkeyAuthentication yes'
 #+END_SRC
@@ -566,7 +349,7 @@
 *** Do not permit empty passwords
    Users are not allowed to set empty-password.
 #+BEGIN_EXAMPLE
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: Do not permit empty password, also ensure proper owner, group and permissions
   lineinfile: dest=/etc/ssh/sshd_config regexp='PermitEmptyPasswords ' line='PermitEmptyPasswords no' mode=0600 owner=root group=root
 
@@ -589,9 +372,10 @@
 	#chkconfig auditd on
 	#+END_EXAMPLE
     - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: Install Auditd service
-  yum: name=audit state=installed
+  apt: name=auditd state=installed
+
 - name: start auditd service on boot
   service: name=auditd enabled=yes
 #+END_SRC
@@ -608,7 +392,7 @@
         #+END_EXAMPLE
    - Implementation ::
 
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: collecting login and logout events
   lineinfile: 
     dest: /etc/audit/audit.rules
@@ -636,7 +420,7 @@
          #+END_EXAMPLE
     - Implementation ::
 
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: collecting Changes to system administration scope (sudoers)
   lineinfile: 
     dest: /etc/audit/audit.rules
@@ -664,7 +448,7 @@
          #+END_EXAMPLE
     - Implementation ::
 
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: collecting File deletion events by users are not
   lineinfile: 
     dest: /etc/audit/audit.rules
@@ -693,7 +477,7 @@
          #+END_EXAMPLE
     - Implementation ::
 
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: Collect Unsuccessful unauthorized file access attempts
   lineinfile: 
     dest: /etc/audit/audit.rules
@@ -725,7 +509,7 @@
 
          #+END_EXAMPLE
     - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: Collecting Events that modify the system's network environment
   lineinfile: 
     dest: /etc/audit/audit.rules
@@ -760,7 +544,7 @@
 
           #+END_EXAMPLE
      - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: Enabling audit service
   lineinfile: 
     dest: /etc/audit/audit.rules
@@ -789,7 +573,7 @@
 	 max_log_file_action = keep_logs
          #+END_EXAMPLE
     - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name:  Audit logs are automatically deleted option
   lineinfile:
    dest: /etc/audit/auditd.conf
@@ -811,7 +595,7 @@
 	 max_log_file = 
 	 #+END_EXAMPLE
      - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: Audit log storage size
   lineinfile:
      name: /etc/audit/auditd.conf
@@ -839,7 +623,7 @@
 	-a always,exit -F arch=b32 -S clock_settime -k time-change
 	#+END_EXAMPLE
      - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: Events that modify date and time information are collected option
   lineinfile:
     dest: /etc/audit/audit.rules
@@ -874,7 +658,7 @@
 	 #+END_EXAMPLE
 
      - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: Events that modify date and time information are collected option
   lineinfile:
     dest: /etc/audit/audit.rules
@@ -905,7 +689,7 @@
       -w /var/log/sudo.log -p wa -k actions
       #+END_EXAMPLE
     - Implementation ::
-#+BEGIN_SRC yml :tangle  roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle  roles/ubuntu_harden/tasks/main.yml
 - name: Collect System administrator actions (sudolog)
   lineinfile:
    dest: /etc/audit/audit.rules
@@ -937,7 +721,7 @@
 
        - Implementation ::
 
-#+BEGIN_SRC yml :tangle  roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle  roles/ubuntu_harden/tasks/main.yml
 - name: Collect Session Initiation Information
   lineinfile: 
    dest: /etc/audit/audit.rules
@@ -976,7 +760,7 @@
 
     - Implementation ::
 
-#+BEGIN_SRC yml :tangle  roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle  roles/ubuntu_harden/tasks/main.yml
 - name: Collect Session Initiation Information
   lineinfile: 
    dest: /etc/audit/audit.rules
@@ -1007,7 +791,7 @@
 			 for more details check audit.rules
                          man page
       - Implementation ::
-#+BEGIN_SRC yml :tangle  roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle  roles/ubuntu_harden/tasks/main.yml
 - name: Make audit configuration immutable
   lineinfile:
    dest: /etc/audit/audit.rules
@@ -1027,7 +811,7 @@
 	#find /var/log -type f -exec chmod g-wx,o-rwx {} +
         #+END_EXAMPLE
    - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: Set Permissions on all logfiles
   command: "find /var/log -type f -exec chmod g-wx,o-rwx {} +"
 
@@ -1060,7 +844,7 @@
 			 Run the following commands to set
                          the active kernel parameters
 
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 # - name: Configure ip_forward to 0 other servers
 #   lineinfile:
 #     dest: /etc/sysctl.conf
@@ -1100,7 +884,7 @@
 	#sysctl -w net.ipv4.route.flush=1
         #+END_EXAMPLE
    - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: Setting the parameters in reverse path
   lineinfile: 
    dest: /etc/sysctl.conf
@@ -1129,7 +913,7 @@
 	 #sysctl -w net.ipv4.route.flush=1
          #+END_EXAMPLE
      
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: Configure sysctl file to Log the suspicious packets 
   lineinfile:
    dest: /etc/sysctl.conf
@@ -1163,7 +947,7 @@
 	#sysctl -w net.ipv4.route.flush=1
         #+END_EXAMPLE
     - Implementation ::   	
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: Configure sysctl to do not accept secure ICMP redirect packets
   lineinfile:
     name: /etc/sysctl.conf
@@ -1199,7 +983,7 @@
 	#sysctl -w net.ipv4.route.flush=1
         #+END_EXAMPLE
     - Implementation ::     
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: Do not accept ICMP redirects
   lineinfile:
    dest: /etc/sysctl.conf
@@ -1238,7 +1022,7 @@
 
       - Implementation ::
 
-#+BEGIN_SRC yml :tangle  roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle  roles/ubuntu_harden/tasks/main.yml
 - name: Ignore Bogus Messages
   lineinfile:
     dest:  /etc/sysctl.conf
@@ -1273,7 +1057,7 @@
 
     - Implementation ::
 
-#+BEGIN_SRC yml :tangle  roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle  roles/ubuntu_harden/tasks/main.yml
 - name: Broadcast ICMP requests are not ignored 
   lineinfile: 
     dest:  /etc/sysctl.conf
@@ -1304,16 +1088,16 @@
         available to consult your virtualization software
         documentation and setup host based synchronization.
    - Implementation ::     
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: install the latest version of ntp
-  yum:
+  apt:
      name: ntp
      state: latest
   ignore_errors: yes
    #+END_SRC
 *** Configure NTP service
-   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/103][Check the issue]]
-
+    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/103][Check the issue]]
+    
    - Impact :: It is designed to synchronize system clocks across a
                variety of systems and use a source that is highly
                accurate.
@@ -1331,9 +1115,9 @@
      Add or edit the OPTIONS in /etc/sysconfig/ntpd to include '-u
         ntp:ntp': OPTIONS="-u ntp:ntp"
    - Implementation ::     
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: Install ntp 
-  yum: name=ntp state=installed
+  apt: name=ntp state=installed
 
 - name:  configuring ntp files
   lineinfile:
@@ -1347,12 +1131,25 @@
    regexp: '.*restrict -6 default kod nomodify notrap nopeer noquery.*'
    line: 'restrict -6 default kod nomodify notrap nopeer noquery'
    state: present
-- name: Inserting a line 
-  lineinfile:
-    name: /etc/sysconfig/ntpd
-    line: OPTIONS="-u ntp:ntp"
-    insertafter: OPTIONS.*
-    state: present
+
+#+END_SRC
+*** Remove/uninstall talk
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/100][Associated issue on GitLab]]
+   - Impact :: The software presents a security risk as it uses
+               unencrypted protocols for communication.
+
+   - Recommendations :: Run the following command to uninstall talk
+
+        #+BEGIN_EXAMPLE
+        #yum remove talk
+        #+END_EXAMPLE
+
+    - Implementation ::
+
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
+- name: remove the talk package
+  apt: name=talk state=absent 
+  ignore_errors: yes
 
 #+END_SRC
 
@@ -1370,7 +1167,7 @@
         #+END_EXAMPLE
 
    - Implementation ::      
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name:  stop the talk service onboot 
   action: command /sbin/chkconfig talk off
   ignore_errors: yes
@@ -1390,11 +1187,52 @@
 	#yum remove telnet
         #+END_EXAMPLE
    - Implementation ::	
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: remove the telnet package
-  yum:
+  apt:
    name: telnet
    state: absent 
+  ignore_errors: yes
+#+END_SRC
+   
+*** Disable/remove Telnet serverx
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/105][Associated issue on GitLab]]
+   - Impact :: Vulnerable to sniff the network
+
+   - Recommendations :: Run the following command to disable telnet:
+
+        #+BEGIN_EXAMPLE
+        #chkconfig telnet off
+        #+END_EXAMPLE
+   - Implementation ::
+		      The ssh package provides an encrypted
+                      session and stronger security
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
+- name: Disable telnet service
+  command: /sbin/chkconfig telnet off
+  ignore_errors: yes
+#+END_SRC
+*** Disable NFS and RPC services
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/205][Associated issue on GitLab]]
+   - Impact ::  If the system does not export NFS shares or
+                act as an NFS client, it is recommended that
+                these services be disabled to reduce remote
+                attack surface.
+
+   - Recommendations :: Run the following commands to
+        disable nfs and rpcbind.
+	#+BEGIN_EXAMPLE
+	chkconfig nfs off
+	chkconfig rpcbind off
+	#+END_EXAMPLE
+   - Implementation ::
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
+- name:  stop the nfs service onboot 
+  service: name=nfs enabled=no
+  ignore_errors: yes
+
+- name: stop RPC service on boot
+  service: name=rpcbind enabled=no
   ignore_errors: yes
 #+END_SRC
 
@@ -1411,7 +1249,7 @@
         All activity may be monitored and reported." > /etc/issue.net
 	#+END_EXAMPLE
    - Implementation :: 	
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: Backup of /etc/issue.net file
   command: 'cp /etc/issue.net /etc/issue.net-default'
 - name: Remote login warning banner
@@ -1430,27 +1268,12 @@
 	All activity may be monitored and reported." > /etc/issue
 	#+END_EXAMPLE
     - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: Backup of /etc/issue  file
   command: 'cp /etc/issue /etc/issue-default'
 
 - name: Local login warning banner
   shell: 'echo -e "Allowed Authorized uses/users only.\nAll activity may be monitored and reported." > /etc/issue'
-#+END_SRC
-*** Set Message of the day in /etc/motd
-   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/94][Associated issue on gitlab]]
-   - Impact :: Vulnerable to providing detailed system
-               information to attackers attempting to target
-               specific exploits of a system.
-   - Recommendations :: Edit the =/etc/motd= file with the
-        appropriate contents according to your site policy,
-        remove any instances of \m, \r, \s, or \v.
-   - Implementation ::	
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
-- name: Backup of /etc/motd file
-  command: 'cp /etc/motd /etc/motd-default'
-- name: Set Message in motd 
-  shell: 'echo -e "`date` \nIts Virtual-Labs. \nAllowed Authorized uses/users only.\nAll activity may be monitored and reported." > /etc/motd'
 #+END_SRC
 *** Configure /etc/hosts.allow
     [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/212][Associated issue on gitlab]]
@@ -1464,7 +1287,7 @@
 	#echo "ALL: /, /, ..." >/etc/hosts.allow 	
 	#+END_EXAMPLE
    - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: Configure /etc/hosts.allow
   lineinfile: 
      name: /etc/hosts.allow
@@ -1488,7 +1311,7 @@
 	#chmod 644 /etc/issue
         #+END_EXAMPLE
    - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: Permissions on /etc/issue
   command: "{{ item }}"
   with_items:
@@ -1508,37 +1331,13 @@
 	#chmod 644 /etc/issue.net
         #+END_EXAMPLE
    - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: Permissions on /etc/issue.net
   command: "{{ item }}"
   with_items:
    - chown root:root /etc/issue.net
    - chmod 644 /etc/issue.net
 #+END_SRC
-*** Set file Permissions to /etc/motd
-   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/97][Check the issue]]
-
-   - Impact :: If the =/etc/motd= file does not have the correct
-               ownership it could be modified by unauthorized users
-               with incorrect or misleading information.
-
-   - Recommendations :: Run the following commands to set permissions
-        on =/etc/motd=:
-
-        #+BEGIN_EXAMPLE
-	#chown root:root /etc/motd
-	#chmod 644 /etc/motd
-        #+END_EXAMPLE
-   - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
-- name: Permissions on /etc/motd
-  command: "{{ item }}"
-  with_items:
-   - chown root:root /etc/motd
-   - chmod 644 /etc/motd
-
-#+END_SRC
-
 *** Set file Permissions to /etc/hosts.allow
    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/114][Check the issue]]
    - Impact :: With a default accept policy the firewall will accept
@@ -1554,7 +1353,7 @@
 	#chmod 644 /etc/hosts.allow
         #+END_EXAMPLE
    - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: Permissions on /etc/hosts.allow
   command: "{{ item }}"
   with_items:
@@ -1578,7 +1377,7 @@
 	#chmod 644 /etc/hosts.deny
         #+END_EXAMPLE
    - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: Permissions on /etc/hosts.allow
   command: "{{ item }}"
   with_items:
@@ -1588,7 +1387,7 @@
 #+END_SRC
 
 *** Set Permissions to /etc/crontab
-   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/171][Check the same issue on GitLab]]
+    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/171][Check the same issue on GitLab]]
    - Impact :: 
 	       Write access to these files could provide
                unprivileged users with the ability to
@@ -1601,63 +1400,12 @@
 	#chmod og-rwx /etc/crontab
         #+END_EXAMPLE
    - Implementation ::
-#+BEGIN_SRC  yml :tangle  roles/os_harden/tasks/main.yml
+#+BEGIN_SRC  yml :tangle  roles/ubuntu_harden/tasks/main.yml
 - name: Set Permissions to /etc/crontab
   command: "{{ item }}"
   with_items:
     - "chown root:root /etc/crontab"
     - "chmod og-rwx /etc/crontab"
-#+END_SRC
-*** Check file system integrity
-   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/87][Issue on GitLab]]
-   - Impact :: Vulnerable to critical files have been
-               changed in an unauthorized fashion.
-   - Recommendations ::  
-	#+BEGIN_EXAMPLE
-	#crontab -u root ¡Ve	
-	#+END_EXAMPLE
-	Add the following line to the crontab
-	#+BEGIN_EXAMPLE
-	0 5 * * * /usr/sbin/aide --check
-	#+END_EXAMPLE
-   - Implementation :: 
-#+BEGIN_SRC yml :tangle  roles/os_harden/tasks/main.yml
-- name: Check File System integrity using AIDE
-  cron:
-   name: "Check file system integrity check"
-   minute: "0"
-   hour: "5"
-   job: "/usr/sbin/aide --check"
-#+END_SRC
-*** Limit the Password reuse
-   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/299][Check the issue on GitLab]]
-   - Impact :: Forcing users not to reuse their past 5 passwords make
-               it less likely that an attacker will be able to guess
-               the password
-
-    - Recommendations ::
-			Edit the =/etc/pam.d/password-auth= and
-                        =/etc/pam.d/system-auth= files to include the
-                        remember option and conform to site policy as
-                        shown:
-
-			#+BEGIN_EXAMPLE
-			Password sufficient pam_unix.so remember=5
-			
-			#+END_EXAMPLE
-
-
-     - Implementation ::
-
-#+BEGIN_SRC yml :tangle  roles/os_harden/tasks/main.yml
-- name: Password reuse is not limited
-  lineinfile: 
-   dest: /etc/pam.d/password-auth
-   line: '{{ item }}'
-  with_items:
-    - 'password sufficient pam_unix.so remember=5'
-
-
 #+END_SRC
 *** Restrict Core dumps
    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/282][Check the issue on GitLab]]
@@ -1694,7 +1442,7 @@
 
      - Implementation ::
 
-#+BEGIN_SRC yml :tangle  roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle  roles/ubuntu_harden/tasks/main.yml
 - name: Set the core dumps
   lineinfile: 
    dest:  /etc/security/limits.conf
@@ -1722,11 +1470,126 @@
 	#start on runlevel [2345]
 	#+END_EXAMPLE
    - Implementation ::
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: stop xinetd service on boot
   service: name=xinetd enabled=yes
   ignore_errors: yes
 #+END_SRC
+*** Permissions on /etc/passwd-
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/585][Associated issue on GitLab]]   
+   - Impact :: Vulnerable to unauthorized access
+
+   - Recommendations :: Run the following command to set permissions
+        on =/etc/passwd-= :
+
+	#+BEGIN_EXAMPLE
+	#chown root:root /etc/passwd-
+	#chmod u-x,go-wx /etc/passwd-
+	#+END_EXAMPLE
+   - Implementation ::
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
+- name: Permissions on /etc/password-
+  command: "{{ item }}"
+  with_items:
+   - chown root:root /etc/passwd-
+   - chmod u-x,go-wx /etc/passwd-
+#+END_SRC
+*** Permissions on /etc/shadow
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/584][Associated issue on GitLab]]   
+   - Impact :: If attackers can gain read access to the =/etc/shadow=
+               file, they can easily run a password cracking program
+               against the hashed password to break it.
+
+   - Recommendations :: Run the following command to set permissions
+        on =/etc/shadow= :
+
+	#+BEGIN_EXAMPLE
+	#chown root:shadow /etc/shadow
+	#chmod o-rwx,g-wx /etc/shadow
+	#+END_EXAMPLE
+   - Implementation ::
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
+- name: Permissions on /etc/shadow
+  command: "{{ item }}"
+  with_items:
+   - chown root:root /etc/shadow
+   - chmod o-rwx,g-wx /etc/shadow
+#+END_SRC
+*** Permissions on /etc/ssh/sshd_config
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/576][Associated issue on GitLab]]   
+   - Impact :: Vulnerable to unauthorized changes by non-privileged
+               users.
+
+   - Recommendations :: Run the following commands to set ownership
+        and permissions on =/etc/ssh/sshd_config=
+
+	#+BEGIN_EXAMPLE
+	#chown root:root /etc/ssh/sshd_config
+	#chmod og-rwx /etc/ssh/sshd_config
+	#+END_EXAMPLE
+   - Implementation ::
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
+- name: Permissions on /etc/ssh/sshd_config
+  command: "{{ item }}"
+  with_items:
+   - chown root:root /etc/ssh/sshd_config
+   - chmod og-rwx /etc/ssh/sshd_config
+#+END_SRC
+*** Remove LDAP client
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/566][Associated issue on GitLab]]   
+   - Impact :: It is a service that provides a method for looking up
+               information from a central database.
+
+   - Recommendations :: If not required it can be removed from the
+        server:
+
+     Uninstall ldap-utils using the appropriate package manager or
+        manual installation:
+     
+	#+BEGIN_EXAMPLE
+	#apt-get remove ldap-utils
+	#+END_EXAMPLE
+   - Implementation ::
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
+- name: remove the LDAP client
+  apt: name=ldap-utils state=absent 
+  ignore_errors: yes
+#+END_SRC
+*** Disable samba service
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/563][Associated issue on GitLab]]   
+   - Impact :: Vulnerable to Ransomware attacks
+
+   - Recommendations :: Remove or comment out start lines in
+        =/etc/init/smbd.conf=:
+
+	#+BEGIN_EXAMPLE
+	#start on (local-filesystems and net-device-up)
+	#+END_EXAMPLE
+   - Implementation ::
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
+- name: Disable samba service 
+  lineinfile:
+   dest: /etc/init/smbd.conf 
+   regexp: '^start on.*'
+   line: '#start on (local-filesystems and net-device-up)'
+   state: present
+#+END_SRC
+*** MAC algorithms
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/578][Associated issue on GitLab]]   
+   - Impact :: Man-in-the-Middle Attacks
+
+   - Recommendations :: Edit the =/etc/ssh/sshd_config= file to set
+        the parameter as follows:
+
+	#+BEGIN_EXAMPLE
+	MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512,hmac-sha2-256,umac-128@openssh.com
+	#+END_EXAMPLE
+   - Implementation ::
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
+- name: Using MAC algorithms
+  lineinfile:
+   dest: /etc/ssh/sshd_config
+   line: MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512,hmac-sha2-256,umac-128@openssh.com
 #+END_SRC
 *** Configure /etc/hosts.deny
    - Impact ::  The =/etc/hosts.deny= file serves as a
@@ -1741,14 +1604,33 @@
 	#echo "ALL: ALL" >> /etc/hosts.deny
 	#+END_EXAMPLE
 
-#+BEGIN_SRC yml :tangle roles/os_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: Configure /etc/hosts.deny
   lineinfile: 
     name: /etc/hosts.deny
     regexp: "ALL: ALL"
-    line: "ALL: ALL EXCEPT 10.100., 10.2."
+    line: "ALL: ALL EXCEPT 10.100."
 #+END_SRC
+** Create application service hosts
+   Replace following services with ip address, Ex:
+   <analytics-db-ip-address> = 10.100.2.3
+#+BEGIN_SRC text :tangle service-hosts
+[services]
+<analytics-db-ip-address>
+<vlabs-analytics-ip-address>
+<feedback-ip-address>
+<outreach-ip-address>
+#+END_SRC
+** Confgure os hardening in application services
+#+BEGIN_SRC yaml :tangle ubuntu_hardening.yaml
+---
+- name: This file configures outreach, analytics, feedback servers
+  hosts: services
+  remote_user: root
 
+  roles:
+    - ubuntu_harden
+#+END_SRC
 * Duplicate/Repeated issues.
   While implementing/writing ansible playbooks for each
   milestone(Milestones can be found [[https://gitlab.com/vlead-systems/os-hardening/milestones/1][here]]), we found that

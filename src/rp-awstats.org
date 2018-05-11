@@ -2292,7 +2292,7 @@ service httpd restart
    host_name: "reverseproxy.{{prefix}}vlabs.ac.in"
   roles:
     - common
-    - os_harden
+    - centos_harden
     - reverseproxy_server
 #+END_SRC
 *** Install clients in Reverese proxy server 
