@@ -1561,7 +1561,8 @@
    and it has analytics-db-ip-address, analytics-ip-address..etc
 
    Update =~/systems-model/build/<cluster-name>/service-hosts= file
-   with appropriate service ip address. (For example 10.100.0.4).
+   with appropriate service ip address. (For example
+   <analytics-db-ip-address> is 10.100.0.4).
 
 #+BEGIN_SRC text :tangle service-hosts
 [services]
@@ -1572,8 +1573,7 @@
 #+END_SRC
 
 ** Confgure os harden in application services/servers
-   The below file is configures os hardening in application
-   services/servers.
+   The below file is configures os hardening in application services.
 #+BEGIN_SRC yaml :tangle ubuntu_hardening.yaml
 ---
 - name: This file configures outreach, analytics, feedback servers
