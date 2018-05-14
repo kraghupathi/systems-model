@@ -1089,11 +1089,11 @@
         documentation and setup host based synchronization.
    - Implementation ::     
 #+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
-- name: install the latest version of ntp
-  apt:
-     name: ntp
-     state: latest
-  ignore_errors: yes
+#- name: install the latest version of ntp
+#  apt:
+#     name: ntp
+#     state: latest
+#  ignore_errors: yes
    #+END_SRC
 *** Configure NTP service
     [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/103][Check the issue]]
