@@ -1417,7 +1417,7 @@
    - Implementation ::
 #+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: stop xinetd service on boot
-  service: name=xinetd enabled=yes
+  service: name=xinetd enabled=no
   ignore_errors: yes
 #+END_SRC
 *** Permissions on /etc/passwd-
