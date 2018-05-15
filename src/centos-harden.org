@@ -337,7 +337,7 @@
 - name: Set SSH idle time out
   lineinfile:
    dest: /etc/ssh/sshd_config
-   regexp: '^#ClientAliveInterval.*'
+   regexp: '.*ClientAliveInterval.*'
    line: 'ClientAliveInterval 300'
    state: present
 - name: Set Set SSH idle time out
@@ -542,7 +542,6 @@
 - name: Permit root login without-password(key based)
   lineinfile: dest=/etc/ssh/sshd_config regexp='PermitRootLogin ' line='PermitRootLogin without-password' state=present
 #+END_SRC
-
 *** Disable password based access
      Password based access is disabled.
 
@@ -550,8 +549,6 @@
 - name: Disable Password authentication
   lineinfile: dest=/etc/ssh/sshd_config regexp='PasswordAuthentication ' line='PasswordAuthentication no'
 #+END_SRC
-
-
 *** Enable key based authentication
    Only key based access is enabled.
 
@@ -559,7 +556,6 @@
 - name: Enable Public key authentication
   lineinfile: dest=/etc/ssh/sshd_config regexp='PubkeyAuthentication ' line='PubkeyAuthentication yes'
 #+END_SRC
-
 *** Do not permit empty passwords
    Users are not allowed to set empty-password.
 
@@ -809,7 +805,7 @@
   lineinfile:
      name: /etc/audit/auditd.conf
      backup: yes
-     regexp: "^max_log_file = *"
+     regexp: ".*max_log_file = *"
      line: "max_log_file = 6"
      state: present
 #+END_SRC
@@ -1434,7 +1430,7 @@
 - name: Configure /etc/hosts.allow
   lineinfile: 
      name: /etc/hosts.allow
-     regexp: "^ALL"
+     regexp: ".*ALL"
      line: "ALL: 10.100., 10.2., .vlabs.ac.in"
 #+END_SRC
 
@@ -1713,7 +1709,7 @@
 - name: Configure /etc/hosts.deny
   lineinfile: 
     name: /etc/hosts.deny
-    regexp: "ALL: ALL"
+    regexp: ".*ALL: ALL.*"
     line: "ALL: ALL EXCEPT 10.100., 10.2."
 #+END_SRC
 
