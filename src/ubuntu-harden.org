@@ -93,7 +93,7 @@
 - name: Setting SSH LoginGraceTime
   lineinfile:
    dest: /etc/ssh/sshd_config
-   regexp: '^LoginGraceTime 2m.*'
+   regexp: '.*LoginGraceTime 2m.*'
    line: 'LoginGraceTime 60'
    state: present
 #+END_SRC
@@ -119,13 +119,13 @@
 - name: Set SSH idle time out
   lineinfile:
    dest: /etc/ssh/sshd_config
-   regexp: '^ClientAliveInterval.*'
+   regexp: '.*ClientAliveInterval.*'
    line: 'ClientAliveInterval 300'
    state: present
 - name: Set Set SSH idle time out
   lineinfile:
    dest: /etc/ssh/sshd_config
-   regexp: '^ClientAliveCountMax.*'
+   regexp: '.*ClientAliveCountMax.*'
    line: 'ClientAliveCountMax 5'
    state: present
 #+END_SRC
@@ -153,7 +153,7 @@
 - name: SSH IgnoreRhosts is enable
   lineinfile: 
    dest: /etc/ssh/sshd_config
-   regexp: '^IgnoreRhosts yes.*'
+   regexp: '.*IgnoreRhosts yes.*'
    line: 'IgnoreRhosts yes'
    state: present
    #+END_SRC
@@ -200,7 +200,7 @@
 - name:  set the SSH MaxAuthTries
   lineinfile:
    dest: /etc/ssh/sshd_config
-   regexp: '^MaxAuthTries 6.*'
+   regexp: '.*MaxAuthTries 6.*'
    line: 'MaxAuthTries 4'
    state: present
 #+END_SRC
@@ -226,7 +226,7 @@
 - name:  set SSH LogLevel
   lineinfile:
    dest: /etc/ssh/sshd_config
-   regexp: '^LogLevel INFO.*'
+   regexp: '.*LogLevel INFO.*'
    line: 'LogLevel INFO'
    state: present
 #+END_SRC
@@ -1236,7 +1236,7 @@
 - name: Configure /etc/hosts.allow
   lineinfile: 
      name: /etc/hosts.allow
-     regexp: "^ALL"
+     regexp: ".*ALL"
      line: "ALL: 10.100., 10.2., .vlabs.ac.in"
 #+END_SRC
 
@@ -1553,7 +1553,7 @@
 - name: Configure /etc/hosts.deny
   lineinfile: 
     name: /etc/hosts.deny
-    regexp: "ALL: ALL"
+    regexp: ".*ALL: ALL"
     line: "ALL: ALL EXCEPT 10.100."
 #+END_SRC
 ** Set application service/server ip addresses in service hosts file
