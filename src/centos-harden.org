@@ -311,7 +311,7 @@
 - name: Setting SSH LoginGraceTime
   lineinfile:
    dest: /etc/ssh/sshd_config
-   regexp: '.*LoginGraceTime 2m.*'
+   regexp: '.*LoginGraceTime.*'
    line: 'LoginGraceTime 60'
    state: present
 #+END_SRC
@@ -418,7 +418,7 @@
 - name:  set the SSH MaxAuthTries
   lineinfile:
    dest: /etc/ssh/sshd_config
-   regexp: '.*MaxAuthTries 6.*'
+   regexp: '.*MaxAuthTries.*'
    line: 'MaxAuthTries 4'
    state: present
 #+END_SRC
@@ -1709,7 +1709,7 @@
 - name: Configure /etc/hosts.deny
   lineinfile: 
     name: /etc/hosts.deny
-    regexp: ".*ALL: ALL.*"
+    regexp: ".*ALL: ALL"
     line: "ALL: ALL EXCEPT 10.100., 10.2."
 #+END_SRC
 
