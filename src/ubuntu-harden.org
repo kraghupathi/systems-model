@@ -65,8 +65,8 @@
 	#+END_EXAMPLE
    - Implementation ::
 #+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
-- name: stop xinetd service on boot
-  service: name=xinetd enabled=no
+- name:  stop the xinetd service onboot 
+  action: command /sbin/chkconfig xinetd off
   ignore_errors: yes
 #+END_SRC
 *** SELinux 

@@ -165,8 +165,8 @@
 	#+END_EXAMPLE
    - Implementation ::
 #+BEGIN_SRC yml :tangle roles/centos_harden/tasks/main.yml
-- name: stop xinetd service on boot
-  service: name=xinetd enabled=no
+- name: Disable xinetd service
+  command: /sbin/chkconfig xinetd off
   ignore_errors: yes
 #+END_SRC
 *** IPv6 router advertisements are accepted with server
@@ -1615,7 +1615,7 @@
      - Implementation ::
 
 #+BEGIN_SRC yml :tangle  roles/centos_harden/tasks/main.yml
-- name: Password reuse is not limited
+- name: Limit reuse password
   lineinfile: 
    name: '{{ item }'
    insertafter: "^password*" 
@@ -1646,7 +1646,7 @@
      - Implementation ::
 
 #+BEGIN_SRC yml :tangle  roles/centos_harden/tasks/main.yml
-- name: Password reuse is not limited
+- name: Creation of password requirements
   lineinfile: 
    name: '{{ item }'
    insertafter: "^password    requisite*" 
