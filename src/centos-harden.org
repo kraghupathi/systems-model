@@ -1617,11 +1617,44 @@
 #+BEGIN_SRC yml :tangle  roles/centos_harden/tasks/main.yml
 - name: Password reuse is not limited
   lineinfile: 
-   dest: /etc/pam.d/password-auth
-   line: '{{ item }}'
+   name: '{{ item }'
+   insertafter: "^password*" 
+   backup: yes
+   line: 'password sufficient pam_unix.so remember=5'
   with_items:
-    - 'password sufficient pam_unix.so remember=5'
+    - '/etc/pam.d/password-auth'
+    - '/etc/pam.d/system-auth'
 
+#+END_SRC
+*** Password creation requirements
+    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/181][Check the issue on GitLab]]
+   - Impact :: Strong password protect systems from being hacked
+               through brute force methods.
+
+    - Recommendations ::
+			Edit the =/etc/pam.d/password-auth= and
+                        =/etc/pam.d/system-auth= files to include the
+                        appropriate options for pam_cracklib.so and to
+                        conform to site policy:
+
+			#+BEGIN_EXAMPLE
+			password requisite pam_cracklib.so try_first_pass retry=3 minlen=14 dcredit=-1 ucredit=-1 ocredit=-1 lcredit=-1
+			
+			#+END_EXAMPLE
+
+
+     - Implementation ::
+
+#+BEGIN_SRC yml :tangle  roles/centos_harden/tasks/main.yml
+- name: Password reuse is not limited
+  lineinfile: 
+   name: '{{ item }'
+   insertafter: "^password    requisite*" 
+   backup: yes
+   line: 'password    requisite     pam_cracklib.so  try_first_pass retry=3 minlen=14 dcredit=-1 ucredit=-1 ocredit=-1 lcredit=-1'
+  with_items:
+    - '/etc/pam.d/password-auth'
+    - '/etc/pam.d/system-auth'
 
 #+END_SRC
 *** Restrict core dumps

@@ -314,6 +314,7 @@
     customized as per the requirement.
 *** Permit root login without password
      Only system administrators with ssh private key can login as Root.
+
 #+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: Permit root login without-password(key based)
   lineinfile: dest=/etc/ssh/sshd_config regexp='PermitRootLogin ' line='PermitRootLogin without-password' state=present
