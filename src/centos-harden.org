@@ -1616,10 +1616,10 @@
 #+BEGIN_SRC yml :tangle  roles/centos_harden/tasks/main.yml
 - name: Limit reuse password
   lineinfile: 
-   name: '{{ item }'
+   name: "{{ item }}"
    insertafter: "^password*" 
    backup: yes
-   line: 'password sufficient pam_unix.so remember=5'
+   line: "password sufficient pam_unix.so remember=5"
   with_items:
     - '/etc/pam.d/password-auth'
     - '/etc/pam.d/system-auth'
@@ -1647,10 +1647,10 @@
 #+BEGIN_SRC yml :tangle  roles/centos_harden/tasks/main.yml
 - name: Creation of password requirements
   lineinfile: 
-   name: '{{ item }'
+   name: "{{ item }}"
    insertafter: "^password    requisite*" 
    backup: yes
-   line: 'password    requisite     pam_cracklib.so  try_first_pass retry=3 minlen=14 dcredit=-1 ucredit=-1 ocredit=-1 lcredit=-1'
+   line: "password    requisite     pam_cracklib.so  try_first_pass retry=3 minlen=14 dcredit=-1 ucredit=-1 ocredit=-1 lcredit=-1"
   with_items:
     - '/etc/pam.d/password-auth'
     - '/etc/pam.d/system-auth'
