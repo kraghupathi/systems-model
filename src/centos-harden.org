@@ -503,7 +503,7 @@
     dest: /etc/ssh/sshd_config
     line: '{{ item }}'
   with_items:
-    - 'AllowUsers root, vlead'
+    - 'AllowUsers vlead, root'
 #+END_SRC
 **** SSH Hardening
     All the servers in the cluster are made secure by hardening *ssh*

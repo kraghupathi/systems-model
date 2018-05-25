@@ -281,7 +281,7 @@
     dest: /etc/ssh/sshd_config
     line: '{{ item }}'
   with_items:
-    - 'AllowUsers root, vlead'
+    - 'AllowUsers vlead, root'
 #+END_SRC
 **** Enable key based authentication
     Only key based access is enabled.
