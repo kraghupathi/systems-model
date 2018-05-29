@@ -1721,7 +1721,11 @@
    - Implementation ::
 #+BEGIN_SRC yml :tangle roles/centos_harden/tasks/main.yml
 - name: stop xinetd service on boot
-  service: name=xinetd enabled=no
+  lineinfile:
+   dest: /etc/init/xinetd.conf
+   regexp: 'start on runlevel.*'
+   line: '#start on runlevel [2345]'
+   state: present
   ignore_errors: yes
 #+END_SRC
 *** Configure /etc/hosts.deny
