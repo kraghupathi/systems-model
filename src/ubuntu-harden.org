@@ -65,7 +65,7 @@
 	#+END_EXAMPLE
    - Implementation ::
 #+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
-- name:  stop the xinetd service onboot 
+- name: stop xinetd service on boot
   action: command /sbin/chkconfig xinetd off
   ignore_errors: yes
 #+END_SRC
@@ -816,8 +816,8 @@
          #+END_EXAMPLE
 
     	 #+BEGIN_EXAMPLE
-         net.ipv4.conf.all.send_redirects = 0
-	 net.ipv4.conf.default.send_redirects = 0
+         net.ipv4.conf.all.send_redirects=0
+	 net.ipv4.conf.default.send_redirects=0
          #+END_EXAMPLE
 
       - Implementation :: Run the following commands to set the active
@@ -828,7 +828,7 @@
   lineinfile:
     dest: /etc/sysctl.conf
     regexp: "^net.ipv4.ip_forward.*"
-    line: 'net.ipv4.ip_forward = 0'
+    line: 'net.ipv4.ip_forward=0'
     state: present
   when: router_internal_ip is defined
 
@@ -838,9 +838,9 @@
     line: "{{ item }}"
     insertafter: net.ipv4.ip_forward.*
   with_items:
-  - 'net.ipv4.conf.all.send_redirects = 0'
-  - 'net.ipv4.conf.default.send_redirects = 0'
-  - 'net.ipv4.route.flush = 1'
+  - 'net.ipv4.conf.all.send_redirects=0'
+  - 'net.ipv4.conf.default.send_redirects=0'
+  - 'net.ipv4.route.flush=1'
 #+END_SRC
 **** Enable reverse path filtering
    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/110][Associated issue]]
@@ -852,8 +852,8 @@
         =/etc/sysctl.conf= file:
 
         #+BEGIN_EXAMPLE
-	net.ipv4.conf.all.rp_filter = 1
-	net.ipv4.conf.default.rp_filter = 1
+	net.ipv4.conf.all.rp_filter=1
+	net.ipv4.conf.default.rp_filter=1
         #+END_EXAMPLE
      Run the following commands to set the active kernel parameters:
         #+BEGIN_EXAMPLE
@@ -868,8 +868,8 @@
    dest: /etc/sysctl.conf
    line: '{{ item }}'
   with_items:
-   - 'net.ipv4.conf.all.rp_filter = 1'
-   - 'net.ipv4.conf.default.rp_filter = 1'
+   - 'net.ipv4.conf.all.rp_filter=1'
+   - 'net.ipv4.conf.default.rp_filter=1'
 #+END_SRC
 
 **** Log the suspicious packets
@@ -880,8 +880,8 @@
          =/etc/sysctl.conf= file:
 
          #+BEGIN_EXAMPLE
-	 net.ipv4.conf.all.log_martians = 1
-	 net.ipv4.conf.default.log_martians = 1
+	 net.ipv4.conf.all.log_martians=1
+	 net.ipv4.conf.default.log_martians=1
          #+END_EXAMPLE
        Run the following commands to set the active kernel parameters:
          #+BEGIN_EXAMPLE
@@ -898,8 +898,8 @@
    insertafter: "net.ipv4.ip_forward.*"
    state: present
   with_items:
-   - 'net.ipv4.conf.all.log_martians = 1'
-   - 'net.ipv4.conf.default.log_martians = 1'
+   - 'net.ipv4.conf.all.log_martians=1'
+   - 'net.ipv4.conf.default.log_martians=1'
 #+END_SRC
    
 **** Do not accept Secure ICMP redirects packets
@@ -911,8 +911,8 @@
         =/etc/sysctl.conf= file:
 
         #+BEGIN_EXAMPLE
-	net.ipv4.conf.all.secure_redirects = 0
-	net.ipv4.conf.default.secure_redirects = 0
+	net.ipv4.conf.all.secure_redirects=0
+	net.ipv4.conf.default.secure_redirects=0
         #+END_EXAMPLE
       Run the following commands to set the active kernel parameters:
 
@@ -930,8 +930,8 @@
     insertafter: net.ipv4.ip_forward.*
     state: present
   with_items:
-    - 'net.ipv4.conf.all.secure_redirects = 0'
-    - 'net.ipv4.conf.default.secure_redirects = 0'
+    - 'net.ipv4.conf.all.secure_redirects=0'
+    - 'net.ipv4.conf.default.secure_redirects=0'
 #+END_SRC
 
 **** Do not accept ICMP redirects
@@ -945,8 +945,8 @@
         =/etc/sysctl.conf= file:
 
         #+BEGIN_EXAMPLE
-	net.ipv4.conf.all.accept_redirects = 0
-	net.ipv4.conf.default.accept_redirect = 0
+	net.ipv4.conf.all.accept_redirects=0
+	net.ipv4.conf.default.accept_redirect=0
         #+END_EXAMPLE
       Run the following commands to set the active kernel parameters:
 
@@ -964,8 +964,8 @@
    insertafter: "net.ipv4.ip_forward.*"
    state: present
   with_items:
-    - 'net.ipv4.conf.all.accept_redirects = 0'
-    - 'net.ipv4.conf.default.accept_redirects = 0'
+    - 'net.ipv4.conf.all.accept_redirects=0'
+    - 'net.ipv4.conf.default.accept_redirects=0'
 #+END_SRC
 
 **** Ignore ICMP bogus Messages
@@ -998,7 +998,7 @@
     dest:  /etc/sysctl.conf
     line: '{{ item }}' 
   with_items:
-    - 'net.ipv4.icmp_ignore_bogus_error_responses = 1'
+    - 'net.ipv4.icmp_ignore_bogus_error_responses=1'
 #+END_SRC
 **** Ignore Broadcast ICMP requests
     [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/292][Check the issue on GitLab]]
@@ -1012,7 +1012,7 @@
                         file:
 
 			#+BEGIN_EXAMPLE
-			net.ipv4.icmp_echo_ignore_broadcasts = 1
+			net.ipv4.icmp_echo_ignore_broadcasts=1
 
 			#+END_EXAMPLE
 			Run the following commands to set the active
@@ -1031,7 +1031,51 @@
     dest:  /etc/sysctl.conf
     line: '{{ item }}'
   with_items:
-   - 'net.ipv4.icmp_echo_ignore_broadcasts = 1'
+   - 'net.ipv4.icmp_echo_ignore_broadcasts=1'
+#+END_SRC
+**** IPv6 router advertisements are accepted with server
+   [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/211][Associated issue on GitLab]]
+   - Impact :: It is recommended that servers not accept
+               router advertisements as they could be
+               tricked into routing traffic to compromised
+               machines.
+	       
+   - Recommendations :: Set the following parameters in the
+        /etc/sysctl.conf file.
+	#+BEGIN_EXAMPLE
+	net.ipv6.conf.all.accept_ra = 0
+	net.ipv6.conf.default.accept_ra = 0
+	#+END_EXAMPLE
+	Run the following commands to set the active kernel
+        parameters.
+	#+BEGIN_EXAMPLE
+	#sysctl -w net.ipv6.conf.all.accept_ra=0
+	#sysctl -w net.ipv6.conf.default.accept_ra=0 
+	#sysctl -w net.ipv6.route.flush=1
+	#+END_EXAMPLE
+   - Implementation ::
+
+#+BEGIN_SRC yml :tangle roles/centos_harden/tasks/main.yml
+- name:  Do not accept router advertisements
+  sysctl:
+     name: net.ipv6.conf.all.accept_ra
+     value: 0
+     state: present
+  ignore_errors: yes
+
+- name:  Do not accept router advertisements
+  sysctl:
+     name: net.ipv6.conf.default.accept_ra
+     value: 0
+     state: present
+  ignore_errors: yes
+
+- name:  Do not accept router advertisements
+  sysctl:
+      name: net.ipv6.route.flush
+      value: 1
+      state: present
+  ignore_errors: yes
 #+END_SRC
 *** NTP service
 **** Configure NTP service
@@ -1176,7 +1220,11 @@
   ignore_errors: yes
 
 - name: stop RPC service on boot
-  service: name=rpcbind enabled=no
+  lineinfile:
+   dest: /etc/init/rpcbind.conf
+   regexp: 'start on start-rpcbind.*'
+   line: '#start on start-rpcbind'
+   state: present
   ignore_errors: yes
 #+END_SRC
 
@@ -1477,7 +1525,11 @@
    - Implementation ::
 #+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name: stop xinetd service on boot
-  service: name=xinetd enabled=no
+  lineinfile:
+   dest: /etc/init/xinetd.conf
+   regexp: 'start on runlevel.*'
+   line: '#start on runlevel [2345]'
+   state: present
   ignore_errors: yes
 #+END_SRC
 *** Remove LDAP client
