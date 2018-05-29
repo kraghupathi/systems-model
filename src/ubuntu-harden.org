@@ -1055,7 +1055,7 @@
 	#+END_EXAMPLE
    - Implementation ::
 
-#+BEGIN_SRC yml :tangle roles/centos_harden/tasks/main.yml
+#+BEGIN_SRC yml :tangle roles/ubuntu_harden/tasks/main.yml
 - name:  Do not accept router advertisements
   sysctl:
      name: net.ipv6.conf.all.accept_ra
@@ -1227,7 +1227,7 @@
    state: present
   ignore_errors: yes
 #+END_SRC
-
+   
 *** Configure Remote login warning banner
    [[https://gitlab.com/vlead-systems/vlead-security-audit/issues/96][Associated issue on gitlab]]
    - Impact :: Vulnerable to providing detailed system
